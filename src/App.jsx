@@ -17,16 +17,13 @@ const chip = (a) => ({ background: a ? `linear-gradient(135deg,${C.gold},#B8942F
 const card = { background: C.bgCard, border: `1px solid ${C.goldDim}`, borderRadius: 22 };
 
 // ═══ SUPABASE CONFIG ═══
-// Main KHG Supabase (gt_venues)
-const SUPA_MAIN = "https://dzlmtvodpyhetvektfuo.supabase.co/rest/v1";
-const SK_MAIN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1ODQ4NjQsImV4cCI6MjA4NTE2MDg2NH0.qmnWB4aWdb7U8Iod9Hv8PQAOJO3AG0vYEGnPS--kfAo";
-// Secondary Supabase (events)
-const SUPA_EV = "https://czocqfaovfpjweayniuw.supabase.co/rest/v1";
-const SK_EV = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6b2NxZmFvdmZwandlYXluaXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNzEzODAsImV4cCI6MjA4Mzk0NzM4MH0.6-3rmA9tZXHLVg5N6a_82rKA9Kvrj4gRrUUiSczovho";
+// Main KHG Supabase — ALL data (gt_venues + eventbrite_events)
+const SUPA = "https://dzlmtvodpyhetvektfuo.supabase.co/rest/v1";
+const SK = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1ODQ4NjQsImV4cCI6MjA4NTE2MDg2NH0.qmnWB4aWdb7U8Iod9Hv8PQAOJO3AG0vYEGnPS--kfAo";
 
-const supa = async (ep, base = SUPA_MAIN, key = SK_MAIN) => {
+const supa = async (ep) => {
   try {
-    const r = await fetch(`${base}/${ep}`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    const r = await fetch(`${SUPA}/${ep}`, { headers: { apikey: SK, Authorization: `Bearer ${SK}` } });
     return r.ok ? await r.json() : [];
   } catch { return []; }
 };
@@ -104,6 +101,7 @@ export default function GoodTimes() {
   const [toast, setToast] = useState(null);
   const [catCounts, setCatCounts] = useState({});
   const [imgErrors, setImgErrors] = useState({});
+  const [evFilter, setEvFilter] = useState("all");
 
   // ═══ SPLASH ═══
   useEffect(() => { const t = setTimeout(() => setScreen("discover"), 2200); return () => clearTimeout(t); }, []);
@@ -129,8 +127,19 @@ export default function GoodTimes() {
   // ═══ LOAD EVENTS ═══
   useEffect(() => {
     (async () => {
-      const ev = await supa("events?select=*&order=date.asc&limit=100", SUPA_EV, SK_EV);
-      setEvents(ev);
+      const raw = await supa("eventbrite_events?is_active=eq.true&select=*&order=event_date.asc&limit=200");
+      // Normalize eventbrite_events schema to what the app expects
+      const normalized = raw.map(e => ({
+        id: e.id,
+        title: e.event_name,
+        brand: e.brand_key?.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) || "",
+        city: e.city || "Atlanta",
+        date: e.event_date,
+        event_type: e.event_type,
+        eventbrite_url: e.eventbrite_url,
+        image_url: null, // eventbrite_events doesn't have images
+      }));
+      setEvents(normalized);
     })();
   }, []);
 
@@ -190,6 +199,7 @@ export default function GoodTimes() {
   const Page = ({ children }) => (
     <div style={{ minHeight: "100vh", background: C.bg, fontFamily: G.f, position: "relative", overflowY: "auto", WebkitOverflowScrolling: "touch", paddingBottom: 90, color: C.text }}>
       {nightBg}<div style={{ position: "relative", zIndex: 1 }}>{children}</div>
+      {toast && <div style={{ position: "fixed", top: 60, left: "50%", transform: "translateX(-50%)", zIndex: 100, background: `linear-gradient(135deg,${C.gold},#B8942F)`, color: "#0A0A0F", padding: "10px 24px", borderRadius: 99, fontSize: 14, fontWeight: 700, fontFamily: G.f, animation: "fadeIn 0.3s ease-out", boxShadow: "0 4px 20px rgba(212,168,83,0.3)" }}>{toast}</div>}
     </div>
   );
 
@@ -589,23 +599,33 @@ export default function GoodTimes() {
   }
 
   // ═══ EVENTS ═══
-  if (screen === "events") return (
+  if (screen === "events") {
+    const allUpcoming = events.filter(e => { const today = new Date().toISOString().split("T")[0]; return e.date >= today; }).sort((a, b) => a.date.localeCompare(b.date));
+    const eventCities = [...new Set(allUpcoming.map(e => e.city))].filter(Boolean);
+    const filtered = evFilter === "all" ? allUpcoming : allUpcoming.filter(e => e.city === evFilter);
+    return (
     <Page>
       {TopBar}{CitySheet}{SearchSheet}
       <div style={{ padding: "8px 20px 20px" }}>
-        <div style={{ textAlign: "center", marginBottom: 20 }}>
-          <div style={{ fontSize: 12, letterSpacing: 4, color: C.gold, fontWeight: 700, marginBottom: 6 }}>EVENTS</div>
+        <div style={{ textAlign: "center", marginBottom: 16 }}>
+          <div style={{ fontSize: 12, letterSpacing: 4, color: C.gold, fontWeight: 700, marginBottom: 6 }}>HUGLIFE EVENTS</div>
           <div style={{ fontSize: 32, fontFamily: G.s, fontWeight: 300, marginBottom: 4 }}>What's Happening</div>
-          <div style={{ fontSize: 14, color: C.textSec }}>{upcoming.length} upcoming in {city.name}</div>
+          <div style={{ fontSize: 14, color: C.textSec }}>{allUpcoming.length} upcoming events</div>
+        </div>
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", marginBottom: 16 }}>
+          <button onClick={() => setEvFilter("all")} style={{ ...chip(evFilter === "all"), padding: "6px 14px", fontSize: 12, whiteSpace: "nowrap", flexShrink: 0 }}>All</button>
+          {eventCities.map(c => (
+            <button key={c} onClick={() => setEvFilter(c)} style={{ ...chip(evFilter === c), padding: "6px 14px", fontSize: 12, whiteSpace: "nowrap", flexShrink: 0 }}>{c}</button>
+          ))}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {upcoming.map(e => <EventCard key={e.id} e={e} />)}
-          {upcoming.length === 0 && <div style={{ textAlign: "center", padding: 40, color: C.muted }}>No upcoming events for {city.name} yet. Check back soon!</div>}
+          {filtered.map(e => <EventCard key={e.id} e={e} />)}
+          {filtered.length === 0 && <div style={{ textAlign: "center", padding: 40, color: C.muted }}>No upcoming events yet. Check back soon!</div>}
         </div>
       </div>
       {NavBar}
     </Page>
-  );
+  );}
 
   // ═══ EVENT DETAIL ═══
   if (screen === "eventDetail" && selectedEvent) {
@@ -619,13 +639,15 @@ export default function GoodTimes() {
           <button onClick={() => { setScreen("events"); setTab("events"); }} style={{ position: "absolute", top: 16, left: 16, ...chip(false), padding: "8px 14px", fontSize: 16, background: "rgba(0,0,0,0.4)", backdropFilter: "blur(8px)" }}>←</button>
         </div>
         <div style={{ padding: "0 20px", marginTop: -50, position: "relative", zIndex: 2 }}>
-          <div style={{ fontSize: 12, color: C.gold, fontWeight: 700, letterSpacing: 2, marginBottom: 8 }}>{e.brand}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <span style={{ fontSize: 12, color: C.gold, fontWeight: 700, letterSpacing: 2 }}>{e.brand}</span>
+            {e.event_type && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 99, background: "rgba(255,255,255,0.05)", color: C.textSec, textTransform: "capitalize" }}>{e.event_type}</span>}
+          </div>
           <div style={{ fontSize: 28, fontFamily: G.s, fontWeight: 400, marginBottom: 8, lineHeight: 1.2 }}>{e.title}</div>
           {d && <div style={{ fontSize: 16, color: C.textSec, marginBottom: 6 }}>📅 {d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</div>}
-          {e.time && <div style={{ fontSize: 14, color: C.muted, marginBottom: 6 }}>⏰ {e.time}{e.end_time ? ` — ${e.end_time}` : ""}</div>}
-          {e.venue && <div style={{ fontSize: 14, color: C.textSec, marginBottom: 6 }}>📍 {e.venue} · {e.city}</div>}
-          {e.description && <div style={{ ...card, padding: "16px 18px", marginTop: 16, marginBottom: 16 }}><div style={{ fontSize: 14, color: C.text, lineHeight: 1.6 }}>{e.description}</div></div>}
-          {e.price > 0 && <div style={{ ...chip(true), padding: "14px 24px", fontSize: 16, textAlign: "center", width: "100%", display: "block", marginBottom: 16 }}>Get Tickets — ${e.price}</div>}
+          {e.city && <div style={{ fontSize: 14, color: C.muted, marginBottom: 12 }}>📍 {e.city}</div>}
+          {e.eventbrite_url && <a href={e.eventbrite_url} target="_blank" rel="noopener noreferrer" style={{ ...chip(true), padding: "14px 24px", fontSize: 16, textAlign: "center", width: "100%", display: "block", marginBottom: 16, textDecoration: "none" }}>Get Tickets →</a>}
+          {!e.eventbrite_url && <div style={{ ...chip(false), padding: "14px 24px", fontSize: 16, textAlign: "center", width: "100%", display: "block", marginBottom: 16, border: `1px solid ${C.goldDim}` }}>Tickets Coming Soon</div>}
         </div>
         {NavBar}
       </Page>
