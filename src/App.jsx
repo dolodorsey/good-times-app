@@ -58,7 +58,15 @@ const Ne={
   ex:{nightlife:"https://images.unsplash.com/photo-1574391884720-bbc3740c59d1?w=400",sports:"https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400",wellness:"https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400",dining:"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400",music:"https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",culture:"https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=400",adventure:"https://images.unsplash.com/photo-1551632811-561732d1e306?w=400",shopping:"https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400",movies:"https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400",gaming:"https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400",drinks:"https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400",exclusive:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400",family:"https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?w=400",dating:"https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400",cosmetic:"https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400",networking:"https://images.unsplash.com/photo-1515169067868-5387ec356754?w=400"},
   // CHANGE #6: UNIQUE browse images (different from explore)
   br:{jki:"https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400",nl:"https://images.unsplash.com/photo-1545128485-c400e7702796?w=400",lm:"https://images.unsplash.com/photo-1501612780327-45045538702b?w=400",sp:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400",ms:"https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400",gm:"https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400"},
-  city:{Atlanta:"https://i.pinimg.com/736x/06/0b/eb/060beb4dc9ca6e94bece6170c3e7e501.jpg",Houston:"https://i.pinimg.com/736x/3e/8e/5d/3e8e5d7c69c0c20a791871a3e11b3ce8.jpg","Los Angeles":"https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=900",Charlotte:"https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=900",Washington:"https://images.unsplash.com/photo-1617581629397-a72507c3de9e?w=600",Miami:"https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=600","Las Vegas":"https://images.unsplash.com/photo-1581351721010-8cf859cb14a4?w=900"}
+  city:{
+    Atlanta:{day:"https://images.unsplash.com/photo-1575917649243-4e498e510c69?w=900",night:"https://images.unsplash.com/photo-1559599238-308793637427?w=900"},
+    Houston:{day:"https://images.unsplash.com/photo-1530089711124-9ca31fb9e863?w=900",night:"https://images.unsplash.com/photo-1548260465-1adda34ebbe7?w=900"},
+    "Los Angeles":{day:"https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=900",night:"https://images.unsplash.com/photo-1515896769750-31548aa180ed?w=900"},
+    Charlotte:{day:"https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=900",night:"https://images.unsplash.com/photo-1605885996758-49b3e33c612d?w=900"},
+    Washington:{day:"https://images.unsplash.com/photo-1617581629397-a72507c3de9e?w=900",night:"https://images.unsplash.com/photo-1501466044931-62695aada8e9?w=900"},
+    Miami:{day:"https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=900",night:"https://images.unsplash.com/photo-1514214246283-d427a95c5d2f?w=900"},
+    "Las Vegas":{day:"https://images.unsplash.com/photo-1605833556294-ea5c7a74f57d?w=900",night:"https://images.unsplash.com/photo-1581351721010-8cf859cb14a4?w=900"}
+  }
 };
 
 const gt={REMIX:{c:"#FF6B6B"},"TASTE OF ART":{c:"#E8A0BF"},NOIR:{c:"#D4A853"},"WRST BHVR":{c:"#FFD700"},PAPARAZZI:{c:"#FF69B4"},"GANGSTA GOSPEL":{c:"#9B59B6"},"SUNDAY'S BEST":{c:"#87CEEB"},PAWCHELLA:{c:"#90EE90"},"BEAUTY & THE BEAST":{c:"#FFD700"},"BLACK BALL":{c:"#888"},"SNOW BALL":{c:"#A8D8FF"},"NO SECTIONS PARTY":{c:"#FF6B6B"},"MONSTER'S BALL":{c:"#8B0000"},"NAPKIN WARS":{c:"#FFB86B"},"FOREVER FUTBOL":{c:"#00A651"},"THE KULTURE":{c:"#B86BFF"},"UNDERGROUND KING":{c:"#D4A853"},STELLA:{c:"#E8A0BF"},CRVNGS:{c:"#FFB86B"},"PARKING LOT PIMPIN":{c:"#FF6B6B"},"WINTER WONDERLAND":{c:"#A8D8FF"}};
@@ -416,14 +424,14 @@ export default function GoodTimesApp(){
 
   // ═══ HEADER BAR ═══
   const Header=(
-    <div style={{padding:"10px 16px 8px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-      <div style={{background:"rgba(255,255,255,0.15)",borderRadius:20,padding:"6px 12px",display:"flex",alignItems:"center",gap:5,backdropFilter:"blur(10px)"}}>
+    <div style={{position:"absolute",top:0,left:0,right:0,zIndex:10,padding:"10px 16px 8px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+      <div style={{background:"rgba(0,0,0,0.35)",borderRadius:20,padding:"6px 12px",display:"flex",alignItems:"center",gap:5,backdropFilter:"blur(10px)"}}>
         <span style={{fontSize:12}}>{"\u{1F4CD}"}</span>
-        <span style={{fontFamily:F.f,fontSize:13,color:C.text,fontWeight:500}}>{city.name}</span>
+        <span style={{fontFamily:F.f,fontSize:13,color:"#fff",fontWeight:600}}>{city.name}</span>
         <span style={{color:"#FFFFFF",fontSize:10,marginLeft:2}}>{"\u25BE"}</span>
       </div>
-      <span style={{fontFamily:F.f,fontSize:13,fontWeight:700,letterSpacing:3,color:C.gold}}>G O O D &nbsp; T I M E S</span>
-      <button onClick={()=>setSearchOpen(!searchOpen)} style={{width:34,height:34,borderRadius:"50%",background:"rgba(255,255,255,0.12)",display:"flex",alignItems:"center",justifyContent:"center",border:"none",cursor:"pointer"}}>
+      <span style={{fontFamily:F.f,fontSize:13,fontWeight:700,letterSpacing:3,color:C.gold,textShadow:"0 1px 8px rgba(0,0,0,0.6)"}}>G O O D &nbsp; T I M E S</span>
+      <button onClick={()=>setSearchOpen(!searchOpen)} style={{width:34,height:34,borderRadius:"50%",background:"rgba(0,0,0,0.35)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center",border:"none",cursor:"pointer"}}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
       </button>
     </div>
@@ -442,9 +450,26 @@ export default function GoodTimesApp(){
   );
 
   // City background
+  // Day/night detection (6AM-6PM = day)
+  const hour=new Date().getHours();
+  const isNight=hour<6||hour>=18;
+  const cityImg=Ne.city[city.name];
+  const skylineUrl=cityImg?(isNight?cityImg.night:cityImg.day):Ne.hero;
+
   const CityBG=(
-    <div style={{position:"absolute",inset:0,zIndex:0,pointerEvents:"none",overflow:"hidden"}}>
-      <img src={Ne.city[city.name]||Ne.hero} alt="" style={{width:"100%",height:"100%",objectFit:"cover",opacity:.12,filter:"blur(2px) saturate(0.5)"}}/>
+    <div style={{position:"relative",zIndex:0,overflow:"hidden"}}>
+      <div style={{height:200,position:"relative",overflow:"hidden"}}>
+        <img src={skylineUrl} alt={city.name+" skyline"} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 40%",transition:"opacity 0.8s"}}/>
+        <div style={{position:"absolute",inset:0,background:isNight
+          ?"linear-gradient(180deg,rgba(6,6,12,0.3) 0%,rgba(6,6,12,0.1) 40%,rgba(6,6,12,0.7) 80%,rgba(6,6,12,1) 100%)"
+          :"linear-gradient(180deg,rgba(6,6,12,0.4) 0%,rgba(6,6,12,0.05) 40%,rgba(6,6,12,0.6) 80%,rgba(6,6,12,1) 100%)"
+        }}/>
+        {Header}
+        <div style={{position:"absolute",top:12,right:16,display:"flex",alignItems:"center",gap:6,padding:"4px 10px",borderRadius:20,background:"rgba(0,0,0,0.4)",backdropFilter:"blur(8px)"}}>
+          <div style={{width:6,height:6,borderRadius:99,background:isNight?"#D4A853":"#FFB86B",boxShadow:isNight?"0 0 8px #D4A853":"0 0 8px #FFB86B"}}/>
+          <span style={{fontSize:10,fontWeight:600,color:isNight?"#D4A853":"#FFB86B",letterSpacing:1}}>{isNight?"NIGHT":"DAY"}</span>
+        </div>
+      </div>
     </div>
   );
 
@@ -475,7 +500,7 @@ export default function GoodTimesApp(){
     // ═══ HOME (NOW) ═══
     if(screen==="now")return(
       <ScrollWrap>
-        {CityBG}{Header}{SearchOverlay}{TeamModal}
+        {CityBG}{SearchOverlay}{TeamModal}
         <div style={{padding:"0 0 20px"}}>
           <div style={{padding:"0 16px",marginBottom:10,textAlign:"center"}}>
             <div style={{fontSize:26,fontFamily:F.s,fontWeight:700,lineHeight:1.15,marginBottom:4,color:"#FFFFFF"}}>What's the move?</div>
@@ -621,7 +646,7 @@ export default function GoodTimesApp(){
       const weekEvts=cityEvents.filter(e=>{if(!e.date)return false;const d=new Date(e.date+"T12:00:00");return d>=weekStart&&d<=weekEnd}).sort((a,b)=>a.date.localeCompare(b.date));
       return(
         <ScrollWrap>
-          {CityBG}{Header}{SearchOverlay}{TeamModal}
+          {CityBG}{SearchOverlay}{TeamModal}
           <div style={{padding:"0 0 40px"}}>
             <div style={{position:"relative",height:200,overflow:"hidden",margin:"0 20px",borderRadius:22,marginBottom:20}}>
               <img src={Ne.v[1]} alt="" style={{width:"100%",height:"100%",objectFit:"cover",}}/>
@@ -704,7 +729,7 @@ export default function GoodTimesApp(){
       const monthEvents=events.filter(e=>{if(!e.date)return false;const[y,m]=e.date.split("-").map(Number);return y===calYear&&m===calMonth+1&&(calCityFilter==="all"||e.city===city.name||e.city==="TBA")&&(calCatFilter==="all"||e.category===calCatFilter)}).sort((a,b)=>a.date.localeCompare(b.date));
       return(
         <ScrollWrap>
-          {CityBG}{Header}{SearchOverlay}{TeamModal}
+          {CityBG}{SearchOverlay}{TeamModal}
           <div style={{padding:"0 20px"}}>
             <div style={{textAlign:"center",marginBottom:16}}>
               <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>CALENDAR</div>
@@ -752,7 +777,7 @@ export default function GoodTimesApp(){
     // ═══ ITINERARY (PLANS) ═══
     if(screen==="plans")return(
       <ScrollWrap>
-        {CityBG}{Header}{SearchOverlay}
+        {CityBG}{SearchOverlay}
         <div style={{padding:"0 20px"}}>
           <div style={{height:160,borderRadius:22,overflow:"hidden",position:"relative",marginBottom:16}}>
             <img src={Ne.v[5]} alt="" style={{width:"100%",height:"100%",objectFit:"cover",}}/>
@@ -804,7 +829,7 @@ export default function GoodTimesApp(){
     // ═══ PLAN FOR ME (CONCIERGE) ═══
     if(screen==="planforme")return(
       <ScrollWrap>
-        {CityBG}{Header}{SearchOverlay}
+        {CityBG}{SearchOverlay}
         <div style={{padding:"0 20px",minHeight:"calc(100vh - 160px)",display:"flex",flexDirection:"column"}}>
           <div style={{textAlign:"center",marginBottom:24}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>CONCIERGE</div>
@@ -907,7 +932,7 @@ export default function GoodTimesApp(){
     // ═══ EXPLORE ═══
     if(screen==="explore")return(
       <ScrollWrap>
-        {CityBG}{Header}{SearchOverlay}
+        {CityBG}{SearchOverlay}
         <div style={{padding:"0 20px 40px"}}>
           <div style={{textAlign:"center",marginBottom:24}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>EXPLORE</div>
@@ -1033,7 +1058,7 @@ export default function GoodTimesApp(){
     // ═══ MAP ═══
     if(screen==="map")return(
       <ScrollWrap>
-        {CityBG}{Header}{SearchOverlay}
+        {CityBG}{SearchOverlay}
         <div style={{padding:"0 20px"}}>
           <div style={{textAlign:"center",marginBottom:16}}>
             <div style={{fontSize:10,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:6}}>MAP</div>
@@ -1054,7 +1079,7 @@ export default function GoodTimesApp(){
     // ═══ VAULT — CHANGE #8: Deals section added ═══
     if(screen==="vault")return(
       <ScrollWrap>
-        {CityBG}{Header}{SearchOverlay}
+        {CityBG}{SearchOverlay}
         <div style={{padding:"0 20px"}}>
           <div style={{textAlign:"center",marginBottom:16}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>VAULT</div>
