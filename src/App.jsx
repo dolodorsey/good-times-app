@@ -298,6 +298,8 @@ export default function GoodTimesApp(){
   // CHANGE #7: subcategory drilldown state
   const[subCatView,setSubCatView]=useState(null);
   const[subRatings,setSubRatings]=useState({});
+  const[venueLoading,setVenueLoading]=useState(false);
+  const[venueResults,setVenueResults]=useState([]);
   // CHANGE #8: subscription state
   const[isSubscribed,setIsSubscribed]=useState(false);
   // Plan states
@@ -948,8 +950,9 @@ export default function GoodTimesApp(){
                   <button key={sub} onClick={async()=>{
                     setSubCatView({parent:exploreSheet,sub});
                     setVenueLoading(true);setVenueResults([]);
-                    // Map city name to city_key
-                    const ck=city.name.toLowerCase().replace(/\s+/g,'_');
+                    // Map city name to city_key (must match gt_venues city_key values)
+                    const cityKeyMap={"Atlanta":"atlanta","Houston":"houston","Los Angeles":"los_angeles","Charlotte":"charlotte","Washington":"washington_dc","Miami":"miami","Las Vegas":"las_vegas","New York":"new_york","Dallas":"dallas","Phoenix":"phoenix","Scottsdale":"scottsdale"};
+                    const ck=cityKeyMap[city.name]||city.name.toLowerCase().replace(/\s+/g,'_');
                     // Map explore category to gt_venues category_keys
                     const cats=CAT_MAP[exploreSheet.id]||[exploreSheet.id];
                     const catFilter=cats.map(c=>`category_key.eq.${c}`).join(",");
