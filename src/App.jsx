@@ -85,7 +85,14 @@ const $u=[
   {brand:"HURT 1800 911",line:"Injured? We fight for you.",color:"#C0392B",sub:"UMBRELLA GROUP",cta:"Call Now",img:"https://good-times-app.vercel.app/brands/hurt-1800.png"},
   {brand:"S.O.S",line:"Safety. On. Speed-dial.",color:"#E74C3C",sub:"KHG APPS",cta:"Download",img:"https://good-times-app.vercel.app/brands/sos.png"},
   {brand:"CASPER GROUP",line:"Hospitality. Reimagined.",color:"#D4A853",sub:"KHG",cta:"Explore",img:"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600"},
-  {brand:"FOREVER FUTBOL",line:"The beautiful game. Elevated.",color:"#00A651",sub:"KHG MUSEUMS",cta:"Experience",img:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600"}
+  {brand:"FOREVER FUTBOL",line:"The beautiful game. Elevated.",color:"#00A651",sub:"KHG MUSEUMS",cta:"Experience",img:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600"},
+  {brand:"ANGEL WINGS",line:"Wings so good, they're sinful.",color:"#FF6B6B",sub:"CASPER GROUP",cta:"Order Now",img:"https://images.unsplash.com/photo-1608039829572-25e8658a7289?w=600"},
+  {brand:"PASTA BISH",line:"Pasta with attitude.",color:"#FFB86B",sub:"CASPER GROUP",cta:"View Menu",img:"https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600"},
+  {brand:"INFINITY WATER",line:"Hydrate different.",color:"#4FC3F7",sub:"BODEGEA",cta:"Shop Now",img:"https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=600"},
+  {brand:"PRONTO ENERGY",line:"Energy. Instantly.",color:"#C0392B",sub:"BODEGEA",cta:"Try It",img:"https://images.unsplash.com/photo-1622543925917-763c34d1a86e?w=600"},
+  {brand:"ESPRESSO CO",line:"Your morning ritual.",color:"#795548",sub:"CASPER GROUP",cta:"Brew",img:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600"},
+  {brand:"NOIR",line:"Espresso Liqueur. After dark.",color:"#D4A853",sub:"BODEGEA",cta:"Sip Now",img:"https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600"},
+  {brand:"THE BRAND STUDIO",line:"Your brand. Elevated.",color:"#B0BEC5",sub:"UMBRELLA GROUP",cta:"Book",img:"https://images.unsplash.com/photo-1497366216548-37526070297c?w=600"}
 ];
 let adI=0;
 const nextAd=()=>{const a=$u[adI%$u.length];adI++;return a};
