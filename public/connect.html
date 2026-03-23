@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Good Times — Partner With Us</title>
+<meta name="description" content="Submit your venue, event, or service to be featured on the Good Times platform. Join 837+ venues across 10 cities.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #06060C;
+  --bg-card: #0E0E1A;
+  --bg-surface: #141422;
+  --gold: #D4A853;
+  --gold-dim: rgba(212,168,83,0.25);
+  --gold-glow: rgba(212,168,83,0.08);
+  --blue: #4A9FD5;
+  --text: #FFFFFF;
+  --text-sec: rgba(255,255,255,0.55);
+  --text-muted: rgba(255,255,255,0.3);
+  --accent: #D4A853;
+  --radius: 14px;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --font-display: 'Playfair Display', Georgia, serif;
+  --font-body: 'DM Sans', -apple-system, sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+body { 
+  background: var(--bg); color: var(--text); font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased; overflow-x: hidden;
+}
+
+/* ═══ GRAIN OVERLAY ═══ */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 9999; pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+}
+
+/* ═══ ATMOSPHERIC BG ═══ */
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: 
+    radial-gradient(ellipse 80% 50% at 20% 0%, rgba(74,159,213,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(212,168,83,0.04) 0%, transparent 50%),
+    var(--bg);
+}
+
+/* ═══ REVEAL ANIMATION ═══ */
+.reveal {
+  opacity: 0; transform: translateY(40px);
+  transition: opacity 1.1s var(--ease), transform 1.1s var(--ease);
+}
+.reveal.visible { opacity: 1; transform: none; }
+.reveal-d1 { transition-delay: 0.1s; }
+.reveal-d2 { transition-delay: 0.2s; }
+.reveal-d3 { transition-delay: 0.3s; }
+.reveal-d4 { transition-delay: 0.4s; }
+.reveal-d5 { transition-delay: 0.5s; }
+
+/* ═══ HERO ═══ */
+.hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  padding: 0 24px; position: relative;
+}
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 20px; border-radius: 100px;
+  background: var(--gold-glow); border: 1px solid rgba(212,168,83,0.15);
+  font-size: 11px; font-weight: 600; letter-spacing: 0.15em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 40px;
+}
+.hero-badge::before {
+  content: ''; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold); animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+.hero h1 {
+  font-family: var(--font-display); font-weight: 300;
+  font-size: clamp(48px, 11vw, 140px); line-height: 0.92;
+  letter-spacing: -0.04em; margin-bottom: 28px;
+}
+.hero h1 em {
+  font-style: italic; font-weight: 400;
+  background: linear-gradient(135deg, var(--gold), #F7D76C);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.hero-sub {
+  font-size: clamp(14px, 1.5vw, 18px); color: var(--text-sec);
+  max-width: 520px; line-height: 1.65; margin-bottom: 48px;
+}
+.hero-stats {
+  display: flex; gap: 48px; margin-top: 20px;
+}
+.hero-stat {
+  text-align: center;
+}
+.hero-stat-num {
+  font-family: var(--font-display); font-size: clamp(28px, 4vw, 48px);
+  font-weight: 300; color: var(--gold); letter-spacing: -0.02em;
+}
+.hero-stat-label {
+  font-size: 11px; color: var(--text-muted); text-transform: uppercase;
+  letter-spacing: 0.15em; margin-top: 4px;
+}
+
+/* ═══ SECTION STYLES ═══ */
+section { padding: clamp(80px, 12vw, 140px) clamp(20px, 5vw, 80px); }
+.section-label {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.25em;
+  text-transform: uppercase; color: var(--gold); margin-bottom: 20px;
+}
+.section-title {
+  font-family: var(--font-display); font-weight: 300;
+  font-size: clamp(32px, 5vw, 64px); letter-spacing: -0.03em;
+  line-height: 1.08; margin-bottom: 20px;
+}
+.section-desc {
+  font-size: clamp(14px, 1.3vw, 17px); color: var(--text-sec);
+  max-width: 560px; line-height: 1.65;
+}
+
+/* ═══ FORM CARDS GRID ═══ */
+.forms-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px; max-width: 1200px; margin: 60px auto 0;
+}
+.form-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 20px 22px; background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.05); border-radius: var(--radius);
+  cursor: pointer; transition: all 0.4s var(--ease); position: relative;
+  overflow: hidden;
+}
+.form-card::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, var(--gold-glow), transparent);
+  opacity: 0; transition: opacity 0.4s ease;
+}
+.form-card:hover {
+  border-color: rgba(212,168,83,0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.form-card:hover::before { opacity: 1; }
+.form-card-icon {
+  width: 44px; height: 44px; border-radius: 10px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0; position: relative; z-index: 1;
+}
+.form-card-text { position: relative; z-index: 1; }
+.form-card-title { font-weight: 600; font-size: 14px; }
+.form-card-desc { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+
+/* ═══ WHY SECTION ═══ */
+.why-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px; max-width: 1000px; margin: 56px auto 0;
+}
+.why-card {
+  padding: 32px 28px; background: var(--bg-card);
+  border: 1px solid rgba(255,255,255,0.04); border-radius: var(--radius);
+}
+.why-card-num {
+  font-family: var(--font-display); font-size: 36px; font-weight: 300;
+  color: var(--gold); opacity: 0.5; margin-bottom: 16px;
+}
+.why-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 10px; }
+.why-card p { font-size: 14px; color: var(--text-sec); line-height: 1.6; }
+
+/* ═══ CTA SECTION ═══ */
+.cta-section {
+  text-align: center; position: relative;
+  background: linear-gradient(180deg, transparent, var(--gold-glow), transparent);
+}
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  padding: 18px 48px; background: linear-gradient(135deg, var(--gold), #B8942F);
+  border: none; border-radius: 12px; color: #0A0A0F;
+  font-size: 16px; font-weight: 700; cursor: pointer;
+  font-family: var(--font-body); letter-spacing: 0.02em;
+  transition: all 0.3s var(--ease); margin-top: 40px;
+}
+.cta-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(212,168,83,0.3); }
+
+/* ═══ MODAL ═══ */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 10000;
+  align-items: center; justify-content: center;
+  background: rgba(6,6,12,0.92); backdrop-filter: blur(24px);
+}
+.modal-overlay.active { display: flex; animation: fadeIn 0.25s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  width: 92%; max-width: 560px; max-height: 92vh;
+  background: #0c0c14; border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.06);
+  display: flex; flex-direction: column;
+  animation: slideUp 0.35s var(--ease);
+}
+@keyframes slideUp { from { opacity:0; transform: translateY(24px) scale(0.96); } to { opacity:1; transform: none; } }
+.modal-header {
+  padding: 20px 28px; display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,0.05); flex-shrink: 0;
+}
+.modal-header h2 {
+  font-family: var(--font-display); font-size: 22px; font-weight: 400;
+  display: flex; align-items: center; gap: 12px;
+}
+.modal-close {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 22px; cursor: pointer; padding: 4px 8px;
+}
+.modal-body { overflow-y: auto; flex: 1; padding: 28px; }
+.field { margin-bottom: 18px; }
+.field label {
+  display: block; font-size: 12px; font-weight: 500;
+  color: var(--text-sec); margin-bottom: 6px; letter-spacing: 0.02em;
+}
+.field label .req { color: var(--gold); margin-left: 3px; }
+.field input, .field select, .field textarea {
+  width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+  color: #fff; font-size: 14px; font-family: var(--font-body); outline: none;
+  transition: border-color 0.2s ease;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--gold);
+}
+.field select { cursor: pointer; appearance: none; }
+.field select option { background: #0c0c14; }
+.field textarea { resize: vertical; min-height: 80px; }
+.submit-btn {
+  width: 100%; padding: 14px; margin-top: 8px;
+  background: var(--gold); border: none; border-radius: 12px;
+  color: #0A0A0F; font-size: 15px; font-weight: 700;
+  cursor: pointer; font-family: var(--font-body); letter-spacing: 0.02em;
+  transition: all 0.3s ease;
+}
+.submit-btn:hover { box-shadow: 0 6px 24px rgba(212,168,83,0.3); }
+.submit-btn:disabled { opacity: 0.5; cursor: wait; }
+
+/* SUCCESS */
+.success-msg {
+  text-align: center; padding: 60px 20px;
+}
+.success-msg .check { font-size: 52px; margin-bottom: 16px; }
+.success-msg h3 {
+  font-family: var(--font-display); font-size: 28px; font-weight: 300; margin-bottom: 12px;
+}
+.success-msg p { color: var(--text-sec); font-size: 14px; }
+
+/* ═══ FOOTER ═══ */
+footer {
+  padding: 40px 24px; text-align: center;
+  border-top: 1px solid rgba(255,255,255,0.04);
+}
+footer p { font-size: 12px; color: var(--text-muted); }
+footer a { color: var(--gold); text-decoration: none; }
+
+/* ═══ MOBILE ═══ */
+@media (max-width: 640px) {
+  .hero-stats { gap: 28px; }
+  .forms-grid { grid-template-columns: 1fr; }
+  .why-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════ HERO ═══════════ -->
+<section class="hero">
+  <div class="hero-badge reveal">Now accepting submissions</div>
+  <h1 class="reveal reveal-d1">Partner With<br><em>Good Times</em></h1>
+  <p class="hero-sub reveal reveal-d2">
+    Submit your venue, event, or service to be featured on the Good Times platform — the go-to nightlife & lifestyle concierge across 10 major cities.
+  </p>
+  <div class="hero-stats reveal reveal-d3">
+    <div class="hero-stat">
+      <div class="hero-stat-num">837</div>
+      <div class="hero-stat-label">Venues</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">10</div>
+      <div class="hero-stat-label">Cities</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-num">16</div>
+      <div class="hero-stat-label">Categories</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FORMS SECTION ═══════════ -->
+<section id="forms">
+  <div class="reveal">
+    <div class="section-label">Get Started</div>
+    <div class="section-title">What brings you here?</div>
+    <div class="section-desc">Choose the form that fits. We'll review every submission and follow up within 48 hours.</div>
+  </div>
+  <div class="forms-grid">
+    <div class="form-card reveal reveal-d1" onclick="openForm('venue_submission')">
+      <div class="form-card-icon">🏙️</div>
+      <div class="form-card-text">
+        <div class="form-card-title">Submit a Venue</div>
+        <div class="form-card-desc">Get your spot listed on Good Times</div>
+      </div>
+    </div>
+    <div class="form-card reveal reveal-d2" onclick="openForm('event_submission')">
+      <div class="form-card-icon">🎟️</div>
+      <div class="form-card-text">
+        <div class="form-card-title">Submit an Event</div>
+        <div class="form-card-desc">Feature your event on the platform</div>
+      </div>
+    </div>
+    <div class="form-card reveal reveal-d1" onclick="openForm('vendor')">
+      <div class="form-card-icon">🏪</div>
+      <div class="form-card-text">
+        <div class="form-card-title">Vendor</div>
+        <div class="form-card-desc">Food, beverage, merch, services</div>
+      </div>
+    </div>
+    <div class="form-card reveal reveal-d2" onclick="openForm('artist_music')">
+      <div class="form-card-icon">🎵</div>
+      <div class="form-card-text">
+        <div class="form-card-title">Artist (Music)</div>
+        <div class="form-card-desc">DJs, performers, live acts</div>
+      </div>
+    </div>
+    <div class="form-card reveal reveal-d3" onclick="openForm('influencer')">
+      <div class="form-card-icon">📸</div>
+      <div class="form-card-text">
+        <div class="form-card-title">Influencer</div>
+        <div class="form-card-desc">Content creators & promoters</div>
+      </div>
+    </div>
+    <div class="form-card reveal reveal-d4" onclick="openForm('sponsor')">
+      <div class="form-card-icon">💎</div>
+      <div class="form-card-text">
+        <div class="form-card-title">Sponsor</div>
+        <div class="form-card-desc">Brand partnerships & activations</div>
+      </div>
+    </div>
+    <div class="form-card reveal reveal-d1" onclick="openForm('what_you_do')">
+      <div class="form-card-icon">✨</div>
+      <div class="form-card-text">
+        <div class="form-card-title">What You Do</div>
+        <div class="form-card-desc">Tell us what you bring to the table</div>
+      </div>
+    </div>
+    <div class="form-card reveal reveal-d2" onclick="openForm('inquiry')">
+      <div class="form-card-icon">📩</div>
+      <div class="form-card-text">
+        <div class="form-card-title">General Inquiry</div>
+        <div class="form-card-desc">Questions, ideas, partnerships</div>
+      </div>
+    </div>
+    <div class="form-card reveal reveal-d3" onclick="openForm('hiring_inquiry')">
+      <div class="form-card-icon">💼</div>
+      <div class="form-card-text">
+        <div class="form-card-title">Hiring Inquiry</div>
+        <div class="form-card-desc">Join the Good Times team</div>
+      </div>
+    </div>
+    <div class="form-card reveal reveal-d4" onclick="openForm('intern')">
+      <div class="form-card-icon">📚</div>
+      <div class="form-card-text">
+        <div class="form-card-title">Intern</div>
+        <div class="form-card-desc">Learn while you build</div>
+      </div>
+    </div>
+    <div class="form-card reveal reveal-d1" onclick="openForm('consultation')">
+      <div class="form-card-icon">💬</div>
+      <div class="form-card-text">
+        <div class="form-card-title">Consultation</div>
+        <div class="form-card-desc">Strategy, events, hospitality</div>
+      </div>
+    </div>
+    <div class="form-card reveal reveal-d2" onclick="openForm('nda')">
+      <div class="form-card-icon">📋</div>
+      <div class="form-card-text">
+        <div class="form-card-title">NDA</div>
+        <div class="form-card-desc">Confidentiality agreement</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ WHY SECTION ═══════════ -->
+<section>
+  <div style="text-align:center;" class="reveal">
+    <div class="section-label">The Platform</div>
+    <div class="section-title">Why Good Times</div>
+  </div>
+  <div class="why-grid">
+    <div class="why-card reveal reveal-d1">
+      <div class="why-card-num">01</div>
+      <h3>Real Curation</h3>
+      <p>Every venue is hand-vetted. No pay-to-play. Your listing exists because you're worth featuring.</p>
+    </div>
+    <div class="why-card reveal reveal-d2">
+      <div class="why-card-num">02</div>
+      <h3>10 Cities & Growing</h3>
+      <p>Atlanta, Houston, LA, Dallas, Charlotte, Miami, DC, New York, Phoenix, Scottsdale — with more on the way.</p>
+    </div>
+    <div class="why-card reveal reveal-d3">
+      <div class="why-card-num">03</div>
+      <h3>Built for Night Culture</h3>
+      <p>Not a generic directory. Good Times is built specifically for the people who make cities come alive after dark.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ CTA ═══════════ -->
+<section class="cta-section">
+  <div class="reveal">
+    <div class="section-title" style="text-align:center;">Ready to be featured?</div>
+    <p class="section-desc" style="text-align:center;margin:16px auto 0;">
+      It takes 2 minutes. Fill out a form and our team will review your submission within 48 hours.
+    </p>
+    <div style="text-align:center;">
+      <button class="cta-btn" onclick="document.getElementById('forms').scrollIntoView({behavior:'smooth'})">
+        Submit Now ↗
+      </button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════ FOOTER ═══════════ -->
+<footer>
+  <p>Good Times — A product of <a href="https://thekollectivehospitality.com" target="_blank">The Kollective Hospitality Group</a></p>
+  <p style="margin-top:8px;">
+    <a href="https://good-times-app.vercel.app" style="margin:0 12px;">Open App</a>
+    <a href="mailto:thekollectivehospitality@gmail.com" style="margin:0 12px;">Email Us</a>
+  </p>
+</footer>
+
+<!-- ═══════════ MODAL ═══════════ -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeForm()">
+  <div class="modal">
+    <div class="modal-header">
+      <h2><span id="modalIcon"></span> <span id="modalTitle"></span></h2>
+      <button class="modal-close" onclick="closeForm()">✕</button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<script>
+// ═══ REVEAL ON SCROLL ═══
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }});
+}, { threshold: 0.08, rootMargin: '0px 0px -60px 0px' });
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+// ═══ FORM DEFINITIONS ═══
+const FORMS = {
+  venue_submission: {
+    icon: '🏙️', label: 'Submit a Venue',
+    fields: [
+      { name:'venue_name', label:'Venue Name', type:'text', required:true },
+      { name:'full_name', label:'Contact Name', type:'text', required:true },
+      { name:'email', label:'Email', type:'email', required:true },
+      { name:'phone', label:'Phone', type:'tel', required:true },
+      { name:'city', label:'City', type:'select', options:['Atlanta','Houston','Los Angeles','Dallas','Charlotte','Miami','Washington DC','New York','Phoenix','Scottsdale','Other'] },
+      { name:'venue_type', label:'Venue Type', type:'select', options:['Restaurant','Bar / Lounge','Nightclub','Rooftop','Day Party Venue','Hookah Lounge','Bowling / Entertainment','Sports Bar','Hotel Bar','Other'] },
+      { name:'address', label:'Venue Address', type:'text' },
+      { name:'website', label:'Website', type:'url' },
+      { name:'instagram', label:'Instagram Handle', type:'text' },
+      { name:'description', label:'Tell Us About Your Venue', type:'textarea' },
+      { name:'referral_source', label:'How Did You Hear About Us?', type:'text' },
+    ]
+  },
+  event_submission: {
+    icon: '🎟️', label: 'Submit an Event',
+    fields: [
+      { name:'event_name', label:'Event Name', type:'text', required:true },
+      { name:'full_name', label:'Contact Name', type:'text', required:true },
+      { name:'email', label:'Email', type:'email', required:true },
+      { name:'phone', label:'Phone', type:'tel', required:true },
+      { name:'city', label:'City', type:'select', options:['Atlanta','Houston','Los Angeles','Dallas','Charlotte','Miami','Washington DC','New York','Phoenix','Scottsdale','Other'] },
+      { name:'event_date', label:'Event Date', type:'date' },
+      { name:'venue_name', label:'Venue Name', type:'text' },
+      { name:'event_type', label:'Event Type', type:'select', options:['Day Party','Night Event','Concert','Food & Drink','Pop-Up','Festival','Private','Other'] },
+      { name:'ticket_link', label:'Ticket Link', type:'url' },
+      { name:'instagram', label:'Instagram Handle', type:'text' },
+      { name:'description', label:'Tell Us About Your Event', type:'textarea' },
+      { name:'referral_source', label:'How Did You Hear About Us?', type:'text' },
+    ]
+  },
+  vendor: {
+    icon:'🏪', label:'Vendor Application',
+    fields:[
+      {name:'full_name',label:'Full Name',type:'text',required:true},
+      {name:'email',label:'Email',type:'email',required:true},
+      {name:'phone',label:'Phone',type:'tel',required:true},
+      {name:'company_name',label:'Company Name',type:'text'},
+      {name:'website',label:'Website',type:'url'},
+      {name:'vendor_type',label:'Vendor Type',type:'select',options:['Food','Beverage','Merchandise','Art','Services','Other']},
+      {name:'description',label:'Description of Services',type:'textarea'},
+      {name:'city',label:'City',type:'text'},
+      {name:'referral_source',label:'How Did You Hear About Us?',type:'text'},
+    ]
+  },
+  artist_music: {
+    icon:'🎵', label:'Artist (Music)',
+    fields:[
+      {name:'full_name',label:'Full Name',type:'text',required:true},
+      {name:'email',label:'Email',type:'email',required:true},
+      {name:'phone',label:'Phone',type:'tel',required:true},
+      {name:'stage_name',label:'Stage Name',type:'text'},
+      {name:'genre',label:'Genre',type:'select',options:['Hip-Hop','R&B','Afrobeats','Latin','House / EDM','Jazz','Gospel','Indie','Other']},
+      {name:'streaming_link',label:'Spotify / Apple Music Link',type:'url'},
+      {name:'instagram',label:'Instagram Handle',type:'text'},
+      {name:'bio',label:'Bio / Description',type:'textarea'},
+      {name:'city',label:'City',type:'text'},
+      {name:'set_length',label:'Set Length',type:'select',options:['15 min','30 min','45 min','1 hour','1.5 hours','2 hours']},
+      {name:'referral_source',label:'How Did You Hear About Us?',type:'text'},
+    ]
+  },
+  influencer: {
+    icon:'📸', label:'Influencer',
+    fields:[
+      {name:'full_name',label:'Full Name',type:'text',required:true},
+      {name:'email',label:'Email',type:'email',required:true},
+      {name:'phone',label:'Phone',type:'tel',required:true},
+      {name:'instagram',label:'Instagram Handle',type:'text'},
+      {name:'tiktok',label:'TikTok Handle',type:'text'},
+      {name:'follower_count',label:'Follower Count',type:'select',options:['1K-5K','5K-10K','10K-25K','25K-50K','50K-100K','100K+']},
+      {name:'niche',label:'Niche / Content Type',type:'text'},
+      {name:'city',label:'City',type:'text'},
+      {name:'rate_card',label:'Rate Card / Pricing',type:'text'},
+      {name:'referral_source',label:'How Did You Hear About Us?',type:'text'},
+    ]
+  },
+  sponsor: {
+    icon:'💎', label:'Sponsor Inquiry',
+    fields:[
+      {name:'full_name',label:'Full Name',type:'text',required:true},
+      {name:'email',label:'Email',type:'email',required:true},
+      {name:'phone',label:'Phone',type:'tel',required:true},
+      {name:'company_name',label:'Company Name',type:'text',required:true},
+      {name:'website',label:'Website',type:'url'},
+      {name:'sponsorship_interest',label:'Sponsorship Interest',type:'select',options:['Event Title','Beverage','Activations','Media','Full Season','Custom']},
+      {name:'budget_range',label:'Budget Range',type:'select',options:['$500-$1K','$1K-$2.5K','$2.5K-$5K','$5K-$10K','$10K+']},
+      {name:'goals',label:'Sponsorship Goals',type:'textarea'},
+      {name:'referral_source',label:'How Did You Hear About Us?',type:'text'},
+    ]
+  },
+  what_you_do: {
+    icon:'✨', label:'What You Do',
+    fields:[
+      {name:'full_name',label:'Full Name',type:'text',required:true},
+      {name:'email',label:'Email',type:'email',required:true},
+      {name:'phone',label:'Phone',type:'tel',required:true},
+      {name:'what_you_do',label:'What You Do',type:'textarea',required:true},
+      {name:'skills',label:'Key Skills',type:'text'},
+      {name:'portfolio_link',label:'Portfolio / Website',type:'url'},
+      {name:'instagram',label:'Instagram Handle',type:'text'},
+      {name:'city',label:'City',type:'text'},
+      {name:'collaboration_ideas',label:'How Can We Collaborate?',type:'textarea'},
+      {name:'referral_source',label:'How Did You Hear About Us?',type:'text'},
+    ]
+  },
+  inquiry: {
+    icon:'📩', label:'General Inquiry',
+    fields:[
+      {name:'full_name',label:'Full Name',type:'text',required:true},
+      {name:'email',label:'Email',type:'email',required:true},
+      {name:'phone',label:'Phone',type:'tel',required:true},
+      {name:'subject',label:'Subject',type:'text',required:true},
+      {name:'message',label:'Message',type:'textarea',required:true},
+      {name:'referral_source',label:'How Did You Hear About Us?',type:'text'},
+    ]
+  },
+  hiring_inquiry: {
+    icon:'💼', label:'Hiring Inquiry',
+    fields:[
+      {name:'full_name',label:'Full Name',type:'text',required:true},
+      {name:'email',label:'Email',type:'email',required:true},
+      {name:'phone',label:'Phone',type:'tel',required:true},
+      {name:'position',label:'Position Interested In',type:'text'},
+      {name:'resume_link',label:'Resume Link',type:'url'},
+      {name:'experience_years',label:'Years of Experience',type:'text'},
+      {name:'city',label:'City',type:'text'},
+      {name:'availability',label:'Availability',type:'select',options:['Immediately','2 Weeks','1 Month','Flexible']},
+      {name:'referral_source',label:'How Did You Hear About Us?',type:'text'},
+    ]
+  },
+  intern: {
+    icon:'📚', label:'Intern Application',
+    fields:[
+      {name:'full_name',label:'Full Name',type:'text',required:true},
+      {name:'email',label:'Email',type:'email',required:true},
+      {name:'phone',label:'Phone',type:'tel',required:true},
+      {name:'school',label:'School / University',type:'text'},
+      {name:'major',label:'Major / Field of Study',type:'text'},
+      {name:'department_interest',label:'Department Interest',type:'select',options:['Events','Marketing','Social Media','Design','Operations','Tech','Other']},
+      {name:'resume_link',label:'Resume Link',type:'url'},
+      {name:'why_interested',label:'Why Are You Interested?',type:'textarea'},
+      {name:'referral_source',label:'How Did You Hear About Us?',type:'text'},
+    ]
+  },
+  consultation: {
+    icon:'💬', label:'Consultation Request',
+    fields:[
+      {name:'full_name',label:'Full Name',type:'text',required:true},
+      {name:'email',label:'Email',type:'email',required:true},
+      {name:'phone',label:'Phone',type:'tel',required:true},
+      {name:'company_name',label:'Company Name',type:'text'},
+      {name:'consultation_type',label:'Type',type:'select',options:['Events','Hospitality','Marketing','Branding','Strategy','Other']},
+      {name:'description',label:'Description of Needs',type:'textarea'},
+      {name:'preferred_date',label:'Preferred Date',type:'date'},
+      {name:'referral_source',label:'How Did You Hear About Us?',type:'text'},
+    ]
+  },
+  nda: {
+    icon:'📋', label:'NDA Agreement',
+    fields:[
+      {name:'full_name',label:'Full Name',type:'text',required:true},
+      {name:'email',label:'Email',type:'email',required:true},
+      {name:'phone',label:'Phone',type:'tel',required:true},
+      {name:'company_name',label:'Company Name',type:'text'},
+      {name:'title',label:'Title / Position',type:'text'},
+      {name:'nda_purpose',label:'Purpose of NDA',type:'textarea',required:true},
+      {name:'date',label:'Date',type:'date'},
+      {name:'signature',label:'Type Full Name as Signature',type:'text',required:true},
+    ]
+  },
+};
+
+// ═══ FORM LOGIC ═══
+function openForm(type) {
+  const def = FORMS[type];
+  if (!def) return;
+  document.getElementById('modalIcon').textContent = def.icon;
+  document.getElementById('modalTitle').textContent = def.label;
+  
+  let html = '<form id="activeForm" onsubmit="submitForm(event,\''+type+'\')">';
+  def.fields.forEach(f => {
+    html += '<div class="field"><label>' + f.label;
+    if (f.required) html += '<span class="req">*</span>';
+    html += '</label>';
+    if (f.type === 'textarea') {
+      html += '<textarea name="'+f.name+'"'+(f.required?' required':'')+' rows="3"></textarea>';
+    } else if (f.type === 'select') {
+      html += '<select name="'+f.name+'"'+(f.required?' required':'')+'><option value="">Select...</option>';
+      f.options.forEach(o => { html += '<option value="'+o+'">'+o+'</option>'; });
+      html += '</select>';
+    } else {
+      html += '<input type="'+f.type+'" name="'+f.name+'"'+(f.required?' required':'')+'/>';
+    }
+    html += '</div>';
+  });
+  html += '<button type="submit" class="submit-btn" id="submitBtn">Submit</button></form>';
+  
+  document.getElementById('modalBody').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeForm() {
+  document.getElementById('modalOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+async function submitForm(e, type) {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Submitting...';
+  
+  const form = document.getElementById('activeForm');
+  const data = Object.fromEntries(new FormData(form));
+  
+  try {
+    const res = await fetch('https://dorsey.app.n8n.cloud/webhook/khg-form-submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        brand_key: 'good_times',
+        form_type: type,
+        location_id: 'jbm4vUg0J1llNkK8q6Lt',
+        contact: {
+          firstName: (data.full_name||'').split(' ')[0],
+          lastName: (data.full_name||'').split(' ').slice(1).join(' '),
+          email: data.email||'',
+          phone: data.phone||'',
+          tags: ['form:'+type, 'brand:good_times', 'website-form'],
+          source: 'Good Times Landing Page - '+type,
+        },
+        form_data: data,
+      }),
+    });
+    
+    // Also log to Supabase directly
+    fetch('https://dzlmtvodpyhetvektfuo.supabase.co/rest/v1/form_submissions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA3NzU5NjQsImV4cCI6MjA1NjM1MTk2NH0.10cLMBYfSGhLqLMx1cT-fCsHMKcrBbxFMOm_UH_oGk4',
+        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA3NzU5NjQsImV4cCI6MjA1NjM1MTk2NH0.10cLMBYfSGhLqLMx1cT-fCsHMKcrBbxFMOm_UH_oGk4',
+      },
+      body: JSON.stringify({
+        brand_key: 'good_times', form_type: type,
+        full_name: data.full_name||'', email: data.email||'', phone: data.phone||'',
+        form_data: data, ghl_push_status: 'pending',
+      }),
+    }).catch(()=>{});
+    
+    document.getElementById('modalBody').innerHTML = 
+      '<div class="success-msg"><div class="check">✓</div><h3>Submitted</h3><p>We\'ll review your submission and follow up within 48 hours.</p><br><button class="submit-btn" onclick="closeForm()">Done</button></div>';
+  } catch {
+    btn.disabled = false;
+    btn.textContent = 'Submit';
+    alert('Something went wrong. Please try again.');
+  }
+}
+
+// Close on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeForm(); });
+</script>
+</body>
+</html>
