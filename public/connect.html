@@ -11,19 +11,19 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #05050B;
-  --bg-card: #0A0A16;
-  --bg-elevated: #0F0F1E;
+  --bg: #06060C;
+  --bg-card: #22223A;
+  --bg-elevated: #1E1E32;
   --gold: #D4A853;
-  --gold-bright: #F2D48A;
+  
   --gold-dim: rgba(212,168,83,0.12);
   --gold-glow: rgba(212,168,83,0.06);
   --blue: #4A9FD5;
   --blue-dim: rgba(74,159,213,0.08);
-  --text: #F0EDE6;
-  --text-sec: rgba(240,237,230,0.5);
-  --text-muted: rgba(240,237,230,0.22);
-  --border: rgba(255,255,255,0.05);
+  --text: #FFFFFF;
+  --text-sec: #E8E8E8;
+  --text-muted: #C0C0C0;
+  --border: rgba(255,255,255,0.4);
   --radius: 16px;
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
@@ -162,7 +162,7 @@ body::before {
   display: inline-flex; align-items: center; gap: 14px;
 }
 .sec-label::before {
-  content: ''; width: 28px; height: 1px; background: var(--gold); opacity: 0.5;
+  content: ''; width: 6px; height: 6px; border-radius: 99px; background: var(--gold); box-shadow: 0 0 6px var(--gold);
 }
 .sec-title {
   font-family: var(--font-display); font-weight: 300;
@@ -244,7 +244,7 @@ body::before {
 .form-sm-icon {
   width: 38px; height: 38px; border-radius: 10px;
   background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05);
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: flex-end; justify-content: center;
   font-size: 17px; flex-shrink: 0;
 }
 .form-sm-title { font-weight: 600; font-size: 13px; letter-spacing: 0.01em; }
@@ -332,7 +332,7 @@ body::before {
 
 /* ═══ FOOTER ═══ */
 footer {
-  padding: 48px clamp(24px, 5vw, 80px); display: flex;
+  padding: 48px clamp(24px, 5vw, 80px) 100px; display: flex;
   align-items: center; justify-content: space-between;
   border-top: 1px solid var(--border);
   font-size: 12px; color: var(--text-muted);
@@ -344,7 +344,7 @@ footer a:hover { opacity: 0.7; }
 /* ═══ MODAL ═══ */
 .modal-overlay {
   display: none; position: fixed; inset: 0; z-index: 10000;
-  align-items: center; justify-content: center;
+  align-items: flex-end; justify-content: center;
   background: rgba(5,5,11,0.94); backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
 }
@@ -352,7 +352,7 @@ footer a:hover { opacity: 0.7; }
 @keyframes mFade { from { opacity: 0; } to { opacity: 1; } }
 .modal {
   width: 92%; max-width: 540px; max-height: 90vh;
-  background: var(--bg-card); border-radius: 24px;
+  background: var(--bg-card); border-radius: 20px 20px 0 0;
   border: 1px solid rgba(255,255,255,0.06);
   display: flex; flex-direction: column;
   animation: mSlide 0.4s var(--ease);
@@ -405,7 +405,7 @@ footer a:hover { opacity: 0.7; }
 .submit-btn:hover { box-shadow: 0 8px 28px rgba(212,168,83,0.25); transform: translateY(-1px); }
 .submit-btn:disabled { opacity: 0.4; cursor: wait; transform: none; box-shadow: none; }
 .success-msg { text-align: center; padding: 56px 20px; }
-.success-msg .ck { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--gold); display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--gold); margin: 0 auto 24px; }
+.success-msg .ck { width: 64px; height: 64px; border-radius: 50%; border: 2px solid var(--gold); display: flex; align-items: flex-end; justify-content: center; font-size: 28px; color: var(--gold); margin: 0 auto 24px; }
 .success-msg h3 { font-family: var(--font-display); font-size: 30px; font-weight: 300; margin-bottom: 12px; }
 .success-msg p { color: var(--text-sec); font-size: 14px; line-height: 1.6; }
 
@@ -624,9 +624,20 @@ footer a:hover { opacity: 0.7; }
   </div>
 </footer>
 
+<!-- APP TOOLBAR -->
+<nav style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:200;width:100%;max-width:480px;background:rgba(30,30,50,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-around;align-items:center;padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px))">
+  <a href="https://good-times-app.vercel.app" style="display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:#C0C0C0;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;padding:6px 12px"><span style="font-size:20px">🌙</span>Now</a>
+  <a href="#forms" style="display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:#D4A853;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;padding:6px 12px"><span style="font-size:20px">📝</span>Forms</a>
+  <a href="https://good-times-app.vercel.app" style="display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:#C0C0C0;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;padding:6px 12px"><span style="font-size:20px">🧭</span>Explore</a>
+  <a href="https://good-times-app.vercel.app" style="display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:#C0C0C0;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;padding:6px 12px"><span style="font-size:20px">📅</span>Calendar</a>
+  <a href="https://good-times-app.vercel.app" style="display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:#C0C0C0;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;padding:6px 12px"><span style="font-size:20px">🔒</span>Vault</a>
+</nav>
+
+
 <!-- MODAL -->
 <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeForm()">
   <div class="modal">
+    <div style="width:40px;height:4px;border-radius:4px;background:rgba(255,255,255,0.15);margin:12px auto 0"></div>
     <div class="modal-header">
       <h2><span id="modalIcon"></span><span id="modalTitle"></span></h2>
       <button class="modal-close" onclick="closeForm()">✕</button>
