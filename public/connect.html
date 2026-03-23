@@ -6,23 +6,23 @@
 <title>Good Times — Partner With Us</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 </head>
-<body style="margin:0;background:#06060C;color:#fff;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden">
+<body style="margin:0;background:#F7F8FA;color:#1A1A2E;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden">
 
 <!-- GRAIN -->
-<div style="position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.03;background-image:url(&quot;data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E&quot;)"></div>
+<div style="position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:.015;background-image:url(&quot;data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E&quot;)"></div>
 
 <div id="root" style="max-width:480px;margin:0 auto;min-height:100vh;position:relative;padding-bottom:72px"></div>
 
 <!-- TOOLBAR -->
-<nav id="toolbar" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:200;width:100%;max-width:480px;background:rgba(30,30,50,0.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,255,255,0.08);display:flex;justify-content:space-around;align-items:center;padding:8px 0 max(8px,env(safe-area-inset-bottom))"></nav>
+<nav id="toolbar" style="position:fixed;bottom:0;left:50%;transform:translateX(-50%);z-index:200;width:100%;max-width:480px;background:rgba(255,255,255,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(0,0,0,0.06);display:flex;justify-content:space-around;align-items:center;padding:8px 0 max(8px,env(safe-area-inset-bottom))"></nav>
 
 <!-- MODAL -->
 <div id="mo" style="display:none;position:fixed;inset:0;z-index:500;align-items:flex-end;justify-content:center;background:rgba(6,6,12,0.88)"></div>
 
 <script>
-const C={bg:"#06060C",card:"#22223A",sheet:"#1E1E32",gold:"#D4A853",goldGrad:"linear-gradient(135deg,#D4A853,#B8942F)",text:"#FFF",sec:"#E8E8E8",muted:"#C0C0C0",blue:"#6BB8FF",orange:"#FFB86B",pink:"#FF6B6B",purple:"#B86BFF",green:"#6BFFB8",border:"rgba(255,255,255,0.4)",borderLo:"rgba(255,255,255,0.08)",overlay:"rgba(6,6,12,0.88)"};
+const C={bg:"#F7F8FA",card:"#FFFFFF",sheet:"#FFFFFF",gold:"#D4A853",goldGrad:"linear-gradient(135deg,#D4A853,#B8942F)",text:"#1A1A2E",sec:"#4A5568",muted:"#8896A6",blue:"#4A9FD5",orange:"#E8854A",pink:"#E05C6F",purple:"#8B5CF6",green:"#34D399",border:"rgba(0,0,0,0.08)",borderLo:"rgba(0,0,0,0.04)",overlay:"rgba(0,0,0,0.5)"};
 const F={f:"'DM Sans',sans-serif",s:"'Playfair Display',Georgia,serif"};
-const K=`background:${C.card};border:1px solid ${C.border};border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.3)`;
+const K=`background:${C.card};border:1px solid ${C.border};border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.06),0 4px 16px rgba(0,0,0,0.04)`;
 
 // ═══ TOOLBAR ═══
 document.getElementById("toolbar").innerHTML=[
@@ -31,7 +31,7 @@ document.getElementById("toolbar").innerHTML=[
   {icon:"🧭",l:"Explore",href:"https://good-times-app.vercel.app",active:false},
   {icon:"📅",l:"Calendar",href:"https://good-times-app.vercel.app",active:false},
   {icon:"🔒",l:"Vault",href:"https://good-times-app.vercel.app",active:false},
-].map(t=>`<a href="${t.href}" style="display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:${t.active?C.gold:C.muted};font-family:${F.f};font-size:10px;font-weight:600;letter-spacing:.5px;padding:6px 12px"><span style="font-size:20px">${t.icon}</span>${t.l}</a>`).join("");
+].map(t=>`<a href="${t.href}" style="display:flex;flex-direction:column;align-items:center;gap:3px;text-decoration:none;color:${t.active?C.gold:'#8896A6'};font-family:${F.f};font-size:10px;font-weight:600;letter-spacing:.5px;padding:6px 12px"><span style="font-size:20px">${t.icon}</span>${t.l}</a>`).join("");
 
 // ═══ FORM DEFINITIONS ═══
 const FM={
@@ -82,7 +82,7 @@ function rowCard(key,d){
         <span style="font-size:11px;color:${d.color};font-weight:600">${d.desc.split(",")[0]}</span>
       </div>
     </div>
-    <div style="display:flex;align-items:center;padding:0 14px;flex-shrink:0;font-size:16px;color:${C.muted}">›</div>
+    <div style="display:flex;align-items:center;padding:0 14px;flex-shrink:0;font-size:16px;color:#C0C0C0">›</div>
   </button>`}
 
 // ═══ BUILD PAGE ═══
@@ -92,7 +92,7 @@ const root=document.getElementById("root");
 let html=`
 <div style="position:relative;overflow:hidden">
   <div style="height:220px;position:relative;overflow:hidden;background:#06060C">
-    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,6,12,0.3) 0%,rgba(6,6,12,0.1) 40%,rgba(6,6,12,0.7) 80%,rgba(6,6,12,1) 100%)"></div>
+    <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,6,12,0.3) 0%,rgba(6,6,12,0.05) 35%,rgba(6,6,12,0.5) 70%,#F7F8FA 100%)"></div>
     <div style="position:absolute;top:0;left:0;right:0;z-index:10;padding:14px 16px;display:flex;align-items:center;justify-content:space-between">
       <div style="background:rgba(0,0,0,0.35);border-radius:20px;padding:6px 14px;display:flex;align-items:center;gap:6px;backdrop-filter:blur(10px)">
         <span style="font-size:12px">📝</span>
@@ -109,14 +109,14 @@ let html=`
 </div>
 
 <div style="padding:0 16px;margin-top:-40px;position:relative;z-index:5;text-align:center;margin-bottom:24px">
-  <div style="font-size:28px;font-family:${F.s};font-weight:700;line-height:1.1;margin-bottom:6px">Partner With <span style="color:${C.gold};font-style:italic">Good Times</span></div>
+  <div style="font-size:28px;font-family:${F.s};font-weight:700;line-height:1.1;margin-bottom:6px;color:#1A1A2E">Partner With <span style="color:${C.gold};font-style:italic">Good Times</span></div>
   <div style="font-size:12px;color:${C.sec}">Submit your venue, event, or service to join <strong style="color:${C.gold}">837+</strong> curated listings</div>
 </div>
 
 <div style="padding:0 16px;margin-bottom:20px">
-  <div style="display:flex;gap:0;background:rgba(255,255,255,0.25);border-radius:10px;padding:3px">
+  <div style="display:flex;gap:0;background:rgba(0,0,0,0.05);border-radius:10px;padding:3px">
     <div style="flex:1;padding:10px 0;border-radius:8px;font-size:13px;font-weight:700;background:${C.goldGrad};color:#0A0A0F;text-align:center;letter-spacing:.3px;font-family:${F.f}">Submit</div>
-    <a href="https://good-times-app.vercel.app" style="flex:1;padding:10px 0;border-radius:8px;font-size:13px;font-weight:500;color:#fff;text-align:center;text-decoration:none;font-family:${F.f}">Open App</a>
+    <a href="https://good-times-app.vercel.app" style="flex:1;padding:10px 0;border-radius:8px;font-size:13px;font-weight:500;color:#4A5568;text-align:center;text-decoration:none;font-family:${F.f}">Open App</a>
   </div>
 </div>
 `;
@@ -146,18 +146,18 @@ html+=`<div style="padding:0 16px;margin-bottom:20px;display:grid;grid-template-
 </div>`;
 
 // Lifestyle banner
-html+=`<div style="padding:0 16px;margin-bottom:20px"><div style="${K};overflow:hidden;padding:0;border-radius:12px;height:160px;position:relative"><img src="https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=900" alt="" style="width:100%;height:100%;object-fit:cover" loading="lazy"><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,6,12,0) 30%,rgba(6,6,12,0.8) 100%)"></div><div style="position:absolute;bottom:16px;left:16px;right:16px"><div style="font-family:${F.s};font-size:20px;font-weight:600;margin-bottom:4px">Your City. Your Night.</div><div style="font-size:12px;color:${C.sec}">Curated experiences across 10 cities</div></div></div></div>`;
+html+=`<div style="padding:0 16px;margin-bottom:20px"><div style="${K};overflow:hidden;padding:0;border-radius:12px;height:160px;position:relative"><img src="https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=900" alt="" style="width:100%;height:100%;object-fit:cover" loading="lazy"><div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(6,6,12,0) 30%,rgba(6,6,12,0.8) 100%)"></div><div style="position:absolute;bottom:16px;left:16px;right:16px"><div style="font-family:${F.s};font-size:20px;font-weight:600;margin-bottom:4px;color:#fff">Your City. Your Night.</div><div style="font-size:12px;color:${C.sec}">Curated experiences across 10 cities</div></div></div></div>`;
 
 // Stats
 html+=`<div style="padding:0 16px;margin-bottom:20px">
-  <div style="${K};padding:0;overflow:hidden;position:relative;border:1px solid ${C.gold}30">
+  <div style="${K};padding:0;overflow:hidden;position:relative;border:1px solid rgba(212,168,83,0.15)">
     <img src="https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=600" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.15" loading="lazy"><div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(212,168,83,0.08),rgba(6,6,12,0.92))"></div>
     <div style="position:relative;z-index:2;padding:16px 20px">
       ${SH("📊","PLATFORM STATS",C.gold)}
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;text-align:center;margin-top:8px">
-        <div><div style="font-family:${F.s};font-size:28px;font-weight:300">837<span style="color:${C.gold};font-size:.5em;vertical-align:super">+</span></div><div style="font-size:9px;letter-spacing:2px;color:${C.muted};font-weight:700;margin-top:2px">VENUES</div></div>
-        <div><div style="font-family:${F.s};font-size:28px;font-weight:300">10</div><div style="font-size:9px;letter-spacing:2px;color:${C.muted};font-weight:700;margin-top:2px">CITIES</div></div>
-        <div><div style="font-family:${F.s};font-size:28px;font-weight:300">48<span style="color:${C.gold};font-size:.5em">hr</span></div><div style="font-size:9px;letter-spacing:2px;color:${C.muted};font-weight:700;margin-top:2px">RESPONSE</div></div>
+        <div><div style="font-family:${F.s};font-size:28px;font-weight:300;color:#fff">837<span style="color:${C.gold};font-size:.5em;vertical-align:super">+</span></div><div style="font-size:9px;letter-spacing:2px;color:#C0C0C0;font-weight:700;margin-top:2px">VENUES</div></div>
+        <div><div style="font-family:${F.s};font-size:28px;font-weight:300;color:#fff">10</div><div style="font-size:9px;letter-spacing:2px;color:#C0C0C0;font-weight:700;margin-top:2px">CITIES</div></div>
+        <div><div style="font-family:${F.s};font-size:28px;font-weight:300;color:#fff">48<span style="color:${C.gold};font-size:.5em">hr</span></div><div style="font-size:9px;letter-spacing:2px;color:#C0C0C0;font-weight:700;margin-top:2px">RESPONSE</div></div>
       </div>
     </div>
   </div>
@@ -182,7 +182,7 @@ html+=`<div style="text-align:center;padding:32px 20px">
 </div>`;
 
 // Footer
-html+=`<div style="text-align:center;padding:24px 20px;border-top:1px solid rgba(255,255,255,0.05);font-size:11px;color:${C.muted}">
+html+=`<div style="text-align:center;padding:24px 20px;border-top:1px solid rgba(0,0,0,0.06);font-size:11px;color:${C.muted}">
   Good Times — A <a href="https://thekollectivehospitality.com" target="_blank" style="color:${C.gold};text-decoration:none">Kollective Hospitality Group</a> product
 </div>`;
 
@@ -192,19 +192,19 @@ root.innerHTML=html;
 function openForm(k){
   const d=FM[k];if(!d)return;
   const mo=document.getElementById("mo");
-  let h=`<div onclick="event.stopPropagation()" style="width:100%;max-width:480px;margin:0 auto;background:${C.sheet};border-radius:20px 20px 0 0;padding:0;max-height:85vh;display:flex;flex-direction:column;animation:moS .35s cubic-bezier(0.16,1,0.3,1)">
+  let h=`<div onclick="event.stopPropagation()" style="width:100%;max-width:480px;margin:0 auto;background:#1E1E32;border-radius:20px 20px 0 0;padding:0;max-height:85vh;display:flex;flex-direction:column;animation:moS .35s cubic-bezier(0.16,1,0.3,1)">
     <div style="width:40px;height:4px;border-radius:99px;background:rgba(255,255,255,0.15);margin:12px auto 0;flex-shrink:0"></div>
     <div style="padding:16px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0">
-      <div style="font-family:${F.s};font-size:20px;font-weight:400;display:flex;align-items:center;gap:10px"><span>${d.icon}</span>${d.l}</div>
-      <button onclick="closeForm()" style="background:none;border:1px solid rgba(255,255,255,0.08);color:${C.muted};width:32px;height:32px;border-radius:8px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+      <div style="font-family:${F.s};font-size:20px;font-weight:400;color:#fff;display:flex;align-items:center;gap:10px"><span>${d.icon}</span>${d.l}</div>
+      <button onclick="closeForm()" style="background:none;border:1px solid rgba(255,255,255,0.15);color:#C0C0C0;width:32px;height:32px;border-radius:8px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
     </div>
     <div style="overflow-y:auto;flex:1;padding:20px;-webkit-overflow-scrolling:touch">
       <form id="af" onsubmit="sub(event,'${k}')">`;
   d.fields.forEach(f=>{
-    h+=`<div style="margin-bottom:16px"><label style="display:block;font-size:10px;font-weight:700;color:${C.muted};margin-bottom:6px;letter-spacing:2px;text-transform:uppercase">${f.l}${f.r?`<span style="color:${C.gold}"> *</span>`:""}</label>`;
-    if(f.t==="textarea")h+=`<textarea name="${f.n}"${f.r?" required":""} rows="3" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:14px;font-family:${F.f};outline:none;resize:vertical;min-height:80px"></textarea>`;
-    else if(f.t==="select"){h+=`<select name="${f.n}"${f.r?" required":""} style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:14px;font-family:${F.f};outline:none;cursor:pointer;appearance:none"><option value="" style="background:${C.sheet}">Select...</option>`;f.o.forEach(o=>{h+=`<option value="${o}" style="background:${C.sheet}">${o}</option>`});h+=`</select>`}
-    else h+=`<input type="${f.t}" name="${f.n}"${f.r?" required":""} style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#fff;font-size:14px;font-family:${F.f};outline:none">`;
+    h+=`<div style="margin-bottom:16px"><label style="display:block;font-size:10px;font-weight:700;color:#A0A0B0;margin-bottom:6px;letter-spacing:2px;text-transform:uppercase">${f.l}${f.r?`<span style="color:${C.gold}"> *</span>`:""}</label>`;
+    if(f.t==="textarea")h+=`<textarea name="${f.n}"${f.r?" required":""} rows="3" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#FFFFFF;font-size:14px;font-family:${F.f};outline:none;resize:vertical;min-height:80px"></textarea>`;
+    else if(f.t==="select"){h+=`<select name="${f.n}"${f.r?" required":""} style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:14px;font-family:${F.f};outline:none;cursor:pointer;appearance:none"><option value="" style="background:${C.sheet}">Select...</option>`;f.o.forEach(o=>{h+=`<option value="${o}" style="background:${C.sheet}">${o}</option>`});h+=`</select>`}
+    else h+=`<input type="${f.t}" name="${f.n}"${f.r?" required":""} style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:14px;font-family:${F.f};outline:none">`;
     h+=`</div>`;
   });
   h+=`<button type="submit" id="sb" style="width:100%;padding:14px;margin-top:8px;background:${C.goldGrad};border:none;border-radius:10px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;font-family:${F.f};letter-spacing:.3px">Submit</button></form></div></div>`;
@@ -213,7 +213,7 @@ function openForm(k){
   document.body.style.overflow="hidden";
 }
 function closeForm(){document.getElementById("mo").style.display="none";document.body.style.overflow=""}
-async function sub(e,k){e.preventDefault();const b=document.getElementById("sb");b.disabled=true;b.textContent="Submitting...";const d=Object.fromEntries(new FormData(document.getElementById("af")));try{await fetch("https://dorsey.app.n8n.cloud/webhook/khg-form-submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({brand_key:"good_times",form_type:k,location_id:"jbm4vUg0J1llNkK8q6Lt",contact:{firstName:(d.full_name||"").split(" ")[0],lastName:(d.full_name||"").split(" ").slice(1).join(" "),email:d.email||"",phone:d.phone||"",tags:["form:"+k,"brand:good_times","website-form"],source:"Good Times Landing - "+k},form_data:d})});fetch("https://dzlmtvodpyhetvektfuo.supabase.co/rest/v1/form_submissions",{method:"POST",headers:{"Content-Type":"application/json",apikey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA3NzU5NjQsImV4cCI6MjA1NjM1MTk2NH0.10cLMBYfSGhLqLMx1cT-fCsHMKcrBbxFMOm_UH_oGk4",Authorization:"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA3NzU5NjQsImV4cCI6MjA1NjM1MTk2NH0.10cLMBYfSGhLqLMx1cT-fCsHMKcrBbxFMOm_UH_oGk4"},body:JSON.stringify({brand_key:"good_times",form_type:k,full_name:d.full_name||"",email:d.email||"",phone:d.phone||"",form_data:d,ghl_push_status:"pending"})}).catch(()=>{});const mb=document.getElementById("mo").querySelector("[style*='overflow-y']");mb.innerHTML=`<div style="text-align:center;padding:48px 16px"><div style="width:56px;height:56px;border-radius:50%;border:2px solid ${C.gold};display:flex;align-items:center;justify-content:center;font-size:24px;color:${C.gold};margin:0 auto 20px">✓</div><div style="font-family:${F.s};font-size:26px;font-weight:300;margin-bottom:10px">Submitted</div><div style="color:${C.muted};font-size:13px;line-height:1.5;margin-bottom:24px">We'll review and follow up within 48 hours.</div><button onclick="closeForm()" style="width:100%;padding:14px;background:${C.goldGrad};border:none;border-radius:10px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;font-family:${F.f}">Done</button></div>`}catch{b.disabled=false;b.textContent="Submit";alert("Something went wrong.")}}
+async function sub(e,k){e.preventDefault();const b=document.getElementById("sb");b.disabled=true;b.textContent="Submitting...";const d=Object.fromEntries(new FormData(document.getElementById("af")));try{await fetch("https://dorsey.app.n8n.cloud/webhook/khg-form-submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({brand_key:"good_times",form_type:k,location_id:"jbm4vUg0J1llNkK8q6Lt",contact:{firstName:(d.full_name||"").split(" ")[0],lastName:(d.full_name||"").split(" ").slice(1).join(" "),email:d.email||"",phone:d.phone||"",tags:["form:"+k,"brand:good_times","website-form"],source:"Good Times Landing - "+k},form_data:d})});fetch("https://dzlmtvodpyhetvektfuo.supabase.co/rest/v1/form_submissions",{method:"POST",headers:{"Content-Type":"application/json",apikey:"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA3NzU5NjQsImV4cCI6MjA1NjM1MTk2NH0.10cLMBYfSGhLqLMx1cT-fCsHMKcrBbxFMOm_UH_oGk4",Authorization:"Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA3NzU5NjQsImV4cCI6MjA1NjM1MTk2NH0.10cLMBYfSGhLqLMx1cT-fCsHMKcrBbxFMOm_UH_oGk4"},body:JSON.stringify({brand_key:"good_times",form_type:k,full_name:d.full_name||"",email:d.email||"",phone:d.phone||"",form_data:d,ghl_push_status:"pending"})}).catch(()=>{});const mb=document.getElementById("mo").querySelector("[style*='overflow-y']");mb.innerHTML=`<div style="text-align:center;padding:48px 16px"><div style="width:56px;height:56px;border-radius:50%;border:2px solid ${C.gold};display:flex;align-items:center;justify-content:center;font-size:24px;color:${C.gold};margin:0 auto 20px">✓</div><div style="font-family:${F.s};font-size:26px;font-weight:300;color:#fff;margin-bottom:10px">Submitted</div><div style="color:#A0A0B0;font-size:13px;line-height:1.5;margin-bottom:24px">We'll review and follow up within 48 hours.</div><button onclick="closeForm()" style="width:100%;padding:14px;background:${C.goldGrad};border:none;border-radius:10px;color:#0A0A0F;font-size:13px;font-weight:700;cursor:pointer;font-family:${F.f}">Done</button></div>`}catch{b.disabled=false;b.textContent="Submit";alert("Something went wrong.")}}
 document.getElementById("mo").addEventListener("click",function(e){if(e.target===this)closeForm()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")closeForm()});
 </script>
