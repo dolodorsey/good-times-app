@@ -341,16 +341,27 @@ export default function GoodTimesApp(){
 
   const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(null),2000)};
 
-  // Load events — REAL data from eventbrite_events on KHG Supabase
+  // Load events — ALL 3 TIERS of data
   useEffect(()=>{
     (async()=>{
       setLoading(true);
       const today=new Date().toISOString().split("T")[0];
-      // Pull REAL 2026 events from eventbrite_events (KHG Supabase) — sorted by priority then date
+      const dayNames=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+      const todayDay=dayNames[new Date().getDay()];
+
+      // TIER 1: Our events from eventbrite_events
       const real=await khgF("eventbrite_events?select=id,event_name,brand_key,event_date,city,is_active,eventbrite_url,event_type,event_time,display_priority,image_url&is_active=eq.true&event_date=gte."+today+"&order=display_priority.asc,event_date.asc&limit=100");
-      // Also pull city attractions/nightlife from legacy events table (always-on city content)
+
+      // TIER 2a: City events (scraped concerts, festivals, activations)
+      const cityEvts=await khgF("gt_city_events?select=id,event_name,city_key,event_type,venue_name,start_date,start_time,ticket_url,organizer,image_url,is_free&start_date=gte."+today+"&status=in.(active,confirmed)&order=start_date.asc&limit=200");
+
+      // TIER 2b: Weekly venue happenings (tonight's programming)
+      const happenings=await khgF("gt_venue_happenings?select=id,venue_id,city_key,day_of_week,happening_name,happening_type,time_slot,start_time,description,priority_score&is_active=eq.true&day_of_week=eq."+todayDay+"&order=priority_score.desc&limit=50");
+
+      // TIER 1 legacy nightlife (always-on ATL content)
       const legacy=await sbF("events?select=*&order=date.asc&limit=100");
-      // Map real events to app format
+
+      // === MAP TIER 1: Our events ===
       const BRAND_DISPLAY={remix:"REMIX",taste_of_art:"TASTE OF ART",noir:"NOIR",wrst_bhvr:"WRST BHVR",gangsta_gospel:"GANGSTA GOSPEL",soul_sessions:"SOUL SESSIONS",kulture:"THE KULTURE",underground_king:"UNDERGROUND KING",crvngs:"CRVNGS",block_party:"BLOCK PARTY",cinco_de_mayo:"BLOCK PARTY",parking_lot_pimpin:"PARKING LOT PIMPIN",monsters_ball:"MONSTER'S BALL",black_ball:"BLACK BALL",snow_ball:"SNOW BALL",beauty_beast:"BEAUTY & THE BEAST",secret_society:"SECRET SOCIETY",huglife:"HUGLIFE",forever_futbol:"FOREVER FUTBOL",stella:"STELLA",shut_up_dance:"SHUT UP & DANCE"};
       const mapped=real.map(e=>({
         id:e.id,
@@ -368,16 +379,52 @@ export default function GoodTimesApp(){
         source:"huglife",
         status:"upcoming"
       }));
-      // Legacy events: update dates to today/this-week so nightlife shows in "Tonight"
-      const legacyMapped=legacy.map(e=>{
-        // Nightlife venues are "always on" — show them as tonight
-        if(e.category==="nightlife"||e.category==="experience"){
-          return {...e, date:today, source:"city"};
-        }
-        return {...e, source:"city"};
-      });
-      // OUR events always come first, then city nightlife/attractions
-      setEvents([...mapped,...legacyMapped]);
+
+      // === MAP TIER 2a: City events ===
+      const CITY_KEY_MAP={atlanta:"Atlanta",houston:"Houston",los_angeles:"Los Angeles",charlotte:"Charlotte",washington_dc:"Washington",miami:"Miami",las_vegas:"Las Vegas",new_york:"New York",dallas:"Dallas",phoenix:"Phoenix",scottsdale:"Scottsdale"};
+      const cityMapped=cityEvts.map(e=>({
+        id:"ce-"+e.id,
+        title:e.event_name,
+        brand:e.organizer||e.event_type||"CITY EVENT",
+        city:CITY_KEY_MAP[e.city_key]||e.city_key,
+        date:e.start_date,
+        time:e.start_time||"TBA",
+        venue:e.venue_name||"TBA",
+        category:e.event_type||"event",
+        is_featured:false,
+        image_url:e.image_url||null,
+        ticket_url:e.ticket_url,
+        display_priority:40,
+        source:"city_event",
+        status:"upcoming"
+      }));
+
+      // === MAP TIER 2b: Tonight's happenings ===
+      const hapMapped=happenings.map(e=>({
+        id:"hap-"+e.id,
+        title:e.happening_name,
+        brand:e.happening_type==="recurring_night"?"NIGHTLIFE":e.happening_type==="live_music"?"LIVE MUSIC":e.happening_type==="brunch_party"?"DAY PARTY":"NIGHTLIFE",
+        city:CITY_KEY_MAP[e.city_key]||e.city_key,
+        date:today,
+        time:e.start_time||"22:00",
+        venue:e.description?.split(".")[0]||"",
+        category:"nightlife",
+        is_featured:e.priority_score>=9,
+        display_priority:35,
+        source:"happening",
+        status:"tonight"
+      }));
+
+      // === MAP TIER 1 legacy ===
+      const legacyMapped=legacy.map(e=>({
+        ...e,
+        date:e.category==="nightlife"||e.category==="experience"?today:e.date,
+        display_priority:45,
+        source:"legacy"
+      }));
+
+      // Merge: OUR events → tonight's happenings → city events → legacy
+      setEvents([...mapped,...hapMapped,...cityMapped,...legacyMapped]);
       setLoading(false);
     })();
   },[]);
