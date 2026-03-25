@@ -51,12 +51,14 @@ const CAT_MAP={
   networking:["event_venue","event_creative"]
 };
 
-// Images
+// Images — NO DUPLICATES across sections. Each pool is unique.
 const Ne={
-  hero:"https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800",
-  v:["https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=600","https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=600","https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600","https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600","https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600","https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=600","https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600","https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=900"],
+  hero:"https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=900",
+  // Trending carousel images (nightlife/party vibes)
+  v:["https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=600","https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=600","https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600","https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600","https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=600","https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=600","https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600","https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=900"],
+  // Explore category images — UNIQUE from trending & browse
   ex:{nightlife:"https://images.unsplash.com/photo-1574391884720-bbc3740c59d1?w=400",sports:"https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400",wellness:"https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400",dining:"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400",music:"https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",culture:"https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=400",adventure:"https://images.unsplash.com/photo-1551632811-561732d1e306?w=400",shopping:"https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400",movies:"https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400",gaming:"https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400",drinks:"https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400",exclusive:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400",family:"https://images.unsplash.com/photo-1472653431158-6364773b2a56?w=400",dating:"https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400",cosmetic:"https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400",networking:"https://images.unsplash.com/photo-1515169067868-5387ec356754?w=400"},
-  // CHANGE #6: UNIQUE browse images (different from explore)
+  // Browse images — DIFFERENT from explore
   br:{jki:"https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400",nl:"https://images.unsplash.com/photo-1545128485-c400e7702796?w=400",lm:"https://images.unsplash.com/photo-1501612780327-45045538702b?w=400",sp:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400",ms:"https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400",gm:"https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400"},
   city:{
     Atlanta:{day:"https://images.unsplash.com/photo-1575917649243-4e498e510c69?w=900",night:"https://images.unsplash.com/photo-1559599238-308793637427?w=900"},
@@ -69,9 +71,14 @@ const Ne={
   }
 };
 
-const gt={REMIX:{c:"#FF6B6B"},"TASTE OF ART":{c:"#E8A0BF"},NOIR:{c:"#D4A853"},"WRST BHVR":{c:"#FFD700"},PAPARAZZI:{c:"#FF69B4"},"GANGSTA GOSPEL":{c:"#9B59B6"},"SUNDAY'S BEST":{c:"#87CEEB"},PAWCHELLA:{c:"#90EE90"},"BEAUTY & THE BEAST":{c:"#FFD700"},"BLACK BALL":{c:"#888"},"SNOW BALL":{c:"#A8D8FF"},"NO SECTIONS PARTY":{c:"#FF6B6B"},"MONSTER'S BALL":{c:"#8B0000"},"NAPKIN WARS":{c:"#FFB86B"},"FOREVER FUTBOL":{c:"#00A651"},"THE KULTURE":{c:"#B86BFF"},"UNDERGROUND KING":{c:"#D4A853"},STELLA:{c:"#E8A0BF"},CRVNGS:{c:"#FFB86B"},"PARKING LOT PIMPIN":{c:"#FF6B6B"},"WINTER WONDERLAND":{c:"#A8D8FF"}};
+const gt={REMIX:{c:"#FF6B6B"},"TASTE OF ART":{c:"#E8A0BF"},NOIR:{c:"#D4A853"},"WRST BHVR":{c:"#FFD700"},PAPARAZZI:{c:"#FF69B4"},"GANGSTA GOSPEL":{c:"#9B59B6"},"SUNDAY'S BEST":{c:"#87CEEB"},PAWCHELLA:{c:"#90EE90"},"BEAUTY & THE BEAST":{c:"#FFD700"},"BLACK BALL":{c:"#888"},"SNOW BALL":{c:"#A8D8FF"},"NO SECTIONS PARTY":{c:"#FF6B6B"},"MONSTER'S BALL":{c:"#8B0000"},"NAPKIN WARS":{c:"#FFB86B"},"FOREVER FUTBOL":{c:"#00A651"},"THE KULTURE":{c:"#B86BFF"},"UNDERGROUND KING":{c:"#D4A853"},STELLA:{c:"#E8A0BF"},CRVNGS:{c:"#FFB86B"},"PARKING LOT PIMPIN":{c:"#FF6B6B"},"WINTER WONDERLAND":{c:"#A8D8FF"},"SHUT UP & DANCE":{c:"#FF69B4"},"SECRET SOCIETY":{c:"#D4A853"},"SOUL SESSIONS":{c:"#9B59B6"},"BLOCK PARTY":{c:"#6BFFB8"},HUGLIFE:{c:"#FF6B6B"},"FOOD TRUCK FESTIVAL":{c:"#FFB86B"}};
 
-const wn=e=>{if(e?.image_url)return e.image_url;const t={REMIX:0,"TASTE OF ART":1,NOIR:2,"WRST BHVR":3,PAPARAZZI:5,"GANGSTA GOSPEL":6,"BLACK BALL":7};return Ne.v[t[e?.brand]??(e?.id?.charCodeAt(0)%8)]||Ne.hero};
+const wn=e=>{
+  // Priority: 1) DB image_url  2) Legacy image_url  3) Brand-indexed fallback
+  if(e?.image_url) return e.image_url;
+  const t={REMIX:0,"TASTE OF ART":1,NOIR:2,"WRST BHVR":3,"GANGSTA GOSPEL":4,"SECRET SOCIETY":5,"SHUT UP & DANCE":6,"BLACK BALL":7,"SOUL SESSIONS":0,"THE KULTURE":1,"UNDERGROUND KING":2,CRVNGS:3,"BLOCK PARTY":4,"PARKING LOT PIMPIN":5,"FOREVER FUTBOL":6,"BEAUTY & THE BEAST":7,"MONSTER'S BALL":2,"SNOW BALL":5,HUGLIFE:3};
+  return Ne.v[t[e?.brand]??(e?.id?.toString().charCodeAt(0)%8)]||Ne.hero;
+};
 
 // Cities/Teams — REAL LOGOS via ESPN CDN
 const Ri=[
@@ -86,12 +93,12 @@ const Ri=[
 
 // Sponsors
 const $u=[
-  {brand:"GOODFELLAS PIZZA",line:"Pizza with a side of loyalty.",color:"#FF6B6B",sub:"CASPER GROUP",cta:"Order",img:"https://good-times-app.vercel.app/brands/goodfellas-alt.png",logo:"https://good-times-app.vercel.app/brands/goodfellas.png"},
-  {brand:"MIND STUDIO",line:"Mental health. Reimagined.",color:"#9B59B6",sub:"KHG",cta:"Book",img:"https://good-times-app.vercel.app/brands/mind-studio.png",logo:"https://good-times-app.vercel.app/brands/mind-studio-alt.png"},
-  {brand:"ON CALL",line:"24/7 Emergency Services.",color:"#FFB86B",sub:"KHG APPS",cta:"Download",img:"https://good-times-app.vercel.app/brands/on-call.png"},
-  {brand:"UMBRELLA GROUP",line:"Full-service creative agency.",color:"#D4A853",sub:"KHG",cta:"Learn More",img:"https://good-times-app.vercel.app/brands/umbrella-group.png"},
-  {brand:"HURT 1800 911",line:"Injured? We fight for you.",color:"#C0392B",sub:"UMBRELLA GROUP",cta:"Call Now",img:"https://good-times-app.vercel.app/brands/hurt-1800.png"},
-  {brand:"S.O.S",line:"Safety. On. Speed-dial.",color:"#E74C3C",sub:"KHG APPS",cta:"Download",img:"https://good-times-app.vercel.app/brands/sos.png"},
+  {brand:"GOODFELLAS PIZZA",line:"Pizza with a side of loyalty.",color:"#FF6B6B",sub:"CASPER GROUP",cta:"Order",img:"/brands/goodfellas-alt.png",logo:"/brands/goodfellas.png"},
+  {brand:"MIND STUDIO",line:"Mental health. Reimagined.",color:"#9B59B6",sub:"KHG",cta:"Book",img:"/brands/mind-studio.png",logo:"/brands/mind-studio-alt.png"},
+  {brand:"ON CALL",line:"24/7 Emergency Services.",color:"#FFB86B",sub:"KHG APPS",cta:"Download",img:"/brands/on-call.png"},
+  {brand:"UMBRELLA GROUP",line:"Full-service creative agency.",color:"#D4A853",sub:"KHG",cta:"Learn More",img:"/brands/umbrella-group.png"},
+  {brand:"HURT 1800 911",line:"Injured? We fight for you.",color:"#C0392B",sub:"UMBRELLA GROUP",cta:"Call Now",img:"/brands/hurt-1800.png"},
+  {brand:"S.O.S",line:"Safety. On. Speed-dial.",color:"#E74C3C",sub:"KHG APPS",cta:"Download",img:"/brands/sos.png"},
   {brand:"CASPER GROUP",line:"Hospitality. Reimagined.",color:"#D4A853",sub:"KHG",cta:"Explore",img:"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600"},
   {brand:"FOREVER FUTBOL",line:"The beautiful game. Elevated.",color:"#00A651",sub:"KHG MUSEUMS",cta:"Experience",img:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600"},
   {brand:"ANGEL WINGS",line:"Wings so good, they're sinful.",color:"#FF6B6B",sub:"CASPER GROUP",cta:"Order Now",img:"https://images.unsplash.com/photo-1608039829572-25e8658a7289?w=600"},
@@ -146,9 +153,9 @@ const kn=[
 
 // CHANGE #8: Deals data for Vault
 const dealsData=[
-  {id:"d1",title:"2-for-1 Bottle Service",venue:"Opium Nightclub",desc:"Every Thursday before midnight",savings:"Save $200+",cat:"Nightlife",img:"https://good-times-app.vercel.app/venues/opium.jpg"},
+  {id:"d1",title:"2-for-1 Bottle Service",venue:"Opium Nightclub",desc:"Every Thursday before midnight",savings:"Save $200+",cat:"Nightlife",img:"/venues/opium.jpg"},
   {id:"d2",title:"50% Off Tasting Menu",venue:"STK Atlanta",desc:"Mon-Wed 5-course chef selection",savings:"Save $85",cat:"Dining",img:"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400"},
-  {id:"d3",title:"Free Entry Before 11pm",venue:"Revel ATL",desc:"RSVP on Good Times for free entry",savings:"Save $45",cat:"Nightlife",img:"https://good-times-app.vercel.app/venues/revel.webp"},
+  {id:"d3",title:"Free Entry Before 11pm",venue:"Revel ATL",desc:"RSVP on Good Times for free entry",savings:"Save $45",cat:"Nightlife",img:"/venues/revel.webp"},
   {id:"d4",title:"VIP Table Upgrade",venue:"Opium Nightclub",desc:"Book GA get VIP section free",savings:"Save $500+",cat:"Events",img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400"},
   {id:"d5",title:"Day Pass + Mimosas",venue:"Spa at Mandarin Oriental",desc:"Full spa day with unlimited mimosas",savings:"Save $120",cat:"Wellness",img:"https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400"},
   {id:"d6",title:"Brunch for 2 Special",venue:"South City Kitchen",desc:"Brunch entrees + bottomless cocktails",savings:"Save $60",cat:"Dining",img:"https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400"},
@@ -334,18 +341,43 @@ export default function GoodTimesApp(){
 
   const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(null),2000)};
 
-  // Load events
+  // Load events — REAL data from eventbrite_events on KHG Supabase
   useEffect(()=>{
     (async()=>{
       setLoading(true);
-      const db=await sbF("events?select=*&order=date.asc&limit=100");
-      const fallback=[
-        {id:"haunt-atl",title:"HAUNTED HOUSE \u2014 Atlanta",brand:"HAUNTED HOUSE",city:"Atlanta",date:"2026-10-01",time:"19:00",venue:"TBA",category:"exclusive",is_featured:true,price:null,status:"upcoming",short_description:"Month-long Halloween."},
-        {id:"nk-fall",title:"NAPKIN KING \u2014 Fall Finale",brand:"NAPKIN KING",city:"TBA",date:"2026-10-10",time:"20:00",venue:"TBA",category:"dining",is_featured:false,price:150,status:"upcoming",short_description:"Season Finale."},
-        {id:"ww-atl",title:"WINTER WONDERLAND \u2014 Atlanta",brand:"WINTER WONDERLAND",city:"Atlanta",date:"2026-12-01",time:"17:00",venue:"TBA",category:"exclusive",is_featured:true,price:null,status:"upcoming",short_description:"Holiday magic. All December."}
-      ];
-      const ids=new Set(db.map(e=>e.id));
-      setEvents([...db,...fallback.filter(e=>!ids.has(e.id))]);
+      const today=new Date().toISOString().split("T")[0];
+      // Pull REAL 2026 events from eventbrite_events (KHG Supabase) — sorted by priority then date
+      const real=await khgF("eventbrite_events?select=id,event_name,brand_key,event_date,city,is_active,eventbrite_url,event_type,event_time,display_priority,image_url&is_active=eq.true&event_date=gte."+today+"&order=display_priority.asc,event_date.asc&limit=100");
+      // Also pull city attractions/nightlife from legacy events table (always-on city content)
+      const legacy=await sbF("events?select=*&order=date.asc&limit=100");
+      // Map real events to app format
+      const BRAND_DISPLAY={remix:"REMIX",taste_of_art:"TASTE OF ART",noir:"NOIR",wrst_bhvr:"WRST BHVR",gangsta_gospel:"GANGSTA GOSPEL",soul_sessions:"SOUL SESSIONS",kulture:"THE KULTURE",underground_king:"UNDERGROUND KING",crvngs:"CRVNGS",block_party:"BLOCK PARTY",cinco_de_mayo:"BLOCK PARTY",parking_lot_pimpin:"PARKING LOT PIMPIN",monsters_ball:"MONSTER'S BALL",black_ball:"BLACK BALL",snow_ball:"SNOW BALL",beauty_beast:"BEAUTY & THE BEAST",secret_society:"SECRET SOCIETY",huglife:"HUGLIFE",forever_futbol:"FOREVER FUTBOL",stella:"STELLA",shut_up_dance:"SHUT UP & DANCE"};
+      const mapped=real.map(e=>({
+        id:e.id,
+        title:e.event_name,
+        brand:BRAND_DISPLAY[e.brand_key]||e.brand_key?.toUpperCase()||"HUGLIFE",
+        city:e.city||"Atlanta",
+        date:e.event_date,
+        time:e.event_time||"20:00",
+        venue:"TBA",
+        category:e.event_type||"exclusive",
+        is_featured:(e.display_priority||50)<=5,
+        image_url:e.image_url||null,
+        eventbrite_url:e.eventbrite_url,
+        display_priority:e.display_priority||50,
+        source:"huglife",
+        status:"upcoming"
+      }));
+      // Legacy events: update dates to today/this-week so nightlife shows in "Tonight"
+      const legacyMapped=legacy.map(e=>{
+        // Nightlife venues are "always on" — show them as tonight
+        if(e.category==="nightlife"||e.category==="experience"){
+          return {...e, date:today, source:"city"};
+        }
+        return {...e, source:"city"};
+      });
+      // OUR events always come first, then city nightlife/attractions
+      setEvents([...mapped,...legacyMapped]);
       setLoading(false);
     })();
   },[]);
@@ -529,7 +561,7 @@ export default function GoodTimesApp(){
                 <div style={{width:7,height:7,borderRadius:99,background:"#FF6B6B",boxShadow:"0 0 10px #FF6B6B",animation:"pulse 1.5s ease-in-out infinite"}}/>
                 <span style={{fontSize:11,letterSpacing:2.5,color:"#FF6B6B",fontWeight:700}}>{realm==="week"?"THIS WEEK":realm==="today"?"TODAY":"TONIGHT"}</span>
               </div>
-              <EventGrid items={realmEvents.length>0?realmEvents:upcoming} onSelect={e=>{setDetail(e);navigate("detail")}} max={8}/>
+              <EventGrid items={realmEvents.length>0?realmEvents:upcoming} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>
             </div>
           )}
 
@@ -561,10 +593,14 @@ export default function GoodTimesApp(){
           {/* ── Sponsor break ── */}
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
 
-          {/* ── Trending — horizontal scroll carousel ── */}
+          {/* ── Trending — horizontal scroll carousel — DIFFERENT from realm grid ── */}
+          {(()=>{
+            const shownIds=new Set((realmEvents.length>0?realmEvents:upcoming).slice(0,4).map(e=>e.id));
+            const trendPool=(featured.length>0?featured:upcoming).filter(e=>!shownIds.has(e.id));
+            return trendPool.length>0&&(<>
           <SectionHead t="TRENDING" icon={"\u{1F525}"} color={"#FF6B6B"} action={{l:"See All",fn:()=>navigate("explore")}}/>
           <div style={{display:"flex",gap:12,overflowX:"auto",padding:"0 16px",marginBottom:16,scrollSnapType:"x mandatory"}}>
-            {(featured.length>0?featured:upcoming).slice(0,6).map((e,i)=>{
+            {trendPool.slice(0,6).map((e,i)=>{
               const g=gt[e.brand]?.c||C.gold;
               return(
                 <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,flexShrink:0,width:200,padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:14,scrollSnapAlign:"start",border:`1px solid ${g}20`}}>
@@ -581,11 +617,17 @@ export default function GoodTimesApp(){
               );
             })}
           </div>
+          </>);
+          })()}
 
-          {/* ── Featured Picks — large hero cards ── */}
+          {/* ── Featured Picks — large hero cards — UNIQUE from above sections ── */}
+          {(()=>{
+            const shownIds=new Set([...(realmEvents.length>0?realmEvents:upcoming).slice(0,4).map(e=>e.id),...(featured.length>0?featured:upcoming).slice(0,6).map(e=>e.id)]);
+            const featPool=upcoming.filter(e=>!shownIds.has(e.id));
+            return featPool.length>0&&(<>
           <SectionHead t="FEATURED PICKS" icon={"\u2726"} color={C.gold}/>
           <div style={{padding:"0 16px",marginBottom:16}}>
-            {(featured.length>0?featured:upcoming).slice(0,2).map((e,i)=>{
+            {featPool.slice(0,2).map((e,i)=>{
               const g=gt[e.brand]?.c||C.gold;
               const dt=e.date?new Date(e.date+"T12:00:00"):null;
               return(
@@ -610,15 +652,27 @@ export default function GoodTimesApp(){
               );
             })}
           </div>
+          </>);
+          })()}
 
           {/* ── Sponsor break 2 ── */}
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
 
-          {/* ── Upcoming — grid ── */}
+          {/* ── Upcoming — grid — UNIQUE from all above sections ── */}
+          {(()=>{
+            const shownIds=new Set([
+              ...(realmEvents.length>0?realmEvents:upcoming).slice(0,4).map(e=>e.id),
+              ...(featured.length>0?featured:upcoming).slice(0,6).map(e=>e.id),
+              ...upcoming.slice(0,8).map(e=>e.id)
+            ]);
+            const upPool=upcoming.filter((_,i)=>i>=8);
+            return upPool.length>0&&(<>
           <SectionHead t="UPCOMING" icon={"\u{1F51C}"} color={C.a3} action={{l:"See All",fn:()=>navigate("calendar")}}/>
           <div style={{padding:"0 16px",marginBottom:16}}>
-            <EventGrid items={upcoming} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
+            <EventGrid items={upPool} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
           </div>
+          </>);
+          })()}
 
           {/* ── Quick Links bar ── */}
           <div style={{padding:"0 16px",marginBottom:16}}>
