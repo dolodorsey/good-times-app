@@ -355,7 +355,10 @@ export default function GoodTimesApp(){
       // TIER 1: Our events from eventbrite_events
       const real=await khgF("eventbrite_events?select=id,event_name,brand_key,event_date,city,is_active,eventbrite_url,event_type,event_time,display_priority,image_url&is_active=eq.true&event_date=gte."+today+"&order=display_priority.asc,event_date.asc&limit=100");
 
-      // TIER 2a: City events (scraped concerts, festivals, activations)
+      // TIER 2a: In-house entertainment database (concerts, comedy, plays, festivals)
+      const shows=await khgF("gt_shows?select=id,event_name,event_type,genre,city_key,show_date,show_time,venue_name,ticket_url,image_url,status,display_priority,is_featured&show_date=gte."+today+"&status=in.(confirmed,tentative)&order=display_priority.asc,show_date.asc&limit=200");
+
+      // TIER 2a-legacy: Old scraped city events (will phase out as gt_shows grows)
       const cityEvts=await khgF("gt_city_events?select=id,event_name,city_key,event_type,venue_name,start_date,start_time,ticket_url,organizer,image_url,is_free&start_date=gte."+today+"&status=in.(active,confirmed)&order=start_date.asc&limit=200");
 
       // TIER 2b: Weekly venue happenings (tonight's programming) — with venue details
@@ -393,9 +396,29 @@ export default function GoodTimesApp(){
         status:"upcoming"
       }));
 
-      // === MAP TIER 2a: City events ===
+      // === MAP TIER 2a: In-house shows (concerts, comedy, plays) ===
       const CITY_KEY_MAP={atlanta:"Atlanta",houston:"Houston",los_angeles:"Los Angeles",charlotte:"Charlotte",washington_dc:"Washington",miami:"Miami",las_vegas:"Las Vegas",new_york:"New York",dallas:"Dallas",phoenix:"Phoenix",scottsdale:"Scottsdale"};
-      const cityMapped=cityEvts.map(e=>({
+      const TYPE_LABELS={concert:"CONCERT",comedy:"COMEDY",play:"THEATER",musical:"THEATER",festival:"FESTIVAL",sports:"SPORTS",special_event:"SPECIAL EVENT",activation:"ACTIVATION"};
+      const showsMapped=shows.map(e=>({
+        id:"show-"+e.id,
+        title:e.event_name,
+        brand:TYPE_LABELS[e.event_type]||e.genre?.toUpperCase()||"EVENT",
+        city:CITY_KEY_MAP[e.city_key]||e.city_key,
+        date:e.show_date,
+        time:e.show_time||"TBA",
+        venue:e.venue_name||"TBA",
+        category:e.event_type||"concert",
+        is_featured:e.is_featured||(e.display_priority<=5),
+        image_url:e.image_url||null,
+        ticket_url:e.ticket_url,
+        display_priority:e.display_priority||30,
+        source:"shows",
+        status:"upcoming"
+      }));
+
+      // === MAP TIER 2a-legacy: Old city events (dedup against gt_shows by title+date) ===
+      const showTitleDates=new Set(showsMapped.map(s=>s.title+"|"+s.date));
+      const cityMapped=cityEvts.filter(e=>!showTitleDates.has(e.event_name+"|"+e.start_date)).map(e=>({
         id:"ce-"+e.id,
         title:e.event_name,
         brand:e.organizer||e.event_type||"CITY EVENT",
@@ -457,8 +480,8 @@ export default function GoodTimesApp(){
         source:"legacy"
       }));
 
-      // Merge: OUR events → tonight happenings → tonight venues → city events → legacy
-      setEvents([...mapped,...hapMapped,...tonightMapped,...cityMapped,...legacyMapped]);
+      // Merge: OUR events → in-house shows → tonight happenings → tonight venues → city events → legacy
+      setEvents([...mapped,...showsMapped,...hapMapped,...tonightMapped,...cityMapped,...legacyMapped]);
       setLoading(false);
     })();
   },[]);
