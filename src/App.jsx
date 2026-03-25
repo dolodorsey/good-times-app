@@ -482,14 +482,24 @@ export default function GoodTimesApp(){
     return sorted.filter(e=>e.date>=todayStr&&e.date<=weekEndStr);
   },[cityEvents,realm,todayStr]);
 
-  // Upcoming — OUR events first (by display_priority), then city content by date
+  // Upcoming — CONCIERGE: best content from ALL sources interleaved
+  // Sort by: has image? → display_priority → date proximity
   const upcoming=useMemo(()=>{
     const future=cityEvents.filter(e=>e.date>=todayStr);
-    const ours=future.filter(e=>e.source==="huglife").sort((a,b)=>(a.display_priority||50)-(b.display_priority||50)||a.date.localeCompare(b.date));
-    const city_content=future.filter(e=>e.source!=="huglife").sort((a,b)=>a.date.localeCompare(b.date));
-    return [...ours,...city_content];
+    return future.sort((a,b)=>{
+      // Events with real images always rank higher
+      const aImg=a.image_url?0:1;
+      const bImg=b.image_url?0:1;
+      if(aImg!==bImg)return aImg-bImg;
+      // Then by display priority (lower = better)
+      const aPri=a.display_priority||50;
+      const bPri=b.display_priority||50;
+      if(aPri!==bPri)return aPri-bPri;
+      // Then by date (sooner = better)
+      return a.date.localeCompare(b.date);
+    });
   },[cityEvents,todayStr]);
-  const featured=useMemo(()=>upcoming.filter(e=>e.is_featured),[upcoming]);
+  const featured=useMemo(()=>upcoming.filter(e=>e.image_url),[upcoming]);
   const allUpcoming=useMemo(()=>events.filter(e=>e.date>=todayStr).sort((a,b)=>(a.display_priority||50)-(b.display_priority||50)||a.date.localeCompare(b.date)),[events,todayStr]);
 
   const toggleSave=id=>{
