@@ -61,10 +61,10 @@ const Ne={
   // Browse images — DIFFERENT from explore
   br:{jki:"https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400",nl:"https://images.unsplash.com/photo-1545128485-c400e7702796?w=400",lm:"https://images.unsplash.com/photo-1501612780327-45045538702b?w=400",sp:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400",ms:"https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400",gm:"https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400"},
   city:{
-    Atlanta:{day:"https://images.unsplash.com/photo-1575917649243-4e498e510c69?w=900",night:"https://images.unsplash.com/photo-1559599238-308793637427?w=900"},
+    Atlanta:{day:"https://images.unsplash.com/photo-1575917649243-4e498e510c69?w=900",night:"https://images.unsplash.com/photo-1570744080498-4c76bfdd1773?w=900"},
     Houston:{day:"https://images.unsplash.com/photo-1530089711124-9ca31fb9e863?w=900",night:"https://images.unsplash.com/photo-1548260465-1adda34ebbe7?w=900"},
     "Los Angeles":{day:"https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=900",night:"https://images.unsplash.com/photo-1515896769750-31548aa180ed?w=900"},
-    Charlotte:{day:"https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=900",night:"https://images.unsplash.com/photo-1605885996758-49b3e33c612d?w=900"},
+    Charlotte:{day:"https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?w=900",night:"https://images.unsplash.com/photo-1605885996758-49b3e33c612d?w=900"},
     Washington:{day:"https://images.unsplash.com/photo-1617581629397-a72507c3de9e?w=900",night:"https://images.unsplash.com/photo-1501466044931-62695aada8e9?w=900"},
     Miami:{day:"https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=900",night:"https://images.unsplash.com/photo-1514214246283-d427a95c5d2f?w=900"},
     "Las Vegas":{day:"https://images.unsplash.com/photo-1605833556294-ea5c7a74f57d?w=900",night:"https://images.unsplash.com/photo-1581351721010-8cf859cb14a4?w=900"}
@@ -421,10 +421,15 @@ export default function GoodTimesApp(){
     return sorted.filter(e=>e.date>=todayStr&&e.date<=weekEndStr);
   },[cityEvents,realm,todayStr]);
 
-  // Upcoming (all future, for sections that don't filter by realm)
-  const upcoming=useMemo(()=>cityEvents.filter(e=>e.date>=todayStr).sort((a,b)=>a.date.localeCompare(b.date)),[cityEvents,todayStr]);
-  const featured=useMemo(()=>cityEvents.filter(e=>e.is_featured),[cityEvents]);
-  const allUpcoming=useMemo(()=>events.filter(e=>e.date>=todayStr).sort((a,b)=>a.date.localeCompare(b.date)),[events,todayStr]);
+  // Upcoming — OUR events first (by display_priority), then city content by date
+  const upcoming=useMemo(()=>{
+    const future=cityEvents.filter(e=>e.date>=todayStr);
+    const ours=future.filter(e=>e.source==="huglife").sort((a,b)=>(a.display_priority||50)-(b.display_priority||50)||a.date.localeCompare(b.date));
+    const city_content=future.filter(e=>e.source!=="huglife").sort((a,b)=>a.date.localeCompare(b.date));
+    return [...ours,...city_content];
+  },[cityEvents,todayStr]);
+  const featured=useMemo(()=>upcoming.filter(e=>e.is_featured),[upcoming]);
+  const allUpcoming=useMemo(()=>events.filter(e=>e.date>=todayStr).sort((a,b)=>(a.display_priority||50)-(b.display_priority||50)||a.date.localeCompare(b.date)),[events,todayStr]);
 
   const toggleSave=id=>{
     const has=saved.includes(id);
@@ -450,7 +455,7 @@ export default function GoodTimesApp(){
   if(loading)return(
     <div style={{minHeight:"100vh",background:`radial-gradient(ellipse at 50% 40%,rgba(50,35,15,0.5) 0%,${C.bg} 70%)`,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",animation:"fadeIn 0.8s ease"}}>
       <div style={{width:80,height:1,background:`linear-gradient(90deg,transparent,${C.gold},transparent)`,marginBottom:24,animation:"shimmer 2s infinite"}}/>
-      <div style={{fontSize:12,letterSpacing:5,color:C.gold,fontWeight:700}}>G O O D &nbsp; T I M E S</div>
+      <img src="/good-times-logo.png" alt="Good Times" style={{height:48,objectFit:"contain",animation:"fadeIn 1.2s ease"}} />
     </div>
   );
 
@@ -462,7 +467,7 @@ export default function GoodTimesApp(){
         <span style={{fontFamily:F.f,fontSize:13,color:"#fff",fontWeight:600}}>{city.name}</span>
         <span style={{color:"#FFFFFF",fontSize:10,marginLeft:2}}>{"\u25BE"}</span>
       </div>
-      <span style={{fontFamily:F.f,fontSize:13,fontWeight:700,letterSpacing:3,color:C.gold,textShadow:"0 1px 8px rgba(0,0,0,0.6)"}}>G O O D &nbsp; T I M E S</span>
+      <span style={{fontFamily:F.f,fontSize:13,fontWeight:700,letterSpacing:3,color:C.gold,textShadow:"0 1px 8px rgba(0,0,0,0.6)"}}><img src="/good-times-logo.png" alt="Good Times" style={{height:28,objectFit:"contain",filter:"drop-shadow(0 1px 6px rgba(0,0,0,0.6))"}} /></span>
       <button onClick={()=>setSearchOpen(!searchOpen)} style={{width:34,height:34,borderRadius:"50%",background:"rgba(0,0,0,0.35)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center",border:"none",cursor:"pointer"}}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
       </button>
@@ -554,18 +559,33 @@ export default function GoodTimesApp(){
               <button key={ch.l} onClick={()=>navigate("explore")} style={{...V(false),padding:"7px 14px",border:`1px solid ${ch.c}`,color:ch.c,fontSize:12,fontWeight:600,whiteSpace:"nowrap",flexShrink:0,borderRadius:8}}>{ch.l}</button>
             ))}
           </div>
-          {/* Events grid — filtered by realm, balanced 2-column */}
-          {(realmEvents.length>0?realmEvents:upcoming).length>0&&(
+          {/* ═══ ALL EVENT SECTIONS — single-pass dedup, NO REPEATS ═══ */}
+          {(()=>{
+            const shown=new Set();
+            const mark=(items,max)=>{const r=items.filter(e=>!shown.has(e.id)).slice(0,max);r.forEach(e=>shown.add(e.id));return r};
+            // Section 1: Tonight/Today/This Week grid
+            const realmPool=realmEvents.length>0?realmEvents:upcoming;
+            const sec1=mark(realmPool,4);
+            // Section 2: Trending — OUR events by priority, skip what's shown
+            const trendSrc=upcoming.filter(e=>e.source==="huglife");
+            const sec2=mark(trendSrc.length>0?trendSrc:upcoming,6);
+            // Section 3: Featured — next best OUR events
+            const featSrc=upcoming.filter(e=>e.source==="huglife");
+            const sec3=mark(featSrc,2);
+            // Section 4: Upcoming — everything else
+            const sec4=mark(upcoming,6);
+            return(<>
+          {/* Tonight grid */}
+          {sec1.length>0&&(
             <div style={{padding:"0 16px",marginBottom:16}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
                 <div style={{width:7,height:7,borderRadius:99,background:"#FF6B6B",boxShadow:"0 0 10px #FF6B6B",animation:"pulse 1.5s ease-in-out infinite"}}/>
                 <span style={{fontSize:11,letterSpacing:2.5,color:"#FF6B6B",fontWeight:700}}>{realm==="week"?"THIS WEEK":realm==="today"?"TODAY":"TONIGHT"}</span>
               </div>
-              <EventGrid items={realmEvents.length>0?realmEvents:upcoming} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>
+              <EventGrid items={sec1} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>
             </div>
           )}
-
-          {/* ── YOUR CITY'S TEAMS — immediately after events ── */}
+          {/* Teams */}
           <div style={{padding:"0 16px",marginBottom:16}}>
             <div style={{...K,padding:0,overflow:"hidden",position:"relative",border:"1px solid rgba(107,255,184,0.4)"}}>
               <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600" alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",opacity:0.3}} loading="lazy"/>
@@ -589,23 +609,15 @@ export default function GoodTimesApp(){
             </div>
             </div>
           </div>
-
-          {/* ── Sponsor break ── */}
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
-
-          {/* ── Trending — horizontal scroll carousel — DIFFERENT from realm grid ── */}
-          {(()=>{
-            const shownIds=new Set((realmEvents.length>0?realmEvents:upcoming).slice(0,4).map(e=>e.id));
-            const trendPool=(featured.length>0?featured:upcoming).filter(e=>!shownIds.has(e.id));
-            return trendPool.length>0&&(<>
+          {/* Trending carousel */}
+          {sec2.length>0&&(<>
           <SectionHead t="TRENDING" icon={"\u{1F525}"} color={"#FF6B6B"} action={{l:"See All",fn:()=>navigate("explore")}}/>
           <div style={{display:"flex",gap:12,overflowX:"auto",padding:"0 16px",marginBottom:16,scrollSnapType:"x mandatory"}}>
-            {trendPool.slice(0,6).map((e,i)=>{
-              const g=gt[e.brand]?.c||C.gold;
-              return(
+            {sec2.map(e=>{const g=gt[e.brand]?.c||C.gold;return(
                 <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,flexShrink:0,width:200,padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:14,scrollSnapAlign:"start",border:`1px solid ${g}20`}}>
                   <div style={{height:120,position:"relative",overflow:"hidden"}}>
-                    <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover",}} loading="lazy"/>
+                    <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
                     <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 65%,rgba(6,6,12,0.5) 100%)"}}/>
                     <div style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)",borderRadius:6,padding:"3px 8px",fontSize:9,color:g,fontWeight:700,border:`1px solid ${g}30`}}>{e.brand}</div>
                     <div style={{position:"absolute",bottom:8,left:10,right:10,textShadow:"0 1px 4px rgba(0,0,0,0.8),0 0 12px rgba(0,0,0,0.5)"}}>
@@ -614,26 +626,17 @@ export default function GoodTimesApp(){
                     </div>
                   </div>
                 </button>
-              );
-            })}
+            )})}
           </div>
-          </>);
-          })()}
-
-          {/* ── Featured Picks — large hero cards — UNIQUE from above sections ── */}
-          {(()=>{
-            const shownIds=new Set([...(realmEvents.length>0?realmEvents:upcoming).slice(0,4).map(e=>e.id),...(featured.length>0?featured:upcoming).slice(0,6).map(e=>e.id)]);
-            const featPool=upcoming.filter(e=>!shownIds.has(e.id));
-            return featPool.length>0&&(<>
+          </>)}
+          {/* Featured Picks */}
+          {sec3.length>0&&(<>
           <SectionHead t="FEATURED PICKS" icon={"\u2726"} color={C.gold}/>
           <div style={{padding:"0 16px",marginBottom:16}}>
-            {featPool.slice(0,2).map((e,i)=>{
-              const g=gt[e.brand]?.c||C.gold;
-              const dt=e.date?new Date(e.date+"T12:00:00"):null;
-              return(
+            {sec3.map(e=>{const g=gt[e.brand]?.c||C.gold;const dt=e.date?new Date(e.date+"T12:00:00"):null;return(
                 <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:16,marginBottom:12,position:"relative",border:`1px solid ${g}20`,boxShadow:`0 4px 20px rgba(0,0,0,0.3)`}}>
                   <div style={{height:160,position:"relative",overflow:"hidden"}}>
-                    <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover",}} loading="lazy"/>
+                    <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
                     <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 65%,rgba(6,6,12,0.5) 100%)"}}/>
                     <div style={{position:"absolute",top:12,left:14,display:"flex",alignItems:"center",gap:6}}>
                       <div style={{width:6,height:6,borderRadius:99,background:g,boxShadow:`0 0 8px ${g}`}}/>
@@ -649,45 +652,19 @@ export default function GoodTimesApp(){
                     </div>
                   </div>
                 </button>
-              );
-            })}
+            )})}
           </div>
-          </>);
-          })()}
-
-          {/* ── Sponsor break 2 ── */}
+          </>)}
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
-
-          {/* ── Upcoming — grid — UNIQUE from all above sections ── */}
-          {(()=>{
-            const shownIds=new Set([
-              ...(realmEvents.length>0?realmEvents:upcoming).slice(0,4).map(e=>e.id),
-              ...(featured.length>0?featured:upcoming).slice(0,6).map(e=>e.id),
-              ...upcoming.slice(0,8).map(e=>e.id)
-            ]);
-            const upPool=upcoming.filter((_,i)=>i>=8);
-            return upPool.length>0&&(<>
+          {/* Upcoming */}
+          {sec4.length>0&&(<>
           <SectionHead t="UPCOMING" icon={"\u{1F51C}"} color={C.a3} action={{l:"See All",fn:()=>navigate("calendar")}}/>
           <div style={{padding:"0 16px",marginBottom:16}}>
-            <EventGrid items={upPool} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
+            <EventGrid items={sec4} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
           </div>
+          </>)}
           </>);
           })()}
-
-          {/* ── Quick Links bar ── */}
-          <div style={{padding:"0 16px",marginBottom:16}}>
-            <div style={{display:"flex",gap:8}}>
-              {[{l:"Plan My Night",icon:"\u2728",fn:()=>navigate("planforme"),c:"#B86BFF"},{l:"Explore All",icon:"\u{1F30D}",fn:()=>navigate("explore"),c:"#6BB8FF"},{l:"My Vault",icon:"\u{1F512}",fn:()=>navigate("vault"),c:C.gold}].map(q=>(
-                <button key={q.l} onClick={q.fn} style={{...V(false),flex:1,padding:"14px 8px",border:`1px solid ${q.c}25`,borderRadius:12,textAlign:"center",cursor:"pointer",fontFamily:F.f,background:`linear-gradient(135deg,${q.c}25,rgba(14,14,24,0.95))`}}>
-                  <div style={{fontSize:18,marginBottom:4}}>{q.icon}</div>
-                  <div style={{fontSize:10,fontWeight:600,color:q.c,letterSpacing:.5}}>{q.l}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Final sponsor ── */}
-          <div style={{padding:"0 16px",marginBottom:14}}><SponsorBanner/></div>
         </div>
       </ScrollWrap>
     );
