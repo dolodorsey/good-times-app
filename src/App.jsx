@@ -61,7 +61,7 @@ const Ne={
   // Browse images — DIFFERENT from explore
   br:{jki:"https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400",nl:"https://images.unsplash.com/photo-1545128485-c400e7702796?w=400",lm:"https://images.unsplash.com/photo-1501612780327-45045538702b?w=400",sp:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400",ms:"https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400",gm:"https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400"},
   city:{
-    Atlanta:{day:"https://images.unsplash.com/photo-1575917649243-4e498e510c69?w=900",night:"https://images.unsplash.com/photo-1570744080498-4c76bfdd1773?w=900"},
+    Atlanta:{day:"/city-atlanta.png",night:"/city-atlanta.png"},
     Houston:{day:"https://images.unsplash.com/photo-1530089711124-9ca31fb9e863?w=900",night:"https://images.unsplash.com/photo-1548260465-1adda34ebbe7?w=900"},
     "Los Angeles":{day:"https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=900",night:"https://images.unsplash.com/photo-1515896769750-31548aa180ed?w=900"},
     Charlotte:{day:"https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?w=900",night:"https://images.unsplash.com/photo-1605885996758-49b3e33c612d?w=900"},
@@ -608,8 +608,23 @@ export default function GoodTimesApp(){
           </div>
           {/* ═══ ALL EVENT SECTIONS — single-pass dedup, NO REPEATS ═══ */}
           {(()=>{
-            const shown=new Set();
-            const mark=(items,max)=>{const r=items.filter(e=>!shown.has(e.id)).slice(0,max);r.forEach(e=>shown.add(e.id));return r};
+            const shownIds=new Set();
+            const shownTitles=new Set();
+            // Mark: skip if id OR title already shown (REMIX May 2 and REMIX Jul 11 = same title = only show once)
+            const mark=(items,max)=>{
+              const r=[];
+              for(const e of items){
+                if(shownIds.has(e.id))continue;
+                // For recurring events (same title, different dates), only show the NEXT occurrence
+                const titleKey=e.title?.replace(/\s*[-—]\s*.*/,"").trim()||e.id;
+                if(shownTitles.has(titleKey))continue;
+                r.push(e);
+                shownIds.add(e.id);
+                shownTitles.add(titleKey);
+                if(r.length>=max)break;
+              }
+              return r;
+            };
             // Section 1: Tonight/Today/This Week grid
             const realmPool=realmEvents.length>0?realmEvents:upcoming;
             const sec1=mark(realmPool,4);
