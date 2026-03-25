@@ -74,10 +74,13 @@ const Ne={
 const gt={REMIX:{c:"#FF6B6B"},"TASTE OF ART":{c:"#E8A0BF"},NOIR:{c:"#D4A853"},"WRST BHVR":{c:"#FFD700"},PAPARAZZI:{c:"#FF69B4"},"GANGSTA GOSPEL":{c:"#9B59B6"},"SUNDAY'S BEST":{c:"#87CEEB"},PAWCHELLA:{c:"#90EE90"},"BEAUTY & THE BEAST":{c:"#FFD700"},"BLACK BALL":{c:"#888"},"SNOW BALL":{c:"#A8D8FF"},"NO SECTIONS PARTY":{c:"#FF6B6B"},"MONSTER'S BALL":{c:"#8B0000"},"NAPKIN WARS":{c:"#FFB86B"},"FOREVER FUTBOL":{c:"#00A651"},"THE KULTURE":{c:"#B86BFF"},"UNDERGROUND KING":{c:"#D4A853"},STELLA:{c:"#E8A0BF"},CRVNGS:{c:"#FFB86B"},"PARKING LOT PIMPIN":{c:"#FF6B6B"},"WINTER WONDERLAND":{c:"#A8D8FF"},"SHUT UP & DANCE":{c:"#FF69B4"},"SECRET SOCIETY":{c:"#D4A853"},"SOUL SESSIONS":{c:"#9B59B6"},"BLOCK PARTY":{c:"#6BFFB8"},HUGLIFE:{c:"#FF6B6B"},"FOOD TRUCK FESTIVAL":{c:"#FFB86B"}};
 
 const wn=e=>{
-  // Priority: 1) DB image_url  2) Legacy image_url  3) Brand-indexed fallback
+  // Priority: 1) DB image_url  2) Legacy image_url  3) City-appropriate Gemini image
   if(e?.image_url) return e.image_url;
-  const t={REMIX:0,"TASTE OF ART":1,NOIR:2,"WRST BHVR":3,"GANGSTA GOSPEL":4,"SECRET SOCIETY":5,"SHUT UP & DANCE":6,"BLACK BALL":7,"SOUL SESSIONS":0,"THE KULTURE":1,"UNDERGROUND KING":2,CRVNGS:3,"BLOCK PARTY":4,"PARKING LOT PIMPIN":5,"FOREVER FUTBOL":6,"BEAUTY & THE BEAST":7,"MONSTER'S BALL":2,"SNOW BALL":5,HUGLIFE:3};
-  return Ne.v[t[e?.brand]??(e?.id?.toString().charCodeAt(0)%8)]||Ne.hero;
+  // For events without images, use the city Gemini images (these are real ATL scenes, not random stock)
+  const cityFallbacks=["/city-atlanta.png","/city-atlanta-night.png"];
+  // Use a hash of the event id/title to pick consistently but differently per event
+  const hash=(e?.title||e?.id||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0);
+  return cityFallbacks[hash%cityFallbacks.length]||Ne.hero;
 };
 
 // Cities/Teams — REAL LOGOS via ESPN CDN
@@ -355,8 +358,15 @@ export default function GoodTimesApp(){
       // TIER 2a: City events (scraped concerts, festivals, activations)
       const cityEvts=await khgF("gt_city_events?select=id,event_name,city_key,event_type,venue_name,start_date,start_time,ticket_url,organizer,image_url,is_free&start_date=gte."+today+"&status=in.(active,confirmed)&order=start_date.asc&limit=200");
 
-      // TIER 2b: Weekly venue happenings (tonight's programming)
+      // TIER 2b: Weekly venue happenings (tonight's programming) — with venue details
       const happenings=await khgF("gt_venue_happenings?select=id,venue_id,city_key,day_of_week,happening_name,happening_type,time_slot,start_time,description,priority_score&is_active=eq.true&day_of_week=eq."+todayDay+"&order=priority_score.desc&limit=50");
+      // Pull venue details (name + hero_image) for happenings
+      const venueIds=[...new Set(happenings.map(h=>h.venue_id).filter(Boolean))];
+      let venueMap={};
+      if(venueIds.length>0){
+        const venueData=await khgF("gt_venues?select=id,name,hero_image,neighborhood&id=in.("+venueIds.join(",")+")");
+        venueData.forEach(v=>{venueMap[v.id]=v});
+      }
 
       // TIER 1 legacy nightlife (always-on ATL content)
       const legacy=await sbF("events?select=*&order=date.asc&limit=100");
@@ -399,21 +409,25 @@ export default function GoodTimesApp(){
         status:"upcoming"
       }));
 
-      // === MAP TIER 2b: Tonight's happenings ===
-      const hapMapped=happenings.map(e=>({
-        id:"hap-"+e.id,
-        title:e.happening_name,
-        brand:e.happening_type==="recurring_night"?"NIGHTLIFE":e.happening_type==="live_music"?"LIVE MUSIC":e.happening_type==="brunch_party"?"DAY PARTY":"NIGHTLIFE",
-        city:CITY_KEY_MAP[e.city_key]||e.city_key,
-        date:today,
-        time:e.start_time||"22:00",
-        venue:e.description?.split(".")[0]||"",
-        category:"nightlife",
-        is_featured:e.priority_score>=9,
-        display_priority:35,
-        source:"happening",
-        status:"tonight"
-      }));
+      // === MAP TIER 2b: Tonight's happenings with real venue photos ===
+      const hapMapped=happenings.map(e=>{
+        const v=venueMap[e.venue_id]||{};
+        return {
+          id:"hap-"+e.id,
+          title:e.happening_name,
+          brand:v.name||"NIGHTLIFE",
+          city:CITY_KEY_MAP[e.city_key]||e.city_key,
+          date:today,
+          time:e.start_time||"22:00",
+          venue:v.name||(e.description?.split(".")[0]||""),
+          category:"nightlife",
+          is_featured:e.priority_score>=9,
+          image_url:v.hero_image||null,
+          display_priority:e.priority_score>=9?8:35,
+          source:"happening",
+          status:"tonight"
+        };
+      });
 
       // === MAP TIER 1 legacy ===
       const legacyMapped=legacy.map(e=>({
@@ -625,16 +639,22 @@ export default function GoodTimesApp(){
               }
               return r;
             };
-            // Section 1: Tonight/Today/This Week grid
+            // Section 1: Tonight — best happenings + tonight events mixed
             const realmPool=realmEvents.length>0?realmEvents:upcoming;
             const sec1=mark(realmPool,4);
-            // Section 2: Trending — OUR events by priority, skip what's shown
-            const trendSrc=upcoming.filter(e=>e.source==="huglife");
-            const sec2=mark(trendSrc.length>0?trendSrc:upcoming,6);
-            // Section 3: Featured — next best OUR events
-            const featSrc=upcoming.filter(e=>e.source==="huglife");
-            const sec3=mark(featSrc,2);
-            // Section 4: Upcoming — everything else
+            // Section 2: Trending — BEST upcoming across ALL sources, events WITH images first
+            const trendPool=[...upcoming].sort((a,b)=>{
+              // Events with real images rank higher
+              const aImg=a.image_url?0:1;
+              const bImg=b.image_url?0:1;
+              if(aImg!==bImg)return aImg-bImg;
+              return(a.display_priority||50)-(b.display_priority||50);
+            });
+            const sec2=mark(trendPool,6);
+            // Section 3: Featured — only events that HAVE real graphics (no fakes)
+            const featPool=upcoming.filter(e=>e.image_url);
+            const sec3=mark(featPool,2);
+            // Section 4: Coming Up — everything else, mixed from all sources
             const sec4=mark(upcoming,6);
             return(<>
           {/* Tonight grid */}
