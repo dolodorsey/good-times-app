@@ -368,6 +368,9 @@ export default function GoodTimesApp(){
         venueData.forEach(v=>{venueMap[v.id]=v});
       }
 
+      // TIER 2c: Tonight-eligible venues — clubs, rooftops, lounges with real photos (always show regardless of day)
+      const tonightVenues=await khgF("gt_venues?select=id,name,hero_image,neighborhood,category_key,google_rating,tonight_label,city_key&tonight_eligible=eq.true&hero_image=not.is.null&order=google_rating.desc.nullslast&limit=30");
+
       // TIER 1 legacy nightlife (always-on ATL content)
       const legacy=await sbF("events?select=*&order=date.asc&limit=100");
 
@@ -429,6 +432,23 @@ export default function GoodTimesApp(){
         };
       });
 
+      // === MAP TIER 2c: Tonight-eligible venues (clubs, rooftops, lounges with real photos) ===
+      const tonightMapped=tonightVenues.map(v=>({
+        id:"tv-"+v.id,
+        title:v.name,
+        brand:v.tonight_label||v.category_key?.replace(/_/g," ").toUpperCase()||"NIGHTLIFE",
+        city:CITY_KEY_MAP[v.city_key]||v.city_key,
+        date:today,
+        time:"22:00",
+        venue:v.neighborhood||"",
+        category:v.category_key||"nightlife",
+        is_featured:parseFloat(v.google_rating||0)>=4.5,
+        image_url:v.hero_image,
+        display_priority:parseFloat(v.google_rating||0)>=4.5?15:30,
+        source:"venue",
+        status:"tonight"
+      }));
+
       // === MAP TIER 1 legacy ===
       const legacyMapped=legacy.map(e=>({
         ...e,
@@ -437,8 +457,8 @@ export default function GoodTimesApp(){
         source:"legacy"
       }));
 
-      // Merge: OUR events → tonight's happenings → city events → legacy
-      setEvents([...mapped,...hapMapped,...cityMapped,...legacyMapped]);
+      // Merge: OUR events → tonight happenings → tonight venues → city events → legacy
+      setEvents([...mapped,...hapMapped,...tonightMapped,...cityMapped,...legacyMapped]);
       setLoading(false);
     })();
   },[]);
