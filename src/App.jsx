@@ -744,8 +744,9 @@ export default function GoodTimesApp(){
             // Section 3: Featured — only events that HAVE real graphics (no fakes)
             const featPool=upcoming.filter(e=>e.image_url);
             const sec3=mark(featPool,2);
-            // Section 4: Coming Up — everything else, mixed from all sources
-            const sec4=mark(upcoming,6);
+            // Section 4: UPCOMING — Next KHG events only (curated, not all 47)
+            // Show max 4 nearest KHG events, deduped by title
+            const sec4=mark(upcoming.filter(e=>e.source==="huglife"),4);
             return(<>
           {/* Tonight grid */}
           {sec1.length>0&&(
@@ -828,13 +829,28 @@ export default function GoodTimesApp(){
           </div>
           </>)}
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
-          {/* Upcoming */}
+          {/* Upcoming KHG */}
           {sec4.length>0&&(<>
           <SectionHead t="UPCOMING" icon={"\u{1F51C}"} color={C.a3} action={{l:"See All",fn:()=>navigate("calendar")}}/>
           <div style={{padding:"0 16px",marginBottom:16}}>
-            <EventGrid items={sec4} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
+            <EventGrid items={sec4} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>
           </div>
           </>)}
+          {/* Happening in City — curated city events as clean list */}
+          {(()=>{
+            const weekEnd=new Date();weekEnd.setDate(weekEnd.getDate()+7);
+            const weekEndStr=weekEnd.toISOString().split("T")[0];
+            const cityDaily=events.filter(e=>e.source==="daily_event"&&e.date>=todayStr&&e.date<=weekEndStr&&(e.city===city.name||e.city==="TBA")).sort((a,b)=>a.date.localeCompare(b.date));
+            const seen=new Set();
+            const unique=cityDaily.filter(e=>{const k=e.title;if(seen.has(k))return false;seen.add(k);return true}).slice(0,6);
+            if(unique.length===0)return null;
+            return(<>
+              <SectionHead t={`HAPPENING IN ${city.name.toUpperCase()}`} icon={"\u{1F30D}"} color={C.a4} action={{l:"See All",fn:()=>navigate("calendar")}}/>
+              <div style={{padding:"0 16px",marginBottom:16}}>
+                {unique.map(e=><EventRow key={e.id} e={e} onClick={()=>{setDetail(e);navigate("detail")}}/>)}
+              </div>
+            </>);
+          })()}
           </>);
           })()}
         </div>
