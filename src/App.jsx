@@ -74,25 +74,24 @@ const Ne={
 const gt={REMIX:{c:"#FF6B6B"},"TASTE OF ART":{c:"#E8A0BF"},NOIR:{c:"#D4A853"},"WRST BHVR":{c:"#FFD700"},PAPARAZZI:{c:"#FF69B4"},"GANGSTA GOSPEL":{c:"#9B59B6"},"SUNDAY'S BEST":{c:"#87CEEB"},PAWCHELLA:{c:"#90EE90"},"BEAUTY & THE BEAST":{c:"#FFD700"},"BLACK BALL":{c:"#888"},"SNOW BALL":{c:"#A8D8FF"},"NO SECTIONS PARTY":{c:"#FF6B6B"},"MONSTER'S BALL":{c:"#8B0000"},"NAPKIN WARS":{c:"#FFB86B"},"FOREVER FUTBOL":{c:"#00A651"},"THE KULTURE":{c:"#B86BFF"},"UNDERGROUND KING":{c:"#D4A853"},STELLA:{c:"#E8A0BF"},CRVNGS:{c:"#FFB86B"},"PARKING LOT PIMPIN":{c:"#FF6B6B"},"WINTER WONDERLAND":{c:"#A8D8FF"},"SHUT UP & DANCE":{c:"#FF69B4"},"SECRET SOCIETY":{c:"#D4A853"},"SOUL SESSIONS":{c:"#9B59B6"},"BLOCK PARTY":{c:"#6BFFB8"},HUGLIFE:{c:"#FF6B6B"},"FOOD TRUCK FESTIVAL":{c:"#FFB86B"}};
 
 const wn=e=>{
-  // Priority: 1) DB image_url  2) Official brand graphic  3) Category-matched fallback
+  // Priority: 1) DB image_url  2) Official brand graphic (brand_key ONLY)  3) Category-matched fallback
   if(e?.image_url) return e.image_url;
-  // Check brand_key against official brand images
-  const bk=e?.brand_key||e?.brand?.toLowerCase()?.replace(/[\s']+/g,"_")||"";
-  if(BRAND_IMAGES[bk]) return BRAND_IMAGES[bk];
-  // Category-matched fallbacks — pick based on event type/category, NOT random
+  // ONLY check brand_key — NOT e.brand (which is display text like "NOIR", "NIGHTLIFE", venue names, etc.)
+  if(e?.brand_key&&BRAND_IMAGES[e.brand_key]) return BRAND_IMAGES[e.brand_key];
+  // Category-matched fallbacks — pick based on event type/category
   const catImgs={
-    concert:"https://images.unsplash.com/photo-1429514513361-8fa32282fd5f?w=900",       // concert stage lights
-    music:"https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=900",          // live music venue
-    comedy:"https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=900",         // comedy mic stage
-    food:"https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=900",           // gourmet plated
-    festival:"https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=900",       // festival atmosphere
-    sports:"https://images.unsplash.com/photo-1517649763962-0c623066013b?w=900",         // stadium crowd
-    nightlife:"https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900",      // nightclub party
-    art:"https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=900",            // abstract art
-    theater:"https://images.unsplash.com/photo-1503095396549-807759245b35?w=900",        // theater stage
-    activation:"https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=900",     // brand event
-    exclusive:"https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=900",      // VIP luxury
-    default:"https://images.unsplash.com/photo-1496024840928-4c417adf211d?w=900"         // event atmosphere
+    concert:"https://images.unsplash.com/photo-1429514513361-8fa32282fd5f?w=900",
+    music:"https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=900",
+    comedy:"https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=900",
+    food:"https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=900",
+    festival:"https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=900",
+    sports:"https://images.unsplash.com/photo-1517649763962-0c623066013b?w=900",
+    nightlife:"https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900",
+    art:"https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=900",
+    theater:"https://images.unsplash.com/photo-1503095396549-807759245b35?w=900",
+    activation:"https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=900",
+    exclusive:"https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=900",
+    default:"https://images.unsplash.com/photo-1496024840928-4c417adf211d?w=900"
   };
   const cat=e?.category||e?.event_type||"default";
   return catImgs[cat]||catImgs.default;
@@ -561,7 +560,9 @@ export default function GoodTimesApp(){
       }));
 
       // === MAP TIER 1 legacy ===
-      const legacyMapped=legacy.map(e=>({
+      // Filter out legacy events whose brand matches a KHG brand_key (those are already in mapped[] from eventbrite_events)
+      const KHG_BRANDS=new Set(real.map(e=>e.brand_key).filter(Boolean));
+      const legacyMapped=legacy.filter(e=>!KHG_BRANDS.has(e.brand)).map(e=>({
         ...e,
         date:e.category==="nightlife"||e.category==="experience"?today:e.date,
         display_priority:45,
