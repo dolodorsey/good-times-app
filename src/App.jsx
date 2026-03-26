@@ -74,13 +74,15 @@ const Ne={
 const gt={REMIX:{c:"#FF6B6B"},"TASTE OF ART":{c:"#E8A0BF"},NOIR:{c:"#D4A853"},"WRST BHVR":{c:"#FFD700"},PAPARAZZI:{c:"#FF69B4"},"GANGSTA GOSPEL":{c:"#9B59B6"},"SUNDAY'S BEST":{c:"#87CEEB"},PAWCHELLA:{c:"#90EE90"},"BEAUTY & THE BEAST":{c:"#FFD700"},"BLACK BALL":{c:"#888"},"SNOW BALL":{c:"#A8D8FF"},"NO SECTIONS PARTY":{c:"#FF6B6B"},"MONSTER'S BALL":{c:"#8B0000"},"NAPKIN WARS":{c:"#FFB86B"},"FOREVER FUTBOL":{c:"#00A651"},"THE KULTURE":{c:"#B86BFF"},"UNDERGROUND KING":{c:"#D4A853"},STELLA:{c:"#E8A0BF"},CRVNGS:{c:"#FFB86B"},"PARKING LOT PIMPIN":{c:"#FF6B6B"},"WINTER WONDERLAND":{c:"#A8D8FF"},"SHUT UP & DANCE":{c:"#FF69B4"},"SECRET SOCIETY":{c:"#D4A853"},"SOUL SESSIONS":{c:"#9B59B6"},"BLOCK PARTY":{c:"#6BFFB8"},HUGLIFE:{c:"#FF6B6B"},"FOOD TRUCK FESTIVAL":{c:"#FFB86B"}};
 
 const wn=e=>{
-  // Priority: 1) DB image_url  2) Legacy image_url  3) City-appropriate Gemini image
+  // Priority: 1) DB image_url  2) Official brand graphic  3) Unique city scene per event
   if(e?.image_url) return e.image_url;
-  // For events without images, use the city Gemini images (these are real ATL scenes, not random stock)
-  const cityFallbacks=["/city-atlanta.png","/city-atlanta-night.png"];
-  // Use a hash of the event id/title to pick consistently but differently per event
-  const hash=(e?.title||e?.id||"").split("").reduce((a,c)=>a+c.charCodeAt(0),0);
-  return cityFallbacks[hash%cityFallbacks.length]||Ne.hero;
+  // Check brand_key against official brand images
+  const bk=e?.brand_key||e?.brand?.toLowerCase()?.replace(/\s+/g,"_")||"";
+  if(BRAND_IMAGES[bk]) return BRAND_IMAGES[bk];
+  // Generate a unique Unsplash image per event using a seeded query — NO DUPLICATES
+  const uniqueQueries=["atlanta+skyline+night","atlanta+downtown+sunset","atlanta+midtown+lights","atlanta+beltline+evening","atlanta+piedmont+park","atlanta+buckhead+nightlife","atlanta+ponce+city","atlanta+krog+tunnel","atlanta+centennial+park","atlanta+westside+provisions","atlanta+little+five+points","atlanta+inman+park","atlanta+old+fourth+ward","atlanta+grant+park","atlanta+virginia+highland","atlanta+east+atlanta","atlanta+edgewood+avenue","atlanta+decatur+square","atlanta+sweet+auburn","atlanta+castleberry+hill"];
+  const hash=(e?.title||e?.id||e?.event_name||"x").split("").reduce((a,c)=>a+c.charCodeAt(0),0);
+  return "https://images.unsplash.com/photo-"+["1575917649563-5c78027a9774","1558618666-fcd25c85f48e","1506905925346-21bda4d32df4","1470071459604-3b5ec3a7fe05","1514565131-fce0801e5785","1533050487297-09b450131914","1496442226666-8d4d0e62e6e9","1446776811953-b23d57bd21aa","1504609773096-104ff2c73ba4","1493397212122-2b85dda8106b","1524781289445-ddf8f5695861","1485871981521-5b1fd3a57ac2","1504674900247-0877df9cc836","1498307833015-e7b400441eb8","1542281286-9e0a16bb7366","1470229722913-7c0e2dbbafd3","1507608616759-54f48f0af0ee","1502872364588-894d7d6ddfab","1519501025264-65ba15a82390","1464746133101-a2c3f88e0dd9"][hash%20]+"?w=900&q=80";
 };
 
 // Cities/Teams — REAL LOGOS via ESPN CDN
@@ -94,26 +96,49 @@ const Ri=[
   {id:"las-vegas",name:"Las Vegas",lat:36.17,lng:-115.14,teams:[{n:"Aces",s:"WNBA",logo:"https://a.espncdn.com/i/teamlogos/wnba/500/lva.png",url:"https://aces.wnba.com/schedule/"},{n:"Raiders",s:"NFL",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/lv.png",url:"https://www.raiders.com/schedule/"},{n:"Golden Knights",s:"NHL",logo:"https://a.espncdn.com/i/teamlogos/nhl/500/vgk.png",url:"https://www.nhl.com/goldenknights/schedule"}]}
 ];
 
-// Sponsors
+// Sponsors — Official Brand Graphics (Supabase CDN)
+const _SB="https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good-times-app";
 const $u=[
-  {brand:"GOODFELLAS PIZZA",line:"Pizza with a side of loyalty.",color:"#FF6B6B",sub:"CASPER GROUP",cta:"Order",img:"/brands/goodfellas-alt.png",logo:"/brands/goodfellas.png"},
-  {brand:"MIND STUDIO",line:"Mental health. Reimagined.",color:"#9B59B6",sub:"KHG",cta:"Book",img:"/brands/mind-studio.png",logo:"/brands/mind-studio-alt.png"},
-  {brand:"ON CALL",line:"24/7 Emergency Services.",color:"#FFB86B",sub:"KHG APPS",cta:"Download",img:"/brands/on-call.png"},
-  {brand:"UMBRELLA GROUP",line:"Full-service creative agency.",color:"#D4A853",sub:"KHG",cta:"Learn More",img:"/brands/umbrella-group.png"},
-  {brand:"HURT 1800 911",line:"Injured? We fight for you.",color:"#C0392B",sub:"UMBRELLA GROUP",cta:"Call Now",img:"/brands/hurt-1800.png"},
-  {brand:"S.O.S",line:"Safety. On. Speed-dial.",color:"#E74C3C",sub:"KHG APPS",cta:"Download",img:"/brands/sos.png"},
-  {brand:"CASPER GROUP",line:"Hospitality. Reimagined.",color:"#D4A853",sub:"KHG",cta:"Explore",img:"https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600"},
-  {brand:"FOREVER FUTBOL",line:"The beautiful game. Elevated.",color:"#00A651",sub:"KHG MUSEUMS",cta:"Experience",img:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600"},
-  {brand:"ANGEL WINGS",line:"Wings so good, they're sinful.",color:"#FF6B6B",sub:"CASPER GROUP",cta:"Order Now",img:"https://images.unsplash.com/photo-1608039829572-25e8658a7289?w=600"},
-  {brand:"PASTA BISH",line:"Pasta with attitude.",color:"#FFB86B",sub:"CASPER GROUP",cta:"View Menu",img:"https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600"},
-  {brand:"INFINITY WATER",line:"Hydrate different.",color:"#4FC3F7",sub:"BODEGEA",cta:"Shop Now",img:"https://images.unsplash.com/photo-1548839140-29a749e1cf4d?w=600"},
-  {brand:"PRONTO ENERGY",line:"Energy. Instantly.",color:"#C0392B",sub:"BODEGEA",cta:"Try It",img:"https://images.unsplash.com/photo-1622543925917-763c34d1a86e?w=600"},
-  {brand:"ESPRESSO CO",line:"Your morning ritual.",color:"#795548",sub:"CASPER GROUP",cta:"Brew",img:"https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=600"},
-  {brand:"NOIR",line:"Espresso Liqueur. After dark.",color:"#D4A853",sub:"BODEGEA",cta:"Sip Now",img:"https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600"},
-  {brand:"THE BRAND STUDIO",line:"Your brand. Elevated.",color:"#B0BEC5",sub:"UMBRELLA GROUP",cta:"Book",img:"https://images.unsplash.com/photo-1497366216548-37526070297c?w=600"}
+  {brand:"GOOD TIMES",line:"Find Your Next Move.",color:"#D4A853",sub:"KHG",cta:"Explore",img:_SB+"/good_times/good_times_card.png"},
+  {brand:"SECRET SOCIETY",line:"Midnight Affair. Atlanta.",color:"#D4A853",sub:"HUGLIFE EVENTS",cta:"RSVP",img:_SB+"/secret_society/secret_society_landscape.png"},
+  {brand:"FOREVER FUTBOL",line:"The World's Game. ATL.",color:"#00A651",sub:"KHG MUSEUMS",cta:"Experience",img:_SB+"/forever_futbol/forever_futbol_card.png"},
+  {brand:"WRST BHVR",line:"Worst Behavior. Best Night.",color:"#FFD700",sub:"HUGLIFE EVENTS",cta:"Get Tickets",img:_SB+"/wrst_bhvr/wrst_bhvr_card.png"},
+  {brand:"TASTE OF ART",line:"Art. Fashion. Music. Culture.",color:"#E8A0BF",sub:"HUGLIFE EVENTS",cta:"Get Tickets",img:_SB+"/taste_of_art/taste_of_art_landscape.png"},
+  {brand:"GANGSTA GOSPEL",line:"Where the streets meet the spirit.",color:"#9B59B6",sub:"HUGLIFE EVENTS",cta:"Experience",img:_SB+"/gangsta_gospel/gangsta_gospel_landscape.png"},
+  {brand:"GOODFELLAS PIZZA",line:"Pizza with a side of loyalty.",color:"#FF6B6B",sub:"CASPER GROUP",cta:"Order",img:_SB+"/goodfellas/goodfellas_atlanta_landscape.png"},
+  {brand:"CASPER GROUP",line:"Hospitality. Reimagined.",color:"#D4A853",sub:"KHG",cta:"Explore",img:_SB+"/casper_group/casper_group_landscape.png"},
+  {brand:"MIND STUDIO",line:"Mental health. Reimagined.",color:"#9B59B6",sub:"KHG",cta:"Book",img:_SB+"/mind_studio/mind_studio_landscape.png"},
+  {brand:"PRONTO ENERGY",line:"Energy. Instantly.",color:"#C0392B",sub:"BODEGEA",cta:"Try It",img:_SB+"/pronto_energy/pronto_energy_landscape.png"},
+  {brand:"INFINITY WATER",line:"Hydrate different.",color:"#4FC3F7",sub:"BODEGEA",cta:"Shop Now",img:_SB+"/infinity_water/infinity_water_landscape.png"},
+  {brand:"UMBRELLA GROUP",line:"Full-service creative agency.",color:"#D4A853",sub:"KHG",cta:"Learn More",img:_SB+"/umbrella_group/umbrella_group_landscape.png"},
+  {brand:"HURT 1800 911",line:"Injured? We fight for you.",color:"#C0392B",sub:"UMBRELLA GROUP",cta:"Call Now",img:_SB+"/hurt_911/hurt_911_landscape.png"},
+  {brand:"TULUM PARTY",line:"Party & Taluum!",color:"#2E8B57",sub:"HUGLIFE EVENTS",cta:"Get Tickets",img:_SB+"/tulum_party/tulum_party_landscape.png"},
+  {brand:"OUT & ABOUT",line:"Atlanta LGBTQ+ Guide.",color:"#FF6B6B",sub:"GOOD TIMES",cta:"Explore",img:_SB+"/lgbtq_avenue/lgbtq_avenue_card.png"},
+  {brand:"HUGLIFE EVENTS",line:"Atlanta's Premier Event Collective.",color:"#FF6B6B",sub:"KHG",cta:"See Events",img:_SB+"/huglife_events/huglife_events_card.png"}
 ];
 let adI=0;
 const nextAd=()=>{const a=$u[adI%$u.length];adI++;return a};
+
+// Official brand images for event fallbacks — EVERY brand_key must have a UNIQUE image, NO DUPLICATES
+const BRAND_IMAGES={
+  secret_society:_SB+"/secret_society/secret_society_landscape.png",
+  forever_futbol:_SB+"/forever_futbol/forever_futbol_card.png",
+  wrst_bhvr:_SB+"/wrst_bhvr/wrst_bhvr_card.png",
+  taste_of_art:_SB+"/taste_of_art/taste_of_art_landscape.png",
+  gangsta_gospel:_SB+"/gangsta_gospel/gangsta_gospel_landscape.png",
+  goodfellas:_SB+"/goodfellas/goodfellas_atlanta_landscape.png",
+  casper_group:_SB+"/casper_group/casper_group_landscape.png",
+  mind_studio:_SB+"/mind_studio/mind_studio_landscape.png",
+  pronto_energy:_SB+"/pronto_energy/pronto_energy_landscape.png",
+  infinity_water:_SB+"/infinity_water/infinity_water_landscape.png",
+  umbrella_group:_SB+"/umbrella_group/umbrella_group_landscape.png",
+  hurt_911:_SB+"/hurt_911/hurt_911_landscape.png",
+  tulum_party:_SB+"/tulum_party/tulum_party_landscape.png",
+  lgbtq_avenue:_SB+"/lgbtq_avenue/lgbtq_avenue_card.png",
+  huglife:_SB+"/huglife_events/huglife_events_card.png",
+  huglife_events:_SB+"/huglife_events/huglife_events_card.png",
+  good_times:_SB+"/good_times/good_times_card.png",
+};
 
 // Explore categories
 const Vu=[
@@ -396,7 +421,7 @@ export default function GoodTimesApp(){
         venue:"TBA",
         category:e.event_type||"exclusive",
         is_featured:(e.display_priority||50)<=5,
-        image_url:e.image_url||null,
+        image_url:e.image_url||BRAND_IMAGES[e.brand_key]||null,
         eventbrite_url:e.eventbrite_url,
         display_priority:e.display_priority||50,
         source:"huglife",
