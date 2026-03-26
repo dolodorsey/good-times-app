@@ -439,6 +439,7 @@ export default function GoodTimesApp(){
       }));
 
       // === MAP TIER 2d: Blog/influencer sourced daily events ===
+      // These ONLY show in the Dates tab, NOT on the home screen
       // Dedup: skip if same event_name+date already in shows or cityMapped
       const existingTitleDates=new Set([
         ...showsMapped.map(s=>s.title+"|"+s.date),
@@ -455,11 +456,11 @@ export default function GoodTimesApp(){
         time:TIME_SLOT_MAP[e.time_slot]||"TBA",
         venue:e.venue||"TBA",
         category:e.event_type||"event",
-        is_featured:e.relevance_score>=90,
+        is_featured:false,
         image_url:null,
-        display_priority:Math.max(10, 50-Math.floor((e.relevance_score||50)/3)),
+        display_priority:99,
         source:"daily_event",
-        status:"upcoming",
+        status:"dates_only",
         is_free:e.is_free||false,
         vibe_tags:e.vibe_tags||[],
         description:e.description||""
@@ -535,13 +536,7 @@ export default function GoodTimesApp(){
   // CHANGE #1: Realm-filtered events — TODAY / TONIGHT / THIS WEEK show DIFFERENT results
   const todayStr=new Date().toISOString().split("T")[0];
   const realmEvents=useMemo(()=>{
-    const sorted=cityEvents.filter(e=>e.date>=todayStr).sort((a,b)=>{
-      // KHG events ALWAYS surface first within any realm
-      const aKHG=a.source==="huglife"?0:1;
-      const bKHG=b.source==="huglife"?0:1;
-      if(aKHG!==bKHG)return aKHG-bKHG;
-      return a.date.localeCompare(b.date)||(a.display_priority||50)-(b.display_priority||50);
-    });
+    const sorted=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event").sort((a,b)=>a.date.localeCompare(b.date));
     if(realm==="today"){
       // Only events happening TODAY
       return sorted.filter(e=>e.date===todayStr);
@@ -564,8 +559,9 @@ export default function GoodTimesApp(){
 
   // Upcoming — CONCIERGE: best content from ALL sources interleaved
   // KHG events (source: huglife) ALWAYS shown first, then sorted by image/priority/date
+  // daily_event source is EXCLUDED — those only show in the Dates tab
   const upcoming=useMemo(()=>{
-    const future=cityEvents.filter(e=>e.date>=todayStr);
+    const future=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event");
     return future.sort((a,b)=>{
       // KHG events ALWAYS come first
       const aKHG=a.source==="huglife"?0:1;
@@ -584,7 +580,7 @@ export default function GoodTimesApp(){
     });
   },[cityEvents,todayStr]);
   const featured=useMemo(()=>upcoming.filter(e=>e.image_url),[upcoming]);
-  const allUpcoming=useMemo(()=>events.filter(e=>e.date>=todayStr).sort((a,b)=>(a.display_priority||50)-(b.display_priority||50)||a.date.localeCompare(b.date)),[events,todayStr]);
+  const allUpcoming=useMemo(()=>events.filter(e=>e.date>=todayStr&&e.source!=="daily_event").sort((a,b)=>(a.display_priority||50)-(b.display_priority||50)||a.date.localeCompare(b.date)),[events,todayStr]);
 
   const toggleSave=id=>{
     const has=saved.includes(id);
