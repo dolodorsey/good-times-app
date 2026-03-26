@@ -361,6 +361,9 @@ export default function GoodTimesApp(){
       // TIER 2a-legacy: Old scraped city events (will phase out as gt_shows grows)
       const cityEvts=await khgF("gt_city_events?select=id,event_name,city_key,event_type,venue_name,start_date,start_time,ticket_url,organizer,image_url,is_free&start_date=gte."+today+"&status=in.(active,confirmed)&order=start_date.asc&limit=200");
 
+      // TIER 2d: Blog/influencer sourced daily events (curated city happenings)
+      const dailyEvts=await khgF("gt_daily_events?select=id,event_name,city_key,event_date,day_of_week,venue,event_type,time_slot,description,source_handle,is_free,vibe_tags,relevance_score,is_verified&event_date=gte."+today+"&is_verified=eq.true&order=event_date.asc,relevance_score.desc&limit=200");
+
       // TIER 2b: Weekly venue happenings (tonight's programming) — with venue details
       const happenings=await khgF("gt_venue_happenings?select=id,venue_id,city_key,day_of_week,happening_name,happening_type,time_slot,start_time,description,priority_score&is_active=eq.true&day_of_week=eq."+todayDay+"&order=priority_score.desc&limit=50");
       // Pull venue details (name + hero_image) for happenings
@@ -435,6 +438,33 @@ export default function GoodTimesApp(){
         status:"upcoming"
       }));
 
+      // === MAP TIER 2d: Blog/influencer sourced daily events ===
+      // Dedup: skip if same event_name+date already in shows or cityMapped
+      const existingTitleDates=new Set([
+        ...showsMapped.map(s=>s.title+"|"+s.date),
+        ...cityMapped.map(s=>s.title+"|"+s.date)
+      ]);
+      const TIME_SLOT_MAP={afternoon:"14:00",evening:"20:00",late_night:"23:00",all_day:"12:00"};
+      const DAILY_TYPE_LABELS={concert:"CONCERT",nightlife:"NIGHTLIFE",food_event:"FOOD & DRINK",art:"ART & CULTURE",day_party:"DAY PARTY",community:"COMMUNITY",popup:"POP-UP"};
+      const dailyMapped=dailyEvts.filter(e=>!existingTitleDates.has(e.event_name+"|"+e.event_date)).map(e=>({
+        id:"daily-"+e.id,
+        title:e.event_name,
+        brand:DAILY_TYPE_LABELS[e.event_type]||e.event_type?.replace(/_/g," ").toUpperCase()||"EVENT",
+        city:CITY_KEY_MAP[e.city_key]||e.city_key,
+        date:e.event_date,
+        time:TIME_SLOT_MAP[e.time_slot]||"TBA",
+        venue:e.venue||"TBA",
+        category:e.event_type||"event",
+        is_featured:e.relevance_score>=90,
+        image_url:null,
+        display_priority:Math.max(10, 50-Math.floor((e.relevance_score||50)/3)),
+        source:"daily_event",
+        status:"upcoming",
+        is_free:e.is_free||false,
+        vibe_tags:e.vibe_tags||[],
+        description:e.description||""
+      }));
+
       // === MAP TIER 2b: Tonight's happenings with real venue photos ===
       const hapMapped=happenings.map(e=>{
         const v=venueMap[e.venue_id]||{};
@@ -480,8 +510,9 @@ export default function GoodTimesApp(){
         source:"legacy"
       }));
 
-      // Merge: OUR events → in-house shows → tonight happenings → tonight venues → city events → legacy
-      setEvents([...mapped,...showsMapped,...hapMapped,...tonightMapped,...cityMapped,...legacyMapped]);
+      // Merge: OUR events → in-house shows → tonight happenings → tonight venues → daily blog events → city events → legacy
+      // KHG events (mapped) always come first due to source:"huglife" and low display_priority
+      setEvents([...mapped,...showsMapped,...hapMapped,...tonightMapped,...dailyMapped,...cityMapped,...legacyMapped]);
       setLoading(false);
     })();
   },[]);
@@ -504,7 +535,13 @@ export default function GoodTimesApp(){
   // CHANGE #1: Realm-filtered events — TODAY / TONIGHT / THIS WEEK show DIFFERENT results
   const todayStr=new Date().toISOString().split("T")[0];
   const realmEvents=useMemo(()=>{
-    const sorted=cityEvents.filter(e=>e.date>=todayStr).sort((a,b)=>a.date.localeCompare(b.date));
+    const sorted=cityEvents.filter(e=>e.date>=todayStr).sort((a,b)=>{
+      // KHG events ALWAYS surface first within any realm
+      const aKHG=a.source==="huglife"?0:1;
+      const bKHG=b.source==="huglife"?0:1;
+      if(aKHG!==bKHG)return aKHG-bKHG;
+      return a.date.localeCompare(b.date)||(a.display_priority||50)-(b.display_priority||50);
+    });
     if(realm==="today"){
       // Only events happening TODAY
       return sorted.filter(e=>e.date===todayStr);
@@ -526,11 +563,15 @@ export default function GoodTimesApp(){
   },[cityEvents,realm,todayStr]);
 
   // Upcoming — CONCIERGE: best content from ALL sources interleaved
-  // Sort by: has image? → display_priority → date proximity
+  // KHG events (source: huglife) ALWAYS shown first, then sorted by image/priority/date
   const upcoming=useMemo(()=>{
     const future=cityEvents.filter(e=>e.date>=todayStr);
     return future.sort((a,b)=>{
-      // Events with real images always rank higher
+      // KHG events ALWAYS come first
+      const aKHG=a.source==="huglife"?0:1;
+      const bKHG=b.source==="huglife"?0:1;
+      if(aKHG!==bKHG)return aKHG-bKHG;
+      // Events with real images rank higher
       const aImg=a.image_url?0:1;
       const bImg=b.image_url?0:1;
       if(aImg!==bImg)return aImg-bImg;
