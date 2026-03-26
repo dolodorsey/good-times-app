@@ -305,6 +305,7 @@ export default function GoodTimesApp(){
   const[loading,setLoading]=useState(true);
   const[detail,setDetail]=useState(null);
   const[realm,setRealm]=useState("tonight");
+  const[nowCat,setNowCat]=useState("all");
   const[teamSheet,setTeamSheet]=useState(null);
   const[toast,setToast]=useState(null);
   const[saved,setSaved]=useState([]);
@@ -535,14 +536,25 @@ export default function GoodTimesApp(){
 
   // CHANGE #1: Realm-filtered events — TODAY / TONIGHT / THIS WEEK show DIFFERENT results
   const todayStr=new Date().toISOString().split("T")[0];
+  // Category filter mapping for Now screen chips
+  const CAT_FILTER={
+    eat:["dining","restaurant","food_hall","brunch","bbq","seafood","steakhouse","food_event"],
+    drink:["bar","cocktail_bar","rooftop","brewery","wine_bar","lounge","hookah"],
+    music:["concert","jazz","live_music","karaoke","dj"],
+    goout:["nightlife","nightclub","day_party","party","entertainment","comedy"],
+    sports:["sports","sports_bar","game_day"]
+  };
   const realmEvents=useMemo(()=>{
-    const sorted=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event").sort((a,b)=>a.date.localeCompare(b.date));
+    let sorted=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event").sort((a,b)=>a.date.localeCompare(b.date));
+    // Apply category filter
+    if(nowCat!=="all"){
+      const cats=CAT_FILTER[nowCat]||[];
+      sorted=sorted.filter(e=>cats.some(c=>e.category?.includes(c)||e.brand?.toLowerCase().includes(c)));
+    }
     if(realm==="today"){
-      // Only events happening TODAY
       return sorted.filter(e=>e.date===todayStr);
     }
     if(realm==="tonight"){
-      // Events today with evening times (6pm+) or no specific time
       return sorted.filter(e=>{
         if(e.date!==todayStr)return false;
         if(!e.time)return true;
@@ -550,12 +562,11 @@ export default function GoodTimesApp(){
         return hr>=17;
       });
     }
-    // "week" — rest of the week
     const weekEnd=new Date();
     weekEnd.setDate(weekEnd.getDate()+(7-weekEnd.getDay()));
     const weekEndStr=weekEnd.toISOString().split("T")[0];
     return sorted.filter(e=>e.date>=todayStr&&e.date<=weekEndStr);
-  },[cityEvents,realm,todayStr]);
+  },[cityEvents,realm,todayStr,nowCat]);
 
   // Upcoming — CONCIERGE: best content from ALL sources interleaved
   // KHG events (source: huglife) ALWAYS shown first, then sorted by image/priority/date
@@ -706,8 +717,8 @@ export default function GoodTimesApp(){
           </div>
           {/* Category chips */}
           <div style={{padding:"0 16px",display:"flex",gap:6,overflowX:"auto",marginBottom:12}}>
-            {[{l:"\u{1F37D}\uFE0F Eat",c:"#FFB86B"},{l:"\u{1F378} Drink",c:"#C39BD3"},{l:"\u{1F3B5} Music",c:"#FF6B6B"},{l:"\u{1F319} Go Out",c:"#B86BFF"},{l:"\u{1F3DF}\uFE0F Sports",c:"#6BFFB8"},{l:"\u{1F3A8} Culture",c:"#E8A0BF"},{l:"\u{1F602} Comedy",c:"#FFD700"},{l:"\u{1F389} Festival",c:"#FF69B4"}].map(ch=>(
-              <button key={ch.l} onClick={()=>navigate("explore")} style={{...V(false),padding:"7px 14px",border:`1px solid ${ch.c}`,color:ch.c,fontSize:12,fontWeight:600,whiteSpace:"nowrap",flexShrink:0,borderRadius:8}}>{ch.l}</button>
+            {[{id:"all",l:"All",c:C.gold},{id:"eat",l:"\u{1F37D}\uFE0F Eat",c:"#FFB86B"},{id:"drink",l:"\u{1F378} Drink",c:"#C39BD3"},{id:"music",l:"\u{1F3B5} Music",c:"#FF6B6B"},{id:"goout",l:"\u{1F319} Go Out",c:"#B86BFF"},{id:"sports",l:"\u{1F3DF}\uFE0F Sports",c:"#6BFFB8"}].map(ch=>(
+              <button key={ch.id} onClick={()=>setNowCat(nowCat===ch.id?"all":ch.id)} style={{...V(nowCat===ch.id),padding:"7px 14px",border:`1px solid ${ch.c}`,color:nowCat===ch.id?"#0A0A0F":ch.c,background:nowCat===ch.id?ch.c:"transparent",fontSize:12,fontWeight:600,whiteSpace:"nowrap",flexShrink:0,borderRadius:8}}>{ch.l}</button>
             ))}
           </div>
           {/* ═══ ALL EVENT SECTIONS — single-pass dedup, NO REPEATS ═══ */}
@@ -729,9 +740,12 @@ export default function GoodTimesApp(){
               }
               return r;
             };
-            // Section 1: Tonight — best happenings + tonight events mixed
+            // Section 1: Tonight — ONLY events with real images go in the grid
             const realmPool=realmEvents.length>0?realmEvents:upcoming;
-            const sec1=mark(realmPool,4);
+            const realmWithImg=realmPool.filter(e=>e.image_url);
+            const realmNoImg=realmPool.filter(e=>!e.image_url);
+            const sec1=mark(realmWithImg,4);
+            const sec1list=mark(realmNoImg,4);
             // Section 2: Trending — BEST upcoming across ALL sources, events WITH images first
             const trendPool=[...upcoming].sort((a,b)=>{
               // Events with real images rank higher
@@ -756,6 +770,7 @@ export default function GoodTimesApp(){
                 <span style={{fontSize:11,letterSpacing:2.5,color:"#FF6B6B",fontWeight:700}}>{realm==="week"?"THIS WEEK":realm==="today"?"TODAY":"TONIGHT"}</span>
               </div>
               <EventGrid items={sec1} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>
+              {sec1list.length>0&&<div style={{marginTop:8}}>{sec1list.map(e=><EventRow key={e.id} e={e} onClick={()=>{setDetail(e);navigate("detail")}}/>)}</div>}
             </div>
           )}
           {/* Teams */}
