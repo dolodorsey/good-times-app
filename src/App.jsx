@@ -378,6 +378,9 @@ export default function GoodTimesApp(){
       // TIER 2c: Tonight-eligible venues — clubs, rooftops, lounges with real photos (always show regardless of day)
       const tonightVenues=await khgF("gt_venues?select=id,name,hero_image,neighborhood,category_key,google_rating,tonight_label,city_key&tonight_eligible=eq.true&hero_image=not.is.null&order=google_rating.desc.nullslast&limit=30");
 
+      // TIER 3: Sports games — real upcoming matchups with team logos
+      const sportsGames=await khgF("gt_sports_games?select=id,league,home_team,home_abbr,away_team,away_abbr,game_date,game_time,venue,city_key,status,home_logo,away_logo,is_home_game&game_date=gte."+today+"&status=eq.scheduled&order=game_date.asc&limit=30");
+
       // TIER 1 legacy nightlife (always-on ATL content)
       const legacy=await sbF("events?select=*&order=date.asc&limit=100");
 
@@ -512,9 +515,31 @@ export default function GoodTimesApp(){
         source:"legacy"
       }));
 
-      // Merge: OUR events → in-house shows → tonight happenings → tonight venues → daily blog events → city events → legacy
+      // === MAP TIER 3: Sports games with both team logos ===
+      const sportsMapped=sportsGames.map(g=>({
+        id:"game-"+g.id,
+        title:g.home_team+" vs "+g.away_team,
+        brand:g.league,
+        city:CITY_KEY_MAP[g.city_key]||g.city_key,
+        date:g.game_date,
+        time:g.game_time||"TBA",
+        venue:g.venue||"TBA",
+        category:"sports",
+        is_featured:false,
+        image_url:g.home_logo,
+        display_priority:20,
+        source:"sports_game",
+        status:"upcoming",
+        home_logo:g.home_logo,
+        away_logo:g.away_logo,
+        home_abbr:g.home_abbr,
+        away_abbr:g.away_abbr,
+        is_home_game:g.is_home_game
+      }));
+
+      // Merge: OUR events → in-house shows → tonight happenings → tonight venues → daily blog events → sports → city events → legacy
       // KHG events (mapped) always come first due to source:"huglife" and low display_priority
-      setEvents([...mapped,...showsMapped,...hapMapped,...tonightMapped,...dailyMapped,...cityMapped,...legacyMapped]);
+      setEvents([...mapped,...showsMapped,...hapMapped,...tonightMapped,...dailyMapped,...sportsMapped,...cityMapped,...legacyMapped]);
       setLoading(false);
     })();
   },[]);
@@ -797,6 +822,36 @@ export default function GoodTimesApp(){
             </div>
             </div>
           </div>
+          {/* Upcoming Games — real matchup data with team logos */}
+          {(()=>{
+            const games=events.filter(e=>e.source==="sports_game"&&e.date>=todayStr).slice(0,6);
+            if(games.length===0)return null;
+            return(<>
+              <SectionHead t="UPCOMING GAMES" icon={"\u{1F3C0}"} color={"#6BFFB8"}/>
+              <div style={{display:"flex",gap:10,overflowX:"auto",padding:"0 16px",marginBottom:16,scrollSnapType:"x mandatory"}}>
+                {games.map(g=>(
+                  <div key={g.id} style={{...K,flexShrink:0,width:180,padding:"12px",borderRadius:14,scrollSnapAlign:"start",border:"1px solid rgba(107,255,184,0.3)",background:"rgba(107,255,184,0.08)"}}>
+                    <div style={{fontSize:9,letterSpacing:1.5,color:"#6BFFB8",fontWeight:700,marginBottom:8,textAlign:"center"}}>{g.brand}</div>
+                    <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,marginBottom:8}}>
+                      <div style={{textAlign:"center"}}>
+                        <img src={g.home_logo} alt="" style={{width:36,height:36,objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none"}}/>
+                        <div style={{fontSize:10,fontWeight:700,color:"#fff",marginTop:2}}>{g.home_abbr}</div>
+                      </div>
+                      <div style={{fontSize:14,fontWeight:800,color:"rgba(255,255,255,0.4)"}}>vs</div>
+                      <div style={{textAlign:"center"}}>
+                        <img src={g.away_logo} alt="" style={{width:36,height:36,objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none"}}/>
+                        <div style={{fontSize:10,fontWeight:700,color:"#fff",marginTop:2}}>{g.away_abbr}</div>
+                      </div>
+                    </div>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontSize:10,color:"#FFFFFF"}}>{new Date(g.date+"T12:00:00").toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}</div>
+                      <div style={{fontSize:9,color:"rgba(255,255,255,0.6)"}}>{g.time} · {g.venue}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>);
+          })()}
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
           {/* Trending carousel */}
           {sec2.length>0&&(<>
