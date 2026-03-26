@@ -74,15 +74,28 @@ const Ne={
 const gt={REMIX:{c:"#FF6B6B"},"TASTE OF ART":{c:"#E8A0BF"},NOIR:{c:"#D4A853"},"WRST BHVR":{c:"#FFD700"},PAPARAZZI:{c:"#FF69B4"},"GANGSTA GOSPEL":{c:"#9B59B6"},"SUNDAY'S BEST":{c:"#87CEEB"},PAWCHELLA:{c:"#90EE90"},"BEAUTY & THE BEAST":{c:"#FFD700"},"BLACK BALL":{c:"#888"},"SNOW BALL":{c:"#A8D8FF"},"NO SECTIONS PARTY":{c:"#FF6B6B"},"MONSTER'S BALL":{c:"#8B0000"},"NAPKIN WARS":{c:"#FFB86B"},"FOREVER FUTBOL":{c:"#00A651"},"THE KULTURE":{c:"#B86BFF"},"UNDERGROUND KING":{c:"#D4A853"},STELLA:{c:"#E8A0BF"},CRVNGS:{c:"#FFB86B"},"PARKING LOT PIMPIN":{c:"#FF6B6B"},"WINTER WONDERLAND":{c:"#A8D8FF"},"SHUT UP & DANCE":{c:"#FF69B4"},"SECRET SOCIETY":{c:"#D4A853"},"SOUL SESSIONS":{c:"#9B59B6"},"BLOCK PARTY":{c:"#6BFFB8"},HUGLIFE:{c:"#FF6B6B"},"FOOD TRUCK FESTIVAL":{c:"#FFB86B"}};
 
 const wn=e=>{
-  // Priority: 1) DB image_url  2) Official brand graphic  3) Unique city scene per event
+  // Priority: 1) DB image_url  2) Official brand graphic  3) Category-matched fallback
   if(e?.image_url) return e.image_url;
   // Check brand_key against official brand images
-  const bk=e?.brand_key||e?.brand?.toLowerCase()?.replace(/\s+/g,"_")||"";
+  const bk=e?.brand_key||e?.brand?.toLowerCase()?.replace(/[\s']+/g,"_")||"";
   if(BRAND_IMAGES[bk]) return BRAND_IMAGES[bk];
-  // Generate a unique Unsplash image per event using a seeded query — NO DUPLICATES
-  const uniqueQueries=["atlanta+skyline+night","atlanta+downtown+sunset","atlanta+midtown+lights","atlanta+beltline+evening","atlanta+piedmont+park","atlanta+buckhead+nightlife","atlanta+ponce+city","atlanta+krog+tunnel","atlanta+centennial+park","atlanta+westside+provisions","atlanta+little+five+points","atlanta+inman+park","atlanta+old+fourth+ward","atlanta+grant+park","atlanta+virginia+highland","atlanta+east+atlanta","atlanta+edgewood+avenue","atlanta+decatur+square","atlanta+sweet+auburn","atlanta+castleberry+hill"];
-  const hash=(e?.title||e?.id||e?.event_name||"x").split("").reduce((a,c)=>a+c.charCodeAt(0),0);
-  return "https://images.unsplash.com/photo-"+["1575917649563-5c78027a9774","1558618666-fcd25c85f48e","1506905925346-21bda4d32df4","1470071459604-3b5ec3a7fe05","1514565131-fce0801e5785","1533050487297-09b450131914","1496442226666-8d4d0e62e6e9","1446776811953-b23d57bd21aa","1504609773096-104ff2c73ba4","1493397212122-2b85dda8106b","1524781289445-ddf8f5695861","1485871981521-5b1fd3a57ac2","1504674900247-0877df9cc836","1498307833015-e7b400441eb8","1542281286-9e0a16bb7366","1470229722913-7c0e2dbbafd3","1507608616759-54f48f0af0ee","1502872364588-894d7d6ddfab","1519501025264-65ba15a82390","1464746133101-a2c3f88e0dd9"][hash%20]+"?w=900&q=80";
+  // Category-matched fallbacks — pick based on event type/category, NOT random
+  const catImgs={
+    concert:"https://images.unsplash.com/photo-1429514513361-8fa32282fd5f?w=900",       // concert stage lights
+    music:"https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=900",          // live music venue
+    comedy:"https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=900",         // comedy mic stage
+    food:"https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=900",           // gourmet plated
+    festival:"https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=900",       // festival atmosphere
+    sports:"https://images.unsplash.com/photo-1517649763962-0c623066013b?w=900",         // stadium crowd
+    nightlife:"https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900",      // nightclub party
+    art:"https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=900",            // abstract art
+    theater:"https://images.unsplash.com/photo-1503095396549-807759245b35?w=900",        // theater stage
+    activation:"https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=900",     // brand event
+    exclusive:"https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=900",      // VIP luxury
+    default:"https://images.unsplash.com/photo-1496024840928-4c417adf211d?w=900"         // event atmosphere
+  };
+  const cat=e?.category||e?.event_type||"default";
+  return catImgs[cat]||catImgs.default;
 };
 
 // Cities/Teams — REAL LOGOS via ESPN CDN
@@ -119,8 +132,9 @@ const $u=[
 let adI=0;
 const nextAd=()=>{const a=$u[adI%$u.length];adI++;return a};
 
-// Official brand images for event fallbacks — EVERY brand_key must have a UNIQUE image, NO DUPLICATES
+// Official brand images for event fallbacks — EVERY brand_key has a UNIQUE, CONTEXT-MATCHED image
 const BRAND_IMAGES={
+  // === BRANDS WITH OFFICIAL UPLOADED GRAPHICS ===
   secret_society:_SB+"/secret_society/secret_society_landscape.png",
   forever_futbol:_SB+"/forever_futbol/forever_futbol_card.png",
   wrst_bhvr:_SB+"/wrst_bhvr/wrst_bhvr_card.png",
@@ -135,9 +149,23 @@ const BRAND_IMAGES={
   hurt_911:_SB+"/hurt_911/hurt_911_landscape.png",
   tulum_party:_SB+"/tulum_party/tulum_party_landscape.png",
   lgbtq_avenue:_SB+"/lgbtq_avenue/lgbtq_avenue_card.png",
-  huglife:_SB+"/huglife_events/huglife_events_card.png",
   huglife_events:_SB+"/huglife_events/huglife_events_card.png",
   good_times:_SB+"/good_times/good_times_card.png",
+  // === BRANDS WITHOUT GRAPHICS YET — context-matched Unsplash (each 100% unique) ===
+  black_ball:"https://images.unsplash.com/photo-1528495612343-9ca9f4a4de28?w=900",       // formal dark gala
+  block_party:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=900",      // outdoor festival crowd
+  cinco_de_mayo:"https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900",        // cocktail drinks / fiesta
+  crvngs:"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=900",               // gourmet food spread
+  kulture:"https://images.unsplash.com/photo-1556906781-9a412961c28c?w=900",              // sneakers / streetwear
+  monsters_ball:"https://images.unsplash.com/photo-1509557965875-b88c97052f0e?w=900",     // masquerade / halloween
+  parking_lot_pimpin:"https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=900",   // classic car show
+  snow_ball:"https://images.unsplash.com/photo-1482517967863-00e15c9b44be?w=900",         // winter holiday lights
+  soul_sessions:"https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=900",     // R&B live performance
+  underground_king:"https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?w=900",  // underground hip hop show
+  remix:"https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=900",             // DJ mixing / turntables
+  noir:"https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=900",              // dark cocktail bar / espresso liqueur
+  beauty_beast:"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=900",      // glam beauty / fashion
+  stella:"https://images.unsplash.com/photo-1516802273409-68526ee1bdd6?w=900",            // women celebrating / groove
 };
 
 // Explore categories
