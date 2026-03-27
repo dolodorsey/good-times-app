@@ -1043,14 +1043,14 @@ export default function GoodTimesApp(){
           </div>
           </>)}
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
-          {/* NIGHTLIFE — clubs, lounges, rooftops, bars open tonight */}
+          {/* NIGHTLIFE — real clubs and tonight's programming: Revel, Opium, Magic City, Compound, etc. */}
           {(()=>{
-            const nlPool=events.filter(e=>e.city===city.name&&(e.category||"").match(/nightclub|lounge|bar|rooftop|club|hookah|speakeasy|cocktail/)&&e.source!=="daily_event").slice(0,6);
+            const nlPool=events.filter(e=>e.city===city.name&&((e.category||"").match(/nightclub|lounge|club|hookah|speakeasy/)||(e.subcategory||"").match(/nightclub/i)||["Revel Atlanta","Opium","Magic City Atlanta","Compound Atlanta","Tongue and Groove","Gold Room","Ravine Atlanta","Onyx Atlanta","Visions Ultra Lounge","Utopia ATL","Elleven45 Lounge","Privé Atlanta","Allure Atlanta","District Atlanta"].includes(e.venue||e.title)))&&e.source!=="daily_event").slice(0,8);
             if(nlPool.length===0)return null;
             return(<>
               <SectionHead t="NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
               <div style={{padding:"0 16px",marginBottom:16}}>
-                <EventGrid items={nlPool} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
+                <EventGrid items={nlPool} onSelect={e=>{setDetail(e);navigate("detail")}} max={8}/>
               </div>
             </>);
           })()}
@@ -1703,7 +1703,7 @@ export default function GoodTimesApp(){
     {id:"now",l:"Now",icon:"M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 16.89 19.32C18.55 17.68 19.13 15.19 18.15 13.06L17.98 12.72C17.9 12.56 17.78 12.39 17.66 12.2L17.66 11.2Z"},
     {id:"calendar",l:"Dates",icon:"M19 3H18V1H16V3H8V1H6V3H5C3.89 3 3.01 3.9 3.01 5L3 19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V8H19V19ZM9 10H7V12H9V10ZM13 10H11V12H13V10ZM17 10H15V12H17V10Z"},
     {id:"plans",l:"Itinerary",icon:"M3 13H5V11H3V13ZM3 17H5V15H3V17ZM3 9H5V7H3V9ZM7 13H21V11H7V13ZM7 17H21V15H7V17ZM7 7V9H21V7H7Z"},
-    {id:"planforme",l:"Concierge",icon:"M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"},
+    {id:"planforme",l:"Build My Night",icon:"M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"},
     {id:"explore",l:"Explore",icon:"M12 10.9C11.39 10.9 10.9 11.39 10.9 12S11.39 13.1 12 13.1C12.61 13.1 13.1 12.61 13.1 12S12.61 10.9 12 10.9ZM12 2C6.48 2 2 6.48 2 12S6.48 22 12 22S22 17.52 22 12S17.52 2 12 2ZM14.19 14.19L6 18L9.81 9.81L18 6L14.19 14.19Z"},
     {id:"map",l:"Map",icon:"M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22S19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9S10.62 6.5 12 6.5S14.5 7.62 14.5 9S13.38 11.5 12 11.5Z"},
     {id:"vault",l:"Vault",icon:"M18 8H17V6C17 3.24 14.76 1 12 1S7 3.24 7 6V8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM12 17C10.9 17 10 16.1 10 15S10.9 13 12 13S14 13.9 14 15S13.1 17 12 17ZM15.1 8H8.9V6C8.9 4.29 10.29 2.9 12 2.9S15.1 4.29 15.1 6V8Z"}
