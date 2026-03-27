@@ -373,6 +373,9 @@ export default function GoodTimesApp(){
   const[subRatings,setSubRatings]=useState({});
   const[venueLoading,setVenueLoading]=useState(false);
   const[venueResults,setVenueResults]=useState([]);
+  // Map state
+  const[mapFilter,setMapFilter]=useState("all");
+  const[venueMapList,setVenueMapList]=useState([]);
   // CHANGE #8: subscription state
   const[isSubscribed,setIsSubscribed]=useState(false);
   // Plan states
@@ -599,6 +602,12 @@ export default function GoodTimesApp(){
       // KHG events (mapped) always come first due to source:"huglife" and low display_priority
       setEvents([...mapped,...showsMapped,...hapMapped,...tonightMapped,...dailyMapped,...sportsMapped,...cityMapped,...legacyMapped]);
       setLoading(false);
+
+      // Load venue map data (lat/lng for map pins)
+      const cityKeyMap={"Atlanta":"atlanta","Houston":"houston","Los Angeles":"los_angeles","Charlotte":"charlotte","Washington":"washington_dc","Miami":"miami","Las Vegas":"las_vegas","New York":"new_york","Dallas":"dallas","Phoenix":"phoenix"};
+      const ck=cityKeyMap[cObj.name]||cObj.name.toLowerCase().replace(/\s+/g,"_");
+      const mapVenues=await khgF(`gt_venues?select=id,name,category_key,subcategory,neighborhood,latitude,longitude,hero_image,short_desc,google_rating,price_range&status=eq.active&city_key=eq.${ck}&latitude=not.is.null&longitude=not.is.null&order=google_rating.desc.nullslast&limit=100`);
+      setVenueMapList(mapVenues||[]);
     })();
   },[]);
 
@@ -1063,9 +1072,15 @@ export default function GoodTimesApp(){
               </div>
             </>);
           })()}
-          {/* UPCOMING CONCERTS — shows and live music */}
+          {/* UPCOMING CONCERTS — shows and live music ONLY, no sports */}
           {(()=>{
-            const concertPool=events.filter(e=>e.city===city.name&&(e.source==="show"||(e.category||"").match(/concert|live_music|music|festival/))&&e.date>=todayStr).sort((a,b)=>(a.date||"").localeCompare(b.date||"")).slice(0,6);
+            const concertPool=events.filter(e=>{
+              if(e.city!==city.name||!e.date||e.date<todayStr)return false;
+              if(e.source==="sports_game"||e.category==="sports")return false;
+              if(e.source==="show"&&(e.event_type||"").match(/concert|comedy|musical|festival|special_event/))return true;
+              if((e.event_type||"").match(/concert|festival/))return true;
+              return false;
+            }).sort((a,b)=>(a.date||"").localeCompare(b.date||"")).slice(0,6);
             if(concertPool.length===0)return null;
             return(<>
               <SectionHead t="UPCOMING CONCERTS" icon={"\u{1F3B5}"} color={C.gold} action={{l:"See All",fn:()=>navigate("calendar")}}/>
@@ -1529,12 +1544,31 @@ export default function GoodTimesApp(){
             <div style={{fontSize:10,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:6}}>MAP</div>
             <div style={{fontSize:24,fontFamily:F.s,fontWeight:700}}>Around {city.name}</div>
           </div>
-          <div style={{borderRadius:20,overflow:"hidden",height:400,...K,marginBottom:16}}>
-            <iframe title="City Map" width="100%" height="100%" frameBorder="0" style={{border:0,filter:"invert(1) hue-rotate(180deg) contrast(1.1)"}} src={`https://www.openstreetmap.org/export/embed.html?bbox=${city.lng-.08}%2C${city.lat-.05}%2C${city.lng+.08}%2C${city.lat+.05}&layer=mapnik&marker=${city.lat}%2C${city.lng}`}/>
+          {/* Map category filter */}
+          <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:12}}>
+            {[{id:"all",l:"All",e:"\u{2728}"},{id:"nightclub",l:"Clubs",e:"\u{1F319}"},{id:"lounge",l:"Lounges",e:"\u{1F378}"},{id:"rooftop",l:"Rooftops",e:"\u{1F307}"},{id:"restaurant",l:"Dining",e:"\u{1F37D}"},{id:"bar",l:"Bars",e:"\u{1F37A}"},{id:"hookah",l:"Hookah",e:"\u{1F4A8}"}].map(f=>(
+              <button key={f.id} onClick={()=>setMapFilter&&setMapFilter(f.id)} style={{...V(mapFilter===f.id||(!mapFilter&&f.id==="all")),padding:"6px 14px",fontSize:11,borderRadius:20,whiteSpace:"nowrap"}}>{f.e} {f.l}</button>
+            ))}
           </div>
-          <SectionHead t="NEARBY EXPERIENCES" icon={"\u{1F4CD}"} color={C.a3}/>
-          <div style={{display:"flex",gap:12,overflowX:"auto",marginBottom:20}}>
-            {upcoming.slice(0,5).map((e,i)=><EventCard key={e.id} e={e} compact onClick={()=>{setDetail(e);navigate("detail")}}/>)}
+          <div style={{borderRadius:20,overflow:"hidden",height:420,...K,marginBottom:16,position:"relative"}}>
+            <iframe title="City Map" width="100%" height="100%" frameBorder="0" style={{border:0,filter:"invert(1) hue-rotate(180deg) contrast(1.1)"}} src={`https://www.openstreetmap.org/export/embed.html?bbox=${city.lng-.06}%2C${city.lat-.04}%2C${city.lng+.06}%2C${city.lat+.04}&layer=mapnik`}/>
+            <div style={{position:"absolute",bottom:12,left:12,right:12,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(12px)",borderRadius:12,padding:"10px 14px",fontSize:11,color:C.gold,fontWeight:600,textAlign:"center",border:`1px solid ${C.goldDim}`}}>
+              {"\u{1F4CD}"} {(()=>{const mf=mapFilter||"all";const pool=events.filter(e=>e.city===city.name&&e.latitude&&e.longitude&&(mf==="all"||e.category===mf));return pool.length})() || venueMapList.length} locations loaded
+            </div>
+          </div>
+          {/* Venue list below map */}
+          <SectionHead t={`${(mapFilter||"ALL").toUpperCase()} NEARBY`} icon={"\u{1F4CD}"} color={C.gold}/>
+          <div style={{marginBottom:20}}>
+            {venueMapList.filter(v=>{const mf=mapFilter||"all";return mf==="all"||v.category_key===mf}).slice(0,12).map(v=>(
+              <div key={v.id} style={{...K,display:"flex",gap:12,padding:12,marginBottom:8,border:`1px solid ${C.goldDim}`,cursor:"pointer"}} onClick={()=>{setDetail({id:v.id,title:v.name,venue:v.name,city:city.name,category:v.category_key,image_url:v.hero_image,description:v.short_desc,date:"",time:"",source:"venue"});navigate("detail")}}>
+                {v.hero_image&&<img src={v.hero_image} alt="" style={{width:60,height:60,borderRadius:10,objectFit:"cover"}}/>}
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{fontSize:14,fontWeight:700,color:C.text}}>{v.name}</div>
+                  <div style={{fontSize:11,color:C.gold,marginTop:2}}>{v.neighborhood||v.category_key}</div>
+                  {v.google_rating&&<div style={{fontSize:11,color:C.muted,marginTop:2}}>{"\u2B50"} {v.google_rating}</div>}
+                </div>
+              </div>
+            ))}
           </div>
           <SponsorBanner/>
         </div>
