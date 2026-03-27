@@ -34,10 +34,11 @@ const khgF=async q=>{try{const r=await fetch(`${KHG_SB}/${q}`,{headers:{apikey:K
 // Map explore categories → gt_venues category_keys
 const CAT_MAP={
   dining:["restaurant","food_and_dining","brunch","food_hall","food_truck"],
-  nightlife:["nightclub","lounge","hookah","day_party","pool_party"],
+  nightlife:["nightclub","lounge","day_party","pool_party"],
+  hookah:["hookah"],
   music:["jazz","entertainment"],
   sports:["sports_bar"],
-  culture:["culture","special_events"],
+  culture:["culture","special_events","comedy"],
   wellness:["spa","wellness","fitness","gym"],
   adventure:["outdoor_adventures","experiences"],
   shopping:["shopping"],
@@ -45,8 +46,8 @@ const CAT_MAP={
   gaming:["entertainment"],
   drinks:["bar","wine_bar","speakeasy","coffee","rooftop"],
   exclusive:["event_venue","event_creative","special_events"],
-  family:["experiences","outdoor_adventures"],
-  dating:["rooftop","lounge","restaurant","speakeasy"],
+  family:["experiences","outdoor_adventures","entertainment"],
+  dating:["rooftop","lounge","restaurant","speakeasy","jazz"],
   cosmetic:["beauty","services"],
   networking:["event_venue","event_creative"]
 };
@@ -184,7 +185,7 @@ const Vu=[
   {id:"family",name:"Family",icon:"\u{1F468}\u200D\u{1F469}\u200D\u{1F467}",color:"#87CEEB",subs:["Kid-Friendly","Amusement Parks","Zoos","Aquariums","Science Centers"]},
   {id:"dating",name:"Date Night",icon:"\u{1F4AB}",color:"#FF6B6B",subs:["Romantic Dinner","Sunset Spots","Couples Activities","Wine & Paint","Dancing","Scenic Views"]},
   {id:"cosmetic",name:"Cosmetic",icon:"\u{1F484}",color:"#FF69B4",subs:["Med Spas","Lash Studios","Hair Salons","Nail Bars","Skincare","Barbershops","Tattoo Studios"]},
-  {id:"networking",name:"Networking",icon:"\u{1F91D}",color:"#6BFFB8",subs:["Mixers","Industry Events","Co-Working","Pitch Nights","Conferences","Workshops"]}
+  {id:"hookah",name:"Hookah",icon:"\u{1F4A8}",color:"#B86BFF",subs:["Premium Lounges","Late Night","Rooftop Hookah","Mediterranean","Fruit Bowls","BYOB","Hookah Bars","VIP Hookah"]}
 ];
 
 // CHANGE #5: Vibe browse — Gentleman's Club REMOVED
@@ -618,7 +619,8 @@ export default function GoodTimesApp(){
   // Category filter mapping for Now screen chips
   const CAT_FILTER={
     eat:["dining","restaurant","food_hall","brunch","bbq","seafood","steakhouse","food_event"],
-    drink:["bar","cocktail_bar","rooftop","brewery","wine_bar","lounge","hookah"],
+    drink:["bar","cocktail_bar","rooftop","brewery","wine_bar","lounge"],
+    hookah:["hookah"],
     music:["concert","jazz","live_music","karaoke","dj"],
     goout:["nightlife","nightclub","day_party","party","entertainment","comedy"],
     sports:["sports","sports_bar","game_day"]
@@ -694,10 +696,10 @@ export default function GoodTimesApp(){
       
       // Category matching based on mood
       const moodCats={
-        chill:["lounge","jazz","wine_bar","coffee","speakeasy","rooftop"],
+        chill:["lounge","jazz","wine_bar","coffee","speakeasy","rooftop","hookah"],
         turnt:["nightclub","day_party","pool_party","hookah"],
-        date:["restaurant","rooftop","speakeasy","jazz","wine_bar"],
-        bougie:["rooftop","speakeasy","nightclub","lounge"],
+        date:["restaurant","rooftop","speakeasy","jazz","wine_bar","hookah"],
+        bougie:["rooftop","speakeasy","nightclub","lounge","hookah"],
         family:["restaurant","food_hall","entertainment","culture","outdoor_adventures"],
         explore:["culture","entertainment","food_hall","comedy","hookah","speakeasy"]
       };
@@ -881,7 +883,7 @@ export default function GoodTimesApp(){
           </div>
           {/* Category chips */}
           <div style={{padding:"0 16px",display:"flex",gap:6,overflowX:"auto",marginBottom:12}}>
-            {[{id:"all",l:"All",c:C.gold},{id:"eat",l:"\u{1F37D}\uFE0F Eat",c:"#FFB86B"},{id:"drink",l:"\u{1F378} Drink",c:"#C39BD3"},{id:"music",l:"\u{1F3B5} Music",c:"#FF6B6B"},{id:"goout",l:"\u{1F319} Go Out",c:"#B86BFF"},{id:"sports",l:"\u{1F3DF}\uFE0F Sports",c:"#6BFFB8"}].map(ch=>(
+            {[{id:"all",l:"All",c:C.gold},{id:"eat",l:"\u{1F37D}\uFE0F Eat",c:"#FFB86B"},{id:"drink",l:"\u{1F378} Drink",c:"#C39BD3"},{id:"hookah",l:"\u{1F4A8} Hookah",c:"#B86BFF"},{id:"music",l:"\u{1F3B5} Music",c:"#FF6B6B"},{id:"goout",l:"\u{1F319} Go Out",c:"#B86BFF"},{id:"sports",l:"\u{1F3DF}\uFE0F Sports",c:"#6BFFB8"}].map(ch=>(
               <button key={ch.id} onClick={()=>setNowCat(nowCat===ch.id?"all":ch.id)} style={{...V(nowCat===ch.id),padding:"7px 14px",border:`1px solid ${ch.c}`,color:nowCat===ch.id?"#0A0A0F":ch.c,background:nowCat===ch.id?ch.c:"transparent",fontSize:12,fontWeight:600,whiteSpace:"nowrap",flexShrink:0,borderRadius:8}}>{ch.l}</button>
             ))}
           </div>
