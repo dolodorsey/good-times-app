@@ -1043,9 +1043,18 @@ export default function GoodTimesApp(){
           </div>
           </>)}
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
-          {/* NIGHTLIFE — real clubs and tonight's programming: Revel, Opium, Magic City, Compound, etc. */}
+          {/* NIGHTLIFE — real clubs and tonight's programming */}
           {(()=>{
-            const nlPool=events.filter(e=>e.city===city.name&&((e.category||"").match(/nightclub|lounge|club|hookah|speakeasy/)||(e.subcategory||"").match(/nightclub/i)||["Revel Atlanta","Opium","Magic City Atlanta","Compound Atlanta","Tongue and Groove","Gold Room","Ravine Atlanta","Onyx Atlanta","Visions Ultra Lounge","Utopia ATL","Elleven45 Lounge","Privé Atlanta","Allure Atlanta","District Atlanta"].includes(e.venue||e.title)))&&e.source!=="daily_event").slice(0,8);
+            const NL_VENUES=["Revel Atlanta","Opium","Magic City Atlanta","Compound Atlanta","Tongue and Groove","Gold Room","Ravine Atlanta","Onyx Atlanta","Visions Ultra Lounge","Utopia ATL","Elleven45 Lounge","District Atlanta","Allure Atlanta"];
+            const nlPool=events.filter(e=>{
+              if(e.city!==city.name||e.source==="daily_event")return false;
+              const cat=(e.category||"").toLowerCase();
+              const sub=(e.subcategory||"").toLowerCase();
+              if(cat.match(/nightclub|lounge|club|hookah|speakeasy/))return true;
+              if(sub.includes("nightclub"))return true;
+              if(NL_VENUES.includes(e.venue)||NL_VENUES.includes(e.title))return true;
+              return false;
+            }).slice(0,8);
             if(nlPool.length===0)return null;
             return(<>
               <SectionHead t="NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
