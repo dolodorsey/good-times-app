@@ -561,9 +561,11 @@ export default function GoodTimesApp(){
       }));
 
       // === MAP TIER 1 legacy ===
-      // Filter out legacy events whose brand matches a KHG brand_key (those are already in mapped[] from eventbrite_events)
+      // Filter out legacy events whose brand matches ANY KHG brand_key (active OR inactive) — prevents duplicates AND paused brands
       const KHG_BRANDS=new Set(real.map(e=>e.brand_key).filter(Boolean));
-      const legacyMapped=legacy.filter(e=>!KHG_BRANDS.has(e.brand)).map(e=>({
+      // Also block paused/inactive brands that exist in eventbrite_events but aren't active
+      const PAUSED_BRANDS=new Set(["paparazzi","sundays_best","gangsta_gospel","noir","pawchella"]);
+      const legacyMapped=legacy.filter(e=>!KHG_BRANDS.has(e.brand)&&!PAUSED_BRANDS.has(e.brand)).map(e=>({
         ...e,
         date:e.category==="nightlife"||e.category==="experience"?today:e.date,
         display_priority:45,
