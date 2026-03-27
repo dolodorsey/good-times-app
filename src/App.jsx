@@ -14,10 +14,10 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
    ═══════════════════════════════════════════════════════ */
 
 const C = {
-  bg:"#06060C",bgCard:"#22223A",bgSheet:"#1E1E32",
+  bg:"#06060C",bgCard:"#1A1A14",bgSheet:"#18180F",
   gold:"#D4A853",goldDim:"rgba(212,168,83,0.35)",
-  text:"#FFFFFF",textSec:"#E8E8E8",muted:"#C0C0C0",
-  a3:"#6BB8FF",a4:"#FFB86B",overlay:"rgba(6,6,12,0.88)"
+  text:"#FFFFFF",textSec:"#E8DCC8",muted:"#BFA97A",
+  a3:"#D4A853",a4:"#FFB86B",overlay:"rgba(6,6,12,0.88)"
 };
 const F={f:"'DM Sans',sans-serif",s:"'Playfair Display',Georgia,serif"};
 const V=a=>({background:a?`linear-gradient(135deg,${C.gold},#B8942F)`:"rgba(255,255,255,0.15)",color:a?"#0A0A0F":"#fff",border:a?"none":"1px solid rgba(255,255,255,0.6)",borderRadius:10,padding:"8px 16px",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:F.f,letterSpacing:.3,transition:"all 0.25s ease"});
@@ -34,7 +34,7 @@ const khgF=async q=>{try{const r=await fetch(`${KHG_SB}/${q}`,{headers:{apikey:K
 // Map explore categories → gt_venues category_keys
 const CAT_MAP={
   dining:["restaurant","food_and_dining","brunch","food_hall","food_truck"],
-  nightlife:["nightclub","lounge","day_party","pool_party"],
+  nightlife:["nightclub","lounge","day_party","pool_party","rooftop","bar","speakeasy"],
   hookah:["hookah"],
   music:["jazz","entertainment"],
   sports:["sports_bar"],
@@ -72,7 +72,7 @@ const Ne={
   }
 };
 
-const gt={REMIX:{c:"#FF6B6B"},"TASTE OF ART":{c:"#E8A0BF"},NOIR:{c:"#D4A853"},"WRST BHVR":{c:"#FFD700"},PAPARAZZI:{c:"#FF69B4"},"GANGSTA GOSPEL":{c:"#9B59B6"},"SUNDAY'S BEST":{c:"#87CEEB"},PAWCHELLA:{c:"#90EE90"},"BEAUTY & THE BEAST":{c:"#FFD700"},"BLACK BALL":{c:"#888"},"SNOW BALL":{c:"#A8D8FF"},"NO SECTIONS PARTY":{c:"#FF6B6B"},"MONSTER'S BALL":{c:"#8B0000"},"NAPKIN WARS":{c:"#FFB86B"},"FOREVER FUTBOL":{c:"#00A651"},"THE KULTURE":{c:"#B86BFF"},"UNDERGROUND KING":{c:"#D4A853"},STELLA:{c:"#E8A0BF"},CRVNGS:{c:"#FFB86B"},"PARKING LOT PIMPIN":{c:"#FF6B6B"},"WINTER WONDERLAND":{c:"#A8D8FF"},"SHUT UP & DANCE":{c:"#FF69B4"},"SECRET SOCIETY":{c:"#D4A853"},"SOUL SESSIONS":{c:"#9B59B6"},"BLOCK PARTY":{c:"#6BFFB8"},HUGLIFE:{c:"#FF6B6B"},"FOOD TRUCK FESTIVAL":{c:"#FFB86B"}};
+const gt={REMIX:{c:"#FF6B6B"},"TASTE OF ART":{c:"#C8A96E"},"WRST BHVR":{c:"#FFD700"},PAPARAZZI:{c:"#FF69B4"},"GANGSTA GOSPEL":{c:"#9B59B6"},"SUNDAY'S BEST":{c:"#BFA97A"},PAWCHELLA:{c:"#90EE90"},"BEAUTY & THE BEAST":{c:"#FFD700"},"BLACK BALL":{c:"#888"},"SNOW BALL":{c:"#D4A853"},"MAGIC CITY":{c:"#D4A853"},"NO SECTIONS PARTY":{c:"#FF6B6B"},"MONSTER'S BALL":{c:"#8B0000"},"NAPKIN WARS":{c:"#FFB86B"},"FOREVER FUTBOL":{c:"#00A651"},"THE KULTURE":{c:"#B86BFF"},"UNDERGROUND KING":{c:"#D4A853"},STELLA:{c:"#C8A96E"},CRVNGS:{c:"#FFB86B"},"PARKING LOT PIMPIN":{c:"#FF6B6B"},"WINTER WONDERLAND":{c:"#D4A853"},"SHUT UP & DANCE":{c:"#FF69B4"},"SECRET SOCIETY":{c:"#D4A853"},"SOUL SESSIONS":{c:"#9B59B6"},"BLOCK PARTY":{c:"#6BFFB8"},HUGLIFE:{c:"#FF6B6B"},"FOOD TRUCK FESTIVAL":{c:"#FFB86B"}};
 
 const wn=e=>{
   // Priority: 1) DB image_url  2) Official brand graphic (brand_key ONLY)  3) Category-matched fallback
@@ -86,6 +86,7 @@ const wn=e=>{
     comedy:"https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=900",
     food:"https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=900",
     festival:"https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=900",
+    jazz:"https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=900",
     sports:"https://images.unsplash.com/photo-1517649763962-0c623066013b?w=900",
     nightlife:"https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900",
     art:"https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=900",
@@ -116,7 +117,8 @@ const $u=[
   {brand:"SECRET SOCIETY",line:"Midnight Affair. Atlanta.",color:"#D4A853",sub:"HUGLIFE EVENTS",cta:"RSVP",img:_SB+"/secret_society/secret_society_landscape.png"},
   {brand:"FOREVER FUTBOL",line:"The World's Game. ATL.",color:"#00A651",sub:"KHG MUSEUMS",cta:"Experience",img:_SB+"/forever_futbol/forever_futbol_card.png"},
   {brand:"WRST BHVR",line:"Worst Behavior. Best Night.",color:"#FFD700",sub:"HUGLIFE EVENTS",cta:"Get Tickets",img:_SB+"/wrst_bhvr/wrst_bhvr_card.png"},
-  {brand:"TASTE OF ART",line:"Art. Fashion. Music. Culture.",color:"#E8A0BF",sub:"HUGLIFE EVENTS",cta:"Get Tickets",img:_SB+"/taste_of_art/taste_of_art_landscape.png"},
+  {brand:"CINCO DE DRINKO",line:"Cinco de Mayo. The DR. DORSEY Way.",color:"#FF6B6B",sub:"HUGLIFE EVENTS",cta:"Get Tickets",img:_SB+"/cinco_de_mayo/cinco_de_mayo_landscape.png"},
+  {brand:"TASTE OF ART",line:"Art. Fashion. Music. Culture.",color:"#C8A96E",sub:"HUGLIFE EVENTS",cta:"Get Tickets",img:_SB+"/taste_of_art/taste_of_art_landscape.png"},
   {brand:"GANGSTA GOSPEL",line:"Where the streets meet the spirit.",color:"#9B59B6",sub:"HUGLIFE EVENTS",cta:"Experience",img:_SB+"/gangsta_gospel/gangsta_gospel_landscape.png"},
   {brand:"GOODFELLAS PIZZA",line:"Pizza with a side of loyalty.",color:"#FF6B6B",sub:"CASPER GROUP",cta:"Order",img:_SB+"/goodfellas/goodfellas_atlanta_landscape.png"},
   {brand:"CASPER GROUP",line:"Hospitality. Reimagined.",color:"#D4A853",sub:"KHG",cta:"Explore",img:_SB+"/casper_group/casper_group_landscape.png"},
@@ -154,7 +156,7 @@ const BRAND_IMAGES={
   // === BRANDS WITHOUT GRAPHICS YET — context-matched Unsplash (each 100% unique) ===
   black_ball:"https://images.unsplash.com/photo-1528495612343-9ca9f4a4de28?w=900",       // formal dark gala
   block_party:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=900",      // outdoor festival crowd
-  cinco_de_mayo:"https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=900",        // cocktail drinks / fiesta
+  cinco_de_mayo:_SB+"/cinco_de_mayo/cinco_de_mayo_landscape.png",        // cocktail drinks / fiesta
   crvngs:"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=900",               // gourmet food spread
   kulture:"https://images.unsplash.com/photo-1556906781-9a412961c28c?w=900",              // sneakers / streetwear
   monsters_ball:"https://images.unsplash.com/photo-1509557965875-b88c97052f0e?w=900",     // masquerade / halloween
@@ -163,7 +165,6 @@ const BRAND_IMAGES={
   soul_sessions:"https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=900",     // R&B live performance
   underground_king:"https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?w=900",  // underground hip hop show
   remix:"https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=900",             // DJ mixing / turntables
-  noir:"https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=900",              // dark cocktail bar / espresso liqueur
   beauty_beast:"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=900",      // glam beauty / fashion
   stella:"https://images.unsplash.com/photo-1516802273409-68526ee1bdd6?w=900",            // women celebrating / groove
 };
@@ -171,21 +172,21 @@ const BRAND_IMAGES={
 // Explore categories
 const Vu=[
   {id:"dining",name:"Dining",icon:"\u{1F37D}\uFE0F",color:"#FFB86B",subs:["Fine Dining","Brunch","Late Night Eats","Seafood","Soul Food","Steakhouses","Food Halls","Sushi","BBQ","Pizza","Vegan","Taco Spots"]},
-  {id:"nightlife",name:"Nightlife",icon:"\u{1F319}",color:"#B86BFF",subs:["Clubs","Lounges","Rooftops","Hookah","Day Parties","Pool Parties","Afterhours","Speakeasies","Dive Bars","Wine Bars"]},
+  {id:"nightlife",name:"Nightlife",icon:"\u{1F319}",color:"#D4A853",subs:["Clubs","Lounges","Rooftops","Hookah","Day Parties","Pool Parties","Afterhours","Speakeasies","Dive Bars","Wine Bars"]},
   {id:"music",name:"Live Music",icon:"\u{1F3B5}",color:"#FF6B6B",subs:["Concerts","Jazz","R&B/Soul","Hip Hop","Afrobeats","Gospel","Open Mic","DJ Sets","Festivals","Karaoke"]},
   {id:"sports",name:"Sports",icon:"\u{1F3DF}\uFE0F",color:"#6BFFB8",subs:["Game Day Watch","Basketball","Football","Soccer","Baseball","Boxing/MMA","Golf","Sports Bars","Fan Zones"]},
-  {id:"culture",name:"Culture",icon:"\u{1F3A8}",color:"#E8A0BF",subs:["Art Galleries","Museums","Pop-Ups","Film Screenings","Poetry","Comedy Shows","Theater","Fashion Shows"]},
+  {id:"culture",name:"Culture",icon:"\u{1F3A8}",color:"#C8A96E",subs:["Art Galleries","Museums","Pop-Ups","Film Screenings","Poetry","Comedy Shows","Theater","Fashion Shows"]},
   {id:"wellness",name:"Wellness",icon:"\u{1F9D8}",color:"#90EE90",subs:["Spas","Yoga","Sound Baths","Meditation","Fitness","Recovery","Saunas"]},
-  {id:"adventure",name:"Adventure",icon:"\u{1F30A}",color:"#6BB8FF",subs:["Outdoor Activities","Hiking","Beach Days","Water Sports","Escape Rooms","Go Karts","Axe Throwing"]},
+  {id:"adventure",name:"Adventure",icon:"\u{1F30A}",color:"#D4A853",subs:["Outdoor Activities","Hiking","Beach Days","Water Sports","Escape Rooms","Go Karts","Axe Throwing"]},
   {id:"shopping",name:"Shopping",icon:"\u{1F6CD}\uFE0F",color:"#FFD700",subs:["Boutiques","Vintage","Sneaker Shops","Markets","Luxury","Streetwear","Thrift"]},
   {id:"movies",name:"Movies & Shows",icon:"\u{1F3AC}",color:"#FF69B4",subs:["Movie Theaters","Drive-Ins","Film Festivals","Stand-Up","Improv","Drag Shows"]},
   {id:"gaming",name:"Gaming",icon:"\u{1F3AE}",color:"#00CED1",subs:["Arcades","VR","Board Game Cafes","Bowling","Mini Golf","Laser Tag","Trivia"]},
   {id:"drinks",name:"Drinks",icon:"\u{1F378}",color:"#C39BD3",subs:["Cocktail Bars","Breweries","Wine Tastings","Coffee Shops","Juice Bars","Happy Hours"]},
   {id:"exclusive",name:"Exclusive",icon:"\u2726",color:"#D4A853",subs:["Members Only","Private Events","Galas","Invite-Only","VIP","Yacht Parties"]},
-  {id:"family",name:"Family",icon:"\u{1F468}\u200D\u{1F469}\u200D\u{1F467}",color:"#87CEEB",subs:["Kid-Friendly","Amusement Parks","Zoos","Aquariums","Science Centers"]},
+  {id:"family",name:"Family",icon:"\u{1F468}\u200D\u{1F469}\u200D\u{1F467}",color:"#BFA97A",subs:["Kid-Friendly","Amusement Parks","Zoos","Aquariums","Science Centers"]},
   {id:"dating",name:"Date Night",icon:"\u{1F4AB}",color:"#FF6B6B",subs:["Romantic Dinner","Sunset Spots","Couples Activities","Wine & Paint","Dancing","Scenic Views"]},
   {id:"cosmetic",name:"Cosmetic",icon:"\u{1F484}",color:"#FF69B4",subs:["Med Spas","Lash Studios","Hair Salons","Nail Bars","Skincare","Barbershops","Tattoo Studios"]},
-  {id:"hookah",name:"Hookah",icon:"\u{1F4A8}",color:"#B86BFF",subs:["Premium Lounges","Late Night","Rooftop Hookah","Mediterranean","Fruit Bowls","BYOB","Hookah Bars","VIP Hookah"]}
+  {id:"hookah",name:"Hookah",icon:"\u{1F4A8}",color:"#D4A853",subs:["Premium Lounges","Late Night","Rooftop Hookah","Mediterranean","Fruit Bowls","BYOB","Hookah Bars","VIP Hookah"]}
 ];
 
 // CHANGE #5: Vibe browse — Gentleman's Club REMOVED
@@ -200,10 +201,10 @@ const Gu=[
 
 // Plan For Me questions
 const kn=[
-  {id:"mood",q:"What's the mood?",sub:"Set the tone for tonight",multi:false,opts:[{id:"chill",l:"Chill",i:"\u{1F33F}",c:"#90EE90",d:"Low-key vibes",bg:"https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400"},{id:"turnt",l:"Turn Up",i:"\u{1F525}",c:"#FF6B6B",d:"Maximum energy",bg:"https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400"},{id:"date",l:"Date Night",i:"\u{1F320}",c:"#E8A0BF",d:"Intimate & beautiful",bg:"https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400"},{id:"bougie",l:"Bougie",i:"\u{1F48E}",c:"#D4A853",d:"Luxury everything",bg:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400"},{id:"family",l:"Family",i:"\u{1F46A}",c:"#87CEEB",d:"Fun for everyone",bg:"https://images.unsplash.com/photo-1472653431158-6364773b2a56?w=400"},{id:"explore",l:"Explore",i:"\u{2728}",c:"#6BB8FF",d:"New experiences",bg:"https://i.pinimg.com/736x/4f/9c/be/4f9cbe094650bc8e3d2347914e751961.jpg"}]},
-  {id:"group",q:"Who's coming?",sub:"How many in your crew",multi:false,opts:[{id:"solo",l:"Just Me",i:"\u{1F9D1}",c:"#6BB8FF"},{id:"duo",l:"Me + 1",i:"\u{1F46B}",c:"#E8A0BF"},{id:"crew",l:"The Crew",i:"\u{1F46F}",c:"#FFB86B",d:"3-8 people"},{id:"mob",l:"Big Group",i:"\u{1F389}",c:"#FF6B6B",d:"8+ deep"}]},
+  {id:"mood",q:"What's the mood?",sub:"Set the tone for tonight",multi:false,opts:[{id:"chill",l:"Chill",i:"\u{1F33F}",c:"#90EE90",d:"Low-key vibes",bg:"https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400"},{id:"turnt",l:"Turn Up",i:"\u{1F525}",c:"#FF6B6B",d:"Maximum energy",bg:"https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400"},{id:"date",l:"Date Night",i:"\u{1F320}",c:"#C8A96E",d:"Intimate & beautiful",bg:"https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400"},{id:"bougie",l:"Bougie",i:"\u{1F48E}",c:"#D4A853",d:"Luxury everything",bg:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400"},{id:"family",l:"Family",i:"\u{1F46A}",c:"#BFA97A",d:"Fun for everyone",bg:"https://images.unsplash.com/photo-1472653431158-6364773b2a56?w=400"},{id:"explore",l:"Explore",i:"\u{2728}",c:"#D4A853",d:"New experiences",bg:"https://i.pinimg.com/736x/4f/9c/be/4f9cbe094650bc8e3d2347914e751961.jpg"}]},
+  {id:"group",q:"Who's coming?",sub:"How many in your crew",multi:false,opts:[{id:"solo",l:"Just Me",i:"\u{1F9D1}",c:"#D4A853"},{id:"duo",l:"Me + 1",i:"\u{1F46B}",c:"#C8A96E"},{id:"crew",l:"The Crew",i:"\u{1F46F}",c:"#FFB86B",d:"3-8 people"},{id:"mob",l:"Big Group",i:"\u{1F389}",c:"#FF6B6B",d:"8+ deep"}]},
   {id:"budget",q:"Budget vibe?",sub:"Per person for the night",multi:false,opts:[{id:"low",l:"Under $50",i:"\u{1F4B5}",c:"#6BFFB8"},{id:"mid",l:"$50\u2013150",i:"\u{1F4B3}",c:"#FFB86B"},{id:"high",l:"$150\u2013300",i:"\u{1F48E}",c:"#D4A853"},{id:"unlimited",l:"No Limit",i:"\u{1F451}",c:"#FF6B6B"}]},
-  {id:"time",q:"What time?",sub:"When does it start",multi:false,opts:[{id:"afternoon",l:"Afternoon",i:"\u2600\uFE0F",c:"#FFB86B",d:"12-5pm"},{id:"evening",l:"Evening",i:"\u{1F305}",c:"#E8A0BF",d:"5-9pm"},{id:"night",l:"Night",i:"\u{1F319}",c:"#B86BFF",d:"9pm-12am"},{id:"latenight",l:"Late Night",i:"\u{1F30C}",c:"#6BB8FF",d:"After midnight"}]},
+  {id:"time",q:"What time?",sub:"When does it start",multi:false,opts:[{id:"afternoon",l:"Afternoon",i:"\u2600\uFE0F",c:"#FFB86B",d:"12-5pm"},{id:"evening",l:"Evening",i:"\u{1F305}",c:"#C8A96E",d:"5-9pm"},{id:"night",l:"Night",i:"\u{1F319}",c:"#B86BFF",d:"9pm-12am"},{id:"latenight",l:"Late Night",i:"\u{1F30C}",c:"#D4A853",d:"After midnight"}]},
   {id:"vibes",q:"Pick your vibes",sub:"Select all that apply",multi:true,opts:[{id:"music",l:"Live Music",i:"\u{1F3B5}",c:"#FF6B6B"},{id:"food",l:"Great Food",i:"\u{1F37D}\uFE0F",c:"#FFB86B"},{id:"drinks",l:"Cocktails",i:"\u{1F378}",c:"#C39BD3"},{id:"dancing",l:"Dancing",i:"\u{1F57A}",c:"#FF69B4"}]}
 ];
 
@@ -438,7 +439,7 @@ export default function GoodTimesApp(){
       const legacy=await sbF("events?select=*&order=date.asc&limit=100");
 
       // === MAP TIER 1: Our events ===
-      const BRAND_DISPLAY={remix:"REMIX",taste_of_art:"TASTE OF ART",noir:"NOIR",wrst_bhvr:"WRST BHVR",gangsta_gospel:"GANGSTA GOSPEL",soul_sessions:"SOUL SESSIONS",kulture:"THE KULTURE",underground_king:"UNDERGROUND KING",crvngs:"CRVNGS",block_party:"BLOCK PARTY",cinco_de_mayo:"BLOCK PARTY",parking_lot_pimpin:"PARKING LOT PIMPIN",monsters_ball:"MONSTER'S BALL",black_ball:"BLACK BALL",snow_ball:"SNOW BALL",beauty_beast:"BEAUTY & THE BEAST",secret_society:"SECRET SOCIETY",huglife:"HUGLIFE",forever_futbol:"FOREVER FUTBOL",stella:"STELLA",shut_up_dance:"SHUT UP & DANCE"};
+      const BRAND_DISPLAY={remix:"REMIX",taste_of_art:"TASTE OF ART",wrst_bhvr:"WRST BHVR",gangsta_gospel:"GANGSTA GOSPEL",soul_sessions:"SOUL SESSIONS",kulture:"THE KULTURE",underground_king:"UNDERGROUND KING",crvngs:"CRVNGS",block_party:"BLOCK PARTY",cinco_de_mayo:"CINCO DE DRINKO",parking_lot_pimpin:"PARKING LOT PIMPIN",monsters_ball:"MONSTER'S BALL",black_ball:"BLACK BALL",snow_ball:"SNOW BALL",beauty_beast:"BEAUTY & THE BEAST",secret_society:"SECRET SOCIETY",huglife:"HUGLIFE",forever_futbol:"FOREVER FUTBOL",stella:"STELLA",shut_up_dance:"SHUT UP & DANCE"};
       const mapped=real.map(e=>({
         id:e.id,
         title:e.event_name,
@@ -996,10 +997,10 @@ export default function GoodTimesApp(){
             </>);
           })()}
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
-          {/* Trending carousel */}
+          {/* Trending carousel — auto-scrolling slideshow */}
           {sec2.length>0&&(<>
-          <SectionHead t="TRENDING" icon={"\u{1F525}"} color={"#FF6B6B"} action={{l:"See All",fn:()=>navigate("explore")}}/>
-          <div style={{display:"flex",gap:12,overflowX:"auto",padding:"0 16px",marginBottom:16,scrollSnapType:"x mandatory"}}>
+          <SectionHead t="TRENDING" icon={"\u{1F525}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
+          <div ref={el=>{if(el&&!el._autoScroll){el._autoScroll=true;let pos=0;const scroll=()=>{pos+=1;if(pos>=el.scrollWidth-el.clientWidth)pos=0;el.scrollTo({left:pos,behavior:"smooth"});};const iv=setInterval(scroll,40);el.addEventListener("touchstart",()=>clearInterval(iv));el.addEventListener("mouseenter",()=>clearInterval(iv))}}} style={{display:"flex",gap:12,overflowX:"auto",padding:"0 16px",marginBottom:16,scrollSnapType:"x mandatory",scrollbarWidth:"none",msOverflowStyle:"none"}}>
             {sec2.map(e=>{const g=gt[e.brand]?.c||C.gold;return(
                 <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,flexShrink:0,width:200,padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:14,scrollSnapAlign:"start",border:`1px solid ${g}20`}}>
                   <div style={{height:120,position:"relative",overflow:"hidden"}}>
@@ -1042,25 +1043,40 @@ export default function GoodTimesApp(){
           </div>
           </>)}
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
-          {/* Upcoming KHG */}
-          {sec4.length>0&&(<>
-          <SectionHead t="UPCOMING" icon={"\u{1F51C}"} color={C.a3} action={{l:"See All",fn:()=>navigate("calendar")}}/>
-          <div style={{padding:"0 16px",marginBottom:16}}>
-            <EventGrid items={sec4} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>
-          </div>
-          </>)}
-          {/* Happening in City — curated city events as clean list */}
+          {/* NIGHTLIFE — clubs, lounges, rooftops, bars open tonight */}
           {(()=>{
-            const weekEnd=new Date();weekEnd.setDate(weekEnd.getDate()+7);
+            const nlPool=events.filter(e=>e.city===city.name&&(e.category||"").match(/nightclub|lounge|bar|rooftop|club|hookah|speakeasy|cocktail/)&&e.source!=="daily_event").slice(0,6);
+            if(nlPool.length===0)return null;
+            return(<>
+              <SectionHead t="NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
+              <div style={{padding:"0 16px",marginBottom:16}}>
+                <EventGrid items={nlPool} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
+              </div>
+            </>);
+          })()}
+          {/* UPCOMING CONCERTS — shows and live music */}
+          {(()=>{
+            const concertPool=events.filter(e=>e.city===city.name&&(e.source==="show"||(e.category||"").match(/concert|live_music|music|festival/))&&e.date>=todayStr).sort((a,b)=>(a.date||"").localeCompare(b.date||"")).slice(0,6);
+            if(concertPool.length===0)return null;
+            return(<>
+              <SectionHead t="UPCOMING CONCERTS" icon={"\u{1F3B5}"} color={C.gold} action={{l:"See All",fn:()=>navigate("calendar")}}/>
+              <div style={{padding:"0 16px",marginBottom:16}}>
+                <EventGrid items={concertPool} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
+              </div>
+            </>);
+          })()}
+          {/* UPCOMING EVENTS — KHG + curated events this week */}
+          {(()=>{
+            const weekEnd=new Date();weekEnd.setDate(weekEnd.getDate()+14);
             const weekEndStr=weekEnd.toISOString().split("T")[0];
-            const cityDaily=events.filter(e=>e.source==="daily_event"&&e.date>=todayStr&&e.date<=weekEndStr&&(e.city===city.name||e.city==="TBA")).sort((a,b)=>a.date.localeCompare(b.date));
-            const seen=new Set();
-            const unique=cityDaily.filter(e=>{const k=e.title;if(seen.has(k))return false;seen.add(k);return true}).slice(0,6);
+            const evtPool=[...upcoming.filter(e=>e.source==="huglife"),...events.filter(e=>e.source==="daily_event"&&e.date>=todayStr&&e.date<=weekEndStr&&(e.city===city.name||e.city==="TBA"))];
+            const seen=new Set();const unique=evtPool.filter(e=>{const k=e.title;if(seen.has(k))return false;seen.add(k);return true}).slice(0,8);
             if(unique.length===0)return null;
             return(<>
-              <SectionHead t={`HAPPENING IN ${city.name.toUpperCase()}`} icon={"\u{1F30D}"} color={C.a4} action={{l:"See All",fn:()=>navigate("calendar")}}/>
+              <SectionHead t="UPCOMING EVENTS" icon={"\u{1F4C5}"} color={C.gold} action={{l:"See All",fn:()=>navigate("calendar")}}/>
               <div style={{padding:"0 16px",marginBottom:16}}>
-                {unique.map(e=><EventRow key={e.id} e={e} onClick={()=>{setDetail(e);navigate("detail")}}/>)}
+                {unique.slice(0,4).length>0&&<EventGrid items={unique.slice(0,4)} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>}
+                {unique.slice(4).map(e=><EventRow key={e.id} e={e} onClick={()=>{setDetail(e);navigate("detail")}}/>)}
               </div>
             </>);
           })()}
@@ -1413,9 +1429,17 @@ export default function GoodTimesApp(){
                     // Map explore category to gt_venues category_keys
                     const cats=CAT_MAP[exploreSheet.id]||[exploreSheet.id];
                     const catFilter=cats.map(c=>`category_key.eq.${c}`).join(",");
-                    // Try subcategory match first, then fall back to category
-                    let q=`gt_venues?select=id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key&status=eq.active&city_key=eq.${ck}&or=(${catFilter})&order=google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
+                    // Map subcategory labels to actual category_key / subcategory values
+                    const subMap={"Clubs":"nightclub","Lounges":"lounge","Rooftops":"rooftop","Hookah":"hookah","Day Parties":"day_party","Pool Parties":"pool_party","Afterhours":"nightclub","Speakeasies":"speakeasy","Dive Bars":"bar","Wine Bars":"wine_bar","Concerts":"concert","Jazz":"jazz","R&B/Soul":"live_music","Hip Hop":"live_music","DJ Sets":"nightclub","Festivals":"festival","Karaoke":"karaoke","Premium Lounges":"hookah","Rooftop Hookah":"hookah","Sports Bars":"sports_bar"};
+                    const subKey=subMap[sub]||sub.toLowerCase().replace(/\s+/g,"_");
+                    // Try subcategory-specific filter first
+                    let q=`gt_venues?select=id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key&status=eq.active&city_key=eq.${ck}&or=(category_key.eq.${subKey},subcategory.ilike.*${subKey}*)&order=google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
                     let results=await khgF(q);
+                    // Fallback to broader category if no subcategory matches
+                    if(results.length===0){
+                      q=`gt_venues?select=id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key&status=eq.active&city_key=eq.${ck}&or=(${catFilter})&order=google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
+                      results=await khgF(q);
+                    }
                     // If no results for this city, try all cities
                     if(results.length===0){
                       q=`gt_venues?select=id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key,city_key&status=eq.active&or=(${catFilter})&order=google_rating.desc.nullslast&limit=15`;
@@ -1677,7 +1701,6 @@ export default function GoodTimesApp(){
   // ═══ NAV BAR (CHANGE #4: Always visible via position:fixed) ═══
   const navDefs=[
     {id:"now",l:"Now",icon:"M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 16.89 19.32C18.55 17.68 19.13 15.19 18.15 13.06L17.98 12.72C17.9 12.56 17.78 12.39 17.66 12.2L17.66 11.2Z"},
-    {id:"ent",l:"Vibe",icon:"M12 3V13.55C11.41 13.21 10.73 13 10 13C7.79 13 6 14.79 6 17S7.79 21 10 21S14 19.21 14 17V7H18V3H12Z"},
     {id:"calendar",l:"Dates",icon:"M19 3H18V1H16V3H8V1H6V3H5C3.89 3 3.01 3.9 3.01 5L3 19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V8H19V19ZM9 10H7V12H9V10ZM13 10H11V12H13V10ZM17 10H15V12H17V10Z"},
     {id:"plans",l:"Itinerary",icon:"M3 13H5V11H3V13ZM3 17H5V15H3V17ZM3 9H5V7H3V9ZM7 13H21V11H7V13ZM7 17H21V15H7V17ZM7 7V9H21V7H7Z"},
     {id:"planforme",l:"Concierge",icon:"M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"},
