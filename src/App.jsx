@@ -682,15 +682,100 @@ export default function GoodTimesApp(){
   const generatePlans=useCallback(()=>{
     setPlanLoading(true);
     setTimeout(()=>{
-      const pool=upcoming.length>0?upcoming:allUpcoming;
+      const mood=planChoices.mood||"explore";
+      const group=planChoices.group||"crew";
+      const budget=planChoices.budget||"mid";
+      const time=planChoices.time||"evening";
+      const vibes=planVibes||[];
+      
+      // Build venue pool from gt_venues data in events (source: venue, happening, legacy)
+      const venuePool=events.filter(e=>e.city===city.name&&(e.source==="venue"||e.source==="happening"||e.source==="legacy"));
+      const eventPool=upcoming.length>0?upcoming:allUpcoming;
+      
+      // Category matching based on mood
+      const moodCats={
+        chill:["lounge","jazz","wine_bar","coffee","speakeasy","rooftop"],
+        turnt:["nightclub","day_party","pool_party","hookah"],
+        date:["restaurant","rooftop","speakeasy","jazz","wine_bar"],
+        bougie:["rooftop","speakeasy","nightclub","lounge"],
+        family:["restaurant","food_hall","entertainment","culture","outdoor_adventures"],
+        explore:["culture","entertainment","food_hall","comedy","hookah","speakeasy"]
+      };
+      const relevantCats=moodCats[mood]||moodCats.explore;
+      
+      // Time-based filtering
+      const timeSlots={
+        afternoon:{start:"12:00 PM",mid:"2:30 PM",end:"5:00 PM"},
+        evening:{start:"6:00 PM",mid:"8:00 PM",end:"10:00 PM"},
+        night:{start:"8:30 PM",mid:"10:30 PM",end:"12:30 AM"},
+        latenight:{start:"10:00 PM",mid:"12:00 AM",end:"2:00 AM"}
+      };
+      const slots=timeSlots[time]||timeSlots.evening;
+      
+      // Filter venues by mood-relevant categories
+      const matchedVenues=venuePool.filter(e=>{
+        const cat=e.category||"";
+        return relevantCats.some(c=>cat.includes(c));
+      });
+      
+      // Shuffle function to avoid same results every time
+      const shuffle=arr=>{const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+      
+      // Build 3 DISTINCT plans with NO overlapping stops
+      const usedIds=new Set();
+      const pickUnique=(pool,n)=>{
+        const picks=[];
+        const shuffled=shuffle(pool);
+        for(const item of shuffled){
+          if(usedIds.has(item.id)||usedIds.has(item.title))continue;
+          picks.push(item);
+          usedIds.add(item.id);
+          usedIds.add(item.title);
+          if(picks.length>=n)break;
+        }
+        return picks;
+      };
+      
+      // Plan 1: Dinner → Drinks → Event (the full night out)
+      const dinnerPool=venuePool.filter(e=>(e.category||"").match(/restaurant|brunch|food_hall/));
+      const drinkPool=venuePool.filter(e=>(e.category||"").match(/bar|cocktail|rooftop|speakeasy|wine_bar|hookah|lounge/));
+      const p1dinner=pickUnique(dinnerPool.length>0?dinnerPool:matchedVenues,1);
+      const p1drinks=pickUnique(drinkPool.length>0?drinkPool:matchedVenues,1);
+      const p1event=pickUnique(eventPool,1);
+      
+      // Plan 2: Vibe-matched (mood-specific venues + events)
+      const p2stops=pickUnique([...matchedVenues,...eventPool],3);
+      
+      // Plan 3: Explorer (mix of different categories)
+      const remainingMix=shuffle([...venuePool,...eventPool]);
+      const p3stops=pickUnique(remainingMix,3);
+      
+      const planNames={
+        chill:["Smooth Operator","Low-Key Legend","Zen Mode"],
+        turnt:["Maximum Energy","Turn Up Protocol","No Sleep Til"],
+        date:["Sparks Flying","Main Character Energy","Romance Mode"],
+        bougie:["Black Card Night","Luxury Lane","Elevated Evening"],
+        family:["Family Fun Run","Squad Goals","All Ages All Vibes"],
+        explore:["The Explorer","Hidden Gems","Off The Map"]
+      };
+      const names=planNames[mood]||planNames.explore;
+      
       setPlanResult([
-        {name:"The Classic",desc:"Tried & true \u2014 crowd pleasers all night",stops:pool.slice(0,3).map((e,i)=>({time:["7:00 PM","9:30 PM","11:30 PM"][i],event:e,why:["Perfect opener","Peak energy","The finale"][i]}))},
-        {name:"Hidden Gems",desc:"Off the radar, on the vibe",stops:pool.slice(2,5).map((e,i)=>({time:["6:30 PM","9:00 PM","11:00 PM"][i],event:e,why:["Surprise starter","Local favorite","Secret spot"][i]}))},
-        {name:"Late Night",desc:"For the night owls",stops:pool.slice(1,4).map((e,i)=>({time:["9:00 PM","11:00 PM","1:00 AM"][i],event:e,why:["Warm up","Main event","After dark"][i]}))}
-      ]);
+        {name:names[0],desc:mood==="date"?"Dinner, drinks, and magic":"Full night out — eat, drink, experience",stops:[
+          ...(p1dinner[0]?[{time:slots.start,event:p1dinner[0],why:"Start here"}]:[]),
+          ...(p1drinks[0]?[{time:slots.mid,event:p1drinks[0],why:"Set the mood"}]:[]),
+          ...(p1event[0]?[{time:slots.end,event:p1event[0],why:"The main event"}]:[])
+        ].filter(Boolean)},
+        {name:names[1],desc:"Curated for your vibe",stops:p2stops.map((e,i)=>({
+          time:[slots.start,slots.mid,slots.end][i],event:e,why:["First stop","The move","Grand finale"][i]
+        }))},
+        {name:names[2],desc:"Something different tonight",stops:p3stops.map((e,i)=>({
+          time:[slots.start,slots.mid,slots.end][i],event:e,why:["Kick it off","Switch it up","End strong"][i]
+        }))}
+      ].filter(p=>p.stops.length>0));
       setPlanLoading(false);
-    },2000);
-  },[upcoming,allUpcoming]);
+    },1500);
+  },[upcoming,allUpcoming,events,city,planChoices,planVibes]);
 
   // Loading splash
   if(loading)return(
