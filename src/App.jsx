@@ -334,10 +334,11 @@ const EventCard=({e:S,compact:cmp,onClick:g})=>{
 
 // Star rating component (for CHANGE #7)
 const StarRating=({rating,onRate,size=16})=>{
+  const capped=Math.min(rating,4);
   return(
     <div style={{display:"flex",gap:2}}>
       {[1,2,3,4,5].map(i=>(
-        <button key={i} onClick={()=>onRate?.(i)} style={{background:"none",border:"none",cursor:onRate?"pointer":"default",padding:0,fontSize:size,color:i<=rating?C.gold:C.muted,transition:"color 0.2s"}}>{i<=rating?"\u2605":"\u2606"}</button>
+        <button key={i} onClick={()=>onRate?.(i)} style={{background:"none",border:"none",cursor:onRate?"pointer":"default",padding:0,fontSize:size,color:i<=capped?C.gold:C.muted,transition:"color 0.2s"}}>{i<=capped?"\u2605":"\u2606"}</button>
       ))}
     </div>
   );
@@ -622,6 +623,7 @@ export default function GoodTimesApp(){
     setPrev(screen);
     setScreen(s);
     if(["now","ent","calendar","plans","planforme","explore","map","vault"].includes(n||s))setNav(n||s);
+    window.scrollTo({top:0,behavior:"instant"});
   },[screen]);
 
   const goBack=useCallback(()=>{
@@ -906,16 +908,14 @@ export default function GoodTimesApp(){
               <button key={ch.id} onClick={()=>setNowCat(nowCat===ch.id?"all":ch.id)} style={{...V(nowCat===ch.id),padding:"7px 14px",border:`1px solid ${ch.c}`,color:nowCat===ch.id?"#0A0A0F":ch.c,background:nowCat===ch.id?ch.c:"transparent",fontSize:12,fontWeight:600,whiteSpace:"nowrap",flexShrink:0,borderRadius:8}}>{ch.l}</button>
             ))}
           </div>
-          {/* ═══ ALL EVENT SECTIONS — single-pass dedup, NO REPEATS ═══ */}
+          {/* ═══ REORGANIZED HOME — City Spotlight → Today/Tonight/Week → Sections ═══ */}
           {(()=>{
             const shownIds=new Set();
             const shownTitles=new Set();
-            // Mark: skip if id OR title already shown (REMIX May 2 and REMIX Jul 11 = same title = only show once)
             const mark=(items,max)=>{
               const r=[];
               for(const e of items){
                 if(shownIds.has(e.id))continue;
-                // For recurring events (same title, different dates), only show the NEXT occurrence
                 const titleKey=e.title?.replace(/\s*[-—]\s*.*/,"").trim()||e.id;
                 if(shownTitles.has(titleKey))continue;
                 r.push(e);
@@ -925,40 +925,88 @@ export default function GoodTimesApp(){
               }
               return r;
             };
-            // Section 1: Tonight — ONLY events with real images go in the grid
-            const realmPool=realmEvents.length>0?realmEvents:upcoming;
-            const realmWithImg=realmPool.filter(e=>e.image_url);
-            const realmNoImg=realmPool.filter(e=>!e.image_url);
-            const sec1=mark(realmWithImg,4);
-            const sec1list=mark(realmNoImg,4);
-            // Section 2: Trending — BEST upcoming across ALL sources, events WITH images first
-            const trendPool=[...upcoming].sort((a,b)=>{
-              // Events with real images rank higher
-              const aImg=a.image_url?0:1;
-              const bImg=b.image_url?0:1;
-              if(aImg!==bImg)return aImg-bImg;
-              return(a.display_priority||50)-(b.display_priority||50);
-            });
-            const sec2=mark(trendPool,6);
-            // Section 3: Featured — only events that HAVE real graphics (no fakes)
-            const featPool=upcoming.filter(e=>e.image_url);
-            const sec3=mark(featPool,2);
-            // Section 4: UPCOMING — Next KHG events only (curated, not all 47)
-            // Show max 4 nearest KHG events, deduped by title
-            const sec4=mark(upcoming.filter(e=>e.source==="huglife"),4);
+
+            // Build pools
+            const todayPool=cityEvents.filter(e=>e.date===todayStr&&e.source!=="daily_event");
+            const tonightPool=todayPool.filter(e=>{if(!e.time)return true;const hr=parseInt(e.time.split(":")[0],10);return hr>=17;});
+            const weekEnd=new Date();weekEnd.setDate(weekEnd.getDate()+(7-weekEnd.getDay()));
+            const weekEndStr=weekEnd.toISOString().split("T")[0];
+            const weekPool=cityEvents.filter(e=>e.date>=todayStr&&e.date<=weekEndStr&&e.source!=="daily_event");
+            const concertPool=cityEvents.filter(e=>{
+              if(!e.date||e.date<todayStr)return false;
+              if(e.source==="sports_game"||e.category==="sports")return false;
+              if(e.source==="show"||(e.event_type||"").match(/concert|comedy|musical|festival/))return true;
+              if((e.category||"").match(/concert|music|jazz/))return true;
+              return false;
+            }).sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+            const upcomingKHG=upcoming.filter(e=>e.source==="huglife");
+
+            // Featured Picks: REVEL SATURDAY + RnB WEDNESDAYS at FLO (hardcoded featured)
+            const featuredPicks=[
+              {id:"feat-revel",title:"REVEL SATURDAY",brand:"NIGHTLIFE",city:city.name,date:todayStr,time:"22:00",venue:"Revel Atlanta",category:"nightlife",image_url:"https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900",source:"featured",display_priority:1},
+              {id:"feat-rnb",title:"RnB WEDNESDAYS at FLO",brand:"NIGHTLIFE",city:city.name,date:todayStr,time:"21:00",venue:"FLO Atlanta",category:"nightlife",image_url:"https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=900",source:"featured",display_priority:1}
+            ];
+
             return(<>
-          {/* Tonight grid */}
-          {sec1.length>0&&(
-            <div style={{padding:"0 16px",marginBottom:16}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-                <div style={{width:7,height:7,borderRadius:99,background:"#FF6B6B",boxShadow:"0 0 10px #FF6B6B",animation:"pulse 1.5s ease-in-out infinite"}}/>
-                <span style={{fontSize:11,letterSpacing:2.5,color:"#FF6B6B",fontWeight:700}}>{realm==="week"?"THIS WEEK":realm==="today"?"TODAY":"TONIGHT"}</span>
-              </div>
-              <EventGrid items={sec1} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>
-              {sec1list.length>0&&<div style={{marginTop:8}}>{sec1list.map(e=><EventRow key={e.id} e={e} onClick={()=>{setDetail(e);navigate("detail")}}/>)}</div>}
+
+          {/* ═══ SECTION 1: CITY SPOTLIGHT — always at top ═══ */}
+          <div style={{padding:"0 16px",marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+              <span style={{fontSize:14}}>{"\u2726"}</span>
+              <span style={{fontSize:11,letterSpacing:2.5,color:C.gold,fontWeight:700}}>CITY SPOTLIGHT</span>
             </div>
-          )}
-          {/* Teams */}
+            {/* Featured Picks: REVEL SATURDAY + RnB WEDNESDAYS */}
+            {featuredPicks.map(e=>{const g=gt[e.brand]?.c||C.gold;return(
+              <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:16,marginBottom:12,position:"relative",border:"1px solid "+C.gold+"20",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
+                <div style={{height:140,position:"relative",overflow:"hidden"}}>
+                  <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 50%,rgba(6,6,12,0.7) 100%)"}}/>
+                  <div style={{position:"absolute",bottom:14,left:14,right:14,textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>
+                    <div style={{fontSize:18,fontWeight:700,color:C.text,lineHeight:1.2,marginBottom:4}}>{e.title}</div>
+                    <div style={{fontSize:11,color:"#FFFFFF"}}>{e.venue} {"\u00B7"} {e.time}</div>
+                  </div>
+                </div>
+              </button>
+            );})}
+          </div>
+
+          {/* ═══ SECTION 2: TODAY / TONIGHT / THIS WEEK tabs ═══ */}
+          <div style={{padding:"0 16px",marginBottom:12}}>
+            <div style={{display:"flex",gap:0,background:"rgba(255,255,255,0.25)",borderRadius:10,padding:3}}>
+              {[{id:"today",l:"Today"},{id:"tonight",l:"Tonight"},{id:"week",l:"This Week"}].map(r=>(
+                <button key={r.id} onClick={()=>setRealm(r.id)} style={{flex:1,padding:"9px 0",borderRadius:8,fontSize:13,fontWeight:realm===r.id?700:500,background:realm===r.id?"linear-gradient(135deg,"+C.gold+",#B8942F)":"transparent",color:realm===r.id?"#0A0A0F":"#FFFFFF",border:"none",cursor:"pointer",fontFamily:F.f,letterSpacing:.3,transition:"all 0.25s ease"}}>{r.l}</button>
+              ))}
+            </div>
+          </div>
+
+          {/* Realm content */}
+          <div style={{padding:"0 16px",marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+              <div style={{width:7,height:7,borderRadius:99,background:"#FF6B6B",boxShadow:"0 0 10px #FF6B6B",animation:"pulse 1.5s ease-in-out infinite"}}/>
+              <span style={{fontSize:11,letterSpacing:2.5,color:"#FF6B6B",fontWeight:700}}>{realm==="week"?"THIS WEEK":realm==="today"?"TODAY":"TONIGHT"}</span>
+            </div>
+            {(()=>{
+              const pool=realm==="today"?todayPool:realm==="tonight"?tonightPool:weekPool;
+              const withImg=pool.filter(e=>e.image_url);
+              const noImg=pool.filter(e=>!e.image_url);
+              const gridItems=mark(withImg,4);
+              const listItems=mark(noImg,4);
+              if(gridItems.length===0&&listItems.length===0) return(
+                <div style={{...K,padding:"40px 20px",textAlign:"center",color:C.muted,fontSize:14,border:"1px solid rgba(255,255,255,0.12)"}}>
+                  <div style={{fontSize:28,marginBottom:8}}>{"\u{1F30D}"}</div>
+                  Nothing available {realm==="today"?"today":realm==="tonight"?"tonight":"this week"} in {city.name}
+                  <div style={{fontSize:12,marginTop:8,color:C.gold}}>Check back soon or switch cities</div>
+                </div>
+              );
+              return(<>
+                <EventGrid items={gridItems} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>
+                {listItems.length>0&&<div style={{marginTop:8}}>{listItems.map(e=><EventRow key={e.id} e={e} onClick={()=>{setDetail(e);navigate("detail")}}/>)}</div>}
+                {pool.length>4&&<button onClick={()=>navigate("calendar")} style={{...V(false),width:"100%",marginTop:10,padding:"10px",textAlign:"center",fontSize:12}}>See all {pool.length} {"\u2192"}</button>}
+              </>);
+            })()}
+          </div>
+
+          {/* ═══ Teams ═══ */}
           <div style={{padding:"0 16px",marginBottom:16}}>
             <div style={{...K,padding:0,overflow:"hidden",position:"relative",border:"1px solid rgba(107,255,184,0.4)"}}>
               <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600" alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",opacity:0.3}} loading="lazy"/>
@@ -982,9 +1030,10 @@ export default function GoodTimesApp(){
             </div>
             </div>
           </div>
-          {/* Upcoming Games — real matchup data with team logos */}
+
+          {/* Upcoming Games */}
           {(()=>{
-            const games=events.filter(e=>e.source==="sports_game"&&e.date>=todayStr).slice(0,6);
+            const games=events.filter(e=>e.source==="sports_game"&&e.date>=todayStr&&e.city===city.name).slice(0,6);
             if(games.length===0)return null;
             return(<>
               <SectionHead t="UPCOMING GAMES" icon={"\u{1F3C0}"} color={"#6BFFB8"}/>
@@ -1012,63 +1061,75 @@ export default function GoodTimesApp(){
               </div>
             </>);
           })()}
+
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
-          {/* Trending carousel — auto-scrolling slideshow */}
-          {sec2.length>0&&(<>
-          <SectionHead t="TRENDING" icon={"\u{1F525}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
-          <div ref={el=>{if(el&&!el._autoScroll){el._autoScroll=true;let pos=0;const scroll=()=>{pos+=1;if(pos>=el.scrollWidth-el.clientWidth)pos=0;el.scrollTo({left:pos,behavior:"smooth"});};const iv=setInterval(scroll,40);el.addEventListener("touchstart",()=>clearInterval(iv));el.addEventListener("mouseenter",()=>clearInterval(iv))}}} style={{display:"flex",gap:12,overflowX:"auto",padding:"0 16px",marginBottom:16,scrollSnapType:"x mandatory",scrollbarWidth:"none",msOverflowStyle:"none"}}>
-            {sec2.map(e=>{const g=gt[e.brand]?.c||C.gold;return(
-                <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,flexShrink:0,width:200,padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:14,scrollSnapAlign:"start",border:`1px solid ${g}20`}}>
-                  <div style={{height:120,position:"relative",overflow:"hidden"}}>
-                    <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
-                    <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 65%,rgba(6,6,12,0.5) 100%)"}}/>
-                    <div style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)",borderRadius:6,padding:"3px 8px",fontSize:9,color:g,fontWeight:700,border:`1px solid ${g}30`}}>{e.brand}</div>
-                    <div style={{position:"absolute",bottom:8,left:10,right:10,textShadow:"0 1px 4px rgba(0,0,0,0.8),0 0 12px rgba(0,0,0,0.5)"}}>
-                      <div style={{fontSize:13,fontWeight:700,color:C.text,lineHeight:1.2,textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>{e.title}</div>
-                      <div style={{fontSize:10,color:"#FFFFFF",marginTop:3}}>{e.date?new Date(e.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}):""}{" \u00B7 "}{e.time||"TBA"}</div>
-                    </div>
-                  </div>
-                </button>
-            )})}
-          </div>
-          </>)}
-          {/* Featured Picks */}
-          {sec3.length>0&&(<>
-          <SectionHead t="FEATURED PICKS" icon={"\u2726"} color={C.gold}/>
-          <div style={{padding:"0 16px",marginBottom:16}}>
-            {sec3.map(e=>{const g=gt[e.brand]?.c||C.gold;const dt=e.date?new Date(e.date+"T12:00:00"):null;return(
-                <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:16,marginBottom:12,position:"relative",border:`1px solid ${g}20`,boxShadow:`0 4px 20px rgba(0,0,0,0.3)`}}>
-                  <div style={{height:160,position:"relative",overflow:"hidden"}}>
-                    <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
-                    <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 65%,rgba(6,6,12,0.5) 100%)"}}/>
-                    <div style={{position:"absolute",top:12,left:14,display:"flex",alignItems:"center",gap:6}}>
-                      <div style={{width:6,height:6,borderRadius:99,background:g,boxShadow:`0 0 8px ${g}`}}/>
-                      <span style={{fontSize:10,color:g,fontWeight:700,letterSpacing:1}}>{e.brand}</span>
-                    </div>
-                    <div style={{position:"absolute",bottom:14,left:14,right:14,textShadow:"0 1px 4px rgba(0,0,0,0.8),0 0 12px rgba(0,0,0,0.5)"}}>
-                      <div style={{fontSize:18,fontWeight:700,color:C.text,lineHeight:1.2,textShadow:"0 2px 6px rgba(0,0,0,0.8)",marginBottom:4}}>{e.title}</div>
-                      {dt&&<div style={{fontSize:11,color:"#FFFFFF"}}>{dt.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"})}{" \u00B7 "}{e.time||"TBA"}{" \u00B7 "}{e.venue||e.city}</div>}
-                      <div style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:8,padding:"6px 14px",borderRadius:8,background:`${g}20`,border:`1px solid ${g}40`}}>
-                        <span style={{fontSize:11,fontWeight:700,color:g}}>View Details</span>
-                        <span style={{color:g}}>{"\u2192"}</span>
+
+          {/* ═══ TRENDING — auto-scroll carousel ═══ */}
+          {(()=>{
+            const trendPool=[...upcoming].sort((a,b)=>{
+              const aImg=a.image_url?0:1;const bImg=b.image_url?0:1;
+              if(aImg!==bImg)return aImg-bImg;
+              return(a.display_priority||50)-(b.display_priority||50);
+            });
+            const trendItems=mark(trendPool,8);
+            if(trendItems.length===0)return null;
+            return(<>
+              <SectionHead t="TRENDING" icon={"\u{1F525}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
+              <div style={{display:"flex",gap:12,overflowX:"auto",padding:"0 16px",marginBottom:16,scrollSnapType:"x mandatory",scrollbarWidth:"none"}}>
+                {trendItems.map(e=>{const g=gt[e.brand]?.c||C.gold;return(
+                  <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,flexShrink:0,width:200,padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:14,scrollSnapAlign:"start",border:"1px solid "+g+"20"}}>
+                    <div style={{height:120,position:"relative",overflow:"hidden"}}>
+                      <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
+                      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 65%,rgba(6,6,12,0.5) 100%)"}}/>
+                      <div style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)",borderRadius:6,padding:"3px 8px",fontSize:9,color:g,fontWeight:700,border:"1px solid "+g+"30"}}>{e.brand}</div>
+                      <div style={{position:"absolute",bottom:8,left:10,right:10,textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>
+                        <div style={{fontSize:13,fontWeight:700,color:C.text,lineHeight:1.2}}>{e.title}</div>
+                        <div style={{fontSize:10,color:"#FFFFFF",marginTop:3}}>{e.date?new Date(e.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}):""}{" \u00B7 "}{e.time||"TBA"}</div>
                       </div>
                     </div>
-                  </div>
-                </button>
-            )})}
-          </div>
-          </>)}
+                  </button>
+                );})}
+              </div>
+            </>);
+          })()}
+
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
-          {/* NIGHTLIFE — real clubs and tonight's programming */}
+
+          {/* ═══ UPCOMING CONCERTS ═══ */}
           {(()=>{
-            const NL_VENUES=["Revel Atlanta","Opium","Magic City Atlanta","Compound Atlanta","Tongue and Groove","Gold Room","Ravine Atlanta","Onyx Atlanta","Visions Ultra Lounge","Utopia ATL","Elleven45 Lounge","District Atlanta","Allure Atlanta"];
-            const nlPool=events.filter(e=>{
-              if(e.city!==city.name||e.source==="daily_event")return false;
+            const concerts=mark(concertPool,8);
+            if(concerts.length===0)return null;
+            return(<>
+              <SectionHead t="UPCOMING CONCERTS" icon={"\u{1F3B5}"} color={C.gold} action={{l:"See All",fn:()=>navigate("calendar")}}/>
+              <div style={{padding:"0 16px",marginBottom:16}}>
+                <EventGrid items={concerts} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
+                {concertPool.length>6&&<button onClick={()=>navigate("calendar")} style={{...V(false),width:"100%",marginTop:10,padding:"10px",textAlign:"center",fontSize:12}}>See all {concertPool.length} concerts {"\u2192"}</button>}
+              </div>
+            </>);
+          })()}
+
+          {/* ═══ UPCOMING EVENTS — ALL upcoming, more ATL events ═══ */}
+          {(()=>{
+            const evtPool=[...upcomingKHG,...cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event"&&e.source!=="sports_game")];
+            const seen=new Set();const unique=evtPool.filter(e=>{const k=e.title;if(seen.has(k))return false;seen.add(k);return true;});
+            const evtItems=mark(unique,10);
+            if(evtItems.length===0)return null;
+            return(<>
+              <SectionHead t="UPCOMING EVENTS" icon={"\u{1F4C5}"} color={C.gold} action={{l:"See All",fn:()=>navigate("calendar")}}/>
+              <div style={{padding:"0 16px",marginBottom:16}}>
+                {evtItems.slice(0,4).length>0&&<EventGrid items={evtItems.slice(0,4)} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>}
+                {evtItems.slice(4).map(e=><EventRow key={e.id} e={e} onClick={()=>{setDetail(e);navigate("detail")}}/>)}
+                {unique.length>10&&<button onClick={()=>navigate("calendar")} style={{...V(false),width:"100%",marginTop:10,padding:"10px",textAlign:"center",fontSize:12}}>See all {unique.length} events {"\u2192"}</button>}
+              </div>
+            </>);
+          })()}
+
+          {/* ═══ NIGHTLIFE ═══ */}
+          {(()=>{
+            const nlPool=cityEvents.filter(e=>{
+              if(e.source==="daily_event")return false;
               const cat=(e.category||"").toLowerCase();
-              const sub=(e.subcategory||"").toLowerCase();
               if(cat.match(/nightclub|lounge|club|hookah|speakeasy/))return true;
-              if(sub.includes("nightclub"))return true;
-              if(NL_VENUES.includes(e.venue)||NL_VENUES.includes(e.title))return true;
               return false;
             }).slice(0,8);
             if(nlPool.length===0)return null;
@@ -1079,38 +1140,7 @@ export default function GoodTimesApp(){
               </div>
             </>);
           })()}
-          {/* UPCOMING CONCERTS — shows and live music ONLY, no sports */}
-          {(()=>{
-            const concertPool=events.filter(e=>{
-              if(e.city!==city.name||!e.date||e.date<todayStr)return false;
-              if(e.source==="sports_game"||e.category==="sports")return false;
-              if(e.source==="show"&&(e.event_type||"").match(/concert|comedy|musical|festival|special_event/))return true;
-              if((e.event_type||"").match(/concert|festival/))return true;
-              return false;
-            }).sort((a,b)=>(a.date||"").localeCompare(b.date||"")).slice(0,6);
-            if(concertPool.length===0)return null;
-            return(<>
-              <SectionHead t="UPCOMING CONCERTS" icon={"\u{1F3B5}"} color={C.gold} action={{l:"See All",fn:()=>navigate("calendar")}}/>
-              <div style={{padding:"0 16px",marginBottom:16}}>
-                <EventGrid items={concertPool} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
-              </div>
-            </>);
-          })()}
-          {/* UPCOMING EVENTS — KHG + curated events this week */}
-          {(()=>{
-            const weekEnd=new Date();weekEnd.setDate(weekEnd.getDate()+14);
-            const weekEndStr=weekEnd.toISOString().split("T")[0];
-            const evtPool=[...upcoming.filter(e=>e.source==="huglife"),...events.filter(e=>e.source==="daily_event"&&e.date>=todayStr&&e.date<=weekEndStr&&(e.city===city.name||e.city==="TBA"))];
-            const seen=new Set();const unique=evtPool.filter(e=>{const k=e.title;if(seen.has(k))return false;seen.add(k);return true}).slice(0,8);
-            if(unique.length===0)return null;
-            return(<>
-              <SectionHead t="UPCOMING EVENTS" icon={"\u{1F4C5}"} color={C.gold} action={{l:"See All",fn:()=>navigate("calendar")}}/>
-              <div style={{padding:"0 16px",marginBottom:16}}>
-                {unique.slice(0,4).length>0&&<EventGrid items={unique.slice(0,4)} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>}
-                {unique.slice(4).map(e=><EventRow key={e.id} e={e} onClick={()=>{setDetail(e);navigate("detail")}}/>)}
-              </div>
-            </>);
-          })()}
+
           </>);
           })()}
         </div>
