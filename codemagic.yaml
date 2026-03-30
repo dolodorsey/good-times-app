@@ -11,8 +11,8 @@ workflows:
       vars:
         XCODE_WORKSPACE: "ios/App/App.xcworkspace"
         XCODE_SCHEME: "App"
-        APP_STORE_CONNECT_ISSUER_ID: "43ac552d-68b8-412a-8efc-b5f1b1f4de69"
-        APP_STORE_CONNECT_KEY_IDENTIFIER: "7CLK8VSGA3"
+      groups:
+        - app_store_credentials
       node: 18
       xcode: latest
       cocoapods: default
@@ -48,7 +48,7 @@ workflows:
       - name: Increment build number
         script: |
           cd ios/App
-          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_CONNECT_ISSUER_ID" "$APP_STORE_CONNECT_KEY_IDENTIFIER" com.goodtimes.app || echo 0)
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_CONNECT_ISSUER_ID" "$APP_STORE_CONNECT_KEY_IDENTIFIER" com.goodtimes.app 2>/dev/null || echo 0)
           agvtool new-version -all $(($LATEST_BUILD + 1))
       
       - name: Build iOS app
