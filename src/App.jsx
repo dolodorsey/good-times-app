@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { initNative, isNative, isIOS, tapHaptic, shareEvent, openLink, registerPush } from "./native";
 
 /* ═══════════════════════════════════════════════════════
-   GOOD TIMES CONCIERGE — v2 SURGICAL UPDATE
+   GOOD TIMES CONCIERGE — v3 iOS NATIVE + SURGICAL UPDATE
    Changes:
    1. Today/Tonight/This Week show DIFFERENT filtered events
    2. Prices REMOVED from all entries
@@ -401,6 +402,12 @@ export default function GoodTimesApp(){
   const[lockedPlans,setLockedPlans]=useState([]);
 
   const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(null),2000)};
+
+  // Initialize native platform (Capacitor iOS)
+  useEffect(() => {
+    initNative();
+    registerPush();
+  }, []);
 
   // Load events — ALL 3 TIERS of data
   useEffect(()=>{
