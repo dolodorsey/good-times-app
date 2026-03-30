@@ -1,5 +1,5 @@
 {
-  "appId": "com.goodtimes.app",
+  "appId": "app.rork.good-times-ai-concierge-dashboard-q1scx40i",
   "appName": "Good Times",
   "webDir": "dist",
   "server": {
@@ -20,7 +20,11 @@
       "backgroundColor": "#06060C"
     },
     "PushNotifications": {
-      "presentationOptions": ["badge", "sound", "alert"]
+      "presentationOptions": [
+        "badge",
+        "sound",
+        "alert"
+      ]
     }
   },
   "ios": {
