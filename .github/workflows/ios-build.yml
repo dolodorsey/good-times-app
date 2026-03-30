@@ -41,11 +41,9 @@ jobs:
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           
-          # Import DEVELOPMENT certificate
           echo "${{ secrets.DEVELOPMENT_CERTIFICATE_P12 }}" | base64 --decode > $RUNNER_TEMP/dev_cert.p12
           security import $RUNNER_TEMP/dev_cert.p12 -P "${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           
-          # Import DISTRIBUTION certificate
           echo "${{ secrets.DISTRIBUTION_CERTIFICATE_P12 }}" | base64 --decode > $RUNNER_TEMP/dist_cert.p12
           security import $RUNNER_TEMP/dist_cert.p12 -P "${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           
@@ -58,6 +56,9 @@ jobs:
         run: |
           mkdir -p ~/private_keys
           echo "${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}" > ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+          chmod 600 ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+          echo "✅ API key installed at ~/private_keys/"
+          ls -la ~/private_keys/
       
       - name: Build & Archive
         run: |
@@ -101,14 +102,23 @@ jobs:
             -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          
+          echo "✅ IPA exported"
+          ls -la $RUNNER_TEMP/output/
       
       - name: Upload to TestFlight
         run: |
+          echo "📦 Uploading to App Store Connect..."
+          
+          # Use xcrun altool with the private key path
           xcrun altool --upload-app \
-            -f $RUNNER_TEMP/output/*.ipa \
+            -f "$RUNNER_TEMP/output/App.ipa" \
             -t ios \
-            --apiKey ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
-            --apiIssuer ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+            --apiKey "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
+            --apiIssuer "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}" \
+            --verbose
+          
+          echo "✅ Upload complete! Check TestFlight at appstoreconnect.apple.com"
       
       - name: Cleanup
         if: always()
