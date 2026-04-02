@@ -2,6 +2,243 @@ import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { initNative, isNative, isIOS, tapHaptic, shareEvent, openLink, registerPush } from "./native";
 
 /* ═══════════════════════════════════════════════════════
+   GOOD TIMES AUTH + ONBOARDING SYSTEM
+   ═══════════════════════════════════════════════════════ */
+const GT_SB="https://czocqfaovfpjweayniuw.supabase.co";
+const GT_SK="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6b2NxZmFvdmZwandlYXluaXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNzEzODAsImV4cCI6MjA4Mzk0NzM4MH0.6-3rmA9tZXHLVg5N6a_82rKA9Kvrj4gRrUUiSczovho";
+
+const gtAuth=async(ep,body)=>{
+  const r=await fetch(`${GT_SB}/auth/v1/${ep}`,{method:'POST',headers:{'Content-Type':'application/json',apikey:GT_SK,Authorization:`Bearer ${GT_SK}`},body:JSON.stringify(body)});
+  const d=await r.json();if(d.error||d.msg)throw new Error(d.error_description||d.msg||d.error||'Auth failed');return d;
+};
+const gtSignUp=async(email,pw,name,city)=>gtAuth('signup',{email,password:pw,data:{full_name:name,home_city:city}});
+const gtSignIn=async(email,pw)=>gtAuth('token?grant_type=password',{email,password:pw});
+const getGtSession=()=>{try{const s=localStorage.getItem('gt_session');return s?JSON.parse(s):null}catch{return null}};
+const storeGtSession=s=>{try{localStorage.setItem('gt_session',JSON.stringify(s))}catch{}};
+const clearGtSession=()=>{try{localStorage.removeItem('gt_session')}catch{}};
+
+const updateGtPrefs=async(authId,prefs,token)=>{
+  try{
+    // Look up gt_user_profiles id
+    const lr=await fetch(`${GT_SB}/rest/v1/gt_user_profiles?auth_id=eq.${authId}&select=id`,{headers:{apikey:GT_SK,Authorization:`Bearer ${token}`}});
+    const ld=await lr.json();
+    if(!ld||!ld[0])return;
+    await fetch(`${GT_SB}/rest/v1/gt_user_profiles?id=eq.${ld[0].id}`,{
+      method:'PATCH',headers:{'Content-Type':'application/json',apikey:GT_SK,Authorization:`Bearer ${token}`,Prefer:'return=minimal'},
+      body:JSON.stringify(prefs)
+    });
+  }catch{}
+};
+
+const VIBE_OPTIONS=[
+  {id:'nightlife',label:'Nightlife',icon:'🌙',color:'#B86BFF'},
+  {id:'hookah',label:'Hookah',icon:'💨',color:'#D4A853'},
+  {id:'dining',label:'Dining',icon:'🍽️',color:'#FFB86B'},
+  {id:'drinks',label:'Drinks & Bars',icon:'🍸',color:'#C39BD3'},
+  {id:'music',label:'Live Music',icon:'🎵',color:'#FF6B6B'},
+  {id:'sports',label:'Sports',icon:'🏟️',color:'#6BFFB8'},
+  {id:'culture',label:'Arts & Culture',icon:'🎨',color:'#C8A96E'},
+  {id:'dating',label:'Date Night',icon:'💫',color:'#FF69B4'},
+  {id:'wellness',label:'Wellness & Spa',icon:'🧘',color:'#90EE90'},
+  {id:'adventure',label:'Adventure',icon:'🌊',color:'#00CED1'},
+  {id:'shopping',label:'Shopping',icon:'🛍️',color:'#FFD700'},
+  {id:'exclusive',label:'Exclusive / VIP',icon:'✦',color:'#D4A853'},
+];
+
+const CITY_OPTIONS=[
+  {id:'atlanta',name:'Atlanta',emoji:'🍑'},
+  {id:'houston',name:'Houston',emoji:'🤠'},
+  {id:'los_angeles',name:'Los Angeles',emoji:'🌴'},
+  {id:'miami',name:'Miami',emoji:'🌊'},
+  {id:'charlotte',name:'Charlotte',emoji:'👑'},
+  {id:'washington_dc',name:'Washington DC',emoji:'🏛️'},
+  {id:'new_york',name:'New York',emoji:'🗽'},
+  {id:'dallas',name:'Dallas',emoji:'⭐'},
+  {id:'phoenix',name:'Phoenix',emoji:'🌵'},
+  {id:'scottsdale',name:'Scottsdale',emoji:'🏜️'},
+];
+
+function GoodTimesOnboarding({onComplete}){
+  const[step,setStep]=useState('welcome');// welcome|auth|city|vibes|age
+  const[mode,setMode]=useState('signup');
+  const[email,setEmail]=useState('');const[pw,setPw]=useState('');const[name,setName]=useState('');
+  const[city,setCity]=useState('atlanta');
+  const[vibes,setVibes]=useState([]);
+  const[age,setAge]=useState('');
+  const[loading,setLoading]=useState(false);
+  const[err,setErr]=useState('');
+  const[authData,setAuthData]=useState(null);
+
+  const accentGold='#D4A853';
+  const bg='#06060C';
+  const ff="'DM Sans',sans-serif";
+  const fs="'Playfair Display',Georgia,serif";
+
+  const doAuth=async()=>{
+    if(loading)return;setLoading(true);setErr('');
+    try{
+      if(mode==='signup'){
+        if(!name.trim()||name.trim().length<2){setErr('Enter your name');setLoading(false);return;}
+        await gtSignUp(email,pw,name.trim(),city);
+        const d=await gtSignIn(email,pw);
+        storeGtSession(d);setAuthData(d);setStep('city');
+      }else{
+        const d=await gtSignIn(email,pw);
+        storeGtSession(d);
+        // Returning user — skip onboarding
+        onComplete(d,null);
+      }
+    }catch(e){
+      let m=e.message||'Failed';
+      if(m.includes('Invalid login'))m='Wrong email or password';
+      if(m.includes('already registered'))m='Email taken. Try signing in.';
+      setErr(m);
+    }finally{setLoading(false);}
+  };
+
+  const finishOnboarding=async()=>{
+    if(authData){
+      const prefs={home_city:city,vibe_preferences:vibes,tab_interests:vibes,age_range:age||null};
+      updateGtPrefs(authData.user?.id,prefs,authData.access_token);
+    }
+    onComplete(authData,{city,vibes,age});
+  };
+
+  const validEmail=/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const canSubmit=validEmail&&pw.length>=8&&(mode==='signin'||name.trim().length>=2);
+
+  // Welcome
+  if(step==='welcome')return(
+    <div style={{minHeight:'100vh',background:`radial-gradient(ellipse at 50% 30%,rgba(50,35,15,0.5) 0%,${bg} 70%)`,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,fontFamily:ff,color:'#fff',textAlign:'center'}}>
+      <div style={{width:80,height:1,background:`linear-gradient(90deg,transparent,${accentGold},transparent)`,marginBottom:28}}/>
+      <img src="/good-times-logo.png" alt="Good Times" style={{height:48,objectFit:'contain',marginBottom:16}} onError={e=>{e.currentTarget.style.display='none'}}/>
+      <h1 style={{fontFamily:fs,fontSize:36,fontWeight:700,marginBottom:8,color:'#fff'}}>Good Times</h1>
+      <p style={{fontSize:14,color:'rgba(255,255,255,0.5)',marginBottom:40,maxWidth:300}}>Your city. Your vibe. Your night. Curated for you.</p>
+      <button onClick={()=>setStep('auth')} style={{background:`linear-gradient(135deg,${accentGold},#B8942F)`,color:'#0A0A0F',border:'none',borderRadius:14,padding:'16px 48px',fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:ff,letterSpacing:0.5,marginBottom:16,width:'100%',maxWidth:300}}>Get Started</button>
+      <button onClick={()=>{setMode('signin');setStep('auth')}} style={{background:'transparent',color:accentGold,border:`1px solid ${accentGold}40`,borderRadius:14,padding:'14px 48px',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:ff,width:'100%',maxWidth:300}}>I Already Have an Account</button>
+    </div>
+  );
+
+  // Auth
+  if(step==='auth')return(
+    <div style={{minHeight:'100vh',background:bg,display:'flex',flexDirection:'column',fontFamily:ff,color:'#fff'}}>
+      <div style={{padding:'16px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+        <button onClick={()=>setStep('welcome')} style={{background:'none',border:'none',color:'rgba(255,255,255,0.5)',fontSize:14,cursor:'pointer',fontFamily:ff}}>← Back</button>
+        <span style={{fontFamily:fs,fontSize:16,fontWeight:700,color:accentGold}}>Good Times</span>
+        <div style={{width:50}}/>
+      </div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'20px 24px'}}>
+        <h2 style={{fontFamily:fs,fontSize:28,fontWeight:700,marginBottom:4}}>{mode==='signup'?'Create Account':'Welcome Back'}</h2>
+        <p style={{fontSize:14,color:'rgba(255,255,255,0.4)',marginBottom:32}}>{mode==='signup'?'Set up your experience':'Sign in to continue'}</p>
+        <div style={{display:'flex',background:'rgba(255,255,255,0.08)',borderRadius:12,padding:4,marginBottom:28,width:'100%',maxWidth:360}}>
+          <button onClick={()=>{setMode('signup');setErr('')}} style={{flex:1,padding:'10px',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signup'?accentGold:'transparent',color:mode==='signup'?'#0A0A0F':'rgba(255,255,255,0.5)',fontFamily:ff}}>Sign Up</button>
+          <button onClick={()=>{setMode('signin');setErr('')}} style={{flex:1,padding:'10px',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signin'?accentGold:'transparent',color:mode==='signin'?'#0A0A0F':'rgba(255,255,255,0.5)',fontFamily:ff}}>Sign In</button>
+        </div>
+        <div style={{width:'100%',maxWidth:360}}>
+          {mode==='signup'&&<div style={{marginBottom:16}}>
+            <label style={{fontSize:12,color:'rgba(255,255,255,0.5)',display:'block',marginBottom:6}}>Full Name</label>
+            <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={{width:'100%',padding:'14px 16px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:12,color:'#fff',fontSize:14,outline:'none',fontFamily:ff,boxSizing:'border-box'}}/>
+          </div>}
+          <div style={{marginBottom:16}}>
+            <label style={{fontSize:12,color:'rgba(255,255,255,0.5)',display:'block',marginBottom:6}}>Email</label>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com" style={{width:'100%',padding:'14px 16px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:12,color:'#fff',fontSize:14,outline:'none',fontFamily:ff,boxSizing:'border-box'}}/>
+          </div>
+          <div style={{marginBottom:24}}>
+            <label style={{fontSize:12,color:'rgba(255,255,255,0.5)',display:'block',marginBottom:6}}>Password</label>
+            <input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="Min 8 characters" style={{width:'100%',padding:'14px 16px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:12,color:'#fff',fontSize:14,outline:'none',fontFamily:ff,boxSizing:'border-box'}}/>
+          </div>
+          {err&&<div style={{padding:'12px 16px',background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:12,marginBottom:16,fontSize:13,color:'#ef4444',fontWeight:600}}>{err}</div>}
+          <button onClick={doAuth} disabled={!canSubmit||loading} style={{width:'100%',padding:'16px',background:canSubmit&&!loading?`linear-gradient(135deg,${accentGold},#B8942F)`:'rgba(255,255,255,0.08)',color:canSubmit?'#0A0A0F':'rgba(255,255,255,0.3)',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:canSubmit&&!loading?'pointer':'not-allowed',fontFamily:ff}}>{loading?'...':(mode==='signup'?'Create Account':'Sign In')}</button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // City picker
+  if(step==='city')return(
+    <div style={{minHeight:'100vh',background:bg,display:'flex',flexDirection:'column',fontFamily:ff,color:'#fff',padding:24}}>
+      <div style={{textAlign:'center',marginBottom:32,marginTop:40}}>
+        <div style={{fontSize:12,letterSpacing:4,color:accentGold,fontWeight:700,marginBottom:12}}>STEP 1 OF 3</div>
+        <h2 style={{fontFamily:fs,fontSize:28,fontWeight:700,marginBottom:8}}>Where are you?</h2>
+        <p style={{fontSize:14,color:'rgba(255,255,255,0.4)'}}>Pick your home city</p>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,flex:1}}>
+        {CITY_OPTIONS.map(c=>(
+          <button key={c.id} onClick={()=>setCity(c.id)} style={{background:city===c.id?`${accentGold}20`:'rgba(255,255,255,0.04)',border:city===c.id?`2px solid ${accentGold}`:'1px solid rgba(255,255,255,0.1)',borderRadius:16,padding:'20px 16px',cursor:'pointer',textAlign:'center',fontFamily:ff,transition:'all 0.2s'}}>
+            <div style={{fontSize:28,marginBottom:6}}>{c.emoji}</div>
+            <div style={{fontSize:14,fontWeight:700,color:city===c.id?accentGold:'#fff'}}>{c.name}</div>
+          </button>
+        ))}
+      </div>
+      <button onClick={()=>setStep('vibes')} style={{background:`linear-gradient(135deg,${accentGold},#B8942F)`,color:'#0A0A0F',border:'none',borderRadius:14,padding:'16px',fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:ff,marginTop:20,width:'100%'}}>Next →</button>
+    </div>
+  );
+
+  // Vibe picker
+  if(step==='vibes')return(
+    <div style={{minHeight:'100vh',background:bg,display:'flex',flexDirection:'column',fontFamily:ff,color:'#fff',padding:24}}>
+      <div style={{textAlign:'center',marginBottom:24,marginTop:40}}>
+        <div style={{fontSize:12,letterSpacing:4,color:accentGold,fontWeight:700,marginBottom:12}}>STEP 2 OF 3</div>
+        <h2 style={{fontFamily:fs,fontSize:28,fontWeight:700,marginBottom:8}}>What's your vibe?</h2>
+        <p style={{fontSize:14,color:'rgba(255,255,255,0.4)'}}>Select all that apply — this customizes your feed</p>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,flex:1}}>
+        {VIBE_OPTIONS.map(v=>{const sel=vibes.includes(v.id);return(
+          <button key={v.id} onClick={()=>setVibes(prev=>sel?prev.filter(x=>x!==v.id):[...prev,v.id])} style={{background:sel?`${v.color}18`:'rgba(255,255,255,0.04)',border:sel?`2px solid ${v.color}`:'1px solid rgba(255,255,255,0.1)',borderRadius:16,padding:'16px 12px',cursor:'pointer',textAlign:'center',fontFamily:ff,transition:'all 0.2s'}}>
+            <div style={{fontSize:24,marginBottom:4}}>{v.icon}</div>
+            <div style={{fontSize:13,fontWeight:700,color:sel?v.color:'#fff'}}>{v.label}</div>
+          </button>
+        );})}
+      </div>
+      <button onClick={()=>setStep('age')} disabled={vibes.length===0} style={{background:vibes.length>0?`linear-gradient(135deg,${accentGold},#B8942F)`:'rgba(255,255,255,0.08)',color:vibes.length>0?'#0A0A0F':'rgba(255,255,255,0.3)',border:'none',borderRadius:14,padding:'16px',fontSize:16,fontWeight:700,cursor:vibes.length>0?'pointer':'not-allowed',fontFamily:ff,marginTop:20,width:'100%'}}>Next → ({vibes.length} selected)</button>
+    </div>
+  );
+
+  // Age range
+  if(step==='age')return(
+    <div style={{minHeight:'100vh',background:bg,display:'flex',flexDirection:'column',fontFamily:ff,color:'#fff',padding:24}}>
+      <div style={{textAlign:'center',marginBottom:32,marginTop:60}}>
+        <div style={{fontSize:12,letterSpacing:4,color:accentGold,fontWeight:700,marginBottom:12}}>STEP 3 OF 3</div>
+        <h2 style={{fontFamily:fs,fontSize:28,fontWeight:700,marginBottom:8}}>Age range?</h2>
+        <p style={{fontSize:14,color:'rgba(255,255,255,0.4)'}}>Helps us filter age-appropriate content</p>
+      </div>
+      <div style={{display:'flex',flexDirection:'column',gap:12,flex:1,maxWidth:360,margin:'0 auto',width:'100%'}}>
+        {[{id:'18-24',label:'18 – 24'},{id:'25-34',label:'25 – 34'},{id:'35-44',label:'35 – 44'},{id:'45+',label:'45+'}].map(a=>(
+          <button key={a.id} onClick={()=>setAge(a.id)} style={{background:age===a.id?`${accentGold}20`:'rgba(255,255,255,0.04)',border:age===a.id?`2px solid ${accentGold}`:'1px solid rgba(255,255,255,0.1)',borderRadius:16,padding:'20px 24px',cursor:'pointer',textAlign:'left',fontFamily:ff,fontSize:18,fontWeight:700,color:age===a.id?accentGold:'#fff',transition:'all 0.2s'}}>{a.label}</button>
+        ))}
+      </div>
+      <button onClick={finishOnboarding} disabled={!age} style={{background:age?`linear-gradient(135deg,${accentGold},#B8942F)`:'rgba(255,255,255,0.08)',color:age?'#0A0A0F':'rgba(255,255,255,0.3)',border:'none',borderRadius:14,padding:'16px',fontSize:16,fontWeight:700,cursor:age?'pointer':'not-allowed',fontFamily:ff,marginTop:20,width:'100%'}}>Let's Go ✦</button>
+    </div>
+  );
+
+  return null;
+}
+
+/* ═══════════════════════════════════════════════════════
+   AUTH WRAPPER — gates the app behind signup/signin
+   ═══════════════════════════════════════════════════════ */
+function GoodTimesAuthGate(){
+  const[authed,setAuthed]=useState(null);// null=checking, false=needs auth, object=session
+  const[prefs,setPrefs]=useState(null);
+
+  useEffect(()=>{
+    const s=getGtSession();
+    if(s?.access_token&&s?.user){setAuthed(s);setPrefs({city:s.user?.user_metadata?.home_city||'atlanta'});}
+    else setAuthed(false);
+  },[]);
+
+  if(authed===null)return(
+    <div style={{minHeight:'100vh',background:'#06060C',display:'flex',alignItems:'center',justifyContent:'center'}}>
+      <div style={{width:80,height:1,background:'linear-gradient(90deg,transparent,#D4A853,transparent)',animation:'shimmer 2s infinite'}}/>
+    </div>
+  );
+
+  if(authed===false)return <GoodTimesOnboarding onComplete={(session,p)=>{setAuthed(session);setPrefs(p)}}/>;
+
+  return <GoodTimesApp userSession={authed} userPrefs={prefs} onSignOut={()=>{clearGtSession();setAuthed(false);setPrefs(null)}}/>;
+}
+
+/* ═══════════════════════════════════════════════════════
    GOOD TIMES CONCIERGE — v3 iOS NATIVE + SURGICAL UPDATE
    Changes:
    1. Today/Tonight/This Week show DIFFERENT filtered events
@@ -352,11 +589,16 @@ const ScrollWrap=({children})=>(
 );
 
 // ═══ MAIN APP ═══
-export default function GoodTimesApp(){
+export default function GoodTimesAppWrapper(props){return <GoodTimesAuthGate {...props}/>;}
+
+function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const[screen,setScreen]=useState("now");
   const[prevScreen,setPrev]=useState("now");
   const[navScreen,setNav]=useState("now");
-  const[city,setCity]=useState(Ri[0]);
+  const[city,setCity]=useState(()=>{
+    const prefCity=userPrefs?.city||userSession?.user?.user_metadata?.home_city||'atlanta';
+    return Ri.find(c=>c.id===prefCity)||Ri[0];
+  });
   const[events,setEvents]=useState([]);
   const[loading,setLoading]=useState(true);
   const[detail,setDetail]=useState(null);
@@ -715,7 +957,15 @@ export default function GoodTimesApp(){
       const venuePool=events.filter(e=>e.city===city.name&&(e.source==="venue"||e.source==="happening"||e.source==="legacy"));
       const eventPool=upcoming.length>0?upcoming:allUpcoming;
       
-      // Category matching based on mood
+      // Map mood → tab_tags for smarter matching
+      const moodTabs={
+        chill:["drinks","dating","hookah","music"],
+        turnt:["nightlife","drinks","hookah"],
+        date:["dating","dining","drinks"],
+        bougie:["exclusive","nightlife","drinks","dating"],
+        family:["dining","adventure","culture"],
+        explore:["culture","adventure","dining","hookah","drinks"]
+      };
       const moodCats={
         chill:["lounge","jazz","wine_bar","coffee","speakeasy","rooftop","hookah"],
         turnt:["nightclub","day_party","pool_party","hookah"],
@@ -724,6 +974,7 @@ export default function GoodTimesApp(){
         family:["restaurant","food_hall","entertainment","culture","outdoor_adventures"],
         explore:["culture","entertainment","food_hall","comedy","hookah","speakeasy"]
       };
+      const relevantTabs=moodTabs[mood]||moodTabs.explore;
       const relevantCats=moodCats[mood]||moodCats.explore;
       
       // Time-based filtering
@@ -1484,26 +1735,28 @@ export default function GoodTimesApp(){
                   <button key={sub} onClick={async()=>{
                     setSubCatView({parent:exploreSheet,sub});
                     setVenueLoading(true);setVenueResults([]);
-                    // Map city name to city_key (must match gt_venues city_key values)
                     const cityKeyMap={"Atlanta":"atlanta","Houston":"houston","Los Angeles":"los_angeles","Charlotte":"charlotte","Washington":"washington_dc","Miami":"miami","Las Vegas":"las_vegas","New York":"new_york","Dallas":"dallas","Phoenix":"phoenix","Scottsdale":"scottsdale"};
                     const ck=cityKeyMap[city.name]||city.name.toLowerCase().replace(/\s+/g,'_');
-                    // Map explore category to gt_venues category_keys
-                    const cats=CAT_MAP[exploreSheet.id]||[exploreSheet.id];
-                    const catFilter=cats.map(c=>`category_key.eq.${c}`).join(",");
-                    // Map subcategory labels to actual category_key / subcategory values
                     const subMap={"Clubs":"nightclub","Lounges":"lounge","Rooftops":"rooftop","Hookah":"hookah","Day Parties":"day_party","Pool Parties":"pool_party","Afterhours":"nightclub","Speakeasies":"speakeasy","Dive Bars":"bar","Wine Bars":"wine_bar","Concerts":"concert","Jazz":"jazz","R&B/Soul":"live_music","Hip Hop":"live_music","DJ Sets":"nightclub","Festivals":"festival","Karaoke":"karaoke","Premium Lounges":"hookah","Rooftop Hookah":"hookah","Sports Bars":"sports_bar"};
                     const subKey=subMap[sub]||sub.toLowerCase().replace(/\s+/g,"_");
-                    // Try subcategory-specific filter first
-                    let q=`gt_venues?select=id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key&status=eq.active&city_key=eq.${ck}&or=(category_key.eq.${subKey},subcategory.ilike.*${subKey}*)&order=google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
+                    const tabId=exploreSheet.id;
+                    const sel="id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key,tab_tags,search_tags";
+                    // PRIMARY: Use tab_tags to source venues for this tab + subcategory filter
+                    let q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&tab_tags=cs.{${tabId}}&or=(category_key.eq.${subKey},subcategory.ilike.*${subKey}*,search_tags.cs.{${subKey}})&order=google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
                     let results=await khgF(q);
-                    // Fallback to broader category if no subcategory matches
+                    // FALLBACK 1: Tab tag only (broader — all venues tagged for this tab in this city)
                     if(results.length===0){
-                      q=`gt_venues?select=id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key&status=eq.active&city_key=eq.${ck}&or=(${catFilter})&order=google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
+                      q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&tab_tags=cs.{${tabId}}&order=google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
                       results=await khgF(q);
                     }
-                    // If no results for this city, try all cities
+                    // FALLBACK 2: Search tags (keyword match across all fields)
                     if(results.length===0){
-                      q=`gt_venues?select=id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key,city_key&status=eq.active&or=(${catFilter})&order=google_rating.desc.nullslast&limit=15`;
+                      q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&search_tags=cs.{${subKey}}&order=google_rating.desc.nullslast&limit=20`;
+                      results=await khgF(q);
+                    }
+                    // FALLBACK 3: All cities for this tab
+                    if(results.length===0){
+                      q=`gt_venues?select=${sel},city_key&status=eq.active&tab_tags=cs.{${tabId}}&order=google_rating.desc.nullslast&limit=15`;
                       results=await khgF(q);
                     }
                     setVenueResults(results);setVenueLoading(false);
@@ -1727,6 +1980,7 @@ export default function GoodTimesApp(){
               })}
             </div>
           )}
+          {onSignOut&&<div style={{padding:'0 0',marginTop:16}}><button onClick={onSignOut} style={{...V(false),width:'100%',padding:'14px',textAlign:'center',fontSize:14,color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'}}>Sign Out</button></div>}
           <div style={{marginTop:20}}><SponsorBanner/></div>
         </div>
       </ScrollWrap>
@@ -1824,3 +2078,4 @@ export default function GoodTimesApp(){
 }
 // deployed Mon Mar  2 09:01:48 UTC 2026
 // v9.7 deployed Tue Mar 17 07:05:47 UTC 2026
+// v10.0 — auth + onboarding + tab_tags — Apr 2 2026
