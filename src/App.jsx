@@ -699,6 +699,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   useEffect(() => {
     initNative();
     registerPush();
+    // Global image error handler — hides broken images instead of showing broken icon
+    const handleImgError=(e)=>{if(e.target.tagName==='IMG'){e.target.setAttribute('data-error','true');e.target.style.opacity='0';e.target.style.height='0';}};
+    document.addEventListener('error',handleImgError,true);
+    return()=>document.removeEventListener('error',handleImgError,true);
   }, []);
 
   // Load events — ALL 3 TIERS of data
@@ -2161,6 +2165,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         body{background:${C.bg};margin:0;overflow-x:hidden;}
         ::-webkit-scrollbar{display:none;}
         button{font-family:${F.f};}
+        img{transition:opacity 0.3s;}
+        img[data-error]{opacity:0;height:0!important;min-height:0!important;overflow:hidden;}
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
