@@ -1008,6 +1008,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const allUpcoming=useMemo(()=>events.filter(e=>e.date>=todayStr&&e.source!=="daily_event").sort((a,b)=>(a.display_priority||50)-(b.display_priority||50)||a.date.localeCompare(b.date)),[events,todayStr]);
 
   const toggleSave=async(id)=>{
+    tapHaptic();
     const has=saved.includes(id);
     setSaved(s=>has?s.filter(x=>x!==id):[...s,id]);
     showToast(has?"Removed from Vault":"Saved to Vault \u2726");
@@ -2154,7 +2155,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         {navDefs.map(n=>{
           const active=navScreen===n.id;
           return(
-            <button key={n.id} onClick={()=>navigate(n.id,n.id)} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"2px 0",minWidth:0,flex:1,position:"relative"}}>
+            <button key={n.id} onClick={()=>{tapHaptic();navigate(n.id,n.id)}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"2px 0",minWidth:0,flex:1,position:"relative"}}>
               {active&&<div style={{position:"absolute",top:-6,width:24,height:2.5,borderRadius:99,background:C.gold,boxShadow:`0 0 10px ${C.gold}80`}}/>}
               <div style={{width:30,height:30,borderRadius:10,background:active?`${C.gold}18`:"rgba(255,255,255,0.15)",border:active?`1px solid ${C.gold}30`:"1px solid rgba(255,255,255,0.35)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill={active?C.gold:"#FFFFFF"} style={{transition:"all 0.2s"}}><path d={n.icon}/></svg>
