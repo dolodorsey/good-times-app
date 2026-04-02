@@ -2053,7 +2053,11 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
               })}
             </div>
           )}
-          {onSignOut&&<div style={{padding:'0 0',marginTop:16}}><button onClick={onSignOut} style={{...V(false),width:'100%',padding:'14px',textAlign:'center',fontSize:14,color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'}}>Sign Out</button></div>}
+          <div style={{marginTop:16,display:'flex',justifyContent:'center',gap:16}}>
+            <button onClick={()=>window.open('https://thekollectivehospitalitygroup.com/terms','_blank')} style={{background:'none',border:'none',color:'rgba(255,255,255,0.3)',fontSize:11,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",textDecoration:'underline'}}>Terms of Service</button>
+            <button onClick={()=>window.open('https://thekollectivehospitalitygroup.com/privacy','_blank')} style={{background:'none',border:'none',color:'rgba(255,255,255,0.3)',fontSize:11,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",textDecoration:'underline'}}>Privacy Policy</button>
+          </div>
+          {onSignOut&&<div style={{padding:'0 0',marginTop:12}}><button onClick={onSignOut} style={{...V(false),width:'100%',padding:'14px',textAlign:'center',fontSize:14,color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'}}>Sign Out</button></div>}
           <div style={{marginTop:20}}><SponsorBanner/></div>
         </div>
       </ScrollWrap>
