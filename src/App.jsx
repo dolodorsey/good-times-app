@@ -699,6 +699,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   useEffect(() => {
     initNative();
     registerPush();
+    // Global image error handler — hides broken images
+    const imgErr=(e)=>{if(e.target.tagName==='IMG')e.target.setAttribute('data-error','true')};
+    document.addEventListener('error',imgErr,true);
+    return()=>document.removeEventListener('error',imgErr,true);
     // Global image error handler — hides broken images instead of showing broken icon
     const handleImgError=(e)=>{if(e.target.tagName==='IMG'){e.target.setAttribute('data-error','true');e.target.style.opacity='0';e.target.style.height='0';}};
     document.addEventListener('error',handleImgError,true);
