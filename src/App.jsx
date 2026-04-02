@@ -687,6 +687,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const[calCatFilter,setCalCatFilter]=useState("all");
   // Social
   const[connectedSocials,setConnectedSocials]=useState([]);
+  const[legalModal,setLegalModal]=useState(null);// null|'terms'|'privacy'
   // Saved plans
   const[lockedPlans,setLockedPlans]=useState([]);
 
@@ -2054,8 +2055,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             </div>
           )}
           <div style={{marginTop:16,display:'flex',justifyContent:'center',gap:16}}>
-            <button onClick={()=>window.open('https://thekollectivehospitalitygroup.com/terms','_blank')} style={{background:'none',border:'none',color:'rgba(255,255,255,0.3)',fontSize:11,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",textDecoration:'underline'}}>Terms of Service</button>
-            <button onClick={()=>window.open('https://thekollectivehospitalitygroup.com/privacy','_blank')} style={{background:'none',border:'none',color:'rgba(255,255,255,0.3)',fontSize:11,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",textDecoration:'underline'}}>Privacy Policy</button>
+            <button onClick={()=>setLegalModal('terms')} style={{background:'none',border:'none',color:'rgba(255,255,255,0.3)',fontSize:11,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",textDecoration:'underline'}}>Terms of Service</button>
+            <button onClick={()=>setLegalModal('privacy')} style={{background:'none',border:'none',color:'rgba(255,255,255,0.3)',fontSize:11,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",textDecoration:'underline'}}>Privacy Policy</button>
           </div>
           {onSignOut&&<div style={{padding:'0 0',marginTop:12}}><button onClick={onSignOut} style={{...V(false),width:'100%',padding:'14px',textAlign:'center',fontSize:14,color:'#ef4444',border:'1px solid rgba(239,68,68,0.3)'}}>Sign Out</button></div>}
           <div style={{marginTop:20}}><SponsorBanner/></div>
@@ -2125,6 +2126,18 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       {renderScreen()}
       {/* Toast */}
       {toast&&<div style={{position:"fixed",top:50,left:"50%",transform:"translateX(-50%)",zIndex:60,background:`linear-gradient(135deg,${C.gold},#B8942F)`,color:"#0A0A0F",padding:"8px 20px",borderRadius:10,fontSize:12,fontWeight:700,fontFamily:F.f,boxShadow:"0 8px 32px rgba(212,168,83,0.3)",animation:"fadeIn 0.3s ease"}}>{toast}</div>}
+      {legalModal&&<div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(6,6,12,0.97)",overflowY:"auto",padding:"60px 20px 40px"}} onClick={()=>setLegalModal(null)}>
+        <div onClick={e=>e.stopPropagation()} style={{maxWidth:500,margin:"0 auto",background:"#0d0d14",borderRadius:20,padding:"24px 20px",border:"1px solid rgba(255,255,255,0.1)"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <h2 style={{fontFamily:"'Playfair Display',serif",fontSize:20,fontWeight:700,margin:0}}>{legalModal==="terms"?"Terms of Service":"Privacy Policy"}</h2>
+            <button onClick={()=>setLegalModal(null)} style={{background:"none",border:"none",color:"rgba(255,255,255,0.5)",fontSize:20,cursor:"pointer"}}>{"\u2715"}</button>
+          </div>
+          <div style={{fontSize:12,color:"rgba(255,255,255,0.6)",lineHeight:1.8,whiteSpace:"pre-wrap"}}>
+            {legalModal==="terms"?`TERMS OF SERVICE \u2014 The Kollective Hospitality Group\nLast Updated: April 2, 2026\n\n1. ACCEPTANCE OF TERMS\nBy using any application provided by The Kollective Hospitality Group ("KHG"), including Good Times, SOS, On Call, and Help 911, you agree to these Terms.\n\n2. ELIGIBILITY\nYou must be at least 18 years old to use our Apps.\n\n3. ACCOUNT REGISTRATION\nYou are responsible for maintaining the confidentiality of your credentials and for all activities under your account.\n\n4. USE OF SERVICES\nGood Times is a city entertainment guide and venue discovery platform. SOS provides roadside assistance dispatch. On Call provides home and personal services booking. Help 911 is a recovery concierge for accident victims.\n\n5. PAYMENTS\nCertain services require payment. All fees are non-refundable except as required by law.\n\n6. SERVICE PROVIDER DISCLAIMER\nKHG acts as a platform connecting users with independent service providers. We are not liable for services provided by third parties.\n\n7. INTELLECTUAL PROPERTY\nAll content and technology in our Apps are owned by KHG.\n\n8. LIMITATION OF LIABILITY\nKHG shall not be liable for any indirect, incidental, or consequential damages.\n\n9. GOVERNING LAW\nThese terms are governed by the laws of the State of Georgia, United States.\n\n10. CONTACT\nThe Kollective Hospitality Group\nAtlanta, Georgia\nthedoctordorsey@gmail.com`
+            :`PRIVACY POLICY \u2014 The Kollective Hospitality Group\nLast Updated: April 2, 2026\n\n1. INFORMATION WE COLLECT\nAccount information (name, email, phone, city, preferences), usage data, location data when you request location-based services, and payment information processed through third-party processors.\n\n2. HOW WE USE YOUR INFORMATION\nTo provide and improve services, personalize your experience, process transactions, connect you with service providers, and comply with legal obligations.\n\n3. INFORMATION SHARING\nWe do not sell your personal information. We share data with service providers to fulfill requests, analytics partners (anonymized), and law enforcement when required.\n\n4. DATA SECURITY\nWe implement industry-standard security including encryption in transit, secure database storage, and access controls.\n\n5. DATA RETENTION\nWe retain data while your account is active. You may request deletion by contacting us.\n\n6. YOUR RIGHTS\nAccess, correct, or delete your personal data. Opt out of non-essential communications.\n\n7. CHILDREN'S PRIVACY\nOur Apps are not intended for users under 18.\n\n8. CONTACT\nThe Kollective Hospitality Group\nAtlanta, Georgia\nthedoctordorsey@gmail.com`}
+          </div>
+        </div>
+      </div>}
       {/* CHANGE #4: Bottom nav — position:fixed, always visible, z-index:40 */}
       <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,zIndex:40,background:"linear-gradient(180deg,rgba(6,6,12,0.97),rgba(6,6,12,1.0))",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",borderTop:"1px solid rgba(212,168,83,0.12)",padding:"6px 4px 16px",display:"flex",justifyContent:"space-around"}}>
         {navDefs.map(n=>{
