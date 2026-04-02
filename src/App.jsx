@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { initNative, isNative, isIOS, tapHaptic, shareEvent, openLink, registerPush } from "./native";
 
 /* ═══════════════════════════════════════════════════════
@@ -13,7 +13,11 @@ const gtAuth=async(ep,body)=>{
 };
 const gtSignUp=async(email,pw,name,city)=>gtAuth('signup',{email,password:pw,data:{full_name:name,home_city:city}});
 const gtSignIn=async(email,pw)=>gtAuth('token?grant_type=password',{email,password:pw});
-const getGtSession=()=>{try{const s=localStorage.getItem('gt_session');return s?JSON.parse(s):null}catch{return null}};
+const gtResetPassword=async(email)=>{
+  const r=await fetch(`${GT_SB}/auth/v1/recover`,{method:'POST',headers:{'Content-Type':'application/json',apikey:GT_SK},body:JSON.stringify({email})});
+  if(!r.ok){const d=await r.json();throw new Error(d.msg||d.error||'Failed');}
+};
+const getGtSession=()=>{try{const s=localStorage.getItem('gt_session');if(!s)return null;const p=JSON.parse(s);if(p?.expires_at&&Date.now()/1000>p.expires_at)return null;return p;}catch{return null}};
 const storeGtSession=s=>{try{localStorage.setItem('gt_session',JSON.stringify(s))}catch{}};
 const clearGtSession=()=>{try{localStorage.removeItem('gt_session')}catch{}};
 
@@ -59,7 +63,7 @@ const CITY_OPTIONS=[
 ];
 
 function GoodTimesOnboarding({onComplete}){
-  const[step,setStep]=useState('welcome');// welcome|auth|city|vibes|age
+  const[step,setStep]=useState('welcome');// welcome|auth|city|vibes|age|forgot
   const[mode,setMode]=useState('signup');
   const[email,setEmail]=useState('');const[pw,setPw]=useState('');const[name,setName]=useState('');
   const[city,setCity]=useState('atlanta');
@@ -68,6 +72,7 @@ function GoodTimesOnboarding({onComplete}){
   const[loading,setLoading]=useState(false);
   const[err,setErr]=useState('');
   const[authData,setAuthData]=useState(null);
+  const[resetSent,setResetSent]=useState(false);
 
   const accentGold='#D4A853';
   const bg='#06060C';
@@ -149,7 +154,31 @@ function GoodTimesOnboarding({onComplete}){
           </div>
           {err&&<div style={{padding:'12px 16px',background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:12,marginBottom:16,fontSize:13,color:'#ef4444',fontWeight:600}}>{err}</div>}
           <button onClick={doAuth} disabled={!canSubmit||loading} style={{width:'100%',padding:'16px',background:canSubmit&&!loading?`linear-gradient(135deg,${accentGold},#B8942F)`:'rgba(255,255,255,0.08)',color:canSubmit?'#0A0A0F':'rgba(255,255,255,0.3)',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:canSubmit&&!loading?'pointer':'not-allowed',fontFamily:ff}}>{loading?'...':(mode==='signup'?'Create Account':'Sign In')}</button>
+          {mode==='signin'&&<button onClick={()=>{setStep('forgot');setErr('');setResetSent(false)}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',fontFamily:ff,marginTop:12,width:'100%',textAlign:'center'}}>Forgot password?</button>}
         </div>
+      </div>
+    </div>
+  );
+
+  // Forgot password
+  if(step==='forgot')return(
+    <div style={{minHeight:'100vh',background:bg,display:'flex',flexDirection:'column',fontFamily:ff,color:'#fff'}}>
+      <div style={{padding:'16px 20px'}}><button onClick={()=>setStep('auth')} style={{background:'none',border:'none',color:'rgba(255,255,255,0.5)',fontSize:14,cursor:'pointer',fontFamily:ff}}>{'\u2190'} Back to Sign In</button></div>
+      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'20px 24px'}}>
+        {resetSent?<>
+          <div style={{fontSize:40,marginBottom:16}}>{'\u2709\uFE0F'}</div>
+          <h2 style={{fontFamily:fs,fontSize:24,fontWeight:700,marginBottom:8}}>Check Your Email</h2>
+          <p style={{fontSize:14,color:'rgba(255,255,255,0.5)',textAlign:'center',maxWidth:300}}>We sent a password reset link to <strong style={{color:accentGold}}>{email}</strong></p>
+          <button onClick={()=>{setStep('auth');setMode('signin')}} style={{marginTop:24,background:`linear-gradient(135deg,${accentGold},#B8942F)`,color:'#0A0A0F',border:'none',borderRadius:14,padding:'14px 36px',fontSize:15,fontWeight:700,cursor:'pointer',fontFamily:ff}}>Back to Sign In</button>
+        </>:<>
+          <h2 style={{fontFamily:fs,fontSize:24,fontWeight:700,marginBottom:8}}>Reset Password</h2>
+          <p style={{fontSize:14,color:'rgba(255,255,255,0.4)',marginBottom:24,textAlign:'center'}}>Enter your email and we'll send a reset link</p>
+          <div style={{width:'100%',maxWidth:360}}>
+            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Your email" style={{width:'100%',padding:'14px 16px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:12,color:'#fff',fontSize:14,outline:'none',fontFamily:ff,boxSizing:'border-box',marginBottom:16}}/>
+            {err&&<div style={{padding:'10px 14px',background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:12,marginBottom:16,fontSize:13,color:'#ef4444',fontWeight:600}}>{err}</div>}
+            <button onClick={async()=>{if(!email){setErr('Enter your email');return;}setLoading(true);setErr('');try{await gtResetPassword(email);setResetSent(true);}catch(e){setErr(e.message||'Failed');}finally{setLoading(false);}}} disabled={loading} style={{width:'100%',padding:'16px',background:`linear-gradient(135deg,${accentGold},#B8942F)`,color:'#0A0A0F',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:ff}}>{loading?'...':'Send Reset Link'}</button>
+          </div>
+        </>}
       </div>
     </div>
   );
@@ -212,6 +241,24 @@ function GoodTimesOnboarding({onComplete}){
   );
 
   return null;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ERROR BOUNDARY — prevents white screen on JS crash
+   ═══════════════════════════════════════════════════════ */
+class GTErrorBoundary extends React.Component{
+  constructor(p){super(p);this.state={hasError:false};}
+  static getDerivedStateFromError(){return{hasError:true};}
+  componentDidCatch(e,i){console.error('Good Times Error:',e,i);}
+  render(){
+    if(this.state.hasError)return React.createElement('div',{style:{minHeight:'100vh',background:'#06060C',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',fontFamily:"'DM Sans',sans-serif",color:'#fff',padding:24,textAlign:'center'}},
+      React.createElement('div',{style:{fontSize:40,marginBottom:16}},'\u26A0\uFE0F'),
+      React.createElement('h2',{style:{fontSize:20,fontWeight:700,marginBottom:8}},'Something went wrong'),
+      React.createElement('p',{style:{fontSize:14,color:'rgba(255,255,255,0.5)',marginBottom:24}},'The app encountered an error. Please try again.'),
+      React.createElement('button',{onClick:()=>{this.setState({hasError:false});window.location.reload()},style:{background:'linear-gradient(135deg,#D4A853,#B8942F)',color:'#0A0A0F',border:'none',borderRadius:14,padding:'14px 32px',fontSize:16,fontWeight:700,cursor:'pointer'}},'Reload App')
+    );
+    return this.props.children;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -589,8 +636,7 @@ const ScrollWrap=({children})=>(
 );
 
 // ═══ MAIN APP ═══
-export default function GoodTimesAppWrapper(props){return <GoodTimesAuthGate {...props}/>;}
-
+export default function GoodTimesAppWrapper(props){return React.createElement(GTErrorBoundary,null,React.createElement(GoodTimesAuthGate,props));}
 function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const[screen,setScreen]=useState("now");
   const[prevScreen,setPrev]=useState("now");
@@ -858,6 +904,19 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       const ck=cityKeyMap[cObj.name]||cObj.name.toLowerCase().replace(/\s+/g,"_");
       const mapVenues=await khgF(`gt_venues?select=id,name,category_key,subcategory,neighborhood,latitude,longitude,hero_image,short_desc,google_rating,price_range&status=eq.active&city_key=eq.${ck}&latitude=not.is.null&longitude=not.is.null&order=google_rating.desc.nullslast&limit=100`);
       setVenueMapList(mapVenues||[]);
+
+      // Load saved items from Supabase
+      if(userSession?.access_token){
+        try{
+          const pr=await fetch(`${GT_SB}/rest/v1/gt_user_profiles?auth_id=eq.${userSession.user.id}&select=id`,{headers:{apikey:GT_SK,Authorization:`Bearer ${userSession.access_token}`}});
+          const pd=await pr.json();
+          if(pd?.[0]?.id){
+            const sr=await fetch(`${GT_SB}/rest/v1/gt_saved_items?user_id=eq.${pd[0].id}&select=item_id`,{headers:{apikey:GT_SK,Authorization:`Bearer ${userSession.access_token}`}});
+            const sd=await sr.json();
+            if(sd&&Array.isArray(sd))setSaved(sd.map(s=>s.item_id));
+          }
+        }catch{}
+      }
     })();
   },[]);
 
@@ -937,10 +996,24 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const featured=useMemo(()=>upcoming.filter(e=>e.image_url),[upcoming]);
   const allUpcoming=useMemo(()=>events.filter(e=>e.date>=todayStr&&e.source!=="daily_event").sort((a,b)=>(a.display_priority||50)-(b.display_priority||50)||a.date.localeCompare(b.date)),[events,todayStr]);
 
-  const toggleSave=id=>{
+  const toggleSave=async(id)=>{
     const has=saved.includes(id);
     setSaved(s=>has?s.filter(x=>x!==id):[...s,id]);
     showToast(has?"Removed from Vault":"Saved to Vault \u2726");
+    // Sync to Supabase gt_saved_items
+    if(userSession?.access_token){
+      try{
+        const profileR=await fetch(`${GT_SB}/rest/v1/gt_user_profiles?auth_id=eq.${userSession.user.id}&select=id`,{headers:{apikey:GT_SK,Authorization:`Bearer ${userSession.access_token}`}});
+        const profileD=await profileR.json();
+        const uid=profileD?.[0]?.id;
+        if(!uid)return;
+        if(has){
+          await fetch(`${GT_SB}/rest/v1/gt_saved_items?user_id=eq.${uid}&item_id=eq.${id}`,{method:'DELETE',headers:{apikey:GT_SK,Authorization:`Bearer ${userSession.access_token}`}});
+        }else{
+          await fetch(`${GT_SB}/rest/v1/gt_saved_items`,{method:'POST',headers:{'Content-Type':'application/json',apikey:GT_SK,Authorization:`Bearer ${userSession.access_token}`,Prefer:'return=minimal'},body:JSON.stringify({user_id:uid,item_type:'event',item_id:id})});
+        }
+      }catch{}
+    }
   };
 
   // Plan generator
