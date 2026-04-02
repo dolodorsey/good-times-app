@@ -688,6 +688,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   // Social
   const[connectedSocials,setConnectedSocials]=useState([]);
   const[legalModal,setLegalModal]=useState(null);// null|'terms'|'privacy'
+  const[isOffline,setIsOffline]=useState(!navigator.onLine);
+  useEffect(()=>{const on=()=>setIsOffline(false);const off=()=>setIsOffline(true);window.addEventListener('online',on);window.addEventListener('offline',off);return()=>{window.removeEventListener('online',on);window.removeEventListener('offline',off)}},[]);
   // Saved plans
   const[lockedPlans,setLockedPlans]=useState([]);
 
@@ -2125,7 +2127,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:F.f,position:"relative",maxWidth:430,margin:"0 auto"}}>
       {renderScreen()}
       {/* Toast */}
-      {toast&&<div style={{position:"fixed",top:50,left:"50%",transform:"translateX(-50%)",zIndex:60,background:`linear-gradient(135deg,${C.gold},#B8942F)`,color:"#0A0A0F",padding:"8px 20px",borderRadius:10,fontSize:12,fontWeight:700,fontFamily:F.f,boxShadow:"0 8px 32px rgba(212,168,83,0.3)",animation:"fadeIn 0.3s ease"}}>{toast}</div>}
+      {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:100,background:"#ef4444",color:"#fff",textAlign:"center",padding:"6px 16px",fontSize:12,fontWeight:700,fontFamily:F.f}}>No internet connection</div>}
+      {toast&&<div style={{position:"fixed",top:isOffline?30:50,left:"50%",transform:"translateX(-50%)",zIndex:60,background:`linear-gradient(135deg,${C.gold},#B8942F)`,color:"#0A0A0F",padding:"8px 20px",borderRadius:10,fontSize:12,fontWeight:700,fontFamily:F.f,boxShadow:"0 8px 32px rgba(212,168,83,0.3)",animation:"fadeIn 0.3s ease"}}>{toast}</div>}
       {legalModal&&<div style={{position:"fixed",inset:0,zIndex:200,background:"rgba(6,6,12,0.97)",overflowY:"auto",padding:"60px 20px 40px"}} onClick={()=>setLegalModal(null)}>
         <div onClick={e=>e.stopPropagation()} style={{maxWidth:500,margin:"0 auto",background:"#0d0d14",borderRadius:20,padding:"24px 20px",border:"1px solid rgba(255,255,255,0.1)"}}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
@@ -2139,7 +2142,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         </div>
       </div>}
       {/* CHANGE #4: Bottom nav — position:fixed, always visible, z-index:40 */}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,zIndex:40,background:"linear-gradient(180deg,rgba(6,6,12,0.97),rgba(6,6,12,1.0))",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",borderTop:"1px solid rgba(212,168,83,0.12)",padding:"6px 4px 16px",display:"flex",justifyContent:"space-around"}}>
+      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,zIndex:40,background:"linear-gradient(180deg,rgba(6,6,12,0.97),rgba(6,6,12,1.0))",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",borderTop:"1px solid rgba(212,168,83,0.12)",padding:"6px 4px calc(16px + env(safe-area-inset-bottom, 0px))",display:"flex",justifyContent:"space-around"}}>
         {navDefs.map(n=>{
           const active=navScreen===n.id;
           return(
