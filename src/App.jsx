@@ -300,7 +300,7 @@ const Ne={
   // Browse images — DIFFERENT from explore
   br:{jki:"https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400",nl:"https://images.unsplash.com/photo-1545128485-c400e7702796?w=400",lm:"https://images.unsplash.com/photo-1501612780327-45045538702b?w=400",sp:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400",ms:"https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400",gm:"https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400"},
   city:{
-    Atlanta:{day:"/city-atlanta.png",night:"/city-atlanta.png"},
+    Atlanta:{day:"/city-atlanta.png",night:"/city-atlanta-nightlife.png"},
     Houston:{day:"https://images.unsplash.com/photo-1530089711124-9ca31fb9e863?w=900",night:"https://images.unsplash.com/photo-1548260465-1adda34ebbe7?w=900"},
     "Los Angeles":{day:"https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=900",night:"https://images.unsplash.com/photo-1515896769750-31548aa180ed?w=900"},
     Charlotte:{day:"https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?w=900",night:"https://images.unsplash.com/photo-1605885996758-49b3e33c612d?w=900"},
