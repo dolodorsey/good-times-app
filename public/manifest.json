@@ -1,0 +1,22 @@
+{
+  "name": "Good Times",
+  "short_name": "Good Times",
+  "description": "Your city. Your vibe. Your night.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#06060C",
+  "theme_color": "#D4A853",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/good-times-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/good-times-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
