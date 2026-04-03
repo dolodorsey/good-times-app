@@ -921,11 +921,13 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
 
       // TIER 2b: Weekly venue happenings (tonight's programming) — with venue details
       const happenings=await khgF("gt_venue_happenings?select=id,venue_id,city_key,day_of_week,happening_name,happening_type,time_slot,start_time,description,priority_score&is_active=eq.true&day_of_week=eq."+todayDay+"&order=priority_score.desc&limit=50");
+      // ALSO load ALL weekly happenings (all days) for Weekly Nightlife section
+      const allHappenings=await khgF("gt_venue_happenings?select=id,venue_id,city_key,day_of_week,happening_name,happening_type,time_slot,start_time,description,priority_score&is_active=eq.true&order=priority_score.desc&limit=100");
       // Pull venue details (name + hero_image) for happenings
-      const venueIds=[...new Set(happenings.map(h=>h.venue_id).filter(Boolean))];
+      const allVenueIds=[...new Set([...happenings,...allHappenings].map(h=>h.venue_id).filter(Boolean))];
       let venueMap={};
-      if(venueIds.length>0){
-        const venueData=await khgF("gt_venues?select=id,name,hero_image,neighborhood&id=in.("+venueIds.join(",")+")");
+      if(allVenueIds.length>0){
+        const venueData=await khgF("gt_venues?select=id,name,hero_image,neighborhood&id=in.("+allVenueIds.join(",")+")");
         venueData.forEach(v=>{venueMap[v.id]=v});
       }
 
@@ -1044,6 +1046,29 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         };
       });
 
+      // === MAP ALL weekly happenings (all days) for Weekly Nightlife section ===
+      const weeklyMapped=allHappenings.map(e=>{
+        const v=venueMap[e.venue_id]||{};
+        const dayLabel=(e.day_of_week||"").charAt(0).toUpperCase()+(e.day_of_week||"").slice(1);
+        return {
+          id:"wk-"+e.id,
+          title:e.happening_name,
+          brand:dayLabel.toUpperCase()+"S",
+          city:CITY_KEY_MAP[e.city_key]||e.city_key,
+          date:today,
+          time:e.start_time||"22:00",
+          venue:v.name||"",
+          category:"nightlife",
+          is_featured:e.priority_score>=9,
+          image_url:v.hero_image||null,
+          display_priority:e.priority_score>=9?5:20,
+          source:"weekly_party",
+          event_type:"nightlife",
+          description:e.description||"",
+          status:"weekly"
+        };
+      });
+
       // === MAP TIER 2c: Tonight-eligible venues (clubs, rooftops, lounges with real photos) ===
       const tonightMapped=tonightVenues.map(v=>({
         id:"tv-"+v.id,
@@ -1097,7 +1122,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
 
       // Merge: OUR events → in-house shows → tonight happenings → tonight venues → daily blog events → sports → city events → legacy
       // KHG events (mapped) always come first due to source:"huglife" and low display_priority
-      setEvents([...mapped,...showsMapped,...hapMapped,...tonightMapped,...dailyMapped,...sportsMapped,...cityMapped,...legacyMapped]);
+      setEvents([...mapped,...showsMapped,...hapMapped,...weeklyMapped,...tonightMapped,...dailyMapped,...sportsMapped,...cityMapped,...legacyMapped]);
       setLoading(false);
 
       // Load venue map data (lat/lng for map pins)
@@ -1615,14 +1640,12 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
 
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
 
-          {/* ═══ WEEKLY NIGHTLIFE — above upcoming ═══ */}
+          {/* ═══ WEEKLY NIGHTLIFE — actual recurring weekly parties ═══ */}
           {(()=>{
-            const nlPool=cityEvents.filter(e=>{
-              if(e.source==="happening"||e.source==="daily_event")return true;
-              if(e.event_type==="nightlife")return true;
-              return false;
-            });
-            const nlItems=mark(nlPool,8);
+            const nlPool=cityEvents.filter(e=>e.source==="weekly_party"||e.source==="happening");
+            // Sort by priority (higher score = lower number = shows first)
+            const sorted=nlPool.sort((a,b)=>(a.display_priority||50)-(b.display_priority||50));
+            const nlItems=mark(sorted,8);
             if(nlItems.length===0)return null;
             return(<>
               <SectionHead t="WEEKLY NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
@@ -1825,6 +1848,25 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
           ))}
           <button onClick={()=>setPlanStops(s=>[...s,null])} style={{...V(false),width:"100%",padding:"12px",marginBottom:16,textAlign:"center"}}>+ Add Another Stop</button>
           {planStops.filter(Boolean).length>=2&&<button style={{...V(true),width:"100%",padding:"14px",fontSize:14,fontWeight:700,letterSpacing:1}}>{"\u{1F512}"} Lock Plan {"\u2192"} Vault</button>}
+          {/* Social sharing */}
+          {planStops.filter(Boolean).length>=1&&(
+            <div style={{marginTop:16,padding:16,borderRadius:14,background:"rgba(212,168,83,0.06)",border:"1px solid rgba(212,168,83,0.15)"}}>
+              <div style={{fontSize:11,letterSpacing:2,color:C.gold,fontWeight:700,marginBottom:10}}>SHARE YOUR PLAN</div>
+              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+                {[
+                  {l:"Message",e:"\u{1F4AC}",fn:()=>{const txt=planStops.filter(Boolean).map((s,i)=>`${i+1}. ${s.title} @ ${s.venue} · ${s.time}`).join("\n");if(navigator.share)navigator.share({title:"My Good Times Plan",text:txt});else{navigator.clipboard?.writeText(txt);showToast("Copied to clipboard")}}},
+                  {l:"Email",e:"\u{1F4E7}",fn:()=>{const body=planStops.filter(Boolean).map((s,i)=>`${i+1}. ${s.title} @ ${s.venue} · ${s.time}`).join("%0A");window.open(`mailto:?subject=My Good Times Plan&body=${body}`)}},
+                  {l:"Instagram",e:"\u{1F4F8}",fn:()=>{const txt=planStops.filter(Boolean).map((s,i)=>`${i+1}. ${s.title} @ ${s.venue}`).join("\n");navigator.clipboard?.writeText(txt);showToast("Copied! Paste in your IG story")}},
+                  {l:"Copy Link",e:"\u{1F517}",fn:()=>{navigator.clipboard?.writeText(window.location.href);showToast("Link copied!")}}
+                ].map(btn=>(
+                  <button key={btn.l} onClick={btn.fn} style={{flex:"1 0 calc(50% - 4px)",padding:"10px 8px",borderRadius:10,background:"rgba(212,168,83,0.1)",border:"1px solid rgba(212,168,83,0.2)",cursor:"pointer",color:C.text,fontFamily:F.f,fontSize:12,fontWeight:600,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                    <span style={{fontSize:16}}>{btn.e}</span>{btn.l}
+                  </button>
+                ))}
+              </div>
+              <div style={{fontSize:10,color:C.muted,marginTop:8,textAlign:"center"}}>Invite friends to join your plan</div>
+            </div>
+          )}
           <div style={{marginTop:20}}><SponsorBanner/></div>
           {planPickSlot!==null&&(
             <div style={{position:"fixed",inset:0,zIndex:50,background:"rgba(0,0,0,0.7)",display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={()=>setPlanPickSlot(null)}>
