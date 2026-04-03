@@ -1386,7 +1386,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const TeamModal=teamSheet&&(
     <div style={{position:"fixed",inset:0,zIndex:50,background:C.overlay,display:"flex",alignItems:"flex-end"}} onClick={()=>setTeamSheet(null)}>
       <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:430,margin:"0 auto",background:C.bgSheet,borderRadius:"20px 20px 0 0",padding:"24px 20px 40px"}}>
-        <div style={{width:40,height:4,borderRadius:99,background:"rgba(255,255,255,0.15)",margin:"0 auto 16px"}}/>
+        <div style={{width:40,height:4,borderRadius:99,background:"rgba(212,168,83,0.08)",margin:"0 auto 16px"}}/>
         <div style={{textAlign:"center",marginBottom:16}}>
           <div style={{fontSize:36,marginBottom:6}}>{teamSheet.logo?<img src={teamSheet.logo} alt={teamSheet.n} style={{width:56,height:56,objectFit:"contain",margin:"0 auto"}}/>:teamSheet.e}</div>
           <div style={{fontSize:22,fontWeight:700,color:C.text,fontFamily:F.s}}>{teamSheet.n}</div>
@@ -1419,7 +1419,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
           </div>
           {/* CHANGE #1: Realm tabs */}
           <div style={{padding:"0 16px",marginBottom:12}}>
-            <div style={{display:"flex",gap:0,background:"rgba(255,255,255,0.25)",borderRadius:10,padding:3}}>
+            <div style={{display:"flex",gap:0,background:"rgba(212,168,83,0.12)",borderRadius:10,padding:3,border:"1px solid rgba(212,168,83,0.15)"}}>
               {[{id:"today",l:"Today"},{id:"tonight",l:"Tonight"},{id:"week",l:"This Week"}].map(r=>(
                 <button key={r.id} onClick={()=>setRealm(r.id)} style={{flex:1,padding:"9px 0",borderRadius:8,fontSize:13,fontWeight:realm===r.id?700:500,background:realm===r.id?`linear-gradient(135deg,${C.gold},#B8942F)`:"transparent",color:realm===r.id?"#0A0A0F":"#FFFFFF",border:"none",cursor:"pointer",fontFamily:F.f,letterSpacing:.3,transition:"all 0.25s ease"}}>{r.l}</button>
               ))}
@@ -1435,31 +1435,27 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
           {(()=>{
             const shownIds=new Set();
             const shownTitles=new Set();
+            const shownImages=new Set();
             const mark=(items,max)=>{
               const r=[];
               for(const e of items){
                 if(shownIds.has(e.id))continue;
                 const titleKey=e.title?.replace(/\s*[-—]\s*.*/,"").trim()||e.id;
                 if(shownTitles.has(titleKey))continue;
+                // GT-003: No duplicate images
+                const imgKey=e.image_url||wn(e);
+                if(imgKey&&shownImages.has(imgKey))continue;
                 r.push(e);
                 shownIds.add(e.id);
                 shownTitles.add(titleKey);
+                if(imgKey)shownImages.add(imgKey);
                 if(r.length>=max)break;
               }
               return r;
             };
 
-            // Build pools — USE realmEvents (which applies category chips)
+            // pool = realmEvents (filtered by tabs + category chips)
             const pool=realmEvents;
-            const todayPool=cityEvents.filter(e=>e.date===todayStr&&e.source!=="daily_event"&&e.source!=="tonight_venue"&&e.source!=="happening");
-            const tonightPool=todayPool.filter(e=>{
-              if(!e.time)return false;
-              const hr=parseInt(e.time.split(":")[0],10);
-              return hr>=17;
-            });
-            const weekEnd=new Date();weekEnd.setDate(weekEnd.getDate()+(7-weekEnd.getDay()));
-            const weekEndStr=weekEnd.toISOString().split("T")[0];
-            const weekPool=cityEvents.filter(e=>e.date>=todayStr&&e.date<=weekEndStr&&e.source!=="daily_event"&&e.source!=="tonight_venue"&&e.source!=="happening");
             const concertPool=cityEvents.filter(e=>{
               if(!e.date||e.date<todayStr)return false;
               if(e.source==="sports_game"||e.category==="sports")return false;
@@ -1498,16 +1494,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             );})}
           </div>
 
-          {/* ═══ SECTION 2: TODAY / TONIGHT / THIS WEEK tabs ═══ */}
-          <div style={{padding:"0 16px",marginBottom:12}}>
-            <div style={{display:"flex",gap:0,background:"rgba(255,255,255,0.25)",borderRadius:10,padding:3}}>
-              {[{id:"today",l:"Today"},{id:"tonight",l:"Tonight"},{id:"week",l:"This Week"}].map(r=>(
-                <button key={r.id} onClick={()=>setRealm(r.id)} style={{flex:1,padding:"9px 0",borderRadius:8,fontSize:13,fontWeight:realm===r.id?700:500,background:realm===r.id?"linear-gradient(135deg,"+C.gold+",#B8942F)":"transparent",color:realm===r.id?"#0A0A0F":"#FFFFFF",border:"none",cursor:"pointer",fontFamily:F.f,letterSpacing:.3,transition:"all 0.25s ease"}}>{r.l}</button>
-              ))}
-            </div>
-          </div>
-
-          {/* Realm content */}
+          {/* Realm content — uses realmEvents (filtered by tabs + chips) */}
           <div style={{padding:"0 16px",marginBottom:16}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
               <div style={{width:7,height:7,borderRadius:99,background:"#FF6B6B",boxShadow:"0 0 10px #FF6B6B",animation:"pulse 1.5s ease-in-out infinite"}}/>
@@ -1752,7 +1739,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
           {vibeSheet&&(
             <div style={{position:"fixed",inset:0,zIndex:50,background:C.overlay,display:"flex",alignItems:"flex-end"}} onClick={()=>setVibeSheet(null)}>
               <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:430,margin:"0 auto",background:C.bgSheet,borderRadius:"24px 24px 0 0",padding:"28px 20px 40px",maxHeight:"80vh",overflowY:"auto"}}>
-                <div style={{width:40,height:4,borderRadius:99,background:"rgba(255,255,255,0.15)",margin:"0 auto 20px"}}/>
+                <div style={{width:40,height:4,borderRadius:99,background:"rgba(212,168,83,0.08)",margin:"0 auto 20px"}}/>
                 <div style={{textAlign:"center",marginBottom:20}}>
                   <div style={{fontSize:40,marginBottom:8}}>{vibeSheet.icon}</div>
                   <div style={{fontSize:22,fontWeight:700,color:vibeSheet.color,fontFamily:F.s}}>{vibeSheet.name}</div>
@@ -2063,7 +2050,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         {subCatView&&(
           <div style={{position:"fixed",inset:0,zIndex:51,background:C.overlay,display:"flex",alignItems:"flex-end"}} onClick={()=>setSubCatView(null)}>
             <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:430,margin:"0 auto",background:C.bgSheet,borderRadius:"24px 24px 0 0",padding:"24px 20px 40px",maxHeight:"90vh",overflowY:"auto"}}>
-              <div style={{width:40,height:4,borderRadius:99,background:"rgba(255,255,255,0.15)",margin:"0 auto 16px"}}/>
+              <div style={{width:40,height:4,borderRadius:99,background:"rgba(212,168,83,0.08)",margin:"0 auto 16px"}}/>
               <div style={{textAlign:"center",marginBottom:20}}>
                 <div style={{fontSize:14,color:subCatView.parent.color,fontWeight:600,marginBottom:4}}>{subCatView.parent.name}</div>
                 <div style={{fontSize:24,fontWeight:700,color:C.text,fontFamily:F.s}}>{subCatView.sub}</div>
