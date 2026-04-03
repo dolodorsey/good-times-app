@@ -1,223 +1,211 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Good Times — Admin Playground</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=DM+Sans:wght@400;500;700&family=DM+Mono&display=swap" rel="stylesheet">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Good Times — Command Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:#06060C;color:#F5F0E8;min-height:100vh}
-.header{padding:20px 24px;border-bottom:1px solid rgba(212,168,83,0.15);display:flex;align-items:center;justify-content:space-between}
-.header h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;letter-spacing:0.15em;text-transform:uppercase;color:#D4A853}
-.container{max-width:800px;margin:0 auto;padding:20px}
-.tabs{display:flex;gap:4px;margin-bottom:24px;background:rgba(255,255,255,0.06);border-radius:10px;padding:4px}
-.tab{flex:1;padding:10px;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:rgba(255,255,255,0.5);background:transparent;transition:all 0.2s}
-.tab.active{background:linear-gradient(135deg,#D4A853,#B8942F);color:#0A0A0F}
-.form-group{margin-bottom:16px}
-.form-group label{display:block;font-size:11px;letter-spacing:0.1em;color:rgba(255,255,255,0.4);margin-bottom:6px;text-transform:uppercase}
-input,select,textarea{width:100%;padding:12px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none}
-input:focus,select:focus,textarea:focus{border-color:#D4A853}
-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23D4A853' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6.5 6.5-6.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
-select option{background:#1A1A14;color:#fff}
-textarea{min-height:80px;resize:vertical}
-.btn{padding:14px 24px;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:all 0.2s}
-.btn-gold{background:linear-gradient(135deg,#D4A853,#B8942F);color:#0A0A0F}
-.btn-outline{background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.25);color:#D4A853;margin-top:8px}
-.event-list{margin-top:20px}
-.event-item{padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
-.event-item .title{font-weight:700;font-size:14px}
-.event-item .meta{font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px}
-.event-item .actions{display:flex;gap:8px}
-.event-item .actions button{padding:6px 12px;border-radius:6px;border:none;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
-.del-btn{background:rgba(239,68,68,0.15);color:#ef4444}
-.toast{position:fixed;top:20px;right:20px;padding:12px 20px;background:linear-gradient(135deg,#D4A853,#B8942F);color:#0A0A0F;border-radius:10px;font-weight:700;font-size:13px;z-index:100;display:none}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.status{padding:8px 16px;background:rgba(107,255,184,0.1);border:1px solid rgba(107,255,184,0.2);border-radius:8px;font-size:12px;color:#6BFFB8;margin-bottom:16px;text-align:center}
+:root{--bg:#06060C;--card:#111118;--card2:#1A1A22;--gold:#D4A853;--gold-dim:rgba(212,168,83,0.15);--text:#F5F0E8;--muted:#8A8474;--red:#ef4444;--green:#6BFFB8;--border:rgba(255,255,255,0.08)}
+*{box-sizing:border-box;margin:0;padding:0}body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}::selection{background:var(--gold);color:var(--bg)}
+.shell{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+@media(max-width:900px){.shell{grid-template-columns:1fr}.sidebar{position:fixed;left:-260px;top:0;bottom:0;width:260px;z-index:100;transition:left 0.3s}.sidebar.open{left:0}.mob-toggle{display:block!important}}
+.sidebar{background:var(--card);border-right:1px solid var(--border);position:sticky;top:0;height:100vh;overflow-y:auto}
+.sidebar-header{padding:20px;border-bottom:1px solid var(--border)}
+.sidebar-header h1{font-family:'Cormorant Garamond',serif;font-size:18px;font-weight:300;letter-spacing:0.15em;text-transform:uppercase;color:var(--gold)}
+.sidebar-header .sub{font-size:9px;color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;margin-top:4px}
+.nav-group{padding:12px 0}.nav-group-label{font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);padding:0 16px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 16px;cursor:pointer;font-size:12px;color:rgba(255,255,255,0.5);transition:all 0.15s;border-left:2px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,0.03);color:var(--text)}.nav-item.active{background:var(--gold-dim);color:var(--gold);border-left-color:var(--gold);font-weight:600}
+.nav-item .badge{margin-left:auto;font-size:9px;font-weight:700;background:var(--gold-dim);color:var(--gold);padding:2px 6px;border-radius:6px;font-family:'DM Mono',monospace}
+.main{padding:24px 28px;overflow-y:auto;min-height:100vh}
+@media(max-width:900px){.main{padding:16px}}
+.mob-toggle{display:none;position:fixed;top:12px;left:12px;z-index:101;background:var(--gold);color:var(--bg);border:none;width:36px;height:36px;border-radius:8px;font-size:18px;cursor:pointer}
+.page-title{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;letter-spacing:0.1em;margin-bottom:4px}
+.page-sub{font-size:11px;color:var(--muted);margin-bottom:20px;letter-spacing:0.05em}
+.dir-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin-top:12px}
+.dir-card{background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden;cursor:pointer;transition:all 0.2s;position:relative}
+.dir-card:hover{border-color:rgba(212,168,83,0.3);transform:translateY(-1px)}
+.dir-card-img{height:90px;position:relative;overflow:hidden;background:linear-gradient(135deg,rgba(212,168,83,0.08),var(--bg))}
+.dir-card-img img{width:100%;height:100%;object-fit:cover}.dir-card-img .ov{position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(6,6,12,0.7) 100%)}
+.dir-card-body{padding:8px 10px}.dir-card-body .tt{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dir-card-body .mt{font-size:9px;color:var(--muted);margin-top:2px}
+.dir-card .tg{position:absolute;top:6px;left:6px;font-size:7px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;border-radius:3px;background:rgba(6,6,12,0.7);color:var(--gold);backdrop-filter:blur(4px)}
+.dir-card .fb{position:absolute;top:6px;right:6px;font-size:7px;font-weight:700;padding:2px 5px;border-radius:3px;background:var(--gold);color:var(--bg)}
+.entity-panel{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
+.entity-panel h3{font-size:13px;font-weight:700;margin-bottom:14px;color:var(--gold)}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.fr3{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:600px){.fr,.fr3{grid-template-columns:1fr}}
+.fd{display:flex;flex-direction:column;gap:3px}
+.fd label{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)}
+.fd input,.fd select,.fd textarea{padding:9px 11px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none}
+.fd input:focus,.fd select:focus{border-color:var(--gold)}.fd select{appearance:none}.fd textarea{min-height:50px;resize:vertical}
+.br{display:flex;gap:6px;margin-top:14px}
+.btn{padding:9px 18px;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all 0.2s}
+.bg{background:linear-gradient(135deg,var(--gold),#B8942F);color:var(--bg)}.bo{background:transparent;border:1px solid rgba(212,168,83,0.25);color:var(--gold)}
+.bd{background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:var(--red)}
+.bs{padding:5px 10px;font-size:10px;border-radius:5px}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th{font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-align:left;padding:7px 8px;border-bottom:1px solid var(--border)}
+td{padding:8px;font-size:11px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:middle}
+tr:hover td{background:rgba(255,255,255,0.02)}
+.ic img{width:36px;height:36px;border-radius:5px;object-fit:cover}
+.acts{display:flex;gap:3px}
+.toast{position:fixed;top:16px;right:16px;padding:10px 18px;background:linear-gradient(135deg,var(--gold),#B8942F);color:var(--bg);border-radius:8px;font-weight:700;font-size:12px;z-index:1000;transform:translateY(-60px);opacity:0;transition:all 0.3s}
+.toast.show{transform:translateY(0);opacity:1}
+.sb{display:flex;gap:6px;margin-bottom:14px}
+.sb input{flex:1;padding:9px 12px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;outline:none}
+.sb input:focus{border-color:var(--gold)}
+.empty{text-align:center;padding:50px 20px;color:var(--muted);font-size:13px}
+.img-preview{margin:8px 0;display:flex;gap:8px;align-items:center}
+.img-preview img{height:60px;border-radius:6px;object-fit:cover}
 </style>
 </head>
 <body>
-<div class="header">
-  <h1>Good Times Admin</h1>
-  <span style="font-size:11px;color:rgba(255,255,255,0.3)">Playground</span>
+<button class="mob-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
+<div class="shell">
+<div class="sidebar">
+<div class="sidebar-header"><h1>Good Times</h1><div class="sub">Command Center</div></div>
+<div class="nav-group"><div class="nav-group-label">Directory — Where Things Show</div>
+<div class="nav-item active" data-page="dir-tonight">🌙 Tonight<span class="badge" id="ct-tonight">-</span></div>
+<div class="nav-item" data-page="dir-weekend">🔥 This Weekend<span class="badge" id="ct-weekend">-</span></div>
+<div class="nav-item" data-page="dir-concerts">🎵 Concerts<span class="badge" id="ct-concerts">-</span></div>
+<div class="nav-item" data-page="dir-featured">✦ Featured / Hero<span class="badge" id="ct-featured">-</span></div>
+<div class="nav-item" data-page="dir-nightlife">🌃 Weekly Nightlife<span class="badge" id="ct-nightlife">-</span></div>
+<div class="nav-item" data-page="dir-upcoming">📅 All Upcoming<span class="badge" id="ct-upcoming">-</span></div>
 </div>
-<div class="container">
-  <div class="tabs">
-    <button class="tab active" onclick="switchTab('add')">Add Event</button>
-    <button class="tab" onclick="switchTab('manage')">Manage Events</button>
-    <button class="tab" onclick="switchTab('daily')">Daily Lineup</button>
-  </div>
-
-  <div id="status" class="status">Connected to KHG Supabase</div>
-
-  <!-- ADD EVENT -->
-  <div id="tab-add">
-    <div class="form-group"><label>Event Name</label><input id="evt-name" placeholder="e.g. 404 Day Parade"></div>
-    <div class="row">
-      <div class="form-group"><label>Date</label><input id="evt-date" type="date"></div>
-      <div class="form-group"><label>Time</label><input id="evt-time" type="time" value="20:00"></div>
-    </div>
-    <div class="row">
-      <div class="form-group"><label>Event Type</label>
-        <select id="evt-type">
-          <option value="concert">Concert</option>
-          <option value="comedy">Comedy</option>
-          <option value="festival">Festival</option>
-          <option value="special_event">Special Event</option>
-          <option value="nightlife">Nightlife</option>
-          <option value="brunch">Brunch</option>
-          <option value="food">Food Event</option>
-          <option value="art">Art / Culture</option>
-          <option value="sports">Sports</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Genre</label><input id="evt-genre" placeholder="e.g. hip_hop, r_and_b, latin"></div>
-    </div>
-    <div class="form-group"><label>Venue</label><input id="evt-venue" placeholder="e.g. State Farm Arena"></div>
-    <div class="row">
-      <div class="form-group"><label>City</label>
-        <select id="evt-city">
-          <option value="atlanta">Atlanta</option>
-          <option value="houston">Houston</option>
-          <option value="los_angeles">Los Angeles</option>
-          <option value="miami">Miami</option>
-          <option value="charlotte">Charlotte</option>
-          <option value="washington_dc">Washington DC</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Priority (1=top)</label><input id="evt-priority" type="number" value="10" min="1" max="50"></div>
-    </div>
-    <div class="form-group"><label>Image URL (optional)</label><input id="evt-image" placeholder="https://..."></div>
-    <div class="form-group"><label>Ticket URL (optional)</label><input id="evt-ticket" placeholder="https://..."></div>
-    <div class="row">
-      <div class="form-group"><label>Featured?</label>
-        <select id="evt-featured"><option value="false">No</option><option value="true">Yes</option></select>
-      </div>
-      <div class="form-group"><label>Status</label>
-        <select id="evt-status"><option value="confirmed">Confirmed</option><option value="tentative">Tentative</option></select>
-      </div>
-    </div>
-    <button class="btn btn-gold" onclick="addEvent()">Add Event</button>
-    <button class="btn btn-outline" onclick="clearForm()">Clear Form</button>
-  </div>
-
-  <!-- MANAGE EVENTS -->
-  <div id="tab-manage" style="display:none">
-    <div class="form-group"><label>Filter by date</label><input id="manage-date" type="date" onchange="loadEvents()"></div>
-    <div id="events-list" class="event-list"></div>
-  </div>
-
-  <!-- DAILY LINEUP -->
-  <div id="tab-daily" style="display:none">
-    <p style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px">Add recurring weekly nightlife events (clubs, parties, weekly specials)</p>
-    <div class="form-group"><label>Event Name</label><input id="daily-name" placeholder="e.g. Ladies Love R&B"></div>
-    <div class="row">
-      <div class="form-group"><label>Day of Week</label>
-        <select id="daily-day">
-          <option value="Monday">Monday</option><option value="Tuesday">Tuesday</option>
-          <option value="Wednesday" selected>Wednesday</option><option value="Thursday">Thursday</option>
-          <option value="Friday">Friday</option><option value="Saturday">Saturday</option>
-          <option value="Sunday">Sunday</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Time</label><input id="daily-time" type="time" value="22:00"></div>
-    </div>
-    <div class="form-group"><label>Venue</label><input id="daily-venue" placeholder="e.g. Flō Atlanta"></div>
-    <div class="form-group"><label>Event Type</label>
-      <select id="daily-type">
-        <option value="nightlife">Nightlife</option><option value="rnb">R&B Night</option>
-        <option value="hip_hop">Hip Hop Night</option><option value="latin">Latin Night</option>
-        <option value="hookah">Hookah</option><option value="brunch">Brunch</option>
-        <option value="jazz">Jazz Night</option><option value="karaoke">Karaoke</option>
-      </select>
-    </div>
-    <div class="form-group"><label>Description</label><textarea id="daily-desc" placeholder="Brief description..."></textarea></div>
-    <button class="btn btn-gold" onclick="addDaily()">Add Weekly Event</button>
-  </div>
+<div class="nav-group"><div class="nav-group-label">Entity Manager</div>
+<div class="nav-item" data-page="ent-events">📋 Events (gt_shows)</div>
+<div class="nav-item" data-page="ent-venues">📍 Venues</div>
+<div class="nav-item" data-page="ent-daily">🔄 Daily Lineup</div>
+<div class="nav-item" data-page="ent-khg">🎪 KHG Brand Events</div>
 </div>
-
-<div id="toast" class="toast"></div>
-
+<div class="nav-group"><div class="nav-group-label">Quick Add</div>
+<div class="nav-item" data-page="add-event">➕ New Event</div>
+<div class="nav-item" data-page="add-venue">➕ New Venue</div>
+</div>
+</div>
+<div class="main" id="M"><div class="empty">Loading...</div></div>
+</div>
+<div class="toast" id="toast"></div>
 <script>
 const SB='https://dzlmtvodpyhetvektfuo.supabase.co/rest/v1';
 const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTU4NDg2NCwiZXhwIjoyMDg1MTYwODY0fQ.lhtEGfGYYhEZxzrUl3EN1h53IPyfM8TBpwpoFqdgQVs';
-const H={'Content-Type':'application/json',apikey:SK,Authorization:`Bearer ${SK}`,Prefer:'return=representation'};
+const H={apikey:SK,Authorization:'Bearer '+SK};
+const HJ={...H,'Content-Type':'application/json',Prefer:'return=representation'};
+const td=new Date().toISOString().split('T')[0];
+const dn=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const tday=dn[new Date().getDay()];
+const wkEnd=new Date();wkEnd.setDate(wkEnd.getDate()+(7-wkEnd.getDay()));
+const wkStr=wkEnd.toISOString().split('T')[0];
+let S=[],V=[],D=[],K=[];
 
-function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',3000)}
-function switchTab(id){document.querySelectorAll('[id^=tab-]').forEach(t=>t.style.display='none');document.getElementById('tab-'+id).style.display='block';document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');if(id==='manage')loadEvents()}
-function clearForm(){['evt-name','evt-venue','evt-genre','evt-image','evt-ticket'].forEach(id=>document.getElementById(id).value='');document.getElementById('evt-priority').value='10'}
+async function api(q){try{const r=await fetch(SB+'/'+q,{headers:H});return r.ok?await r.json():[]}catch{return[]}}
+async function aPost(t,d){const r=await fetch(SB+'/'+t,{method:'POST',headers:HJ,body:JSON.stringify(d)});if(!r.ok){const e=await r.json();throw new Error(e.message||'Failed')}return r.json()}
+async function aPatch(t,id,d){const r=await fetch(SB+'/'+t+'?id=eq.'+id,{method:'PATCH',headers:HJ,body:JSON.stringify(d)});if(!r.ok){const e=await r.json();throw new Error(e.message||'Failed')}return r.json()}
+async function aDel(t,id){return(await fetch(SB+'/'+t+'?id=eq.'+id,{method:'DELETE',headers:H})).ok}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3000)}
+function gv(id){return document.getElementById(id)?.value?.trim()||''}
 
-async function addEvent(){
-  const data={
-    event_name:document.getElementById('evt-name').value,
-    show_date:document.getElementById('evt-date').value,
-    show_time:document.getElementById('evt-time').value,
-    event_type:document.getElementById('evt-type').value,
-    genre:document.getElementById('evt-genre').value||null,
-    venue_name:document.getElementById('evt-venue').value,
-    city_key:document.getElementById('evt-city').value,
-    display_priority:parseInt(document.getElementById('evt-priority').value)||10,
-    image_url:document.getElementById('evt-image').value||null,
-    ticket_url:document.getElementById('evt-ticket').value||null,
-    is_featured:document.getElementById('evt-featured').value==='true',
-    status:document.getElementById('evt-status').value
-  };
-  if(!data.event_name||!data.show_date){toast('Name and date required');return}
-  try{
-    const r=await fetch(SB+'/gt_shows',{method:'POST',headers:H,body:JSON.stringify(data)});
-    if(r.ok){toast('✓ Event added!');clearForm()}else{const e=await r.json();toast('Error: '+(e.message||'Failed'))}
-  }catch(e){toast('Error: '+e.message)}
+async function load(){
+  [S,V,D,K]=await Promise.all([
+    api('gt_shows?select=*&show_date=gte.'+td+'&status=in.(confirmed,tentative)&order=show_date.asc,display_priority.asc&limit=300'),
+    api('gt_venues?select=id,name,category_key,subcategory,neighborhood,hero_image,city_key,google_rating,tonight_eligible,tonight_label,instagram_handle,address,short_desc,status&city_key=eq.atlanta&status=eq.active&order=google_rating.desc.nullslast&limit=200'),
+    api('gt_daily_events?select=*&is_verified=eq.true&order=relevance_score.desc&limit=200'),
+    api('eventbrite_events?select=*&is_active=eq.true&event_date=gte.'+td+'&order=display_priority.asc&limit=100')
+  ]);
+  updCounts();page('dir-tonight');
 }
 
-async function loadEvents(){
-  const date=document.getElementById('manage-date').value;
-  let q=SB+'/gt_shows?select=id,event_name,show_date,show_time,venue_name,event_type,status,display_priority&order=show_date.asc,display_priority.asc&limit=50';
-  if(date)q+=`&show_date=eq.${date}`;
-  else q+=`&show_date=gte.${new Date().toISOString().split('T')[0]}`;
-  try{
-    const r=await fetch(q,{headers:{apikey:SK,Authorization:`Bearer ${SK}`}});
-    const data=await r.json();
-    const list=document.getElementById('events-list');
-    list.innerHTML=data.map(e=>`
-      <div class="event-item">
-        <div><div class="title">${e.event_name}</div><div class="meta">${e.show_date} · ${e.show_time||'TBA'} · ${e.venue_name||'TBA'} · ${e.event_type}</div></div>
-        <div class="actions"><button class="del-btn" onclick="deleteEvent(${e.id})">Delete</button></div>
-      </div>
-    `).join('');
-    if(data.length===0)list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.3);padding:40px">No events found</div>';
-  }catch(e){toast('Error loading events')}
+function updCounts(){
+  const tn=S.filter(e=>e.show_date===td&&e.show_time&&parseInt(e.show_time)>=17);
+  const wk=S.filter(e=>e.show_date>=td&&e.show_date<=wkStr);
+  const cn=S.filter(e=>['concert','comedy','festival'].includes(e.event_type));
+  const ft=S.filter(e=>e.is_featured);
+  document.getElementById('ct-tonight').textContent=tn.length;
+  document.getElementById('ct-weekend').textContent=wk.length;
+  document.getElementById('ct-concerts').textContent=cn.length;
+  document.getElementById('ct-featured').textContent=ft.length;
+  document.getElementById('ct-nightlife').textContent=D.length;
+  document.getElementById('ct-upcoming').textContent=S.length;
 }
 
-async function deleteEvent(id){
-  if(!confirm('Delete this event?'))return;
-  try{
-    await fetch(SB+'/gt_shows?id=eq.'+id,{method:'DELETE',headers:{apikey:SK,Authorization:`Bearer ${SK}`}});
-    toast('Deleted');loadEvents();
-  }catch(e){toast('Error deleting')}
+function card(e){
+  const img=e.image_url||e.hero_image||'';
+  return '<div class="dir-card" onclick="editEvt(\''+e.id+'\')"><div class="dir-card-img">'+(img?'<img src="'+img+'" onerror="this.style.display=\'none\'" loading="lazy">':'')+'<div class="ov"></div></div><div class="tg">'+(e.event_type||'event')+'</div>'+(e.is_featured?'<div class="fb">★ FEATURED</div>':'')+'<div class="dir-card-body"><div class="tt">'+(e.event_name||e.name||'-')+'</div><div class="mt">'+(e.show_date||'')+' · '+(e.show_time||'TBA')+' · '+(e.venue_name||'')+'</div></div></div>';
 }
 
-async function addDaily(){
-  const data={
-    event_name:document.getElementById('daily-name').value,
-    city_key:'atlanta',
-    day_of_week:document.getElementById('daily-day').value,
-    event_date:new Date().toISOString().split('T')[0],
-    venue:document.getElementById('daily-venue').value,
-    event_type:document.getElementById('daily-type').value,
-    time_slot:document.getElementById('daily-time').value,
-    description:document.getElementById('daily-desc').value||null,
-    is_verified:true,
-    relevance_score:80
-  };
-  if(!data.event_name||!data.venue){toast('Name and venue required');return}
-  try{
-    const r=await fetch(SB+'/gt_daily_events',{method:'POST',headers:H,body:JSON.stringify(data)});
-    if(r.ok){toast('✓ Weekly event added!')}else{const e=await r.json();toast('Error: '+(e.message||'Failed'))}
-  }catch(e){toast('Error: '+e.message)}
+function dirHTML(title,sub,items){
+  return '<div class="page-title">'+title+'</div><div class="page-sub">'+sub+'</div><div class="sb"><input placeholder="Search..." oninput="fDir(this.value)"><button class="btn bg bs" onclick="page(\'add-event\')">+ Add</button></div><div class="dir-grid" id="dg">'+(items.length?items.map(card).join(''):'<div class="empty">No entries</div>')+'</div>';
 }
 
-// Set today's date as default
-document.getElementById('evt-date').value=new Date().toISOString().split('T')[0];
+function page(p){
+  document.querySelectorAll('.nav-item').forEach(n=>{n.classList.toggle('active',n.dataset.page===p)});
+  const m=document.getElementById('M');
+  if(p==='dir-tonight'){m.innerHTML=dirHTML('Tonight','Events tonight in Atlanta · '+td,S.filter(e=>e.show_date===td&&e.show_time&&parseInt(e.show_time)>=17))}
+  else if(p==='dir-weekend'){m.innerHTML=dirHTML('This Weekend','Through '+wkStr+' · 404 Weekend',S.filter(e=>e.show_date>=td&&e.show_date<=wkStr))}
+  else if(p==='dir-concerts'){m.innerHTML=dirHTML('Concerts & Shows','All upcoming concerts, comedy, festivals',S.filter(e=>['concert','comedy','festival','special_event'].includes(e.event_type)))}
+  else if(p==='dir-featured'){m.innerHTML=dirHTML('Featured / Hero Cards','These show as large hero cards on the home screen',S.filter(e=>e.is_featured))}
+  else if(p==='dir-nightlife'){m.innerHTML=dirHTML('Weekly Nightlife','Recurring from gt_daily_events',D.map(d=>({...d,event_name:d.event_name,show_date:d.event_date,show_time:d.time_slot,venue_name:d.venue,event_type:d.event_type})))}
+  else if(p==='dir-upcoming'){m.innerHTML=dirHTML('All Upcoming','Every event from today forward',S)}
+  else if(p==='ent-events'){tblEvents()}
+  else if(p==='ent-venues'){tblVenues()}
+  else if(p==='ent-daily'){tblDaily()}
+  else if(p==='ent-khg'){tblKHG()}
+  else if(p==='add-event'){formEvent()}
+  else if(p==='add-venue'){formVenue()}
+}
+
+function tblEvents(){
+  const m=document.getElementById('M');
+  m.innerHTML='<div class="page-title">Events (gt_shows)</div><div class="page-sub">'+S.length+' entries</div><div class="sb"><input placeholder="Search..." oninput="fTbl(this.value)"><button class="btn bg bs" onclick="page(\'add-event\')">+ Add</button></div><div style="overflow-x:auto"><table id="tbl"><thead><tr><th>Img</th><th>Name</th><th>Date</th><th>Time</th><th>Venue</th><th>Type</th><th>Pri</th><th>★</th><th></th></tr></thead><tbody>'+S.map(e=>'<tr data-s="'+(e.event_name||'').toLowerCase()+'"><td class="ic">'+(e.image_url?'<img src="'+e.image_url+'" onerror="this.src=\'\'">':'—')+'</td><td style="font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(e.event_name||'-')+'</td><td style="font-family:\'DM Mono\',monospace;font-size:10px">'+(e.show_date||'-')+'</td><td>'+(e.show_time||'-')+'</td><td>'+(e.venue_name||'-')+'</td><td>'+(e.event_type||'-')+'</td><td style="text-align:center;font-family:\'DM Mono\'">'+(e.display_priority||'-')+'</td><td style="text-align:center">'+(e.is_featured?'⭐':'')+'</td><td class="acts"><button class="btn bo bs" onclick="editEvt(\''+e.id+'\')">Edit</button><button class="btn bd bs" onclick="delEvt(\''+e.id+'\')">✕</button></td></tr>').join('')+'</tbody></table></div>';
+}
+
+function tblVenues(){
+  const m=document.getElementById('M');
+  m.innerHTML='<div class="page-title">Venues</div><div class="page-sub">'+V.length+' Atlanta venues</div><div class="sb"><input placeholder="Search..." oninput="fTbl(this.value)"><button class="btn bg bs" onclick="page(\'add-venue\')">+ Add</button></div><div style="overflow-x:auto"><table id="tbl"><thead><tr><th>Img</th><th>Name</th><th>Category</th><th>Neighborhood</th><th>Rating</th><th>Tonight?</th><th></th></tr></thead><tbody>'+V.map(v=>'<tr data-s="'+(v.name||'').toLowerCase()+'"><td class="ic">'+(v.hero_image?'<img src="'+v.hero_image+'" onerror="this.src=\'\'">':'—')+'</td><td style="font-weight:600">'+(v.name||'-')+'</td><td>'+(v.category_key||'-')+'</td><td>'+(v.neighborhood||'-')+'</td><td style="font-family:\'DM Mono\'">'+(v.google_rating||'-')+'</td><td>'+(v.tonight_eligible?(v.tonight_label||'Yes'):'—')+'</td><td class="acts"><button class="btn bo bs" onclick="editVen(\''+v.id+'\')">Edit</button></td></tr>').join('')+'</tbody></table></div>';
+}
+
+function tblDaily(){
+  const m=document.getElementById('M');
+  m.innerHTML='<div class="page-title">Daily Lineup</div><div class="page-sub">'+D.length+' entries</div><div style="overflow-x:auto"><table id="tbl"><thead><tr><th>Name</th><th>Day</th><th>Time</th><th>Venue</th><th>Type</th><th></th></tr></thead><tbody>'+D.map(d=>'<tr><td style="font-weight:600">'+(d.event_name||'-')+'</td><td>'+(d.day_of_week||'-')+'</td><td>'+(d.time_slot||'-')+'</td><td>'+(d.venue||'-')+'</td><td>'+(d.event_type||'-')+'</td><td class="acts"><button class="btn bd bs" onclick="delDaily(\''+d.id+'\')">✕</button></td></tr>').join('')+'</tbody></table></div>';
+}
+
+function tblKHG(){
+  const m=document.getElementById('M');
+  m.innerHTML='<div class="page-title">KHG Brand Events</div><div class="page-sub">'+K.length+' entries from eventbrite_events</div><div style="overflow-x:auto"><table id="tbl"><thead><tr><th>Img</th><th>Name</th><th>Brand</th><th>Date</th><th>Type</th><th>Pri</th><th></th></tr></thead><tbody>'+K.map(e=>'<tr><td class="ic">'+(e.image_url?'<img src="'+e.image_url+'" onerror="this.src=\'\'">':'—')+'</td><td style="font-weight:600">'+(e.event_name||'-')+'</td><td style="color:var(--gold)">'+(e.brand_key||'-')+'</td><td style="font-family:\'DM Mono\';font-size:10px">'+(e.event_date||'-')+'</td><td>'+(e.event_type||'-')+'</td><td style="text-align:center">'+(e.display_priority||'-')+'</td><td class="acts"><button class="btn bd bs" onclick="delKHG(\''+e.id+'\')">✕</button></td></tr>').join('')+'</tbody></table></div>';
+}
+
+function formEvent(pre){
+  const e=pre||{};const isE=!!e.id;
+  document.getElementById('M').innerHTML='<div class="page-title">'+(isE?'Edit':'Add')+' Event</div><div class="page-sub">'+(isE?'Update':'Create new')+' in gt_shows</div><div class="entity-panel"><div class="fr"><div class="fd"><label>Event Name *</label><input id="fn" value="'+(e.event_name||'')+'"></div><div class="fd"><label>Venue *</label><input id="fv" value="'+(e.venue_name||'')+'"></div></div><div class="fr fr3"><div class="fd"><label>Date *</label><input id="fd" type="date" value="'+(e.show_date||td)+'"></div><div class="fd"><label>Time</label><input id="ft" type="time" value="'+(e.show_time||'20:00')+'"></div><div class="fd"><label>City</label><select id="fc"><option value="atlanta">Atlanta</option><option value="houston">Houston</option><option value="los_angeles">Los Angeles</option><option value="miami">Miami</option><option value="charlotte">Charlotte</option></select></div></div><div class="fr fr3"><div class="fd"><label>Type</label><select id="fy"><option value="concert">Concert</option><option value="comedy">Comedy</option><option value="festival">Festival</option><option value="special_event">Special Event</option><option value="nightlife">Nightlife</option><option value="brunch">Brunch</option></select></div><div class="fd"><label>Genre</label><input id="fg" value="'+(e.genre||'')+'"></div><div class="fd"><label>Priority (1=top)</label><input id="fp" type="number" value="'+(e.display_priority||10)+'" min="1" max="50"></div></div><div class="fr"><div class="fd"><label>Image URL</label><input id="fi" value="'+(e.image_url||'')+'"></div><div class="fd"><label>Ticket URL</label><input id="fk" value="'+(e.ticket_url||'')+'"></div></div>'+(e.image_url?'<div class="img-preview"><img src="'+e.image_url+'" onerror="this.style.display=\'none\'"><span style="font-size:10px;color:var(--muted)">Current image</span></div>':'')+'<div class="fr"><div class="fd"><label>Featured?</label><select id="ff"><option value="false">No</option><option value="true"'+(e.is_featured?' selected':'')+'>Yes — Hero Card</option></select></div><div class="fd"><label>Status</label><select id="fs"><option value="confirmed"'+(e.status==='confirmed'?' selected':'')+'>Confirmed</option><option value="tentative"'+(e.status==='tentative'?' selected':'')+'>Tentative</option><option value="cancelled">Cancelled</option></select></div></div><div class="fd"><label>Description</label><textarea id="fx">'+(e.description||'')+'</textarea></div><div class="br"><button class="btn bg" onclick="'+(isE?'saveEvt(\''+e.id+'\')':'createEvt()')+'">'+(isE?'Save':'Add Event')+'</button>'+(isE?'<button class="btn bd" onclick="delEvt(\''+e.id+'\')">Delete</button>':'')+'<button class="btn bo" onclick="page(\'dir-upcoming\')">Cancel</button></div></div>';
+  if(e.city_key)document.getElementById('fc').value=e.city_key;
+  if(e.event_type)document.getElementById('fy').value=e.event_type;
+}
+
+function formVenue(pre){
+  const v=pre||{};const isE=!!v.id;
+  document.getElementById('M').innerHTML='<div class="page-title">'+(isE?'Edit':'Add')+' Venue</div><div class="page-sub">'+(isE?'Update':'Create new')+' in gt_venues</div><div class="entity-panel"><div class="fr"><div class="fd"><label>Venue Name *</label><input id="vn" value="'+(v.name||'')+'"></div><div class="fd"><label>Neighborhood</label><input id="vh" value="'+(v.neighborhood||'')+'"></div></div><div class="fr fr3"><div class="fd"><label>Category</label><select id="vc"><option value="nightclub">Nightclub</option><option value="lounge">Lounge</option><option value="restaurant">Restaurant</option><option value="bar">Bar</option><option value="rooftop">Rooftop</option><option value="hookah">Hookah</option><option value="event_venue">Event Venue</option><option value="brunch">Brunch</option></select></div><div class="fd"><label>Google Rating</label><input id="vr" type="number" step="0.1" value="'+(v.google_rating||'')+'"></div><div class="fd"><label>Instagram</label><input id="vi" value="'+(v.instagram_handle||'')+'"></div></div><div class="fr"><div class="fd"><label>Hero Image URL</label><input id="vm" value="'+(v.hero_image||'')+'"></div><div class="fd"><label>Address</label><input id="va" value="'+(v.address||'')+'"></div></div>'+(v.hero_image?'<div class="img-preview"><img src="'+v.hero_image+'" onerror="this.style.display=\'none\'"></div>':'')+'<div class="fr"><div class="fd"><label>Tonight Eligible?</label><select id="ve"><option value="false">No</option><option value="true"'+(v.tonight_eligible?' selected':'')+'>Yes</option></select></div><div class="fd"><label>Tonight Label</label><input id="vl" value="'+(v.tonight_label||'')+'"></div></div><div class="fd"><label>Short Desc</label><input id="vd" value="'+(v.short_desc||'')+'"></div><div class="br"><button class="btn bg" onclick="'+(isE?'saveVen(\''+v.id+'\')':'createVen()')+'">'+(isE?'Save':'Add Venue')+'</button><button class="btn bo" onclick="page(\'ent-venues\')">Cancel</button></div></div>';
+  if(v.category_key)document.getElementById('vc').value=v.category_key;
+}
+
+async function createEvt(){const d={event_name:gv('fn'),venue_name:gv('fv'),show_date:gv('fd'),show_time:gv('ft'),city_key:gv('fc'),event_type:gv('fy'),genre:gv('fg')||null,display_priority:parseInt(gv('fp'))||10,image_url:gv('fi')||null,ticket_url:gv('fk')||null,is_featured:gv('ff')==='true',status:gv('fs'),description:gv('fx')||null};if(!d.event_name||!d.show_date){toast('Name & date required');return}try{await aPost('gt_shows',d);toast('✓ Created');await load()}catch(e){toast('Error: '+e.message)}}
+async function saveEvt(id){const d={event_name:gv('fn'),venue_name:gv('fv'),show_date:gv('fd'),show_time:gv('ft'),city_key:gv('fc'),event_type:gv('fy'),genre:gv('fg')||null,display_priority:parseInt(gv('fp'))||10,image_url:gv('fi')||null,ticket_url:gv('fk')||null,is_featured:gv('ff')==='true',status:gv('fs'),description:gv('fx')||null};try{await aPatch('gt_shows',id,d);toast('✓ Updated');await load()}catch(e){toast('Error: '+e.message)}}
+async function delEvt(id){if(!confirm('Delete?'))return;try{await aDel('gt_shows',id);toast('Deleted');await load()}catch{toast('Error')}}
+function editEvt(id){const e=S.find(s=>s.id===id);if(e)formEvent(e)}
+
+async function createVen(){const d={name:gv('vn'),neighborhood:gv('vh'),category_key:gv('vc'),city_key:'atlanta',google_rating:parseFloat(gv('vr'))||null,hero_image:gv('vm')||null,instagram_handle:gv('vi')||null,address:gv('va')||null,tonight_eligible:gv('ve')==='true',tonight_label:gv('vl')||null,short_desc:gv('vd')||null,status:'active'};if(!d.name){toast('Name required');return}try{await aPost('gt_venues',d);toast('✓ Created');await load()}catch(e){toast('Error: '+e.message)}}
+async function saveVen(id){const d={name:gv('vn'),neighborhood:gv('vh'),category_key:gv('vc'),google_rating:parseFloat(gv('vr'))||null,hero_image:gv('vm')||null,instagram_handle:gv('vi')||null,address:gv('va')||null,tonight_eligible:gv('ve')==='true',tonight_label:gv('vl')||null,short_desc:gv('vd')||null};try{await aPatch('gt_venues',id,d);toast('✓ Updated');await load()}catch(e){toast('Error: '+e.message)}}
+function editVen(id){const v=V.find(x=>x.id===id);if(v)formVenue(v)}
+
+async function delDaily(id){if(!confirm('Delete?'))return;await aDel('gt_daily_events',id);toast('Deleted');await load()}
+async function delKHG(id){if(!confirm('Delete?'))return;await aDel('eventbrite_events',id);toast('Deleted');await load()}
+
+function fDir(q){document.querySelectorAll('#dg .dir-card').forEach(c=>{const t=c.querySelector('.tt')?.textContent?.toLowerCase()||'';c.style.display=t.includes(q.toLowerCase())?'':'none'})}
+function fTbl(q){document.querySelectorAll('#tbl tbody tr').forEach(r=>{r.style.display=(r.dataset.s||'').includes(q.toLowerCase())?'':'none'})}
+
+document.querySelectorAll('.nav-item').forEach(n=>n.addEventListener('click',()=>page(n.dataset.page)));
+load();
 </script>
 </body>
 </html>
