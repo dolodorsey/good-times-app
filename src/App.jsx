@@ -1638,18 +1638,17 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             </>);
           })()}
 
-          {/* ═══ UPCOMING EVENTS — ALL upcoming, more ATL events ═══ */}
+          {/* ═══ UPCOMING EVENTS — ALL upcoming, real ATL events ═══ */}
           {(()=>{
-            const evtPool=[...upcomingKHG,...cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event"&&e.source!=="sports_game")];
+            const evtPool=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event"&&e.source!=="sports_game"&&e.source!=="tonight_venue"&&e.source!=="happening");
             const seen=new Set();const unique=evtPool.filter(e=>{const k=e.title;if(seen.has(k))return false;seen.add(k);return true;});
-            const evtItems=mark(unique,10);
+            const evtItems=mark(unique,8);
             if(evtItems.length===0)return null;
             return(<>
               <SectionHead t="UPCOMING EVENTS" icon={"\u{1F4C5}"} color={C.gold} action={{l:"See All",fn:()=>navigate("calendar")}}/>
               <div style={{padding:"0 16px",marginBottom:16}}>
-                {evtItems.slice(0,4).length>0&&<EventGrid items={evtItems.slice(0,4)} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>}
-                {evtItems.slice(4).map(e=><EventRow key={e.id} e={e} onClick={()=>{setDetail(e);navigate("detail")}}/>)}
-                {unique.length>10&&<button onClick={()=>navigate("calendar")} style={{...V(false),width:"100%",marginTop:10,padding:"10px",textAlign:"center",fontSize:12}}>See all {unique.length} events {"\u2192"}</button>}
+                <EventGrid items={evtItems} onSelect={e=>{setDetail(e);navigate("detail")}} max={8}/>
+                {unique.length>8&&<button onClick={()=>navigate("calendar")} style={{...V(false),width:"100%",marginTop:10,padding:"10px",textAlign:"center",fontSize:12}}>See all {unique.length} events {"\u2192"}</button>}
               </div>
             </>);
           })()}
@@ -2315,16 +2314,15 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     return <GTLoadingOverlay message="Finding your next experience..."/>;
   };
 
-  // ═══ NAV BAR — 3D metallic icons ═══
-  const NAV_ICON_BASE=`${GT_BG_BASE}/nav-icon-`;
+  // ═══ NAV BAR — styled icons ═══
   const navDefs=[
-    {id:"now",l:"Now",img:"now"},
-    {id:"calendar",l:"Dates",img:"dates"},
-    {id:"plans",l:"Itinerary",img:"itinerary"},
-    {id:"planforme",l:"Build My Night",img:"build-my-night"},
-    {id:"explore",l:"Explore",img:"explore"},
-    {id:"map",l:"Map",img:"map"},
-    {id:"vault",l:"Vault",img:"vault"}
+    {id:"now",l:"Now",emoji:"🔥"},
+    {id:"calendar",l:"Dates",emoji:"📅"},
+    {id:"plans",l:"Itinerary",emoji:"📋"},
+    {id:"planforme",l:"Build My Night",emoji:"✨"},
+    {id:"explore",l:"Explore",emoji:"🧭"},
+    {id:"map",l:"Map",emoji:"📍"},
+    {id:"vault",l:"Vault",emoji:"🔒"}
   ];
 
   if(showSplash)return <GTSplashScreen onComplete={()=>{sessionStorage.setItem("gt_splash_shown","1");setShowSplash(false)}} duration={7000}/>;
@@ -2347,15 +2345,17 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
           </div>
         </div>
       </div>}
-      {/* Bottom nav — 3D metallic icons */}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,zIndex:40,background:"linear-gradient(180deg,rgba(6,6,12,0.95),rgba(6,6,12,1.0))",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",borderTop:"1px solid rgba(212,168,83,0.1)",padding:"4px 0 calc(8px + env(safe-area-inset-bottom, 0px))",display:"flex",justifyContent:"space-around"}}>
+      {/* Bottom nav — styled emoji icons */}
+      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,zIndex:40,background:"linear-gradient(180deg,rgba(6,6,12,0.95),rgba(6,6,12,1.0))",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",borderTop:"1px solid rgba(212,168,83,0.1)",padding:"6px 0 calc(10px + env(safe-area-inset-bottom, 0px))",display:"flex",justifyContent:"space-around"}}>
         {navDefs.map(n=>{
           const active=navScreen===n.id;
           return(
-            <button key={n.id} onClick={()=>{tapHaptic();navigate(n.id,n.id)}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"2px 0",minWidth:0,flex:1,position:"relative"}}>
-              {active&&<div style={{position:"absolute",top:-4,width:20,height:2,borderRadius:99,background:C.gold,boxShadow:`0 0 8px ${C.gold}80`}}/>}
-              <img src={`${NAV_ICON_BASE}${n.img}.webp`} alt={n.l} style={{width:40,height:40,objectFit:"contain",filter:active?"brightness(1.2) drop-shadow(0 0 6px rgba(212,168,83,0.5))":"brightness(0.7)",transition:"all 0.25s ease"}}/>
-              <span style={{fontSize:7,letterSpacing:.4,color:active?C.gold:"rgba(255,255,255,0.5)",fontWeight:active?700:500,fontFamily:F.f,whiteSpace:"nowrap",marginTop:-2}}>{n.l}</span>
+            <button key={n.id} onClick={()=>{tapHaptic();navigate(n.id,n.id)}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"2px 0",minWidth:0,flex:1,position:"relative"}}>
+              {active&&<div style={{position:"absolute",top:-5,width:20,height:2,borderRadius:99,background:C.gold,boxShadow:`0 0 8px ${C.gold}80`}}/>}
+              <div style={{width:36,height:36,borderRadius:12,background:active?`linear-gradient(135deg,rgba(212,168,83,0.2),rgba(212,168,83,0.08))`:"rgba(212,168,83,0.04)",border:active?`1px solid ${C.gold}40`:"1px solid rgba(212,168,83,0.12)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.25s",boxShadow:active?"0 0 12px rgba(212,168,83,0.2)":"none"}}>
+                <span style={{fontSize:18,filter:active?"brightness(1.3) saturate(1.3)":"brightness(0.8) saturate(0.6)",transition:"all 0.25s"}}>{n.emoji}</span>
+              </div>
+              <span style={{fontSize:8,letterSpacing:.3,color:active?C.gold:"rgba(255,255,255,0.4)",fontWeight:active?700:500,fontFamily:F.f,whiteSpace:"nowrap"}}>{n.l}</span>
             </button>
           );
         })}
