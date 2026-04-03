@@ -135,7 +135,7 @@ function gv(id){return document.getElementById(id)?.value?.trim()||''}
 async function load(){
   [S,V,D,K]=await Promise.all([
     api('gt_shows?select=*&show_date=gte.'+td+'&status=in.(confirmed,tentative)&order=show_date.asc,display_priority.asc&limit=300'),
-    api('gt_venues?select=id,name,category_key,subcategory,neighborhood,hero_image,city_key,google_rating,tonight_eligible,tonight_label,instagram_handle,address,short_desc,status,phone,website&city_key=eq.atlanta&status=eq.active&order=google_rating.desc.nullslast&limit=200'),
+    api('gt_venues?select=id,name,category_key,subcategory,neighborhood,hero_image,city_key,google_rating,tonight_eligible,tonight_label,instagram_handle,address,short_desc,status,phone,website&city_key=eq.atlanta&status=eq.active&order=google_rating.desc.nullslast&limit=400'),
     api('gt_daily_events?select=*&is_verified=eq.true&order=relevance_score.desc&limit=200'),
     api('eventbrite_events?select=*&is_active=eq.true&event_date=gte.'+td+'&order=display_priority.asc&limit=100')
   ]);
