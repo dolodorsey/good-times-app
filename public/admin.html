@@ -62,6 +62,20 @@ tr:hover td{background:rgba(255,255,255,0.02)}
 </style>
 </head>
 <body>
+<div id="login-gate" style="position:fixed;inset:0;z-index:9999;background:#06060C;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:DM Sans,sans-serif">
+<div style="text-align:center;max-width:320px;padding:24px">
+<h1 style="font-family:Cormorant Garamond,serif;font-size:28px;font-weight:300;letter-spacing:0.15em;text-transform:uppercase;color:#D4A853;margin-bottom:8px">Good Times</h1>
+<p style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:32px">Command Center</p>
+<div style="margin-bottom:14px"><input id="lg-email" type="email" placeholder="Email" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:13px;font-family:DM Sans,sans-serif;outline:none;box-sizing:border-box"></div>
+<div style="margin-bottom:14px;position:relative"><input id="lg-pw" type="password" placeholder="Password" style="width:100%;padding:12px 14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:13px;font-family:DM Sans,sans-serif;outline:none;box-sizing:border-box"></div>
+<div id="lg-err" style="color:#ef4444;font-size:12px;margin-bottom:12px;display:none"></div>
+<button onclick="doLogin()" style="width:100%;padding:14px;background:linear-gradient(135deg,#D4A853,#B8942F);color:#0A0A0F;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:DM Sans,sans-serif">Sign In</button>
+</div></div>
+<script>
+function doLogin(){var e=document.getElementById("lg-email").value,p=document.getElementById("lg-pw").value;if(e==="thedoctordorsey@gmail.com"&&p==="password1017"){sessionStorage.setItem("gt_admin_auth","1");document.getElementById("login-gate").style.display="none"}else{var err=document.getElementById("lg-err");err.textContent="Invalid credentials";err.style.display="block"}}
+if(sessionStorage.getItem("gt_admin_auth")==="1"){document.addEventListener("DOMContentLoaded",function(){document.getElementById("login-gate").style.display="none"})}
+document.addEventListener("keydown",function(e){if(e.key==="Enter"&&document.getElementById("login-gate").style.display!=="none")doLogin()})
+</script>
 <button class="mob-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')">☰</button>
 <div class="shell">
 <div class="sidebar">

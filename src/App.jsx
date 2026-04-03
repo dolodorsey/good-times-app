@@ -2328,15 +2328,16 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     return <GTLoadingOverlay message="Finding your next experience..."/>;
   };
 
-  // ═══ NAV BAR (CHANGE #4: Always visible via position:fixed) ═══
+  // ═══ NAV BAR — 3D metallic icons ═══
+  const NAV_ICON_BASE=`${GT_BG_BASE}/nav-icon-`;
   const navDefs=[
-    {id:"now",l:"Now",icon:"M17.66 11.2C17.43 10.9 17.15 10.64 16.89 10.38C16.22 9.78 15.46 9.35 14.82 8.72C13.33 7.26 13 4.85 13.95 3C13 3.23 12.17 3.75 11.46 4.32C8.87 6.4 7.85 10.07 9.07 13.22C9.11 13.32 9.15 13.42 9.15 13.55C9.15 13.77 9 13.97 8.8 14.05C8.57 14.15 8.33 14.09 8.14 13.93C8.08 13.88 8.04 13.83 8 13.76C6.87 12.33 6.69 10.28 7.45 8.64C5.78 10 4.87 12.3 5 14.47C5.06 14.97 5.12 15.47 5.29 15.97C5.43 16.57 5.7 17.17 6 17.7C7.08 19.43 8.95 20.67 10.96 20.92C13.1 21.19 15.39 20.8 16.89 19.32C18.55 17.68 19.13 15.19 18.15 13.06L17.98 12.72C17.9 12.56 17.78 12.39 17.66 12.2L17.66 11.2Z"},
-    {id:"calendar",l:"Dates",icon:"M19 3H18V1H16V3H8V1H6V3H5C3.89 3 3.01 3.9 3.01 5L3 19C3 20.1 3.89 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM19 19H5V8H19V19ZM9 10H7V12H9V10ZM13 10H11V12H13V10ZM17 10H15V12H17V10Z"},
-    {id:"plans",l:"Itinerary",icon:"M3 13H5V11H3V13ZM3 17H5V15H3V17ZM3 9H5V7H3V9ZM7 13H21V11H7V13ZM7 17H21V15H7V17ZM7 7V9H21V7H7Z"},
-    {id:"planforme",l:"Build My Night",icon:"M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"},
-    {id:"explore",l:"Explore",icon:"M12 10.9C11.39 10.9 10.9 11.39 10.9 12S11.39 13.1 12 13.1C12.61 13.1 13.1 12.61 13.1 12S12.61 10.9 12 10.9ZM12 2C6.48 2 2 6.48 2 12S6.48 22 12 22S22 17.52 22 12S17.52 2 12 2ZM14.19 14.19L6 18L9.81 9.81L18 6L14.19 14.19Z"},
-    {id:"map",l:"Map",icon:"M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22S19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9S10.62 6.5 12 6.5S14.5 7.62 14.5 9S13.38 11.5 12 11.5Z"},
-    {id:"vault",l:"Vault",icon:"M18 8H17V6C17 3.24 14.76 1 12 1S7 3.24 7 6V8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM12 17C10.9 17 10 16.1 10 15S10.9 13 12 13S14 13.9 14 15S13.1 17 12 17ZM15.1 8H8.9V6C8.9 4.29 10.29 2.9 12 2.9S15.1 4.29 15.1 6V8Z"}
+    {id:"now",l:"Now",img:"now"},
+    {id:"calendar",l:"Dates",img:"dates"},
+    {id:"plans",l:"Itinerary",img:"itinerary"},
+    {id:"planforme",l:"Build My Night",img:"build-my-night"},
+    {id:"explore",l:"Explore",img:"explore"},
+    {id:"map",l:"Map",img:"map"},
+    {id:"vault",l:"Vault",img:"vault"}
   ];
 
   if(showSplash)return <GTSplashScreen onComplete={()=>{sessionStorage.setItem("gt_splash_shown","1");setShowSplash(false)}} duration={7000}/>;
@@ -2359,17 +2360,15 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
           </div>
         </div>
       </div>}
-      {/* CHANGE #4: Bottom nav — position:fixed, always visible, z-index:40 */}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,zIndex:40,background:"linear-gradient(180deg,rgba(6,6,12,0.97),rgba(6,6,12,1.0))",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",borderTop:"1px solid rgba(212,168,83,0.12)",padding:"6px 4px calc(16px + env(safe-area-inset-bottom, 0px))",display:"flex",justifyContent:"space-around"}}>
+      {/* Bottom nav — 3D metallic icons */}
+      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,zIndex:40,background:"linear-gradient(180deg,rgba(6,6,12,0.95),rgba(6,6,12,1.0))",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",borderTop:"1px solid rgba(212,168,83,0.1)",padding:"4px 0 calc(8px + env(safe-area-inset-bottom, 0px))",display:"flex",justifyContent:"space-around"}}>
         {navDefs.map(n=>{
           const active=navScreen===n.id;
           return(
-            <button key={n.id} onClick={()=>{tapHaptic();navigate(n.id,n.id)}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"2px 0",minWidth:0,flex:1,position:"relative"}}>
-              {active&&<div style={{position:"absolute",top:-6,width:24,height:2.5,borderRadius:99,background:C.gold,boxShadow:`0 0 10px ${C.gold}80`}}/>}
-              <div style={{width:30,height:30,borderRadius:10,background:active?`${C.gold}18`:"rgba(212,168,83,0.08)",border:active?`1px solid ${C.gold}30`:"1px solid rgba(212,168,83,0.2)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill={active?C.gold:"#FFFFFF"} style={{transition:"all 0.2s"}}><path d={n.icon}/></svg>
-              </div>
-              <span style={{fontSize:8,letterSpacing:.3,color:active?C.gold:"#FFFFFF",fontWeight:active?700:500,fontFamily:F.f,whiteSpace:"nowrap"}}>{n.l}</span>
+            <button key={n.id} onClick={()=>{tapHaptic();navigate(n.id,n.id)}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"2px 0",minWidth:0,flex:1,position:"relative"}}>
+              {active&&<div style={{position:"absolute",top:-4,width:20,height:2,borderRadius:99,background:C.gold,boxShadow:`0 0 8px ${C.gold}80`}}/>}
+              <img src={`${NAV_ICON_BASE}${n.img}.webp`} alt={n.l} style={{width:40,height:40,objectFit:"contain",filter:active?"brightness(1.2) drop-shadow(0 0 6px rgba(212,168,83,0.5))":"brightness(0.7)",transition:"all 0.25s ease"}}/>
+              <span style={{fontSize:7,letterSpacing:.4,color:active?C.gold:"rgba(255,255,255,0.5)",fontWeight:active?700:500,fontFamily:F.f,whiteSpace:"nowrap",marginTop:-2}}>{n.l}</span>
             </button>
           );
         })}
