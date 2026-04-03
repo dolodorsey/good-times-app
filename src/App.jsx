@@ -47,25 +47,30 @@ const gtRandomBg=(cat="loading")=>{
   return chosen;
 };
 
-function GTSplashScreen({onComplete,duration=3500}){
+const GT_INTRO_VIDEO=`${GT_BG_BASE}/gt-intro-video.mp4`;
+
+function GTSplashScreen({onComplete,duration=7000}){
   const[progress,setProgress]=useState(0);
   const[exiting,setExiting]=useState(false);
-  const[bg]=useState(()=>gtRandomBg("splash"));
+  const videoRef=useRef(null);
   useEffect(()=>{
-    const iv=setInterval(()=>setProgress(p=>Math.min(p+2,100)),duration/50);
-    const t=setTimeout(()=>{setExiting(true);setTimeout(()=>onComplete?.(),600)},duration);
+    const iv=setInterval(()=>setProgress(p=>Math.min(p+1.5,100)),duration/67);
+    const t=setTimeout(()=>{setExiting(true);setTimeout(()=>onComplete?.(),800)},duration);
     return()=>{clearInterval(iv);clearTimeout(t)};
   },[duration,onComplete]);
+  useEffect(()=>{
+    if(videoRef.current){videoRef.current.play().catch(()=>{});}
+  },[]);
   return(
-    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden",opacity:exiting?0:1,transition:"opacity 0.6s ease"}}>
-      <div style={{position:"absolute",inset:0,backgroundImage:`url(${gtBgUrl(bg.file)})`,backgroundSize:"cover",backgroundPosition:"center",animation:"gtSlowZoom 12s ease-in-out infinite alternate"}}/>
-      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0.4) 0%,rgba(6,6,12,0.7) 50%,rgba(6,6,12,0.92) 100%)"}}/>
-      <div style={{position:"absolute",inset:0,opacity:0.04,pointerEvents:"none",backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,backgroundRepeat:"repeat"}}/>
-      <div style={{position:"relative",zIndex:2,textAlign:"center",padding:"0 2rem",animation:"gtFadeIn 0.8s ease forwards",animationDelay:"0.2s",opacity:0}}>
-        <div style={{fontFamily:"'Cormorant Garamond','Playfair Display',Georgia,serif",fontSize:"clamp(2rem,8vw,3.5rem)",fontWeight:300,letterSpacing:"0.15em",color:"#F5F0E8",textTransform:"uppercase",marginBottom:"0.5rem",textShadow:"0 2px 20px rgba(0,0,0,0.5)"}}>Good Times</div>
-        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:"clamp(0.65rem,2.5vw,0.85rem)",fontWeight:400,letterSpacing:"0.3em",color:"rgba(212,184,122,0.8)",textTransform:"uppercase",animation:"gtFadeIn 0.8s ease forwards",animationDelay:"0.6s",opacity:0}}>Atlanta's Nightlife Concierge</div>
-        <div style={{width:120,height:2,background:"rgba(245,240,232,0.15)",borderRadius:1,margin:"2.5rem auto 0",overflow:"hidden",animation:"gtFadeIn 0.8s ease forwards",animationDelay:"1s",opacity:0}}>
-          <div style={{height:"100%",background:"linear-gradient(90deg,#D4A853,#F5F0E8)",borderRadius:1,width:`${progress}%`,transition:"width 0.4s ease"}}/>
+    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden",opacity:exiting?0:1,transition:"opacity 0.8s cubic-bezier(0.16,1,0.3,1)",background:"#06060C"}}>
+      <video ref={videoRef} autoPlay muted loop playsInline style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}} src={GT_INTRO_VIDEO}/>
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0.2) 0%,rgba(6,6,12,0.15) 40%,rgba(6,6,12,0.6) 75%,rgba(6,6,12,0.92) 100%)"}}/>
+      <div style={{position:"absolute",inset:0,opacity:0.03,pointerEvents:"none",backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,backgroundRepeat:"repeat"}}/>
+      <div style={{position:"relative",zIndex:2,textAlign:"center",padding:"0 2rem",animation:"gtFadeIn 1s ease forwards",animationDelay:"0.5s",opacity:0}}>
+        <div style={{fontFamily:"'Cormorant Garamond','Playfair Display',Georgia,serif",fontSize:"clamp(2.2rem,9vw,4rem)",fontWeight:300,letterSpacing:"0.18em",color:"#F5F0E8",textTransform:"uppercase",marginBottom:"0.5rem",textShadow:"0 2px 30px rgba(0,0,0,0.6)"}}>Good Times</div>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:"clamp(0.6rem,2.2vw,0.8rem)",fontWeight:400,letterSpacing:"0.35em",color:"rgba(212,184,122,0.75)",textTransform:"uppercase",animation:"gtFadeIn 1s ease forwards",animationDelay:"1.2s",opacity:0}}>Atlanta's Nightlife Concierge</div>
+        <div style={{width:100,height:1.5,background:"rgba(245,240,232,0.12)",borderRadius:1,margin:"2.5rem auto 0",overflow:"hidden",animation:"gtFadeIn 1s ease forwards",animationDelay:"1.8s",opacity:0}}>
+          <div style={{height:"100%",background:"linear-gradient(90deg,#D4A853,#F5F0E8)",borderRadius:1,width:`${progress}%`,transition:"width 0.3s ease"}}/>
         </div>
       </div>
     </div>
@@ -410,7 +415,7 @@ const C = {
   a3:"#D4A853",a4:"#FFB86B",overlay:"rgba(6,6,12,0.88)"
 };
 const F={f:"'DM Sans',sans-serif",s:"'Playfair Display',Georgia,serif"};
-const V=a=>({background:a?`linear-gradient(135deg,${C.gold},#B8942F)`:"rgba(255,255,255,0.15)",color:a?"#0A0A0F":"#fff",border:a?"none":"1px solid rgba(255,255,255,0.6)",borderRadius:10,padding:"8px 16px",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:F.f,letterSpacing:.3,transition:"all 0.25s ease"});
+const V=a=>({background:a?`linear-gradient(135deg,${C.gold},#B8942F)`:"rgba(212,168,83,0.08)",color:a?"#0A0A0F":"#fff",border:a?"none":"1px solid rgba(212,168,83,0.25)",borderRadius:10,padding:"8px 16px",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:F.f,letterSpacing:.3,transition:"all 0.25s ease"});
 const K={background:C.bgCard,border:`1px solid rgba(255,255,255,0.4)`,borderRadius:12,boxShadow:"0 2px 8px rgba(0,0,0,0.3)"};
 
 // Supabase
@@ -1414,10 +1419,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             }).sort((a,b)=>(a.date||"").localeCompare(b.date||""));
             const upcomingKHG=upcoming.filter(e=>e.source==="huglife");
 
-            // Featured Picks: REVEL SATURDAY + RnB WEDNESDAYS at FLO (hardcoded featured)
+            // Featured Picks: REVEL SATURDAY + Ladies Love R&B at FLO (hardcoded featured)
             const featuredPicks=[
-              {id:"feat-revel",title:"REVEL SATURDAY",brand:"NIGHTLIFE",city:city.name,date:todayStr,time:"22:00",venue:"Revel Atlanta",category:"nightlife",image_url:"https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900",source:"featured",display_priority:1},
-              {id:"feat-rnb",title:"RnB WEDNESDAYS at FLO",brand:"NIGHTLIFE",city:city.name,date:todayStr,time:"21:00",venue:"FLO Atlanta",category:"nightlife",image_url:"https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=900",source:"featured",display_priority:1}
+              {id:"feat-revel",title:"REVEL SATURDAY",brand:"NIGHTLIFE",city:city.name,date:todayStr,time:"22:00",venue:"Revel Atlanta",category:"nightlife",image_url:_SB+"/revel/revel-party-1.webp",source:"featured",display_priority:1},
+              {id:"feat-rnb",title:"Ladies Love R&B Wednesdays",brand:"NIGHTLIFE",city:city.name,date:todayStr,time:"21:00",venue:"Flō Atlanta",category:"nightlife",image_url:_SB+"/ladies-love-rnb/llr-flyer-4.webp",source:"featured",display_priority:1}
             ];
 
             return(<>
@@ -2269,7 +2274,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     {id:"vault",l:"Vault",icon:"M18 8H17V6C17 3.24 14.76 1 12 1S7 3.24 7 6V8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM12 17C10.9 17 10 16.1 10 15S10.9 13 12 13S14 13.9 14 15S13.1 17 12 17ZM15.1 8H8.9V6C8.9 4.29 10.29 2.9 12 2.9S15.1 4.29 15.1 6V8Z"}
   ];
 
-  if(showSplash)return <GTSplashScreen onComplete={()=>{sessionStorage.setItem("gt_splash_shown","1");setShowSplash(false)}} duration={3500}/>;
+  if(showSplash)return <GTSplashScreen onComplete={()=>{sessionStorage.setItem("gt_splash_shown","1");setShowSplash(false)}} duration={7000}/>;
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:F.f,position:"relative",maxWidth:430,margin:"0 auto"}}>
@@ -2296,7 +2301,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
           return(
             <button key={n.id} onClick={()=>{tapHaptic();navigate(n.id,n.id)}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"2px 0",minWidth:0,flex:1,position:"relative"}}>
               {active&&<div style={{position:"absolute",top:-6,width:24,height:2.5,borderRadius:99,background:C.gold,boxShadow:`0 0 10px ${C.gold}80`}}/>}
-              <div style={{width:30,height:30,borderRadius:10,background:active?`${C.gold}18`:"rgba(255,255,255,0.15)",border:active?`1px solid ${C.gold}30`:"1px solid rgba(255,255,255,0.35)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
+              <div style={{width:30,height:30,borderRadius:10,background:active?`${C.gold}18`:"rgba(212,168,83,0.08)",border:active?`1px solid ${C.gold}30`:"1px solid rgba(212,168,83,0.2)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.2s"}}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill={active?C.gold:"#FFFFFF"} style={{transition:"all 0.2s"}}><path d={n.icon}/></svg>
               </div>
               <span style={{fontSize:8,letterSpacing:.3,color:active?C.gold:"#FFFFFF",fontWeight:active?700:500,fontFamily:F.f,whiteSpace:"nowrap"}}>{n.l}</span>
