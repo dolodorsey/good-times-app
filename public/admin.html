@@ -99,9 +99,20 @@ document.addEventListener("keydown",function(e){if(e.key==="Enter"&&document.get
 <div class="nav-item" data-page="dir-nightlife">🌃 Weekly Nightlife<span class="badge" id="ct-nightlife">-</span></div>
 <div class="nav-item" data-page="dir-upcoming">📅 All Upcoming<span class="badge" id="ct-upcoming">-</span></div>
 </div>
+<div class="nav-group"><div class="nav-group-label">Explore — Categories</div>
+<div class="nav-item" data-page="exp-dining">🍽️ Dining<span class="badge" id="ct-dining">-</span></div>
+<div class="nav-item" data-page="exp-nightlife">🌙 Nightlife<span class="badge" id="ct-nl">-</span></div>
+<div class="nav-item" data-page="exp-music">🎵 Live Music<span class="badge" id="ct-music">-</span></div>
+<div class="nav-item" data-page="exp-drinks">🍸 Drinks<span class="badge" id="ct-drinks">-</span></div>
+<div class="nav-item" data-page="exp-culture">🎨 Culture<span class="badge" id="ct-culture">-</span></div>
+<div class="nav-item" data-page="exp-wellness">🧘 Wellness<span class="badge" id="ct-well">-</span></div>
+<div class="nav-item" data-page="exp-hookah">💨 Hookah<span class="badge" id="ct-hookah">-</span></div>
+<div class="nav-item" data-page="exp-all">🗂️ All Venues<span class="badge" id="ct-allv">-</span></div>
+</div>
 <div class="nav-group"><div class="nav-group-label">Entity Manager</div>
 <div class="nav-item" data-page="ent-events">📋 Events (gt_shows)</div>
 <div class="nav-item" data-page="ent-venues">📍 Venues</div>
+<div class="nav-item" data-page="ent-happenings">🎉 Weekly Parties</div>
 <div class="nav-item" data-page="ent-daily">🔄 Daily Lineup</div>
 <div class="nav-item" data-page="ent-khg">🎪 KHG Brand Events</div>
 </div>
@@ -123,7 +134,7 @@ const dn=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'
 const tday=dn[new Date().getDay()];
 const wkEnd=new Date();wkEnd.setDate(wkEnd.getDate()+(7-wkEnd.getDay()));
 const wkStr=wkEnd.toISOString().split('T')[0];
-let S=[],V=[],D=[],K=[];
+let S=[],V=[],D=[],K=[],HP=[];
 
 async function api(q){try{const r=await fetch(SB+'/'+q,{headers:H});return r.ok?await r.json():[]}catch{return[]}}
 async function aPost(t,d){const r=await fetch(SB+'/'+t,{method:'POST',headers:HJ,body:JSON.stringify(d)});if(!r.ok){const e=await r.json();throw new Error(e.message||'Failed')}return r.json()}
@@ -133,11 +144,12 @@ function toast(m){const t=document.getElementById('toast');t.textContent=m;t.cla
 function gv(id){return document.getElementById(id)?.value?.trim()||''}
 
 async function load(){
-  [S,V,D,K]=await Promise.all([
+  [S,V,D,K,HP]=await Promise.all([
     api('gt_shows?select=*&show_date=gte.'+td+'&status=in.(confirmed,tentative)&order=show_date.asc,display_priority.asc&limit=300'),
-    api('gt_venues?select=id,name,category_key,subcategory,neighborhood,hero_image,city_key,google_rating,tonight_eligible,tonight_label,instagram_handle,address,short_desc,status,phone,website&city_key=eq.atlanta&status=eq.active&order=google_rating.desc.nullslast&limit=400'),
+    api('gt_venues?select=id,name,category_key,subcategory,neighborhood,hero_image,city_key,google_rating,tonight_eligible,tonight_label,instagram_handle,address,short_desc,status,phone,website,tab_tags,search_tags&city_key=eq.atlanta&status=eq.active&order=google_rating.desc.nullslast&limit=400'),
     api('gt_daily_events?select=*&is_verified=eq.true&order=relevance_score.desc&limit=200'),
-    api('eventbrite_events?select=*&is_active=eq.true&event_date=gte.'+td+'&order=display_priority.asc&limit=100')
+    api('eventbrite_events?select=*&is_active=eq.true&event_date=gte.'+td+'&order=display_priority.asc&limit=100'),
+    api('gt_venue_happenings?select=*&is_active=eq.true&order=priority_score.desc&limit=200')
   ]);
   updCounts();page('dir-tonight');
 }
@@ -151,8 +163,19 @@ function updCounts(){
   document.getElementById('ct-weekend').textContent=wk.length;
   document.getElementById('ct-concerts').textContent=cn.length;
   document.getElementById('ct-featured').textContent=ft.length;
-  document.getElementById('ct-nightlife').textContent=D.length;
+  document.getElementById('ct-nightlife').textContent=HP.length;
   document.getElementById('ct-upcoming').textContent=S.length;
+  // Explore counts
+  const tabCount=t=>V.filter(v=>(v.tab_tags||[]).includes(t)).length;
+  const el=id=>document.getElementById(id);
+  if(el('ct-dining'))el('ct-dining').textContent=tabCount('dining');
+  if(el('ct-nl'))el('ct-nl').textContent=tabCount('nightlife');
+  if(el('ct-music'))el('ct-music').textContent=tabCount('music');
+  if(el('ct-drinks'))el('ct-drinks').textContent=tabCount('drinks');
+  if(el('ct-culture'))el('ct-culture').textContent=tabCount('culture');
+  if(el('ct-well'))el('ct-well').textContent=tabCount('wellness');
+  if(el('ct-hookah'))el('ct-hookah').textContent=tabCount('hookah');
+  if(el('ct-allv'))el('ct-allv').textContent=V.length;
 }
 
 function card(e){
@@ -173,14 +196,67 @@ function page(p){
   else if(p==='dir-weekend'){m.innerHTML=dirHTML('This Weekend','Through '+wkStr+' · 404 Weekend',S.filter(e=>e.show_date>=td&&e.show_date<=wkStr))}
   else if(p==='dir-concerts'){m.innerHTML=dirHTML('Concerts & Shows','All upcoming concerts, comedy, festivals',S.filter(e=>['concert','comedy','festival','special_event'].includes(e.event_type)))}
   else if(p==='dir-featured'){m.innerHTML=dirHTML('Featured / Hero Cards','These show as large hero cards on the home screen',S.filter(e=>e.is_featured))}
-  else if(p==='dir-nightlife'){m.innerHTML=dirHTML('Weekly Nightlife','Recurring from gt_daily_events',D.map(d=>({...d,event_name:d.event_name,show_date:d.event_date,show_time:d.time_slot,venue_name:d.venue,event_type:d.event_type})))}
+  else if(p==='dir-nightlife'){tblHappenings()}
   else if(p==='dir-upcoming'){m.innerHTML=dirHTML('All Upcoming','Every event from today forward',S)}
+  else if(p.startsWith('exp-')){showExplore(p.replace('exp-',''))}
   else if(p==='ent-events'){tblEvents()}
   else if(p==='ent-venues'){tblVenues()}
+  else if(p==='ent-happenings'){tblHappenings()}
   else if(p==='ent-daily'){tblDaily()}
   else if(p==='ent-khg'){tblKHG()}
   else if(p==='add-event'){formEvent()}
   else if(p==='add-venue'){formVenue()}
+}
+
+// Explore category page — shows venues filtered by tab_tag with full contact info
+function showExplore(tab){
+  const m=document.getElementById('M');
+  const tabLabel={dining:'Dining',nightlife:'Nightlife',music:'Live Music',drinks:'Drinks',culture:'Culture',wellness:'Wellness',hookah:'Hookah',all:'All Venues'}[tab]||tab;
+  const filtered=tab==='all'?V:V.filter(v=>(v.tab_tags||[]).includes(tab));
+  // Group by subcategory
+  const subs={};filtered.forEach(v=>{const s=v.subcategory||v.category_key||'other';if(!subs[s])subs[s]=[];subs[s].push(v)});
+  const subKeys=Object.keys(subs).sort((a,b)=>subs[b].length-subs[a].length);
+  m.innerHTML='<div class="page-title">'+tabLabel+'</div><div class="page-sub">'+filtered.length+' venues in Atlanta · Full contact info for sourcing</div>'+
+  '<div class="sb"><input placeholder="Search venues..." oninput="fExpVenues(this.value,\''+tab+'\')"></div>'+
+  '<div id="exp-content">'+subKeys.map(sub=>{
+    const venues=subs[sub];
+    return '<div style="margin-bottom:20px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)"><h3 style="font-size:12px;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold);font-weight:700;margin:0">'+sub.replace(/_/g,' ')+'</h3><span style="font-size:10px;color:var(--muted)">'+venues.length+'</span></div>'+
+    '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr><th>Image</th><th>Name</th><th>Neighborhood</th><th style="color:var(--gold)">Instagram</th><th>Phone</th><th>Website</th><th>Rating</th></tr></thead><tbody>'+
+    venues.map(v=>'<tr class="exp-row" data-s="'+(v.name||'').toLowerCase()+'">'+
+      imgCell(v.hero_image,v.name)+
+      '<td style="font-weight:600">'+(v.name||'-')+'</td>'+
+      '<td>'+(v.neighborhood||'-')+'</td>'+
+      '<td style="color:var(--gold);font-size:10px">'+(v.instagram_handle?'<a href="https://instagram.com/'+v.instagram_handle+'" target="_blank" style="color:var(--gold);text-decoration:none">@'+v.instagram_handle+'</a>':'-')+'</td>'+
+      '<td style="font-family:\'DM Mono\',monospace;font-size:10px">'+(v.phone?'<a href="tel:'+v.phone+'" style="color:var(--text);text-decoration:none">'+v.phone+'</a>':'-')+'</td>'+
+      '<td style="font-size:10px">'+(v.website?'<a href="'+v.website+'" target="_blank" style="color:var(--gold);text-decoration:none">Visit ↗</a>':'-')+'</td>'+
+      '<td style="font-family:\'DM Mono\'">'+((v.google_rating||'-')+(v.google_rating?' ⭐':''))+'</td>'+
+    '</tr>').join('')+'</tbody></table></div></div>';
+  }).join('')+'</div>';
+}
+
+function fExpVenues(q,tab){
+  document.querySelectorAll('.exp-row').forEach(r=>{r.style.display=(r.dataset.s||'').includes(q.toLowerCase())?'':'none'});
+}
+
+// Weekly Parties (happenings) table
+function tblHappenings(){
+  const m=document.getElementById('M');
+  // Join with venue names
+  const venueMap={};V.forEach(v=>{venueMap[v.id]=v});
+  const days=['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+  const sorted=[...HP].sort((a,b)=>{const da=days.indexOf((a.day_of_week||'').toLowerCase()),db=days.indexOf((b.day_of_week||'').toLowerCase());if(da!==db)return da-db;return(b.priority_score||0)-(a.priority_score||0)});
+  m.innerHTML='<div class="page-title">Weekly Parties</div><div class="page-sub">'+HP.length+' recurring weekly happenings from gt_venue_happenings</div>'+
+  '<div class="sb"><input placeholder="Search..." oninput="fTbl(this.value)"></div>'+
+  '<div style="overflow-x:auto"><table id="tbl"><thead><tr><th>Image</th><th>Party Name</th><th>Day</th><th>Time</th><th>Venue</th><th>Type</th><th>Score</th></tr></thead><tbody>'+
+  sorted.map(h=>{const v=venueMap[h.venue_id]||{};return '<tr data-s="'+(h.happening_name||'').toLowerCase()+' '+(v.name||'').toLowerCase()+'">'+
+    imgCell(v.hero_image,h.happening_name)+
+    '<td style="font-weight:600">'+(h.happening_name||'-')+'</td>'+
+    '<td style="color:var(--gold);text-transform:capitalize">'+(h.day_of_week||'-')+'</td>'+
+    '<td>'+(h.start_time||h.time_slot||'-')+'</td>'+
+    '<td>'+(v.name||'-')+'</td>'+
+    '<td>'+(h.happening_type||'-')+'</td>'+
+    '<td style="font-family:\'DM Mono\';text-align:center">'+(h.priority_score||'-')+'</td>'+
+  '</tr>'}).join('')+'</tbody></table></div>';
 }
 
 function tblEvents(){
