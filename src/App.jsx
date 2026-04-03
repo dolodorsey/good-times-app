@@ -1147,11 +1147,14 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     sports:["sports","sports_bar","game_day"]
   };
   const realmEvents=useMemo(()=>{
-    let sorted=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event").sort((a,b)=>a.date.localeCompare(b.date));
-    // Apply category filter
+    let sorted=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event"&&e.source!=="tonight_venue"&&e.source!=="happening").sort((a,b)=>{
+      const pa=a.display_priority||50, pb=b.display_priority||50;
+      if(pa!==pb)return pa-pb;
+      return (a.date||"").localeCompare(b.date||"");
+    });
     if(nowCat!=="all"){
       const cats=CAT_FILTER[nowCat]||[];
-      sorted=sorted.filter(e=>cats.some(c=>e.category?.includes(c)||e.brand?.toLowerCase().includes(c)));
+      sorted=sorted.filter(e=>cats.some(c=>e.category?.includes(c)||e.brand?.toLowerCase().includes(c)||e.event_type?.includes(c)));
     }
     if(realm==="today"){
       return sorted.filter(e=>e.date===todayStr);
@@ -1159,18 +1162,12 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     if(realm==="tonight"){
       return sorted.filter(e=>{
         if(e.date!==todayStr)return false;
-        // Must have a time to qualify as "tonight"
         if(!e.time)return false;
         const hr=parseInt(e.time.split(":")[0],10);
-        // Tonight = 5PM onwards, exclude daytime-only listings
-        if(hr<17)return false;
-        // Exclude generic daily venue listings (those are "explore", not "tonight")
-        if(e.source==="daily_event"||e.source==="venue_listing")return false;
-        return true;
+        return hr>=17;
       });
     }
-    const weekEnd=new Date();
-    weekEnd.setDate(weekEnd.getDate()+(7-weekEnd.getDay()));
+    const weekEnd=new Date();weekEnd.setDate(weekEnd.getDate()+(7-weekEnd.getDay()));
     const weekEndStr=weekEnd.toISOString().split("T")[0];
     return sorted.filter(e=>e.date>=todayStr&&e.date<=weekEndStr);
   },[cityEvents,realm,todayStr,nowCat]);
@@ -1452,12 +1449,17 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
               return r;
             };
 
-            // Build pools
-            const todayPool=cityEvents.filter(e=>e.date===todayStr&&e.source!=="daily_event");
-            const tonightPool=todayPool.filter(e=>{if(!e.time)return true;const hr=parseInt(e.time.split(":")[0],10);return hr>=17;});
+            // Build pools — USE realmEvents (which applies category chips)
+            const pool=realmEvents;
+            const todayPool=cityEvents.filter(e=>e.date===todayStr&&e.source!=="daily_event"&&e.source!=="tonight_venue"&&e.source!=="happening");
+            const tonightPool=todayPool.filter(e=>{
+              if(!e.time)return false;
+              const hr=parseInt(e.time.split(":")[0],10);
+              return hr>=17;
+            });
             const weekEnd=new Date();weekEnd.setDate(weekEnd.getDate()+(7-weekEnd.getDay()));
             const weekEndStr=weekEnd.toISOString().split("T")[0];
-            const weekPool=cityEvents.filter(e=>e.date>=todayStr&&e.date<=weekEndStr&&e.source!=="daily_event");
+            const weekPool=cityEvents.filter(e=>e.date>=todayStr&&e.date<=weekEndStr&&e.source!=="daily_event"&&e.source!=="tonight_venue"&&e.source!=="happening");
             const concertPool=cityEvents.filter(e=>{
               if(!e.date||e.date<todayStr)return false;
               if(e.source==="sports_game"||e.category==="sports")return false;
@@ -1510,24 +1512,39 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
               <div style={{width:7,height:7,borderRadius:99,background:"#FF6B6B",boxShadow:"0 0 10px #FF6B6B",animation:"pulse 1.5s ease-in-out infinite"}}/>
               <span style={{fontSize:11,letterSpacing:2.5,color:"#FF6B6B",fontWeight:700}}>{realm==="week"?"THIS WEEK":realm==="today"?"TODAY":"TONIGHT"}</span>
+              <span style={{fontSize:10,color:C.muted,marginLeft:"auto"}}>{pool.length} events</span>
             </div>
             {(()=>{
-              const pool=realm==="today"?todayPool:realm==="tonight"?tonightPool:weekPool;
-              const withImg=pool.filter(e=>e.image_url);
-              const noImg=pool.filter(e=>!e.image_url);
-              const gridItems=mark(withImg,4);
-              const listItems=mark(noImg,4);
-              if(gridItems.length===0&&listItems.length===0) return(
+              if(pool.length===0) return(
                 <div style={{...K,padding:"40px 20px",textAlign:"center",color:C.muted,fontSize:14,border:"1px solid rgba(255,255,255,0.12)"}}>
                   <div style={{fontSize:28,marginBottom:8}}>{"\u{1F30D}"}</div>
                   Nothing available {realm==="today"?"today":realm==="tonight"?"tonight":"this week"} in {city.name}
                   <div style={{fontSize:12,marginTop:8,color:C.gold}}>Check back soon or switch cities</div>
                 </div>
               );
+              // Featured shows (is_featured or display_priority <= 5) get hero cards
+              const featured=mark(pool.filter(e=>e.is_featured||(e.display_priority&&e.display_priority<=5)),3);
+              const rest=mark(pool.filter(e=>!featured.find(f=>f.id===e.id)),6);
               return(<>
-                <EventGrid items={gridItems} onSelect={e=>{setDetail(e);navigate("detail")}} max={4}/>
-                {listItems.length>0&&<div style={{marginTop:8}}>{listItems.map(e=><EventRow key={e.id} e={e} onClick={()=>{setDetail(e);navigate("detail")}}/>)}</div>}
-                {pool.length>4&&<button onClick={()=>navigate("calendar")} style={{...V(false),width:"100%",marginTop:10,padding:"10px",textAlign:"center",fontSize:12}}>See all {pool.length} {"\u2192"}</button>}
+                {/* Hero cards for featured events */}
+                {featured.map(e=>{const g=gt[e.brand]?.c||C.gold;return(
+                  <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:16,marginBottom:10,position:"relative",border:"1px solid "+g+"25",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
+                    <div style={{height:160,position:"relative",overflow:"hidden",background:`linear-gradient(135deg,${g}30,rgba(6,6,12,0.8))`}}>
+                      <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy" onError={ev=>{ev.currentTarget.style.display='none'}}/>
+                      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 40%,rgba(6,6,12,0.8) 100%)"}}/>
+                      <div style={{position:"absolute",top:10,left:12}}>
+                        <span style={{fontSize:9,fontWeight:700,letterSpacing:1.5,color:g,textTransform:"uppercase",background:"rgba(6,6,12,0.7)",padding:"3px 8px",borderRadius:4}}>{e.brand}</span>
+                      </div>
+                      <div style={{position:"absolute",bottom:14,left:14,right:14,textShadow:"0 1px 6px rgba(0,0,0,0.9)"}}>
+                        <div style={{fontSize:18,fontWeight:700,color:C.text,lineHeight:1.2,marginBottom:4}}>{e.title}</div>
+                        <div style={{fontSize:11,color:"rgba(255,255,255,0.8)"}}>{e.venue||"TBA"} {"\u00B7"} {e.time||"TBA"}</div>
+                      </div>
+                    </div>
+                  </button>
+                );})}
+                {/* Grid + list for rest */}
+                {rest.length>0&&<EventGrid items={rest} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>}
+                {pool.length>9&&<button onClick={()=>navigate("calendar")} style={{...V(false),width:"100%",marginTop:10,padding:"10px",textAlign:"center",fontSize:12}}>See all {pool.length} {"\u2192"}</button>}
               </>);
             })()}
           </div>

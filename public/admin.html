@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Good Times — Admin Playground</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400&family=DM+Sans:wght@400;500;700&family=DM+Mono&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#06060C;color:#F5F0E8;min-height:100vh}
+.header{padding:20px 24px;border-bottom:1px solid rgba(212,168,83,0.15);display:flex;align-items:center;justify-content:space-between}
+.header h1{font-family:'Cormorant Garamond',serif;font-size:24px;font-weight:300;letter-spacing:0.15em;text-transform:uppercase;color:#D4A853}
+.container{max-width:800px;margin:0 auto;padding:20px}
+.tabs{display:flex;gap:4px;margin-bottom:24px;background:rgba(255,255,255,0.06);border-radius:10px;padding:4px}
+.tab{flex:1;padding:10px;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:rgba(255,255,255,0.5);background:transparent;transition:all 0.2s}
+.tab.active{background:linear-gradient(135deg,#D4A853,#B8942F);color:#0A0A0F}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:11px;letter-spacing:0.1em;color:rgba(255,255,255,0.4);margin-bottom:6px;text-transform:uppercase}
+input,select,textarea{width:100%;padding:12px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#D4A853}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23D4A853' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6.5 6.5-6.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+select option{background:#1A1A14;color:#fff}
+textarea{min-height:80px;resize:vertical}
+.btn{padding:14px 24px;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;width:100%;transition:all 0.2s}
+.btn-gold{background:linear-gradient(135deg,#D4A853,#B8942F);color:#0A0A0F}
+.btn-outline{background:rgba(212,168,83,0.08);border:1px solid rgba(212,168,83,0.25);color:#D4A853;margin-top:8px}
+.event-list{margin-top:20px}
+.event-item{padding:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.event-item .title{font-weight:700;font-size:14px}
+.event-item .meta{font-size:11px;color:rgba(255,255,255,0.5);margin-top:4px}
+.event-item .actions{display:flex;gap:8px}
+.event-item .actions button{padding:6px 12px;border-radius:6px;border:none;font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600}
+.del-btn{background:rgba(239,68,68,0.15);color:#ef4444}
+.toast{position:fixed;top:20px;right:20px;padding:12px 20px;background:linear-gradient(135deg,#D4A853,#B8942F);color:#0A0A0F;border-radius:10px;font-weight:700;font-size:13px;z-index:100;display:none}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.status{padding:8px 16px;background:rgba(107,255,184,0.1);border:1px solid rgba(107,255,184,0.2);border-radius:8px;font-size:12px;color:#6BFFB8;margin-bottom:16px;text-align:center}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>Good Times Admin</h1>
+  <span style="font-size:11px;color:rgba(255,255,255,0.3)">Playground</span>
+</div>
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('add')">Add Event</button>
+    <button class="tab" onclick="switchTab('manage')">Manage Events</button>
+    <button class="tab" onclick="switchTab('daily')">Daily Lineup</button>
+  </div>
+
+  <div id="status" class="status">Connected to KHG Supabase</div>
+
+  <!-- ADD EVENT -->
+  <div id="tab-add">
+    <div class="form-group"><label>Event Name</label><input id="evt-name" placeholder="e.g. 404 Day Parade"></div>
+    <div class="row">
+      <div class="form-group"><label>Date</label><input id="evt-date" type="date"></div>
+      <div class="form-group"><label>Time</label><input id="evt-time" type="time" value="20:00"></div>
+    </div>
+    <div class="row">
+      <div class="form-group"><label>Event Type</label>
+        <select id="evt-type">
+          <option value="concert">Concert</option>
+          <option value="comedy">Comedy</option>
+          <option value="festival">Festival</option>
+          <option value="special_event">Special Event</option>
+          <option value="nightlife">Nightlife</option>
+          <option value="brunch">Brunch</option>
+          <option value="food">Food Event</option>
+          <option value="art">Art / Culture</option>
+          <option value="sports">Sports</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Genre</label><input id="evt-genre" placeholder="e.g. hip_hop, r_and_b, latin"></div>
+    </div>
+    <div class="form-group"><label>Venue</label><input id="evt-venue" placeholder="e.g. State Farm Arena"></div>
+    <div class="row">
+      <div class="form-group"><label>City</label>
+        <select id="evt-city">
+          <option value="atlanta">Atlanta</option>
+          <option value="houston">Houston</option>
+          <option value="los_angeles">Los Angeles</option>
+          <option value="miami">Miami</option>
+          <option value="charlotte">Charlotte</option>
+          <option value="washington_dc">Washington DC</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Priority (1=top)</label><input id="evt-priority" type="number" value="10" min="1" max="50"></div>
+    </div>
+    <div class="form-group"><label>Image URL (optional)</label><input id="evt-image" placeholder="https://..."></div>
+    <div class="form-group"><label>Ticket URL (optional)</label><input id="evt-ticket" placeholder="https://..."></div>
+    <div class="row">
+      <div class="form-group"><label>Featured?</label>
+        <select id="evt-featured"><option value="false">No</option><option value="true">Yes</option></select>
+      </div>
+      <div class="form-group"><label>Status</label>
+        <select id="evt-status"><option value="confirmed">Confirmed</option><option value="tentative">Tentative</option></select>
+      </div>
+    </div>
+    <button class="btn btn-gold" onclick="addEvent()">Add Event</button>
+    <button class="btn btn-outline" onclick="clearForm()">Clear Form</button>
+  </div>
+
+  <!-- MANAGE EVENTS -->
+  <div id="tab-manage" style="display:none">
+    <div class="form-group"><label>Filter by date</label><input id="manage-date" type="date" onchange="loadEvents()"></div>
+    <div id="events-list" class="event-list"></div>
+  </div>
+
+  <!-- DAILY LINEUP -->
+  <div id="tab-daily" style="display:none">
+    <p style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:16px">Add recurring weekly nightlife events (clubs, parties, weekly specials)</p>
+    <div class="form-group"><label>Event Name</label><input id="daily-name" placeholder="e.g. Ladies Love R&B"></div>
+    <div class="row">
+      <div class="form-group"><label>Day of Week</label>
+        <select id="daily-day">
+          <option value="Monday">Monday</option><option value="Tuesday">Tuesday</option>
+          <option value="Wednesday" selected>Wednesday</option><option value="Thursday">Thursday</option>
+          <option value="Friday">Friday</option><option value="Saturday">Saturday</option>
+          <option value="Sunday">Sunday</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Time</label><input id="daily-time" type="time" value="22:00"></div>
+    </div>
+    <div class="form-group"><label>Venue</label><input id="daily-venue" placeholder="e.g. Flō Atlanta"></div>
+    <div class="form-group"><label>Event Type</label>
+      <select id="daily-type">
+        <option value="nightlife">Nightlife</option><option value="rnb">R&B Night</option>
+        <option value="hip_hop">Hip Hop Night</option><option value="latin">Latin Night</option>
+        <option value="hookah">Hookah</option><option value="brunch">Brunch</option>
+        <option value="jazz">Jazz Night</option><option value="karaoke">Karaoke</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Description</label><textarea id="daily-desc" placeholder="Brief description..."></textarea></div>
+    <button class="btn btn-gold" onclick="addDaily()">Add Weekly Event</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const SB='https://dzlmtvodpyhetvektfuo.supabase.co/rest/v1';
+const SK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTU4NDg2NCwiZXhwIjoyMDg1MTYwODY0fQ.lhtEGfGYYhEZxzrUl3EN1h53IPyfM8TBpwpoFqdgQVs';
+const H={'Content-Type':'application/json',apikey:SK,Authorization:`Bearer ${SK}`,Prefer:'return=representation'};
+
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';setTimeout(()=>t.style.display='none',3000)}
+function switchTab(id){document.querySelectorAll('[id^=tab-]').forEach(t=>t.style.display='none');document.getElementById('tab-'+id).style.display='block';document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');if(id==='manage')loadEvents()}
+function clearForm(){['evt-name','evt-venue','evt-genre','evt-image','evt-ticket'].forEach(id=>document.getElementById(id).value='');document.getElementById('evt-priority').value='10'}
+
+async function addEvent(){
+  const data={
+    event_name:document.getElementById('evt-name').value,
+    show_date:document.getElementById('evt-date').value,
+    show_time:document.getElementById('evt-time').value,
+    event_type:document.getElementById('evt-type').value,
+    genre:document.getElementById('evt-genre').value||null,
+    venue_name:document.getElementById('evt-venue').value,
+    city_key:document.getElementById('evt-city').value,
+    display_priority:parseInt(document.getElementById('evt-priority').value)||10,
+    image_url:document.getElementById('evt-image').value||null,
+    ticket_url:document.getElementById('evt-ticket').value||null,
+    is_featured:document.getElementById('evt-featured').value==='true',
+    status:document.getElementById('evt-status').value
+  };
+  if(!data.event_name||!data.show_date){toast('Name and date required');return}
+  try{
+    const r=await fetch(SB+'/gt_shows',{method:'POST',headers:H,body:JSON.stringify(data)});
+    if(r.ok){toast('✓ Event added!');clearForm()}else{const e=await r.json();toast('Error: '+(e.message||'Failed'))}
+  }catch(e){toast('Error: '+e.message)}
+}
+
+async function loadEvents(){
+  const date=document.getElementById('manage-date').value;
+  let q=SB+'/gt_shows?select=id,event_name,show_date,show_time,venue_name,event_type,status,display_priority&order=show_date.asc,display_priority.asc&limit=50';
+  if(date)q+=`&show_date=eq.${date}`;
+  else q+=`&show_date=gte.${new Date().toISOString().split('T')[0]}`;
+  try{
+    const r=await fetch(q,{headers:{apikey:SK,Authorization:`Bearer ${SK}`}});
+    const data=await r.json();
+    const list=document.getElementById('events-list');
+    list.innerHTML=data.map(e=>`
+      <div class="event-item">
+        <div><div class="title">${e.event_name}</div><div class="meta">${e.show_date} · ${e.show_time||'TBA'} · ${e.venue_name||'TBA'} · ${e.event_type}</div></div>
+        <div class="actions"><button class="del-btn" onclick="deleteEvent(${e.id})">Delete</button></div>
+      </div>
+    `).join('');
+    if(data.length===0)list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,0.3);padding:40px">No events found</div>';
+  }catch(e){toast('Error loading events')}
+}
+
+async function deleteEvent(id){
+  if(!confirm('Delete this event?'))return;
+  try{
+    await fetch(SB+'/gt_shows?id=eq.'+id,{method:'DELETE',headers:{apikey:SK,Authorization:`Bearer ${SK}`}});
+    toast('Deleted');loadEvents();
+  }catch(e){toast('Error deleting')}
+}
+
+async function addDaily(){
+  const data={
+    event_name:document.getElementById('daily-name').value,
+    city_key:'atlanta',
+    day_of_week:document.getElementById('daily-day').value,
+    event_date:new Date().toISOString().split('T')[0],
+    venue:document.getElementById('daily-venue').value,
+    event_type:document.getElementById('daily-type').value,
+    time_slot:document.getElementById('daily-time').value,
+    description:document.getElementById('daily-desc').value||null,
+    is_verified:true,
+    relevance_score:80
+  };
+  if(!data.event_name||!data.venue){toast('Name and venue required');return}
+  try{
+    const r=await fetch(SB+'/gt_daily_events',{method:'POST',headers:H,body:JSON.stringify(data)});
+    if(r.ok){toast('✓ Weekly event added!')}else{const e=await r.json();toast('Error: '+(e.message||'Failed'))}
+  }catch(e){toast('Error: '+e.message)}
+}
+
+// Set today's date as default
+document.getElementById('evt-date').value=new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>
