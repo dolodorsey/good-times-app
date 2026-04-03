@@ -2,6 +2,103 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { initNative, isNative, isIOS, tapHaptic, shareEvent, openLink, registerPush } from "./native";
 
 /* ═══════════════════════════════════════════════════════
+   GT BACKGROUND SYSTEM — 20 AI-Generated Atlanta Scenes
+   ═══════════════════════════════════════════════════════ */
+const GT_BG_BASE="https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds";
+const GT_BACKGROUNDS={
+  splash:[
+    {name:"Rooftop Lounge",file:"gt-bg-rooftop-lounge.webp"},
+    {name:"Penthouse View",file:"gt-bg-penthouse-view.webp"},
+  ],
+  loading:[
+    {name:"Cigar Terrace",file:"gt-bg-cigar-terrace.webp"},
+    {name:"Rainy Street",file:"gt-bg-rainy-street.webp"},
+    {name:"Aerial Nightlife",file:"gt-bg-aerial-nightlife.webp"},
+    {name:"Social Scene",file:"gt-bg-social-scene.webp"},
+  ],
+  transition:[
+    {name:"VIP Arrival",file:"gt-bg-vip-arrival.webp"},
+    {name:"Valet Entrance",file:"gt-bg-valet-entrance.webp"},
+    {name:"Infinity Bar",file:"gt-bg-infinity-bar.webp"},
+  ],
+  hero:[
+    {name:"Cocktail Lounge",file:"gt-bg-cocktail-lounge.webp"},
+    {name:"Skyline Terrace",file:"gt-bg-skyline-terrace.webp"},
+    {name:"Nightlife District",file:"gt-bg-nightlife-district.webp"},
+    {name:"Panoramic Skyline",file:"gt-bg-panoramic-skyline.webp"},
+    {name:"Grand Venue",file:"gt-bg-grand-venue.webp"},
+    {name:"Waterfront Venue",file:"gt-bg-waterfront-venue.webp"},
+    {name:"Courtyard Evening",file:"gt-bg-courtyard-evening.webp"},
+    {name:"Aurora Complex",file:"gt-bg-aurora-complex.webp"},
+    {name:"Neon Skyline",file:"gt-bg-neon-skyline.webp"},
+    {name:"Spiral Lounge",file:"gt-bg-spiral-lounge.webp"},
+    {name:"Future City",file:"gt-bg-future-city.webp"},
+  ]
+};
+const gtBgUrl=f=>`${GT_BG_BASE}/${f}`;
+let _gtShown=new Set();
+const gtRandomBg=(cat="loading")=>{
+  const pool=GT_BACKGROUNDS[cat]||GT_BACKGROUNDS.loading;
+  const avail=pool.filter(i=>!_gtShown.has(i.file));
+  const pick=avail.length>0?avail:pool;
+  if(avail.length===0)_gtShown.clear();
+  const chosen=pick[Math.floor(Math.random()*pick.length)];
+  _gtShown.add(chosen.file);
+  return chosen;
+};
+
+function GTSplashScreen({onComplete,duration=3500}){
+  const[progress,setProgress]=useState(0);
+  const[exiting,setExiting]=useState(false);
+  const[bg]=useState(()=>gtRandomBg("splash"));
+  useEffect(()=>{
+    const iv=setInterval(()=>setProgress(p=>Math.min(p+2,100)),duration/50);
+    const t=setTimeout(()=>{setExiting(true);setTimeout(()=>onComplete?.(),600)},duration);
+    return()=>{clearInterval(iv);clearTimeout(t)};
+  },[duration,onComplete]);
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden",opacity:exiting?0:1,transition:"opacity 0.6s ease"}}>
+      <div style={{position:"absolute",inset:0,backgroundImage:`url(${gtBgUrl(bg.file)})`,backgroundSize:"cover",backgroundPosition:"center",animation:"gtSlowZoom 12s ease-in-out infinite alternate"}}/>
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0.4) 0%,rgba(6,6,12,0.7) 50%,rgba(6,6,12,0.92) 100%)"}}/>
+      <div style={{position:"absolute",inset:0,opacity:0.04,pointerEvents:"none",backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,backgroundRepeat:"repeat"}}/>
+      <div style={{position:"relative",zIndex:2,textAlign:"center",padding:"0 2rem",animation:"gtFadeIn 0.8s ease forwards",animationDelay:"0.2s",opacity:0}}>
+        <div style={{fontFamily:"'Cormorant Garamond','Playfair Display',Georgia,serif",fontSize:"clamp(2rem,8vw,3.5rem)",fontWeight:300,letterSpacing:"0.15em",color:"#F5F0E8",textTransform:"uppercase",marginBottom:"0.5rem",textShadow:"0 2px 20px rgba(0,0,0,0.5)"}}>Good Times</div>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:"clamp(0.65rem,2.5vw,0.85rem)",fontWeight:400,letterSpacing:"0.3em",color:"rgba(212,184,122,0.8)",textTransform:"uppercase",animation:"gtFadeIn 0.8s ease forwards",animationDelay:"0.6s",opacity:0}}>Atlanta's Nightlife Concierge</div>
+        <div style={{width:120,height:2,background:"rgba(245,240,232,0.15)",borderRadius:1,margin:"2.5rem auto 0",overflow:"hidden",animation:"gtFadeIn 0.8s ease forwards",animationDelay:"1s",opacity:0}}>
+          <div style={{height:"100%",background:"linear-gradient(90deg,#D4A853,#F5F0E8)",borderRadius:1,width:`${progress}%`,transition:"width 0.4s ease"}}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function GTLoadingOverlay({message="Curating your experience..."}){
+  const[bg]=useState(()=>gtRandomBg("loading"));
+  return(
+    <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",overflow:"hidden"}}>
+      <div style={{position:"absolute",inset:0,backgroundImage:`url(${gtBgUrl(bg.file)})`,backgroundSize:"cover",backgroundPosition:"center",animation:"gtSlowZoom 12s ease-in-out infinite alternate"}}/>
+      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0.4) 0%,rgba(6,6,12,0.7) 50%,rgba(6,6,12,0.92) 100%)"}}/>
+      <div style={{position:"relative",zIndex:2,textAlign:"center"}}>
+        <div style={{width:3,height:3,borderRadius:"50%",background:"#D4A853",margin:"0 auto 1.5rem",animation:"gtPulse 1.5s ease-in-out infinite",boxShadow:"0 0 12px rgba(212,184,122,0.6)"}}/>
+        <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:"0.75rem",letterSpacing:"0.25em",color:"rgba(245,240,232,0.6)",textTransform:"uppercase"}}>{message}</div>
+      </div>
+    </div>
+  );
+}
+
+/* GT Background CSS (injected once) */
+if(typeof document!=="undefined"&&!document.getElementById("gt-bg-styles")){
+  const s=document.createElement("style");s.id="gt-bg-styles";
+  s.textContent=`
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&display=swap');
+    @keyframes gtFadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes gtSlowZoom{0%{transform:scale(1)}100%{transform:scale(1.08)}}
+    @keyframes gtPulse{0%,100%{opacity:0.4}50%{opacity:1}}
+  `;
+  document.head.appendChild(s);
+}
+
+/* ═══════════════════════════════════════════════════════
    GOOD TIMES AUTH + ONBOARDING SYSTEM
    ═══════════════════════════════════════════════════════ */
 const GT_SB="https://czocqfaovfpjweayniuw.supabase.co";
@@ -114,13 +211,17 @@ function GoodTimesOnboarding({onComplete}){
 
   // Welcome
   if(step==='welcome')return(
-    <div style={{minHeight:'100vh',background:`radial-gradient(ellipse at 50% 30%,rgba(50,35,15,0.5) 0%,${bg} 70%)`,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,fontFamily:ff,color:'#fff',textAlign:'center'}}>
-      <div style={{width:80,height:1,background:`linear-gradient(90deg,transparent,${accentGold},transparent)`,marginBottom:28}}/>
-      <img src="/good-times-logo.png" alt="Good Times" style={{height:48,objectFit:'contain',marginBottom:16}} onError={e=>{e.currentTarget.style.display='none'}}/>
-      <h1 style={{fontFamily:fs,fontSize:36,fontWeight:700,marginBottom:8,color:'#fff'}}>Good Times</h1>
-      <p style={{fontSize:14,color:'rgba(255,255,255,0.5)',marginBottom:40,maxWidth:300}}>Your city. Your vibe. Your night. Curated for you.</p>
-      <button onClick={()=>setStep('auth')} style={{background:`linear-gradient(135deg,${accentGold},#B8942F)`,color:'#0A0A0F',border:'none',borderRadius:14,padding:'16px 48px',fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:ff,letterSpacing:0.5,marginBottom:16,width:'100%',maxWidth:300}}>Get Started</button>
-      <button onClick={()=>{setMode('signin');setStep('auth')}} style={{background:'transparent',color:accentGold,border:`1px solid ${accentGold}40`,borderRadius:14,padding:'14px 48px',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:ff,width:'100%',maxWidth:300}}>I Already Have an Account</button>
+    <div style={{minHeight:'100vh',position:'relative',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,fontFamily:ff,color:'#fff',textAlign:'center',overflow:'hidden'}}>
+      <div style={{position:'absolute',inset:0,backgroundImage:`url(${GT_BG_BASE}/gt-bg-vip-arrival.webp)`,backgroundSize:'cover',backgroundPosition:'center',animation:'gtSlowZoom 12s ease-in-out infinite alternate'}}/>
+      <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(6,6,12,0.45) 0%,rgba(6,6,12,0.7) 50%,rgba(6,6,12,0.95) 100%)'}}/>
+      <div style={{position:'relative',zIndex:2}}>
+        <div style={{width:80,height:1,background:`linear-gradient(90deg,transparent,${accentGold},transparent)`,marginBottom:28,margin:'0 auto 28px'}}/>
+        <img src="/good-times-logo.png" alt="Good Times" style={{height:48,objectFit:'contain',marginBottom:16}} onError={e=>{e.currentTarget.style.display='none'}}/>
+        <h1 style={{fontFamily:"'Cormorant Garamond','Playfair Display',Georgia,serif",fontSize:42,fontWeight:300,marginBottom:8,color:'#F5F0E8',letterSpacing:'0.1em',textTransform:'uppercase'}}>Good Times</h1>
+        <p style={{fontSize:14,color:'rgba(245,240,232,0.5)',marginBottom:40,maxWidth:300,letterSpacing:'0.05em'}}>Your city. Your vibe. Your night. Curated for you.</p>
+        <button onClick={()=>setStep('auth')} style={{background:`linear-gradient(135deg,${accentGold},#B8942F)`,color:'#0A0A0F',border:'none',borderRadius:14,padding:'16px 48px',fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:ff,letterSpacing:0.5,marginBottom:16,width:'100%',maxWidth:300}}>Get Started</button>
+        <button onClick={()=>{setMode('signin');setStep('auth')}} style={{background:'transparent',color:accentGold,border:`1px solid ${accentGold}40`,borderRadius:14,padding:'14px 48px',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:ff,width:'100%',maxWidth:300}}>I Already Have an Account</button>
+      </div>
     </div>
   );
 
@@ -274,11 +375,7 @@ function GoodTimesAuthGate(){
     else setAuthed(false);
   },[]);
 
-  if(authed===null)return(
-    <div style={{minHeight:'100vh',background:'#06060C',display:'flex',alignItems:'center',justifyContent:'center'}}>
-      <div style={{width:80,height:1,background:'linear-gradient(90deg,transparent,#D4A853,transparent)',animation:'shimmer 2s infinite'}}/>
-    </div>
-  );
+  if(authed===null)return <GTSplashScreen onComplete={()=>{}} duration={99999}/>;
 
   if(authed===false)return <GoodTimesOnboarding onComplete={(session,p)=>{setAuthed(session);setPrefs(p)}}/>;
 
@@ -339,7 +436,7 @@ const CAT_MAP={
 
 // Images — NO DUPLICATES across sections. Each pool is unique.
 const Ne={
-  hero:"https://images.unsplash.com/photo-1533106497176-45ae19e68ba2?w=900",
+  hero:`${GT_BG_BASE}/gt-bg-nightlife-district.webp`,
   // Trending carousel images (nightlife/party vibes)
   v:["https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=600","https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=600","https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600","https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600","https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=600","https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=600","https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600","https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=900"],
   // Explore category images — UNIQUE from trending & browse
@@ -347,7 +444,7 @@ const Ne={
   // Browse images — DIFFERENT from explore
   br:{jki:"https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400",nl:"https://images.unsplash.com/photo-1545128485-c400e7702796?w=400",lm:"https://images.unsplash.com/photo-1501612780327-45045538702b?w=400",sp:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400",ms:"https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400",gm:"https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400"},
   city:{
-    Atlanta:{day:"/city-atlanta.png",night:"/city-atlanta-nightlife.png"},
+    Atlanta:{day:`${GT_BG_BASE}/gt-bg-courtyard-evening.webp`,night:`${GT_BG_BASE}/gt-bg-panoramic-skyline.webp`},
     Houston:{day:"https://images.unsplash.com/photo-1530089711124-9ca31fb9e863?w=900",night:"https://images.unsplash.com/photo-1548260465-1adda34ebbe7?w=900"},
     "Los Angeles":{day:"https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=900",night:"https://images.unsplash.com/photo-1515896769750-31548aa180ed?w=900"},
     Charlotte:{day:"https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?w=900",night:"https://images.unsplash.com/photo-1605885996758-49b3e33c612d?w=900"},
@@ -638,6 +735,7 @@ const ScrollWrap=({children})=>(
 // ═══ MAIN APP ═══
 export default function GoodTimesAppWrapper(props){return React.createElement(GTErrorBoundary,null,React.createElement(GoodTimesAuthGate,props));}
 function GoodTimesApp({userSession,userPrefs,onSignOut}){
+  const[showSplash,setShowSplash]=useState(()=>!sessionStorage.getItem("gt_splash_shown"));
   const[screen,setScreen]=useState("now");
   const[prevScreen,setPrev]=useState("now");
   const[navScreen,setNav]=useState("now");
@@ -2118,7 +2216,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       );
     }
 
-    return <ScrollWrap><div style={{padding:40,textAlign:"center",color:C.muted}}>Loading...</div></ScrollWrap>;
+    return <GTLoadingOverlay message="Finding your next experience..."/>;
   };
 
   // ═══ NAV BAR (CHANGE #4: Always visible via position:fixed) ═══
@@ -2131,6 +2229,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     {id:"map",l:"Map",icon:"M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22S19 14.25 19 9C19 5.13 15.87 2 12 2ZM12 11.5C10.62 11.5 9.5 10.38 9.5 9S10.62 6.5 12 6.5S14.5 7.62 14.5 9S13.38 11.5 12 11.5Z"},
     {id:"vault",l:"Vault",icon:"M18 8H17V6C17 3.24 14.76 1 12 1S7 3.24 7 6V8H6C4.9 8 4 8.9 4 10V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V10C20 8.9 19.1 8 18 8ZM12 17C10.9 17 10 16.1 10 15S10.9 13 12 13S14 13.9 14 15S13.1 17 12 17ZM15.1 8H8.9V6C8.9 4.29 10.29 2.9 12 2.9S15.1 4.29 15.1 6V8Z"}
   ];
+
+  if(showSplash)return <GTSplashScreen onComplete={()=>{sessionStorage.setItem("gt_splash_shown","1");setShowSplash(false)}} duration={3500}/>;
 
   return(
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:F.f,position:"relative",maxWidth:430,margin:"0 auto"}}>
