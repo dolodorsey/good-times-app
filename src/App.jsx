@@ -663,8 +663,8 @@ const EventTile=({e:S,onClick:A,wide})=>{
   const dt=S.date?new Date(S.date+"T12:00:00"):null;
   return(
     <button onClick={A} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:12,position:"relative",gridColumn:wide?"1 / -1":undefined,border:`1px solid ${g}25`,boxShadow:`0 2px 12px rgba(0,0,0,0.3), inset 0 0 0 1px ${g}30`}}>
-      <div style={{height:wide?130:90,position:"relative",overflow:"hidden"}}>
-        <img src={wn(S)} alt="" style={{width:"100%",height:"100%",objectFit:"cover",}} loading="lazy"/>
+      <div style={{height:wide?130:90,position:"relative",overflow:"hidden",background:`linear-gradient(135deg,${g}20,rgba(6,6,12,0.8))`}}>
+        <img src={wn(S)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy" onError={ev=>{ev.currentTarget.style.display='none'}}/>
         <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 65%,rgba(6,6,12,0.5) 100%)"}}/>
         <div style={{position:"absolute",top:6,left:6,display:"flex",alignItems:"center",gap:4}}>
           <div style={{width:5,height:5,borderRadius:99,background:g,boxShadow:`0 0 6px ${g}`}}/>
@@ -1653,19 +1653,37 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             </>);
           })()}
 
-          {/* ═══ NIGHTLIFE ═══ */}
+          {/* ═══ NIGHTLIFE — Weekly party programming ═══ */}
           {(()=>{
+            // Show weekly happenings and nightlife events (the actual parties, not just open venues)
             const nlPool=cityEvents.filter(e=>{
-              if(e.source==="daily_event")return false;
+              if(e.source==="happening"||e.source==="daily_event")return true;
               const cat=(e.category||"").toLowerCase();
-              if(cat.match(/nightclub|lounge|club|hookah|speakeasy/))return true;
+              if(cat.match(/nightclub|nightlife|lounge|hookah|speakeasy|party|club/))return true;
+              if(e.event_type==="nightlife")return true;
               return false;
-            }).slice(0,8);
-            if(nlPool.length===0)return null;
+            });
+            const nlItems=mark(nlPool,8);
+            if(nlItems.length===0)return null;
             return(<>
-              <SectionHead t="NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
+              <SectionHead t="WEEKLY NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
               <div style={{padding:"0 16px",marginBottom:16}}>
-                <EventGrid items={nlPool} onSelect={e=>{setDetail(e);navigate("detail")}} max={8}/>
+                <EventGrid items={nlItems} onSelect={e=>{setDetail(e);navigate("detail")}} max={8}/>
+              </div>
+            </>);
+          })()}
+
+          {/* ═══ CITY HIGHLIGHTS — Venues worth visiting (not events) ═══ */}
+          {(()=>{
+            const venueHighlights=cityEvents.filter(e=>{
+              if(e.source==="tonight_venue"||e.source==="venue")return true;
+              return false;
+            }).slice(0,6);
+            if(venueHighlights.length===0)return null;
+            return(<>
+              <SectionHead t="CITY HIGHLIGHTS" icon={"\u{2728}"} color={C.a4}/>
+              <div style={{padding:"0 16px",marginBottom:16}}>
+                <EventGrid items={venueHighlights} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
               </div>
             </>);
           })()}
