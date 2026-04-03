@@ -170,6 +170,7 @@ function GoodTimesOnboarding({onComplete}){
   const[err,setErr]=useState('');
   const[authData,setAuthData]=useState(null);
   const[resetSent,setResetSent]=useState(false);
+  const[showPw,setShowPw]=useState(false);
 
   const accentGold='#D4A853';
   const bg='#06060C';
@@ -227,35 +228,42 @@ function GoodTimesOnboarding({onComplete}){
 
   // Auth
   if(step==='auth')return(
-    <div style={{minHeight:'100vh',background:bg,display:'flex',flexDirection:'column',fontFamily:ff,color:'#fff'}}>
-      <div style={{padding:'16px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
-        <button onClick={()=>setStep('welcome')} style={{background:'none',border:'none',color:'rgba(255,255,255,0.5)',fontSize:14,cursor:'pointer',fontFamily:ff}}>← Back</button>
-        <span style={{fontFamily:fs,fontSize:16,fontWeight:700,color:accentGold}}>Good Times</span>
-        <div style={{width:50}}/>
-      </div>
-      <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'20px 24px'}}>
-        <h2 style={{fontFamily:fs,fontSize:28,fontWeight:700,marginBottom:4}}>{mode==='signup'?'Create Account':'Welcome Back'}</h2>
-        <p style={{fontSize:14,color:'rgba(255,255,255,0.4)',marginBottom:32}}>{mode==='signup'?'Set up your experience':'Sign in to continue'}</p>
-        <div style={{display:'flex',background:'rgba(255,255,255,0.08)',borderRadius:12,padding:4,marginBottom:28,width:'100%',maxWidth:360}}>
-          <button onClick={()=>{setMode('signup');setErr('')}} style={{flex:1,padding:'10px',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signup'?accentGold:'transparent',color:mode==='signup'?'#0A0A0F':'rgba(255,255,255,0.5)',fontFamily:ff}}>Sign Up</button>
-          <button onClick={()=>{setMode('signin');setErr('')}} style={{flex:1,padding:'10px',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signin'?accentGold:'transparent',color:mode==='signin'?'#0A0A0F':'rgba(255,255,255,0.5)',fontFamily:ff}}>Sign In</button>
+    <div style={{minHeight:'100vh',position:'relative',display:'flex',flexDirection:'column',fontFamily:ff,color:'#fff',overflow:'hidden'}}>
+      <div style={{position:'absolute',inset:0,backgroundImage:`url(${GT_BG_BASE}/gt-bg-cocktail-lounge.webp)`,backgroundSize:'cover',backgroundPosition:'center'}}/>
+      <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(6,6,12,0.7) 0%,rgba(6,6,12,0.88) 40%,rgba(6,6,12,0.95) 100%)'}}/>
+      <div style={{position:'relative',zIndex:2,flex:1,display:'flex',flexDirection:'column'}}>
+        <div style={{padding:'16px 20px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+          <button onClick={()=>setStep('welcome')} style={{background:'none',border:'none',color:'rgba(255,255,255,0.5)',fontSize:14,cursor:'pointer',fontFamily:ff}}>← Back</button>
+          <span style={{fontFamily:"'Cormorant Garamond','Playfair Display',Georgia,serif",fontSize:16,fontWeight:400,color:accentGold,letterSpacing:'0.1em',textTransform:'uppercase'}}>Good Times</span>
+          <div style={{width:50}}/>
         </div>
-        <div style={{width:'100%',maxWidth:360}}>
-          {mode==='signup'&&<div style={{marginBottom:16}}>
-            <label style={{fontSize:12,color:'rgba(255,255,255,0.5)',display:'block',marginBottom:6}}>Full Name</label>
-            <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={{width:'100%',padding:'14px 16px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:12,color:'#fff',fontSize:14,outline:'none',fontFamily:ff,boxSizing:'border-box'}}/>
-          </div>}
-          <div style={{marginBottom:16}}>
-            <label style={{fontSize:12,color:'rgba(255,255,255,0.5)',display:'block',marginBottom:6}}>Email</label>
-            <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com" style={{width:'100%',padding:'14px 16px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:12,color:'#fff',fontSize:14,outline:'none',fontFamily:ff,boxSizing:'border-box'}}/>
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:'20px 24px'}}>
+          <h2 style={{fontFamily:fs,fontSize:28,fontWeight:700,marginBottom:4}}>{mode==='signup'?'Create Account':'Welcome Back'}</h2>
+          <p style={{fontSize:14,color:'rgba(255,255,255,0.4)',marginBottom:32}}>{mode==='signup'?'Set up your experience':'Sign in to continue'}</p>
+          <div style={{display:'flex',background:'rgba(255,255,255,0.08)',borderRadius:12,padding:4,marginBottom:28,width:'100%',maxWidth:360}}>
+            <button onClick={()=>{setMode('signup');setErr('')}} style={{flex:1,padding:'10px',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signup'?accentGold:'transparent',color:mode==='signup'?'#0A0A0F':'rgba(255,255,255,0.5)',fontFamily:ff}}>Sign Up</button>
+            <button onClick={()=>{setMode('signin');setErr('')}} style={{flex:1,padding:'10px',borderRadius:10,border:'none',cursor:'pointer',fontSize:14,fontWeight:700,background:mode==='signin'?accentGold:'transparent',color:mode==='signin'?'#0A0A0F':'rgba(255,255,255,0.5)',fontFamily:ff}}>Sign In</button>
           </div>
-          <div style={{marginBottom:24}}>
-            <label style={{fontSize:12,color:'rgba(255,255,255,0.5)',display:'block',marginBottom:6}}>Password</label>
-            <input type="password" value={pw} onChange={e=>setPw(e.target.value)} placeholder="Min 8 characters" style={{width:'100%',padding:'14px 16px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:12,color:'#fff',fontSize:14,outline:'none',fontFamily:ff,boxSizing:'border-box'}}/>
+          <div style={{width:'100%',maxWidth:360}}>
+            {mode==='signup'&&<div style={{marginBottom:16}}>
+              <label style={{fontSize:12,color:'rgba(255,255,255,0.5)',display:'block',marginBottom:6}}>Full Name</label>
+              <input value={name} onChange={e=>setName(e.target.value)} placeholder="Your name" style={{width:'100%',padding:'14px 16px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:12,color:'#fff',fontSize:14,outline:'none',fontFamily:ff,boxSizing:'border-box'}}/>
+            </div>}
+            <div style={{marginBottom:16}}>
+              <label style={{fontSize:12,color:'rgba(255,255,255,0.5)',display:'block',marginBottom:6}}>Email</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@email.com" style={{width:'100%',padding:'14px 16px',background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:12,color:'#fff',fontSize:14,outline:'none',fontFamily:ff,boxSizing:'border-box'}}/>
+            </div>
+            <div style={{marginBottom:24}}>
+              <label style={{fontSize:12,color:'rgba(255,255,255,0.5)',display:'block',marginBottom:6}}>Password</label>
+              <div style={{position:'relative'}}>
+                <input type={showPw?'text':'password'} value={pw} onChange={e=>setPw(e.target.value)} placeholder="Min 8 characters" style={{width:'100%',padding:'14px 16px',paddingRight:48,background:'rgba(255,255,255,0.06)',border:'1px solid rgba(255,255,255,0.12)',borderRadius:12,color:'#fff',fontSize:14,outline:'none',fontFamily:ff,boxSizing:'border-box'}}/>
+                <button onClick={()=>setShowPw(!showPw)} style={{position:'absolute',right:12,top:'50%',transform:'translateY(-50%)',background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:12,cursor:'pointer',fontFamily:ff,padding:'4px'}}>{showPw?'Hide':'Show'}</button>
+              </div>
+            </div>
+            {err&&<div style={{padding:'12px 16px',background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:12,marginBottom:16,fontSize:13,color:'#ef4444',fontWeight:600}}>{err}</div>}
+            <button onClick={doAuth} disabled={!canSubmit||loading} style={{width:'100%',padding:'16px',background:canSubmit&&!loading?`linear-gradient(135deg,${accentGold},#B8942F)`:'rgba(255,255,255,0.08)',color:canSubmit?'#0A0A0F':'rgba(255,255,255,0.3)',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:canSubmit&&!loading?'pointer':'not-allowed',fontFamily:ff}}>{loading?'...':(mode==='signup'?'Create Account':'Sign In')}</button>
+            {mode==='signin'&&<button onClick={()=>{setStep('forgot');setErr('');setResetSent(false)}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',fontFamily:ff,marginTop:12,width:'100%',textAlign:'center'}}>Forgot password?</button>}
           </div>
-          {err&&<div style={{padding:'12px 16px',background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:12,marginBottom:16,fontSize:13,color:'#ef4444',fontWeight:600}}>{err}</div>}
-          <button onClick={doAuth} disabled={!canSubmit||loading} style={{width:'100%',padding:'16px',background:canSubmit&&!loading?`linear-gradient(135deg,${accentGold},#B8942F)`:'rgba(255,255,255,0.08)',color:canSubmit?'#0A0A0F':'rgba(255,255,255,0.3)',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:canSubmit&&!loading?'pointer':'not-allowed',fontFamily:ff}}>{loading?'...':(mode==='signup'?'Create Account':'Sign In')}</button>
-          {mode==='signin'&&<button onClick={()=>{setStep('forgot');setErr('');setResetSent(false)}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',fontFamily:ff,marginTop:12,width:'100%',textAlign:'center'}}>Forgot password?</button>}
         </div>
       </div>
     </div>
@@ -478,7 +486,18 @@ const wn=e=>{
     default:"https://images.unsplash.com/photo-1496024840928-4c417adf211d?w=900"
   };
   const cat=e?.category||e?.event_type||"default";
-  return catImgs[cat]||catImgs.default;
+  // Also check title and source for better matching
+  const title=(e?.title||"").toLowerCase();
+  const source=e?.source||"";
+  if(catImgs[cat])return catImgs[cat];
+  // Title-based fallbacks for concerts/shows without category match
+  if(source==="show"||title.includes("tour")||title.includes("concert")||title.includes("live"))return catImgs.concert;
+  if(title.includes("jazz"))return catImgs.jazz;
+  if(title.includes("comedy")||title.includes("laugh"))return catImgs.comedy;
+  if(title.includes("festival")||title.includes("fest"))return catImgs.festival;
+  if(title.includes("food")||title.includes("brunch")||title.includes("dinner"))return catImgs.food;
+  if(title.includes("art")||title.includes("gallery"))return catImgs.art;
+  return catImgs.default;
 };
 
 // Cities/Teams — REAL LOGOS via ESPN CDN
@@ -671,22 +690,29 @@ const EventGrid=({items,onSelect,max})=>{
 const EventRow=({e:S,onClick:A})=>{
   const g=gt[S.brand]?.c||C.gold;
   const dt=S.date?new Date(S.date+"T12:00:00"):null;
+  const img=wn(S);
   return(
-    <button onClick={A} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,display:"flex",gap:10,alignItems:"stretch",overflow:"hidden",borderRadius:10,marginBottom:6,height:68}}>
-      <div style={{width:68,height:68,flexShrink:0,position:"relative",overflow:"hidden"}}>
-        <img src={wn(S)} alt="" style={{width:"100%",height:"100%",objectFit:"cover",}} loading="lazy"/>
+    <button onClick={A} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:10,marginBottom:6,height:72,position:"relative",display:"block"}}>
+      <div style={{position:"absolute",inset:0,overflow:"hidden"}}>
+        <img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover",opacity:0.35}} loading="lazy"/>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(90deg,rgba(26,26,20,0.85) 0%,rgba(26,26,20,0.6) 60%,rgba(26,26,20,0.3) 100%)"}}/>
       </div>
-      <div style={{flex:1,padding:"8px 0",minWidth:0,display:"flex",flexDirection:"column",justifyContent:"center"}}>
-        <div style={{fontSize:13,fontWeight:700,color:C.text,lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{S.title}</div>
-        <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
-          <div style={{width:5,height:5,borderRadius:99,background:g}}/>
-          <span style={{fontSize:11,color:g,fontWeight:600}}>{S.brand}</span>
-          {dt&&<span style={{fontSize:11,color:C.textSec}}>{"\u00B7 "}{dt.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>}
+      <div style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",height:"100%",padding:"0 14px",gap:10}}>
+        <div style={{width:44,height:44,borderRadius:8,overflow:"hidden",flexShrink:0,border:`1px solid ${g}30`}}>
+          <img src={img} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
         </div>
-        <div style={{fontSize:11,color:C.textSec,marginTop:1}}>{S.time||"TBA"}{" \u00B7 "}{S.venue||S.city}</div>
-      </div>
-      <div style={{display:"flex",alignItems:"center",padding:"0 12px",flexShrink:0}}>
-        <div style={{fontSize:16,color:C.muted}}>{"\u203A"}</div>
+        <div style={{flex:1,minWidth:0}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.text,lineHeight:1.2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{S.title}</div>
+          <div style={{display:"flex",alignItems:"center",gap:4,marginTop:2}}>
+            <div style={{width:5,height:5,borderRadius:99,background:g}}/>
+            <span style={{fontSize:11,color:g,fontWeight:600}}>{S.brand}</span>
+            {dt&&<span style={{fontSize:11,color:C.textSec}}>{"\u00B7 "}{dt.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</span>}
+          </div>
+          <div style={{fontSize:11,color:C.textSec,marginTop:1}}>{S.time||"TBA"}{" \u00B7 "}{S.venue||S.city}</div>
+        </div>
+        <div style={{display:"flex",alignItems:"center",flexShrink:0}}>
+          <div style={{fontSize:16,color:C.muted}}>{"\u203A"}</div>
+        </div>
       </div>
     </button>
   );
@@ -698,8 +724,8 @@ const EventCard=({e:S,compact:cmp,onClick:g})=>{
   const dt=S.date?new Date(S.date+"T12:00:00"):null;
   return(
     <button onClick={g} style={{...K,width:cmp?180:"100%",flexShrink:0,cursor:"pointer",overflow:"hidden",padding:0,textAlign:"left",fontFamily:F.f,transition:"transform 0.2s",borderRadius:10}}>
-      <div style={{height:cmp?90:120,position:"relative",overflow:"hidden"}}>
-        <img src={wn(S)} alt="" style={{width:"100%",height:"100%",objectFit:"cover",}} loading="lazy"/>
+      <div style={{height:cmp?90:120,position:"relative",overflow:"hidden",background:`linear-gradient(135deg,${clr}30,rgba(6,6,12,0.8))`}}>
+        <img src={wn(S)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy" onError={e=>{e.currentTarget.style.display='none'}}/>
         <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 65%,rgba(6,6,12,0.5) 100%)"}}/>
         {/* CHANGE #2: Price badge REMOVED */}
         <div style={{position:"absolute",top:8,left:8,width:6,height:6,borderRadius:99,background:clr,boxShadow:`0 0 8px ${clr}`}}/>
@@ -733,7 +759,15 @@ const ScrollWrap=({children})=>(
 );
 
 // ═══ MAIN APP ═══
-export default function GoodTimesAppWrapper(props){return React.createElement(GTErrorBoundary,null,React.createElement(GoodTimesAuthGate,props));}
+export default function GoodTimesAppWrapper(props){
+  return React.createElement(GTErrorBoundary,null,
+    React.createElement('div',{style:{minHeight:'100vh',background:`url(${GT_BG_BASE}/gt-bg-aerial-nightlife.webp) center/cover fixed`,display:'flex',alignItems:'center',justifyContent:'center'}},
+      React.createElement('div',{style:{width:'100%',maxWidth:430,minHeight:'100vh',position:'relative',boxShadow:'0 0 80px rgba(0,0,0,0.5)'}},
+        React.createElement(GoodTimesAuthGate,props)
+      )
+    )
+  );
+}
 function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const[showSplash,setShowSplash]=useState(()=>!sessionStorage.getItem("gt_splash_shown"));
   const[screen,setScreen]=useState("now");
@@ -1069,9 +1103,14 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     if(realm==="tonight"){
       return sorted.filter(e=>{
         if(e.date!==todayStr)return false;
-        if(!e.time)return true;
+        // Must have a time to qualify as "tonight"
+        if(!e.time)return false;
         const hr=parseInt(e.time.split(":")[0],10);
-        return hr>=17;
+        // Tonight = 5PM onwards, exclude daytime-only listings
+        if(hr<17)return false;
+        // Exclude generic daily venue listings (those are "explore", not "tonight")
+        if(e.source==="daily_event"||e.source==="venue_listing")return false;
+        return true;
       });
     }
     const weekEnd=new Date();
