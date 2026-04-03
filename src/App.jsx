@@ -559,7 +559,7 @@ const BRAND_IMAGES={
   lgbtq_avenue:_SB+"/lgbtq_avenue/lgbtq_avenue_card.png",
   huglife_events:_SB+"/huglife_events/huglife_events_card.png",
   good_times:_SB+"/good_times/good_times_card.png",
-  // === BRANDS WITHOUT GRAPHICS YET — context-matched Unsplash (each 100% unique) ===
+  // === BRAND EVENT FALLBACK IMAGES — from Supabase good-times-backgrounds ===
   black_ball:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-penthouse-view.webp",       // formal dark gala
   block_party:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-vip-arrival.webp",      // outdoor festival crowd
   cinco_de_mayo:_SB+"/cinco_de_mayo/cinco_de_mayo_landscape.png",        // cocktail drinks / fiesta
@@ -1685,7 +1685,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       const weekEvts=cityEvents.filter(e=>{if(!e.date)return false;const d=new Date(e.date+"T12:00:00");return d>=weekStart&&d<=weekEnd}).sort((a,b)=>a.date.localeCompare(b.date));
       return(
         <ScrollWrap>
-          {CityBG}{SearchOverlay}{TeamModal}
+          {SearchOverlay}
           <div style={{padding:"0 0 40px"}}>
             <div style={{padding:"16px 20px 0"}}>
               <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:4}}>ENTERTAINMENT</div>
@@ -1767,9 +1767,9 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       const monthEvents=events.filter(e=>{if(!e.date)return false;const[y,m]=e.date.split("-").map(Number);return y===calYear&&m===calMonth+1&&(calCityFilter==="all"||e.city===city.name||e.city==="TBA")&&(calCatFilter==="all"||e.category===calCatFilter)}).sort((a,b)=>a.date.localeCompare(b.date));
       return(
         <ScrollWrap>
-          {CityBG}{SearchOverlay}{TeamModal}
+          {SearchOverlay}
           <div style={{padding:"0 20px"}}>
-            <div style={{textAlign:"center",marginBottom:16}}>
+            <div style={{textAlign:"center",marginBottom:16,paddingTop:8}}>
               <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>CALENDAR</div>
               <div style={{fontSize:28,fontFamily:F.s,fontWeight:700,color:"#FFFFFF"}}>What's happening</div>
             </div>
@@ -1815,7 +1815,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     // ═══ ITINERARY (PLANS) ═══
     if(screen==="plans")return(
       <ScrollWrap>
-        {CityBG}{SearchOverlay}
+        {SearchOverlay}
         <div style={{padding:"0 20px"}}>
           <div style={{marginBottom:16,paddingTop:8}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:4}}>ITINERARY</div>
@@ -1882,8 +1882,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     // ═══ PLAN FOR ME (CONCIERGE) ═══
     if(screen==="planforme")return(
       <ScrollWrap>
-        {CityBG}{SearchOverlay}
-        <div style={{padding:"0 20px",minHeight:"calc(100vh - 160px)",display:"flex",flexDirection:"column"}}>
+        {SearchOverlay}
+        <div style={{padding:"0 20px",minHeight:"calc(100vh - 160px)",display:"flex",flexDirection:"column",paddingTop:8}}>
           <div style={{textAlign:"center",marginBottom:24}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>CONCIERGE</div>
             <div style={{fontSize:28,fontFamily:F.s,fontWeight:700,marginBottom:6}}>Build your perfect night</div>
@@ -1985,8 +1985,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     // ═══ EXPLORE ═══
     if(screen==="explore")return(
       <ScrollWrap>
-        {CityBG}{SearchOverlay}
-        <div style={{padding:"0 20px 40px"}}>
+        {SearchOverlay}
+        <div style={{padding:"0 20px 40px",paddingTop:8}}>
           <div style={{textAlign:"center",marginBottom:24}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>EXPLORE</div>
             <div style={{fontSize:28,fontFamily:F.s,fontWeight:700,marginBottom:6}}>Discover {city.name}</div>
@@ -2123,8 +2123,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     // ═══ MAP ═══
     if(screen==="map")return(
       <ScrollWrap>
-        {CityBG}{SearchOverlay}
-        <div style={{padding:"0 20px"}}>
+        {SearchOverlay}
+        <div style={{padding:"0 20px",paddingTop:8}}>
           <div style={{textAlign:"center",marginBottom:16}}>
             <div style={{fontSize:10,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:6}}>MAP</div>
             <div style={{fontSize:24,fontFamily:F.s,fontWeight:700}}>Around {city.name}</div>
@@ -2163,8 +2163,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     // ═══ VAULT — CHANGE #8: Deals section added ═══
     if(screen==="vault")return(
       <ScrollWrap>
-        {CityBG}{SearchOverlay}
-        <div style={{padding:"0 20px"}}>
+        {SearchOverlay}
+        <div style={{padding:"0 20px",paddingTop:8}}>
           <div style={{textAlign:"center",marginBottom:16}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>VAULT</div>
             <div style={{fontSize:28,fontFamily:F.s,fontWeight:700}}>Your Collection</div>
