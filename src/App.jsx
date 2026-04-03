@@ -411,7 +411,7 @@ function GoodTimesAuthGate(){
 const C = {
   bg:"#06060C",bgCard:"#1A1A14",bgSheet:"#18180F",
   gold:"#D4A853",goldDim:"rgba(212,168,83,0.35)",
-  text:"#FFFFFF",textSec:"#E8DCC8",muted:"#BFA97A",
+  text:"#FFFFFF",textSec:"#E8DCC8",muted:"#D4C49A",
   a3:"#D4A853",a4:"#FFB86B",overlay:"rgba(6,6,12,0.88)"
 };
 const F={f:"'DM Sans',sans-serif",s:"'Playfair Display',Georgia,serif"};
