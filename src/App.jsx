@@ -451,19 +451,19 @@ const CAT_MAP={
 const Ne={
   hero:`${GT_BG_BASE}/gt-bg-nightlife-district.webp`,
   // Trending carousel images (nightlife/party vibes)
-  v:["https://images.unsplash.com/photo-1566417713940-fe7c737a9ef2?w=600","https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=600","https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=600","https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600","https://images.unsplash.com/photo-1429962714451-bb934ecdc4ec?w=600","https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?w=600","https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600","https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=900"],
+  v:["https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-neon-skyline.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-infinity-bar.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-valet-entrance.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-social-scene.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aerial-nightlife.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rainy-street.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cigar-terrace.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aurora-complex.webp"],
   // Explore category images — UNIQUE from trending & browse
-  ex:{nightlife:"https://images.unsplash.com/photo-1574391884720-bbc3740c59d1?w=400",sports:"https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400",wellness:"https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400",dining:"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400",music:"https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400",culture:"https://images.unsplash.com/photo-1536924940846-227afb31e2a5?w=400",adventure:"https://images.unsplash.com/photo-1551632811-561732d1e306?w=400",shopping:"https://images.unsplash.com/photo-1483985988355-763728e1935b?w=400",movies:"https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400",gaming:"https://images.unsplash.com/photo-1511512578047-dfb367046420?w=400",drinks:"https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400",exclusive:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400",family:"https://images.unsplash.com/photo-1472653431158-6364773b2a56?w=400",dating:"https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400",cosmetic:"https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400",networking:"https://images.unsplash.com/photo-1515169067868-5387ec356754?w=400"},
+  ex:{nightlife:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-future-city.webp",sports:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-panoramic-skyline.webp",wellness:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-courtyard-evening.webp",dining:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-grand-venue.webp",music:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-nightlife-district.webp",culture:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-skyline-terrace.webp",adventure:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cocktail-lounge.webp",shopping:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-penthouse-view.webp",movies:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-vip-arrival.webp",gaming:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rooftop-lounge.webp",drinks:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-spiral-lounge.webp",exclusive:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-waterfront-venue.webp",family:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-neon-skyline.webp",dating:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-infinity-bar.webp",cosmetic:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-valet-entrance.webp",networking:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-social-scene.webp"},
   // Browse images — DIFFERENT from explore
-  br:{jki:"https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400",nl:"https://images.unsplash.com/photo-1545128485-c400e7702796?w=400",lm:"https://images.unsplash.com/photo-1501612780327-45045538702b?w=400",sp:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400",ms:"https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400",gm:"https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400"},
+  br:{jki:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aerial-nightlife.webp",nl:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rainy-street.webp",lm:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cigar-terrace.webp",sp:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aurora-complex.webp",ms:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-future-city.webp",gm:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-panoramic-skyline.webp"},
   city:{
     Atlanta:{day:`${GT_BG_BASE}/gt-homescreen-atlanta.webp`,night:`${GT_BG_BASE}/gt-homescreen-atlanta.webp`},
-    Houston:{day:"https://images.unsplash.com/photo-1530089711124-9ca31fb9e863?w=900",night:"https://images.unsplash.com/photo-1548260465-1adda34ebbe7?w=900"},
-    "Los Angeles":{day:"https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=900",night:"https://images.unsplash.com/photo-1515896769750-31548aa180ed?w=900"},
-    Charlotte:{day:"https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?w=900",night:"https://images.unsplash.com/photo-1605885996758-49b3e33c612d?w=900"},
-    Washington:{day:"https://images.unsplash.com/photo-1617581629397-a72507c3de9e?w=900",night:"https://images.unsplash.com/photo-1501466044931-62695aada8e9?w=900"},
-    Miami:{day:"https://images.unsplash.com/photo-1535498730771-e735b998cd64?w=900",night:"https://images.unsplash.com/photo-1514214246283-d427a95c5d2f?w=900"},
-    "Las Vegas":{day:"https://images.unsplash.com/photo-1605833556294-ea5c7a74f57d?w=900",night:"https://images.unsplash.com/photo-1581351721010-8cf859cb14a4?w=900"}
+    Houston:{day:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-courtyard-evening.webp",night:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-grand-venue.webp"},
+    "Los Angeles":{day:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-nightlife-district.webp",night:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-skyline-terrace.webp"},
+    Charlotte:{day:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cocktail-lounge.webp",night:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-penthouse-view.webp"},
+    Washington:{day:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-vip-arrival.webp",night:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rooftop-lounge.webp"},
+    Miami:{day:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-spiral-lounge.webp",night:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-waterfront-venue.webp"},
+    "Las Vegas":{day:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-neon-skyline.webp",night:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-infinity-bar.webp"}
   }
 };
 
@@ -476,19 +476,19 @@ const wn=e=>{
   if(e?.brand_key&&BRAND_IMAGES[e.brand_key]) return BRAND_IMAGES[e.brand_key];
   // Category-matched fallbacks — pick based on event type/category
   const catImgs={
-    concert:"https://images.unsplash.com/photo-1429514513361-8fa32282fd5f?w=900",
-    music:"https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=900",
-    comedy:"https://images.unsplash.com/photo-1585699324551-f6c309eedeca?w=900",
-    food:"https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=900",
-    festival:"https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=900",
-    jazz:"https://images.unsplash.com/photo-1415201364774-f6f0bb35f28f?w=900",
-    sports:"https://images.unsplash.com/photo-1517649763962-0c623066013b?w=900",
-    nightlife:"https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=900",
-    art:"https://images.unsplash.com/photo-1460661419201-fd4cecdf8a8b?w=900",
-    theater:"https://images.unsplash.com/photo-1503095396549-807759245b35?w=900",
-    activation:"https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=900",
-    exclusive:"https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=900",
-    default:"https://images.unsplash.com/photo-1496024840928-4c417adf211d?w=900"
+    concert:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-valet-entrance.webp",
+    music:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-social-scene.webp",
+    comedy:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aerial-nightlife.webp",
+    food:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rainy-street.webp",
+    festival:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cigar-terrace.webp",
+    jazz:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aurora-complex.webp",
+    sports:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-future-city.webp",
+    nightlife:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-panoramic-skyline.webp",
+    art:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-courtyard-evening.webp",
+    theater:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-grand-venue.webp",
+    activation:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-nightlife-district.webp",
+    exclusive:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-skyline-terrace.webp",
+    default:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cocktail-lounge.webp"
   };
   const cat=e?.category||e?.event_type||"default";
   // Also check title and source for better matching
@@ -560,19 +560,19 @@ const BRAND_IMAGES={
   huglife_events:_SB+"/huglife_events/huglife_events_card.png",
   good_times:_SB+"/good_times/good_times_card.png",
   // === BRANDS WITHOUT GRAPHICS YET — context-matched Unsplash (each 100% unique) ===
-  black_ball:"https://images.unsplash.com/photo-1528495612343-9ca9f4a4de28?w=900",       // formal dark gala
-  block_party:"https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=900",      // outdoor festival crowd
+  black_ball:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-penthouse-view.webp",       // formal dark gala
+  block_party:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-vip-arrival.webp",      // outdoor festival crowd
   cinco_de_mayo:_SB+"/cinco_de_mayo/cinco_de_mayo_landscape.png",        // cocktail drinks / fiesta
-  crvngs:"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=900",               // gourmet food spread
-  kulture:"https://images.unsplash.com/photo-1556906781-9a412961c28c?w=900",              // sneakers / streetwear
-  monsters_ball:"https://images.unsplash.com/photo-1509557965875-b88c97052f0e?w=900",     // masquerade / halloween
-  parking_lot_pimpin:"https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=900",   // classic car show
-  snow_ball:"https://images.unsplash.com/photo-1482517967863-00e15c9b44be?w=900",         // winter holiday lights
-  soul_sessions:"https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=900",     // R&B live performance
-  underground_king:"https://images.unsplash.com/photo-1524368535928-5b5e00ddc76b?w=900",  // underground hip hop show
-  remix:"https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=900",             // DJ mixing / turntables
-  beauty_beast:"https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=900",      // glam beauty / fashion
-  stella:"https://images.unsplash.com/photo-1516802273409-68526ee1bdd6?w=900",            // women celebrating / groove
+  crvngs:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rooftop-lounge.webp",               // gourmet food spread
+  kulture:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-spiral-lounge.webp",              // sneakers / streetwear
+  monsters_ball:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-waterfront-venue.webp",     // masquerade / halloween
+  parking_lot_pimpin:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-neon-skyline.webp",   // classic car show
+  snow_ball:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-infinity-bar.webp",         // winter holiday lights
+  soul_sessions:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-valet-entrance.webp",     // R&B live performance
+  underground_king:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-social-scene.webp",  // underground hip hop show
+  remix:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aerial-nightlife.webp",             // DJ mixing / turntables
+  beauty_beast:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rainy-street.webp",      // glam beauty / fashion
+  stella:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cigar-terrace.webp",            // women celebrating / groove
 };
 
 // Explore categories — subcategories match REAL gt_venues data
@@ -605,7 +605,7 @@ const Gu=[
 
 // Plan For Me questions
 const kn=[
-  {id:"mood",q:"What's the mood?",sub:"Set the tone for tonight",multi:false,opts:[{id:"chill",l:"Chill",i:"\u{1F33F}",c:"#90EE90",d:"Low-key vibes",bg:"https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400"},{id:"turnt",l:"Turn Up",i:"\u{1F525}",c:"#FF6B6B",d:"Maximum energy",bg:"https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=400"},{id:"date",l:"Date Night",i:"\u{1F320}",c:"#C8A96E",d:"Intimate & beautiful",bg:"https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=400"},{id:"bougie",l:"Bougie",i:"\u{1F48E}",c:"#D4A853",d:"Luxury everything",bg:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400"},{id:"family",l:"Family",i:"\u{1F46A}",c:"#BFA97A",d:"Fun for everyone",bg:"https://images.unsplash.com/photo-1472653431158-6364773b2a56?w=400"},{id:"explore",l:"Explore",i:"\u{2728}",c:"#D4A853",d:"New experiences",bg:"https://i.pinimg.com/736x/4f/9c/be/4f9cbe094650bc8e3d2347914e751961.jpg"}]},
+  {id:"mood",q:"What's the mood?",sub:"Set the tone for tonight",multi:false,opts:[{id:"chill",l:"Chill",i:"\u{1F33F}",c:"#90EE90",d:"Low-key vibes",bg:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aurora-complex.webp"},{id:"turnt",l:"Turn Up",i:"\u{1F525}",c:"#FF6B6B",d:"Maximum energy",bg:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-future-city.webp"},{id:"date",l:"Date Night",i:"\u{1F320}",c:"#C8A96E",d:"Intimate & beautiful",bg:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-panoramic-skyline.webp"},{id:"bougie",l:"Bougie",i:"\u{1F48E}",c:"#D4A853",d:"Luxury everything",bg:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-courtyard-evening.webp"},{id:"family",l:"Family",i:"\u{1F46A}",c:"#BFA97A",d:"Fun for everyone",bg:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-grand-venue.webp"},{id:"explore",l:"Explore",i:"\u{2728}",c:"#D4A853",d:"New experiences",bg:"https://i.pinimg.com/736x/4f/9c/be/4f9cbe094650bc8e3d2347914e751961.jpg"}]},
   {id:"group",q:"Who's coming?",sub:"How many in your crew",multi:false,opts:[{id:"solo",l:"Just Me",i:"\u{1F9D1}",c:"#D4A853"},{id:"duo",l:"Me + 1",i:"\u{1F46B}",c:"#C8A96E"},{id:"crew",l:"The Crew",i:"\u{1F46F}",c:"#FFB86B",d:"3-8 people"},{id:"mob",l:"Big Group",i:"\u{1F389}",c:"#FF6B6B",d:"8+ deep"}]},
   {id:"budget",q:"Budget vibe?",sub:"Per person for the night",multi:false,opts:[{id:"low",l:"Under $50",i:"\u{1F4B5}",c:"#6BFFB8"},{id:"mid",l:"$50\u2013150",i:"\u{1F4B3}",c:"#FFB86B"},{id:"high",l:"$150\u2013300",i:"\u{1F48E}",c:"#D4A853"},{id:"unlimited",l:"No Limit",i:"\u{1F451}",c:"#FF6B6B"}]},
   {id:"time",q:"What time?",sub:"When does it start",multi:false,opts:[{id:"afternoon",l:"Afternoon",i:"\u2600\uFE0F",c:"#FFB86B",d:"12-5pm"},{id:"evening",l:"Evening",i:"\u{1F305}",c:"#C8A96E",d:"5-9pm"},{id:"night",l:"Night",i:"\u{1F319}",c:"#B86BFF",d:"9pm-12am"},{id:"latenight",l:"Late Night",i:"\u{1F30C}",c:"#D4A853",d:"After midnight"}]},
@@ -615,13 +615,13 @@ const kn=[
 // CHANGE #8: Deals data for Vault
 const dealsData=[
   {id:"d1",title:"2-for-1 Bottle Service",venue:"Opium Nightclub",desc:"Every Thursday before midnight",savings:"Save $200+",cat:"Nightlife",img:"/venues/opium.jpg"},
-  {id:"d2",title:"50% Off Tasting Menu",venue:"STK Atlanta",desc:"Mon-Wed 5-course chef selection",savings:"Save $85",cat:"Dining",img:"https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400"},
+  {id:"d2",title:"50% Off Tasting Menu",venue:"STK Atlanta",desc:"Mon-Wed 5-course chef selection",savings:"Save $85",cat:"Dining",img:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-nightlife-district.webp"},
   {id:"d3",title:"Free Entry Before 11pm",venue:"Revel ATL",desc:"RSVP on Good Times for free entry",savings:"Save $45",cat:"Nightlife",img:"/venues/revel.webp"},
-  {id:"d4",title:"VIP Table Upgrade",venue:"Opium Nightclub",desc:"Book GA get VIP section free",savings:"Save $500+",cat:"Events",img:"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400"},
-  {id:"d5",title:"Day Pass + Mimosas",venue:"Spa at Mandarin Oriental",desc:"Full spa day with unlimited mimosas",savings:"Save $120",cat:"Wellness",img:"https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400"},
-  {id:"d6",title:"Brunch for 2 Special",venue:"South City Kitchen",desc:"Brunch entrees + bottomless cocktails",savings:"Save $60",cat:"Dining",img:"https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400"},
-  {id:"d7",title:"Hawks Game Day Bundle",venue:"State Farm Arena",desc:"Tickets + parking + concession credits",savings:"Best value",cat:"Sports",img:"https://images.unsplash.com/photo-1546519638-68e109498ffc?w=400"},
-  {id:"d8",title:"Late Night Happy Hour",venue:"Whiskey Blue at W Hotel",desc:"Half-price cocktails 10pm-12am",savings:"Save $40+",cat:"Drinks",img:"https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=400"}
+  {id:"d4",title:"VIP Table Upgrade",venue:"Opium Nightclub",desc:"Book GA get VIP section free",savings:"Save $500+",cat:"Events",img:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-skyline-terrace.webp"},
+  {id:"d5",title:"Day Pass + Mimosas",venue:"Spa at Mandarin Oriental",desc:"Full spa day with unlimited mimosas",savings:"Save $120",cat:"Wellness",img:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cocktail-lounge.webp"},
+  {id:"d6",title:"Brunch for 2 Special",venue:"South City Kitchen",desc:"Brunch entrees + bottomless cocktails",savings:"Save $60",cat:"Dining",img:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-penthouse-view.webp"},
+  {id:"d7",title:"Hawks Game Day Bundle",venue:"State Farm Arena",desc:"Tickets + parking + concession credits",savings:"Best value",cat:"Sports",img:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-vip-arrival.webp"},
+  {id:"d8",title:"Late Night Happy Hour",venue:"Whiskey Blue at W Hotel",desc:"Half-price cocktails 10pm-12am",savings:"Save $40+",cat:"Drinks",img:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rooftop-lounge.webp"}
 ];
 
 // ═══ COMPONENTS ═══
