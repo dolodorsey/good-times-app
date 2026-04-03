@@ -1536,8 +1536,9 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                   <div style={{fontSize:12,marginTop:8,color:C.gold}}>Check back soon or switch cities</div>
                 </div>
               );
-              const featured=mark(pool.filter(e=>e.is_featured||(e.display_priority&&e.display_priority<=5)),3);
-              const rest=mark(pool.filter(e=>!featured.find(f=>f.id===e.id)),6);
+              const featured=mark(pool.filter(e=>e.is_featured||(e.display_priority&&e.display_priority<=5)),Math.min(3,pool.length));
+              const restPool=pool.filter(e=>!featured.find(f=>f.id===e.id));
+              const rest=mark(restPool,Math.min(6,restPool.length));
               const dateLabel=realm==="tonight"?new Date().toLocaleDateString("en-US",{month:"numeric",day:"numeric"}):"";
               return(<>
                 {featured.map(e=>{const g=gt[e.brand]?.c||C.gold;return(
