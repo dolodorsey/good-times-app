@@ -595,12 +595,12 @@ const Vu=[
 
 // CHANGE #5: Vibe browse — Gentleman's Club REMOVED
 const Gu=[
-  {id:"jki",name:"Just Kick It",icon:"\u{1F525}",color:"#FF6B6B",d:"Catch a vibe",subs:["Lounges","Rooftops","Hookah","Sports Bars","Patios","Day Parties","Pool Parties"]},
-  {id:"nl",name:"Nightlife",icon:"\u{1F319}",color:"#B86BFF",d:"After dark",subs:["Clubs","Speakeasies","Afterhours","VIP Sections","Bottle Service","Late Night"]},
-  {id:"lm",name:"Live Music",icon:"\u{1F3A4}",color:"#FFB86B",d:"Feel the sound",subs:["Concerts","Jazz Clubs","Open Mic","DJ Sets","Festivals","Karaoke"]},
-  {id:"sp",name:"Sports",icon:"\u{1F3C0}",color:"#6BFFB8",d:"Game on",subs:["Watch Parties","Game Day","Fan Zones","Sports Bars","Tailgates"]},
-  {id:"ms",name:"Movies & Shows",icon:"\u{1F3AC}",color:"#FF69B4",d:"Screen time",subs:["Theaters","Drive-Ins","Comedy","Improv","Film Screenings"]},
-  {id:"gm",name:"Gaming",icon:"\u{1F3AE}",color:"#00CED1",d:"Level up",subs:["Arcades","VR","Board Games","Bowling","Mini Golf","Trivia"]}
+  {id:"jki",name:"Just Kick It",icon:"\u{1F525}",color:"#FF6B6B",d:"Catch a vibe",subs:["Lounges","Rooftop Dining","Hookah Lounges","Sports Bars","Day Parties","Pool Parties"]},
+  {id:"nl",name:"Nightlife",icon:"\u{1F319}",color:"#B86BFF",d:"After dark",subs:["Nightclubs","Speakeasies","Cocktail Bars","Lounges","Jazz Bars"]},
+  {id:"lm",name:"Live Music",icon:"\u{1F3A4}",color:"#FFB86B",d:"Feel the sound",subs:["Jazz Bars","Comedy Clubs","Karaoke Bars","Luxury Theaters"]},
+  {id:"sp",name:"Sports",icon:"\u{1F3C0}",color:"#6BFFB8",d:"Game on",subs:["Sports Bars"]},
+  {id:"fd",name:"Food & Drink",icon:"\u{1F37D}\uFE0F",color:"#FFB86B",d:"Eat & sip",subs:["Casual Dining","Brunch","Late Night / 24-Hour Eats","Food Trucks","Coffee Shops"]},
+  {id:"cl",name:"Culture",icon:"\u{1F3A8}",color:"#C8A96E",d:"Explore art",subs:["Art Galleries","History Museums","Comedy Clubs","Theater","Arcades & Gaming"]}
 ];
 
 // Plan For Me questions
@@ -1741,7 +1741,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                 </div>
                 <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center",marginBottom:20}}>
                   {vibeSheet.subs.map(s=>(
-                    <button key={s} style={{...V(false),padding:"12px 20px",border:`1px solid ${vibeSheet.color}25`,color:vibeSheet.color,fontSize:14}}>{s}</button>
+                    <button key={s} onClick={()=>{setVibeSheet(null);setSubCatView({parent:vibeSheet,sub:s});setVenueLoading(true);setVenueResults([]);
+                      const ck="atlanta";const sel="id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key,tab_tags,search_tags";
+                      khgF(`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&subcategory=eq.${encodeURIComponent(s)}&order=google_rating.desc.nullslast&limit=20`).then(r=>{if(r.length===0)return khgF(`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&subcategory=ilike.*${encodeURIComponent(s.split('/')[0].trim())}*&order=google_rating.desc.nullslast&limit=20`);return r}).then(r=>{setVenueResults(r);setVenueLoading(false)});
+                    }} style={{...V(false),padding:"12px 20px",border:`1px solid ${vibeSheet.color}25`,color:vibeSheet.color,fontSize:14}}>{s}</button>
                   ))}
                 </div>
                 <button onClick={()=>setVibeSheet(null)} style={{...V(false),width:"100%",padding:"14px",textAlign:"center",fontSize:15}}>Close</button>
