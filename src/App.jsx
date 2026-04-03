@@ -575,24 +575,22 @@ const BRAND_IMAGES={
   stella:"https://images.unsplash.com/photo-1516802273409-68526ee1bdd6?w=900",            // women celebrating / groove
 };
 
-// Explore categories
+// Explore categories — subcategories match REAL gt_venues data
 const Vu=[
-  {id:"dining",name:"Dining",icon:"\u{1F37D}\uFE0F",color:"#FFB86B",subs:["Fine Dining","Brunch","Late Night Eats","Seafood","Soul Food","Steakhouses","Food Halls","Sushi","BBQ","Pizza","Vegan","Taco Spots"]},
-  {id:"nightlife",name:"Nightlife",icon:"\u{1F319}",color:"#D4A853",subs:["Clubs","Lounges","Rooftops","Hookah","Day Parties","Pool Parties","Afterhours","Speakeasies","Dive Bars","Wine Bars"]},
-  {id:"music",name:"Live Music",icon:"\u{1F3B5}",color:"#FF6B6B",subs:["Concerts","Jazz","R&B/Soul","Hip Hop","Afrobeats","Gospel","Open Mic","DJ Sets","Festivals","Karaoke"]},
-  {id:"sports",name:"Sports",icon:"\u{1F3DF}\uFE0F",color:"#6BFFB8",subs:["Game Day Watch","Basketball","Football","Soccer","Baseball","Boxing/MMA","Golf","Sports Bars","Fan Zones"]},
-  {id:"culture",name:"Culture",icon:"\u{1F3A8}",color:"#C8A96E",subs:["Art Galleries","Museums","Pop-Ups","Film Screenings","Poetry","Comedy Shows","Theater","Fashion Shows"]},
-  {id:"wellness",name:"Wellness",icon:"\u{1F9D8}",color:"#90EE90",subs:["Spas","Yoga","Sound Baths","Meditation","Fitness","Recovery","Saunas"]},
-  {id:"adventure",name:"Adventure",icon:"\u{1F30A}",color:"#D4A853",subs:["Outdoor Activities","Hiking","Beach Days","Water Sports","Escape Rooms","Go Karts","Axe Throwing"]},
-  {id:"shopping",name:"Shopping",icon:"\u{1F6CD}\uFE0F",color:"#FFD700",subs:["Boutiques","Vintage","Sneaker Shops","Markets","Luxury","Streetwear","Thrift"]},
-  {id:"movies",name:"Movies & Shows",icon:"\u{1F3AC}",color:"#FF69B4",subs:["Movie Theaters","Drive-Ins","Film Festivals","Stand-Up","Improv","Drag Shows"]},
-  {id:"gaming",name:"Gaming",icon:"\u{1F3AE}",color:"#00CED1",subs:["Arcades","VR","Board Game Cafes","Bowling","Mini Golf","Laser Tag","Trivia"]},
-  {id:"drinks",name:"Drinks",icon:"\u{1F378}",color:"#C39BD3",subs:["Cocktail Bars","Breweries","Wine Tastings","Coffee Shops","Juice Bars","Happy Hours"]},
-  {id:"exclusive",name:"Exclusive",icon:"\u2726",color:"#D4A853",subs:["Members Only","Private Events","Galas","Invite-Only","VIP","Yacht Parties"]},
-  {id:"family",name:"Family",icon:"\u{1F468}\u200D\u{1F469}\u200D\u{1F467}",color:"#BFA97A",subs:["Kid-Friendly","Amusement Parks","Zoos","Aquariums","Science Centers"]},
-  {id:"dating",name:"Date Night",icon:"\u{1F4AB}",color:"#FF6B6B",subs:["Romantic Dinner","Sunset Spots","Couples Activities","Wine & Paint","Dancing","Scenic Views"]},
-  {id:"cosmetic",name:"Cosmetic",icon:"\u{1F484}",color:"#FF69B4",subs:["Med Spas","Lash Studios","Hair Salons","Nail Bars","Skincare","Barbershops","Tattoo Studios"]},
-  {id:"hookah",name:"Hookah",icon:"\u{1F4A8}",color:"#D4A853",subs:["Premium Lounges","Late Night","Rooftop Hookah","Mediterranean","Fruit Bowls","BYOB","Hookah Bars","VIP Hookah"]}
+  {id:"dining",name:"Dining",icon:"\u{1F37D}\uFE0F",color:"#FFB86B",subs:["Casual Dining","Brunch","Late Night / 24-Hour Eats","Food Trucks","Quick Bites / Fast Casual","Food Halls","Fine Dining"]},
+  {id:"nightlife",name:"Nightlife",icon:"\u{1F319}",color:"#D4A853",subs:["Nightclubs","Cocktail Bars","Rooftop Dining","Hookah Lounges","Lounges","Jazz Bars","Speakeasies","Day Parties","Pool Parties"]},
+  {id:"music",name:"Live Music",icon:"\u{1F3B5}",color:"#FF6B6B",subs:["Jazz Bars","Comedy Clubs","Nightclubs","Luxury Theaters","Karaoke Bars","Arcades & Gaming"]},
+  {id:"sports",name:"Sports",icon:"\u{1F3DF}\uFE0F",color:"#6BFFB8",subs:["Sports Bars"]},
+  {id:"culture",name:"Culture",icon:"\u{1F3A8}",color:"#C8A96E",subs:["Comedy Clubs","Art Galleries","Arcades & Gaming","History Museums","Luxury Theaters","Science & Tech Museums","Historical Sites","Theater","Interactive Exhibits","Escape Rooms"]},
+  {id:"wellness",name:"Wellness",icon:"\u{1F9D8}",color:"#90EE90",subs:["Day Spas","Performance Gyms","Dance Studios","Yoga Studios","Meditation","Cryotherapy"]},
+  {id:"adventure",name:"Adventure",icon:"\u{1F30A}",color:"#D4A853",subs:["Hiking","Attractions","Farmers Markets","City Parks","Botanical Gardens","Zoos & Aquariums","Cycling"]},
+  {id:"shopping",name:"Shopping",icon:"\u{1F6CD}\uFE0F",color:"#FFD700",subs:["Boutiques","Vintage Shops","Luxury Stores","Sneakers","Flea Markets","Jewelry"]},
+  {id:"drinks",name:"Drinks",icon:"\u{1F378}",color:"#C39BD3",subs:["Nightclubs","Coffee Shops","Cocktail Bars","Rooftop Dining","Hookah Lounges","Lounges","Sports Bars","Wine Bars"]},
+  {id:"exclusive",name:"Exclusive",icon:"\u2726",color:"#D4A853",subs:["Event Venues","Speakeasies","Seasonal Festivals","Rooftops","Corporate Events"]},
+  {id:"family",name:"Family",icon:"\u{1F468}\u200D\u{1F469}\u200D\u{1F467}",color:"#BFA97A",subs:["Hiking","City Parks","Farmers Markets","Attractions","Botanical Gardens","Zoos & Aquariums"]},
+  {id:"dating",name:"Date Night",icon:"\u{1F4AB}",color:"#FF6B6B",subs:["Coffee Shops","Rooftop Dining","Hookah Lounges","Lounges","Jazz Bars","Speakeasies","Wine Bars"]},
+  {id:"cosmetic",name:"Cosmetic",icon:"\u{1F484}",color:"#FF69B4",subs:["Day Spas","Facials","Grooming","Nails","Hair"]},
+  {id:"hookah",name:"Hookah",icon:"\u{1F4A8}",color:"#D4A853",subs:["Hookah Lounges"]}
 ];
 
 // CHANGE #5: Vibe browse — Gentleman's Club REMOVED
@@ -1563,14 +1561,15 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             })()}
           </div>
 
-          {/* ═══ Teams — small, all logos on one line ═══ */}
+          {/* ═══ Teams — spread out logos ═══ */}
           <div style={{padding:"0 16px",marginBottom:12}}>
-            <div style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",borderRadius:10,background:"rgba(107,255,184,0.06)",border:"1px solid rgba(107,255,184,0.15)"}}>
-              <span style={{fontSize:10,letterSpacing:1.5,color:"#6BFFB8",fontWeight:700,whiteSpace:"nowrap"}}>TEAMS</span>
-              <div style={{display:"flex",gap:6,flex:1,justifyContent:"center"}}>
+            <div style={{display:"flex",alignItems:"center",gap:0,padding:"10px 16px",borderRadius:10,background:"rgba(107,255,184,0.06)",border:"1px solid rgba(107,255,184,0.15)"}}>
+              <span style={{fontSize:9,letterSpacing:1.5,color:"#6BFFB8",fontWeight:700,whiteSpace:"nowrap",marginRight:12}}>TEAMS</span>
+              <div style={{display:"flex",flex:1,justifyContent:"space-between"}}>
                 {(city.teams||[]).map(t=>(
-                  <button key={t.n} onClick={()=>setTeamSheet(t)} style={{background:"none",border:"none",cursor:"pointer",padding:0}}>
-                    <img src={t.logo} alt={t.n} style={{width:28,height:28,objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none"}}/>
+                  <button key={t.n} onClick={()=>setTeamSheet(t)} style={{background:"none",border:"none",cursor:"pointer",padding:"0 4px",display:"flex",flexDirection:"column",alignItems:"center",gap:3}}>
+                    <img src={t.logo} alt={t.n} style={{width:30,height:30,objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none"}}/>
+                    <span style={{fontSize:7,color:"rgba(255,255,255,0.5)",fontWeight:600,whiteSpace:"nowrap"}}>{t.n.split(" ").pop()}</span>
                   </button>
                 ))}
               </div>
@@ -1608,48 +1607,26 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             </>);
           })()}
 
-          <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
-
-          {/* ═══ TRENDING — auto-scroll carousel ═══ */}
-          {(()=>{
-            const trendPool=[...upcoming].sort((a,b)=>{
-              const aImg=a.image_url?0:1;const bImg=b.image_url?0:1;
-              if(aImg!==bImg)return aImg-bImg;
-              return(a.display_priority||50)-(b.display_priority||50);
-            });
-            const trendItems=mark(trendPool,8);
-            if(trendItems.length===0)return null;
-            return(<>
-              <SectionHead t="TRENDING" icon={"\u{1F525}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
-              <div style={{display:"flex",gap:12,overflowX:"auto",padding:"0 16px",marginBottom:16,scrollSnapType:"x mandatory",scrollbarWidth:"none"}}>
-                {trendItems.map(e=>{const g=gt[e.brand]?.c||C.gold;return(
-                  <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,flexShrink:0,width:200,padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:14,scrollSnapAlign:"start",border:"1px solid "+g+"20"}}>
-                    <div style={{height:120,position:"relative",overflow:"hidden"}}>
-                      <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
-                      <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 65%,rgba(6,6,12,0.5) 100%)"}}/>
-                      <div style={{position:"absolute",top:8,right:8,background:"rgba(0,0,0,0.5)",backdropFilter:"blur(4px)",borderRadius:6,padding:"3px 8px",fontSize:9,color:g,fontWeight:700,border:"1px solid "+g+"30"}}>{e.brand}</div>
-                      <div style={{position:"absolute",bottom:8,left:10,right:10,textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>
-                        <div style={{fontSize:13,fontWeight:700,color:C.text,lineHeight:1.2}}>{e.title}</div>
-                        <div style={{fontSize:10,color:"#FFFFFF",marginTop:3}}>{e.date?new Date(e.date+"T12:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"}):""}{" \u00B7 "}{e.time||"TBA"}</div>
-                      </div>
-                    </div>
-                  </button>
-                );})}
+          {/* ═══ AD SPACE ═══ */}
+          <div style={{padding:"0 16px",marginBottom:16}}>
+            <div style={{borderRadius:14,overflow:"hidden",position:"relative",border:`1px solid ${C.gold}20`,background:"linear-gradient(135deg,rgba(212,168,83,0.08),rgba(6,6,12,0.5))"}}>
+              <div style={{padding:"20px",textAlign:"center"}}>
+                <div style={{fontSize:9,letterSpacing:3,color:C.gold,fontWeight:700,marginBottom:6}}>SPONSORED</div>
+                <div style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:F.s,marginBottom:4}}>Advertise with Good Times</div>
+                <div style={{fontSize:11,color:C.textSec,marginBottom:12}}>Reach Atlanta's nightlife audience</div>
+                <button style={{...V(true),padding:"10px 24px",fontSize:12}}>Learn More</button>
               </div>
-            </>);
-          })()}
-
-          <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
+            </div>
+          </div>
 
           {/* ═══ WEEKLY NIGHTLIFE — actual recurring weekly parties ═══ */}
           {(()=>{
             const nlPool=cityEvents.filter(e=>e.source==="weekly_party"||e.source==="happening");
-            // Sort by priority (higher score = lower number = shows first)
             const sorted=nlPool.sort((a,b)=>(a.display_priority||50)-(b.display_priority||50));
             const nlItems=mark(sorted,8);
             if(nlItems.length===0)return null;
             return(<>
-              <SectionHead t="WEEKLY NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
+              <SectionHead t="WEEKLY NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>{setExploreSheet&&setExploreSheet(Vu.find(c=>c.id==="nightlife"));navigate("explore")}}}/>
               <div style={{padding:"0 16px",marginBottom:16}}>
                 <EventGrid items={nlItems} onSelect={e=>{setDetail(e);navigate("detail")}} max={8}/>
               </div>
@@ -2023,9 +2000,15 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
               </button>
             ))}
           </div>
-          <SponsorBanner style={{marginBottom:24}}/>
-          <SectionHead t="UPCOMING EXPERIENCES" icon={"\u{1F51C}"} color={C.a3}/>
-          <EventGrid items={upcoming} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
+          {/* Ad Space instead of HugLife events */}
+          <div style={{borderRadius:14,overflow:"hidden",position:"relative",border:`1px solid ${C.gold}20`,background:"linear-gradient(135deg,rgba(212,168,83,0.08),rgba(6,6,12,0.5))",marginTop:8}}>
+            <div style={{padding:"20px",textAlign:"center"}}>
+              <div style={{fontSize:9,letterSpacing:3,color:C.gold,fontWeight:700,marginBottom:6}}>SPONSORED</div>
+              <div style={{fontSize:16,fontWeight:700,color:C.text,fontFamily:F.s,marginBottom:4}}>Promote Your Event</div>
+              <div style={{fontSize:11,color:C.textSec,marginBottom:12}}>Get featured in Good Times</div>
+              <button style={{...V(true),padding:"10px 24px",fontSize:12}}>Learn More</button>
+            </div>
+          </div>
         </div>
         {/* CHANGE #7: Explore category sheet with subcategory drilldown */}
         {exploreSheet&&!subCatView&&(
@@ -2048,26 +2031,22 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                     setVenueLoading(true);setVenueResults([]);
                     const cityKeyMap={"Atlanta":"atlanta","Houston":"houston","Los Angeles":"los_angeles","Charlotte":"charlotte","Washington":"washington_dc","Miami":"miami","Las Vegas":"las_vegas","New York":"new_york","Dallas":"dallas","Phoenix":"phoenix","Scottsdale":"scottsdale"};
                     const ck=cityKeyMap[city.name]||city.name.toLowerCase().replace(/\s+/g,'_');
-                    const subMap={"Clubs":"nightclub","Lounges":"lounge","Rooftops":"rooftop","Hookah":"hookah","Day Parties":"day_party","Pool Parties":"pool_party","Afterhours":"nightclub","Speakeasies":"speakeasy","Dive Bars":"bar","Wine Bars":"wine_bar","Concerts":"concert","Jazz":"jazz","R&B/Soul":"live_music","Hip Hop":"live_music","DJ Sets":"nightclub","Festivals":"festival","Karaoke":"karaoke","Premium Lounges":"hookah","Rooftop Hookah":"hookah","Sports Bars":"sports_bar"};
-                    const subKey=subMap[sub]||sub.toLowerCase().replace(/\s+/g,"_");
+                    const subMap={"Nightclubs":"nightclub","Cocktail Bars":"cocktail_bar","Rooftop Dining":"rooftop","Hookah Lounges":"hookah","Lounges":"lounge","Jazz Bars":"jazz","Speakeasies":"speakeasy","Day Parties":"day_party","Pool Parties":"pool_party","Sports Bars":"sports_bar","Comedy Clubs":"comedy","Art Galleries":"culture","Arcades & Gaming":"entertainment","History Museums":"culture","Luxury Theaters":"event_venue","Science & Tech Museums":"culture","Casual Dining":"restaurant","Brunch":"brunch","Late Night / 24-Hour Eats":"restaurant","Food Trucks":"food_truck","Quick Bites / Fast Casual":"restaurant","Food Halls":"food_hall","Fine Dining":"restaurant","Coffee Shops":"coffee","Wine Bars":"wine_bar","Day Spas":"spa","Performance Gyms":"gym","Dance Studios":"fitness","Yoga Studios":"fitness","Boutiques":"shopping","Vintage Shops":"shopping","Luxury Stores":"shopping","Event Venues":"event_venue","Hiking":"outdoor_adventures","City Parks":"outdoor_adventures","Farmers Markets":"outdoor_adventures","Attractions":"entertainment","Botanical Gardens":"outdoor_adventures","Zoos & Aquariums":"outdoor_adventures"};
+                    // Use subcategory directly — match against gt_venues.subcategory
+                    const subKey=sub;
                     const tabId=exploreSheet.id;
                     const sel="id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key,tab_tags,search_tags";
-                    // PRIMARY: Use tab_tags to source venues for this tab + subcategory filter
-                    let q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&tab_tags=cs.{${tabId}}&or=(category_key.eq.${subKey},subcategory.ilike.*${subKey}*,search_tags.cs.{${subKey}})&order=google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
+                    // PRIMARY: Match subcategory exactly within this tab
+                    let q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&tab_tags=cs.{${tabId}}&subcategory=eq.${encodeURIComponent(subKey)}&order=google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
                     let results=await khgF(q);
-                    // FALLBACK 1: Tab tag only (broader — all venues tagged for this tab in this city)
+                    // FALLBACK 1: Broader — subcategory ilike match
+                    if(results.length===0){
+                      q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&subcategory=ilike.*${encodeURIComponent(subKey.split('/')[0].trim())}*&order=google_rating.desc.nullslast&limit=20`;
+                      results=await khgF(q);
+                    }
+                    // FALLBACK 2: Tab tag only (all venues in this category)
                     if(results.length===0){
                       q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&tab_tags=cs.{${tabId}}&order=google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
-                      results=await khgF(q);
-                    }
-                    // FALLBACK 2: Search tags (keyword match across all fields)
-                    if(results.length===0){
-                      q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&search_tags=cs.{${subKey}}&order=google_rating.desc.nullslast&limit=20`;
-                      results=await khgF(q);
-                    }
-                    // FALLBACK 3: All cities for this tab
-                    if(results.length===0){
-                      q=`gt_venues?select=${sel},city_key&status=eq.active&tab_tags=cs.{${tabId}}&order=google_rating.desc.nullslast&limit=15`;
                       results=await khgF(q);
                     }
                     setVenueResults(results);setVenueLoading(false);
