@@ -2353,9 +2353,9 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             <button key={n.id} onClick={()=>{tapHaptic();navigate(n.id,n.id)}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"2px 0",minWidth:0,flex:1,position:"relative"}}>
               {active&&<div style={{position:"absolute",top:-5,width:20,height:2,borderRadius:99,background:C.gold,boxShadow:`0 0 8px ${C.gold}80`}}/>}
               <div style={{width:36,height:36,borderRadius:12,background:active?`linear-gradient(135deg,rgba(212,168,83,0.2),rgba(212,168,83,0.08))`:"rgba(212,168,83,0.04)",border:active?`1px solid ${C.gold}40`:"1px solid rgba(212,168,83,0.12)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.25s",boxShadow:active?"0 0 12px rgba(212,168,83,0.2)":"none"}}>
-                <span style={{fontSize:18,filter:active?"brightness(1.3) saturate(1.3)":"brightness(0.8) saturate(0.6)",transition:"all 0.25s"}}>{n.emoji}</span>
+                <span style={{fontSize:18,filter:active?"brightness(1.3) saturate(1.3)":"brightness(1.0) saturate(0.8)",transition:"all 0.25s"}}>{n.emoji}</span>
               </div>
-              <span style={{fontSize:8,letterSpacing:.3,color:active?C.gold:"rgba(255,255,255,0.4)",fontWeight:active?700:500,fontFamily:F.f,whiteSpace:"nowrap"}}>{n.l}</span>
+              <span style={{fontSize:8,letterSpacing:.3,color:active?C.gold:"rgba(245,240,232,0.7)",fontWeight:active?700:500,fontFamily:F.f,whiteSpace:"nowrap"}}>{n.l}</span>
             </button>
           );
         })}

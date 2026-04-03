@@ -135,7 +135,7 @@ function gv(id){return document.getElementById(id)?.value?.trim()||''}
 async function load(){
   [S,V,D,K]=await Promise.all([
     api('gt_shows?select=*&show_date=gte.'+td+'&status=in.(confirmed,tentative)&order=show_date.asc,display_priority.asc&limit=300'),
-    api('gt_venues?select=id,name,category_key,subcategory,neighborhood,hero_image,city_key,google_rating,tonight_eligible,tonight_label,instagram_handle,address,short_desc,status&city_key=eq.atlanta&status=eq.active&order=google_rating.desc.nullslast&limit=200'),
+    api('gt_venues?select=id,name,category_key,subcategory,neighborhood,hero_image,city_key,google_rating,tonight_eligible,tonight_label,instagram_handle,address,short_desc,status,phone,website&city_key=eq.atlanta&status=eq.active&order=google_rating.desc.nullslast&limit=200'),
     api('gt_daily_events?select=*&is_verified=eq.true&order=relevance_score.desc&limit=200'),
     api('eventbrite_events?select=*&is_active=eq.true&event_date=gte.'+td+'&order=display_priority.asc&limit=100')
   ]);
@@ -190,7 +190,7 @@ function tblEvents(){
 
 function tblVenues(){
   const m=document.getElementById('M');
-  m.innerHTML='<div class="page-title">Venues</div><div class="page-sub">'+V.length+' Atlanta venues · Click any image to preview</div><div class="sb"><input placeholder="Search..." oninput="fTbl(this.value)"><button class="btn bg bs" onclick="page(\'add-venue\')">+ Add</button></div><div style="overflow-x:auto"><table id="tbl"><thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Neighborhood</th><th>Rating</th><th>Tonight?</th><th></th></tr></thead><tbody>'+V.map(v=>'<tr data-s="'+(v.name||'').toLowerCase()+'">'+imgCell(v.hero_image,v.name)+'<td style="font-weight:600">'+(v.name||'-')+'</td><td>'+(v.category_key||'-')+'</td><td>'+(v.neighborhood||'-')+'</td><td style="font-family:\'DM Mono\'">'+(v.google_rating||'-')+'</td><td>'+(v.tonight_eligible?(v.tonight_label||'Yes'):'—')+'</td><td class="acts"><button class="btn bo bs" onclick="editVen(\''+v.id+'\')">Edit</button></td></tr>').join('')+'</tbody></table></div>';
+  m.innerHTML='<div class="page-title">Venues</div><div class="page-sub">'+V.length+' Atlanta venues · Click any image to preview</div><div class="sb"><input placeholder="Search..." oninput="fTbl(this.value)"><button class="btn bg bs" onclick="page(\'add-venue\')">+ Add</button></div><div style="overflow-x:auto"><table id="tbl"><thead><tr><th>Image</th><th>Name</th><th>Category</th><th>Hood</th><th>IG</th><th>Phone</th><th>Rating</th><th>Tonight?</th><th></th></tr></thead><tbody>'+V.map(v=>'<tr data-s="'+(v.name||'').toLowerCase()+'">'+imgCell(v.hero_image,v.name)+'<td style="font-weight:600">'+(v.name||'-')+'</td><td>'+(v.category_key||'-')+'</td><td>'+(v.neighborhood||'-')+'</td><td style="color:var(--gold);font-size:10px">'+(v.instagram_handle?'@'+v.instagram_handle:'-')+'</td><td style="font-size:10px">'+(v.phone||'-')+'</td><td style="font-family:\'DM Mono\'">'+(v.google_rating||'-')+'</td><td>'+(v.tonight_eligible?(v.tonight_label||'Yes'):'—')+'</td><td class="acts"><button class="btn bo bs" onclick="editVen(\''+v.id+'\')">Edit</button></td></tr>').join('')+'</tbody></table></div>';
 }
 
 function tblDaily(){
