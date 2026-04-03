@@ -217,16 +217,16 @@ function GoodTimesOnboarding({onComplete}){
 
   // Welcome
   if(step==='welcome')return(
-    <div style={{minHeight:'100vh',position:'relative',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',padding:24,fontFamily:ff,color:'#fff',textAlign:'center',overflow:'hidden'}}>
-      <div style={{position:'absolute',inset:0,backgroundImage:`url(${GT_BG_BASE}/gt-bg-vip-arrival.webp)`,backgroundSize:'cover',backgroundPosition:'center',animation:'gtSlowZoom 12s ease-in-out infinite alternate'}}/>
-      <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(6,6,12,0.45) 0%,rgba(6,6,12,0.7) 50%,rgba(6,6,12,0.95) 100%)'}}/>
-      <div style={{position:'relative',zIndex:2}}>
-        <div style={{width:80,height:1,background:`linear-gradient(90deg,transparent,${accentGold},transparent)`,marginBottom:28,margin:'0 auto 28px'}}/>
-        <img src="/good-times-logo.png" alt="Good Times" style={{height:48,objectFit:'contain',marginBottom:16}} onError={e=>{e.currentTarget.style.display='none'}}/>
-        <h1 style={{fontFamily:"'Cormorant Garamond','Playfair Display',Georgia,serif",fontSize:42,fontWeight:300,marginBottom:8,color:'#F5F0E8',letterSpacing:'0.1em',textTransform:'uppercase'}}>Good Times</h1>
-        <p style={{fontSize:14,color:'rgba(245,240,232,0.5)',marginBottom:40,maxWidth:300,letterSpacing:'0.05em'}}>Your city. Your vibe. Your night. Curated for you.</p>
-        <button onClick={()=>setStep('auth')} style={{background:`linear-gradient(135deg,${accentGold},#B8942F)`,color:'#0A0A0F',border:'none',borderRadius:14,padding:'16px 48px',fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:ff,letterSpacing:0.5,marginBottom:16,width:'100%',maxWidth:300}}>Get Started</button>
-        <button onClick={()=>{setMode('signin');setStep('auth')}} style={{background:'transparent',color:accentGold,border:`1px solid ${accentGold}40`,borderRadius:14,padding:'14px 48px',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:ff,width:'100%',maxWidth:300}}>I Already Have an Account</button>
+    <div style={{minHeight:'100vh',position:'relative',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'flex-end',padding:'24px 24px 60px',fontFamily:ff,color:'#fff',textAlign:'center',overflow:'hidden',background:'#06060C'}}>
+      <video autoPlay muted loop playsInline style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover'}} src={`${GT_BG_BASE}/gt-homescreen-video.mp4`}/>
+      <div style={{position:'absolute',inset:0,background:'linear-gradient(180deg,rgba(6,6,12,0.1) 0%,rgba(6,6,12,0.05) 30%,rgba(6,6,12,0.5) 60%,rgba(6,6,12,0.95) 85%,rgba(6,6,12,1) 100%)'}}/>
+      <div style={{position:'absolute',inset:0,opacity:0.03,pointerEvents:'none',backgroundImage:`url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,backgroundRepeat:'repeat'}}/>
+      <div style={{position:'relative',zIndex:2,animation:'gtFadeIn 1s ease forwards',animationDelay:'0.3s',opacity:0}}>
+        <img src="/good-times-logo.png" alt="Good Times" style={{height:56,objectFit:'contain',marginBottom:20}} onError={e=>{e.currentTarget.style.display='none'}}/>
+        <h1 style={{fontFamily:"'Cormorant Garamond','Playfair Display',Georgia,serif",fontSize:'clamp(2.2rem,10vw,3.2rem)',fontWeight:300,marginBottom:10,color:'#F5F0E8',letterSpacing:'0.15em',textTransform:'uppercase',textShadow:'0 2px 30px rgba(0,0,0,0.5)'}}>Good Times</h1>
+        <p style={{fontSize:13,color:'rgba(245,240,232,0.55)',marginBottom:40,maxWidth:280,letterSpacing:'0.08em',lineHeight:1.6,margin:'0 auto 40px'}}>Your city. Your vibe. Your night.<br/>Curated for you.</p>
+        <button onClick={()=>setStep('auth')} style={{background:`linear-gradient(135deg,${accentGold},#B8942F)`,color:'#0A0A0F',border:'none',borderRadius:14,padding:'16px 48px',fontSize:16,fontWeight:700,cursor:'pointer',fontFamily:ff,letterSpacing:0.5,marginBottom:14,width:'100%',maxWidth:300,boxShadow:'0 4px 24px rgba(212,168,83,0.3)'}}>Get Started</button>
+        <button onClick={()=>{setMode('signin');setStep('auth')}} style={{background:'rgba(245,240,232,0.06)',color:accentGold,border:`1px solid ${accentGold}35`,borderRadius:14,padding:'14px 48px',fontSize:14,fontWeight:600,cursor:'pointer',fontFamily:ff,width:'100%',maxWidth:300,backdropFilter:'blur(10px)'}}>I Already Have an Account</button>
       </div>
     </div>
   );
