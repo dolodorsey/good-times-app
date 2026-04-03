@@ -457,7 +457,7 @@ const Ne={
   // Browse images — DIFFERENT from explore
   br:{jki:"https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=400",nl:"https://images.unsplash.com/photo-1545128485-c400e7702796?w=400",lm:"https://images.unsplash.com/photo-1501612780327-45045538702b?w=400",sp:"https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400",ms:"https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400",gm:"https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400"},
   city:{
-    Atlanta:{day:`${GT_BG_BASE}/gt-bg-courtyard-evening.webp`,night:`${GT_BG_BASE}/gt-bg-panoramic-skyline.webp`},
+    Atlanta:{day:`${GT_BG_BASE}/gt-homescreen-atlanta.webp`,night:`${GT_BG_BASE}/gt-homescreen-atlanta.webp`},
     Houston:{day:"https://images.unsplash.com/photo-1530089711124-9ca31fb9e863?w=900",night:"https://images.unsplash.com/photo-1548260465-1adda34ebbe7?w=900"},
     "Los Angeles":{day:"https://images.unsplash.com/photo-1534190760961-74e8c1c5c3da?w=900",night:"https://images.unsplash.com/photo-1515896769750-31548aa180ed?w=900"},
     Charlotte:{day:"https://images.unsplash.com/photo-1569025690938-a00729c9e1f9?w=900",night:"https://images.unsplash.com/photo-1605885996758-49b3e33c612d?w=900"},
@@ -1322,12 +1322,9 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
 
   const CityBG=(
     <div style={{position:"relative",zIndex:0,overflow:"hidden"}}>
-      <div style={{height:200,position:"relative",overflow:"hidden"}}>
-        <img src={skylineUrl} alt={city.name+" skyline"} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 40%",transition:"opacity 0.8s"}}/>
-        <div style={{position:"absolute",inset:0,background:isNight
-          ?"linear-gradient(180deg,rgba(6,6,12,0.3) 0%,rgba(6,6,12,0.1) 40%,rgba(6,6,12,0.7) 80%,rgba(6,6,12,1) 100%)"
-          :"linear-gradient(180deg,rgba(6,6,12,0.4) 0%,rgba(6,6,12,0.05) 40%,rgba(6,6,12,0.6) 80%,rgba(6,6,12,1) 100%)"
-        }}/>
+      <div style={{height:240,position:"relative",overflow:"hidden"}}>
+        <img src={skylineUrl} alt={city.name+" skyline"} style={{width:"100%",height:"100%",objectFit:"cover",objectPosition:"center 30%",transition:"opacity 0.8s"}}/>
+        <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0.15) 0%,rgba(6,6,12,0.05) 35%,rgba(6,6,12,0.5) 75%,rgba(6,6,12,1) 100%)"}}/>
         {Header}
         <div style={{position:"absolute",top:12,right:16,display:"flex",alignItems:"center",gap:6,padding:"4px 10px",borderRadius:20,background:"rgba(0,0,0,0.4)",backdropFilter:"blur(8px)"}}>
           <div style={{width:6,height:6,borderRadius:99,background:isNight?"#D4A853":"#FFB86B",boxShadow:isNight?"0 0 8px #D4A853":"0 0 8px #FFB86B"}}/>
