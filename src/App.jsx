@@ -661,6 +661,7 @@ const SponsorBanner=({style:st})=>{
 const EventTile=({e:S,onClick:A,wide})=>{
   const g=gt[S.brand]?.c||C.gold;
   const dt=S.date?new Date(S.date+"T12:00:00"):null;
+  const isTonight=S.date===new Date().toISOString().split("T")[0];
   return(
     <button onClick={A} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:12,position:"relative",gridColumn:wide?"1 / -1":undefined,border:`1px solid ${g}25`,boxShadow:`0 2px 12px rgba(0,0,0,0.3), inset 0 0 0 1px ${g}30`}}>
       <div style={{height:wide?130:90,position:"relative",overflow:"hidden",background:`linear-gradient(135deg,${g}20,rgba(6,6,12,0.8))`}}>
@@ -670,6 +671,7 @@ const EventTile=({e:S,onClick:A,wide})=>{
           <div style={{width:5,height:5,borderRadius:99,background:g,boxShadow:`0 0 6px ${g}`}}/>
           <span style={{fontSize:9,color:g,fontWeight:700,textShadow:"0 1px 3px rgba(0,0,0,0.8)"}}>{S.brand}</span>
         </div>
+        {isTonight&&<div style={{position:"absolute",top:6,right:6,fontSize:8,fontWeight:700,color:"#F5F0E8",background:"rgba(212,168,83,0.7)",padding:"2px 6px",borderRadius:4}}>{new Date().toLocaleDateString("en-US",{month:"numeric",day:"numeric"})}</div>}
         <div style={{position:"absolute",bottom:6,left:8,right:8,textShadow:"0 1px 4px rgba(0,0,0,0.8),0 0 12px rgba(0,0,0,0.5)"}}>
           <div style={{fontSize:12,fontWeight:700,color:C.text,lineHeight:1.25,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",textShadow:"0 1px 4px rgba(0,0,0,0.7)"}}>{S.title}</div>
           {dt&&<div style={{fontSize:9,color:"#FFFFFF",marginTop:2}}>{dt.toLocaleDateString("en-US",{month:"short",day:"numeric"})}{" \u00B7 "}{S.time||"TBA"}</div>}
@@ -957,7 +959,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
 
       // === MAP TIER 2a: In-house shows (concerts, comedy, plays) ===
       const CITY_KEY_MAP={atlanta:"Atlanta",houston:"Houston",los_angeles:"Los Angeles",charlotte:"Charlotte",washington_dc:"Washington",miami:"Miami",las_vegas:"Las Vegas",new_york:"New York",dallas:"Dallas",phoenix:"Phoenix",scottsdale:"Scottsdale"};
-      const TYPE_LABELS={concert:"CONCERT",comedy:"COMEDY",play:"THEATER",musical:"THEATER",festival:"FESTIVAL",sports:"SPORTS",special_event:"SPECIAL EVENT",activation:"ACTIVATION"};
+      const TYPE_LABELS={concert:"CONCERT",comedy:"COMEDY",play:"THEATER",musical:"THEATER",festival:"FESTIVAL",sports:"SPORTS",special_event:"SPECIAL EVENT",activation:"ACTIVATION",nightlife:"NIGHTLIFE",brunch:"BRUNCH"};
       const showsMapped=shows.map(e=>({
         id:"show-"+e.id,
         title:e.event_name,
@@ -1147,15 +1149,11 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     sports:["sports","sports_bar","game_day"]
   };
   const realmEvents=useMemo(()=>{
-    let sorted=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event"&&e.source!=="tonight_venue"&&e.source!=="happening").sort((a,b)=>{
+    let sorted=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event"&&e.source!=="tonight_venue"&&e.source!=="happening"&&e.source!=="venue").sort((a,b)=>{
       const pa=a.display_priority||50, pb=b.display_priority||50;
       if(pa!==pb)return pa-pb;
       return (a.date||"").localeCompare(b.date||"");
     });
-    if(nowCat!=="all"){
-      const cats=CAT_FILTER[nowCat]||[];
-      sorted=sorted.filter(e=>cats.some(c=>e.category?.includes(c)||e.brand?.toLowerCase().includes(c)||e.event_type?.includes(c)));
-    }
     if(realm==="today"){
       return sorted.filter(e=>e.date===todayStr);
     }
@@ -1170,7 +1168,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     const weekEnd=new Date();weekEnd.setDate(weekEnd.getDate()+(7-weekEnd.getDay()));
     const weekEndStr=weekEnd.toISOString().split("T")[0];
     return sorted.filter(e=>e.date>=todayStr&&e.date<=weekEndStr);
-  },[cityEvents,realm,todayStr,nowCat]);
+  },[cityEvents,realm,todayStr]);
 
   // Upcoming — CONCIERGE: best content from ALL sources interleaved
   // KHG events (source: huglife) ALWAYS shown first, then sorted by image/priority/date
@@ -1417,21 +1415,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
               {realm==="today"?"Today":"Tonight"} in {city.name} {"\u00B7"} {realmEvents.length>0?`${realmEvents.length} experiences`:"Check this week"}
             </div>
           </div>
-          {/* CHANGE #1: Realm tabs */}
-          <div style={{padding:"0 16px",marginBottom:12}}>
-            <div style={{display:"flex",gap:0,background:"rgba(212,168,83,0.12)",borderRadius:10,padding:3,border:"1px solid rgba(212,168,83,0.15)"}}>
-              {[{id:"today",l:"Today"},{id:"tonight",l:"Tonight"},{id:"week",l:"This Week"}].map(r=>(
-                <button key={r.id} onClick={()=>setRealm(r.id)} style={{flex:1,padding:"9px 0",borderRadius:8,fontSize:13,fontWeight:realm===r.id?700:500,background:realm===r.id?`linear-gradient(135deg,${C.gold},#B8942F)`:"transparent",color:realm===r.id?"#0A0A0F":"#FFFFFF",border:"none",cursor:"pointer",fontFamily:F.f,letterSpacing:.3,transition:"all 0.25s ease"}}>{r.l}</button>
-              ))}
-            </div>
-          </div>
-          {/* Category chips */}
-          <div style={{padding:"0 16px",display:"flex",gap:6,overflowX:"auto",marginBottom:12}}>
-            {[{id:"all",l:"All",c:C.gold},{id:"eat",l:"\u{1F37D}\uFE0F Eat",c:"#FFB86B"},{id:"drink",l:"\u{1F378} Drink",c:"#C39BD3"},{id:"hookah",l:"\u{1F4A8} Hookah",c:"#B86BFF"},{id:"music",l:"\u{1F3B5} Music",c:"#FF6B6B"},{id:"goout",l:"\u{1F319} Go Out",c:"#B86BFF"},{id:"sports",l:"\u{1F3DF}\uFE0F Sports",c:"#6BFFB8"}].map(ch=>(
-              <button key={ch.id} onClick={()=>setNowCat(nowCat===ch.id?"all":ch.id)} style={{...V(nowCat===ch.id),padding:"7px 14px",border:`1px solid ${ch.c}`,color:nowCat===ch.id?"#0A0A0F":ch.c,background:nowCat===ch.id?ch.c:"transparent",fontSize:12,fontWeight:600,whiteSpace:"nowrap",flexShrink:0,borderRadius:8}}>{ch.l}</button>
-            ))}
-          </div>
-          {/* ═══ REORGANIZED HOME — City Spotlight → Today/Tonight/Week → Sections ═══ */}
+          {/* ═══ REORGANIZED HOME ═══ */}
           {(()=>{
             const shownIds=new Set();
             const shownTitles=new Set();
@@ -1473,14 +1457,25 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
 
             return(<>
 
-          {/* ═══ SECTION 1: CITY SPOTLIGHT — always at top ═══ */}
+          {/* ═══ 1. CITY HIGHLIGHTS — Venues worth visiting (FIRST) ═══ */}
+          {(()=>{
+            const venueHighlights=cityEvents.filter(e=>e.source==="tonight_venue"||e.source==="venue").slice(0,6);
+            if(venueHighlights.length===0)return null;
+            return(<>
+              <SectionHead t="CITY HIGHLIGHTS" icon={"\u{2728}"} color={C.a4}/>
+              <div style={{padding:"0 16px",marginBottom:16}}>
+                <EventGrid items={venueHighlights} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
+              </div>
+            </>);
+          })()}
+
+          {/* ═══ 2. CITY SPOTLIGHT — Featured picks ═══ */}
           <div style={{padding:"0 16px",marginBottom:16}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
               <span style={{fontSize:14}}>{"\u2726"}</span>
               <span style={{fontSize:11,letterSpacing:2.5,color:C.gold,fontWeight:700}}>CITY SPOTLIGHT</span>
             </div>
-            {/* Featured Picks: REVEL SATURDAY + RnB WEDNESDAYS */}
-            {featuredPicks.map(e=>{const g=gt[e.brand]?.c||C.gold;return(
+            {featuredPicks.map(e=>(
               <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:16,marginBottom:12,position:"relative",border:"1px solid "+C.gold+"20",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
                 <div style={{height:140,position:"relative",overflow:"hidden"}}>
                   <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
@@ -1491,10 +1486,17 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                   </div>
                 </div>
               </button>
-            );})}
+            ))}
           </div>
 
-          {/* Realm content — uses realmEvents (filtered by tabs + chips) */}
+          {/* ═══ 3. TODAY / TONIGHT / THIS WEEK — tabs + content (2nd section) ═══ */}
+          <div style={{padding:"0 16px",marginBottom:12}}>
+            <div style={{display:"flex",gap:0,background:"rgba(212,168,83,0.12)",borderRadius:10,padding:3,border:"1px solid rgba(212,168,83,0.15)"}}>
+              {[{id:"today",l:"Today"},{id:"tonight",l:"Tonight"},{id:"week",l:"This Week"}].map(r=>(
+                <button key={r.id} onClick={()=>setRealm(r.id)} style={{flex:1,padding:"9px 0",borderRadius:8,fontSize:13,fontWeight:realm===r.id?700:500,background:realm===r.id?`linear-gradient(135deg,${C.gold},#B8942F)`:"transparent",color:realm===r.id?"#0A0A0F":"#FFFFFF",border:"none",cursor:"pointer",fontFamily:F.f,letterSpacing:.3,transition:"all 0.25s ease"}}>{r.l}</button>
+              ))}
+            </div>
+          </div>
           <div style={{padding:"0 16px",marginBottom:16}}>
             <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
               <div style={{width:7,height:7,borderRadius:99,background:"#FF6B6B",boxShadow:"0 0 10px #FF6B6B",animation:"pulse 1.5s ease-in-out infinite"}}/>
@@ -1509,18 +1511,18 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                   <div style={{fontSize:12,marginTop:8,color:C.gold}}>Check back soon or switch cities</div>
                 </div>
               );
-              // Featured shows (is_featured or display_priority <= 5) get hero cards
               const featured=mark(pool.filter(e=>e.is_featured||(e.display_priority&&e.display_priority<=5)),3);
               const rest=mark(pool.filter(e=>!featured.find(f=>f.id===e.id)),6);
+              const dateLabel=realm==="tonight"?new Date().toLocaleDateString("en-US",{month:"numeric",day:"numeric"}):"";
               return(<>
-                {/* Hero cards for featured events */}
                 {featured.map(e=>{const g=gt[e.brand]?.c||C.gold;return(
                   <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:16,marginBottom:10,position:"relative",border:"1px solid "+g+"25",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
                     <div style={{height:160,position:"relative",overflow:"hidden",background:`linear-gradient(135deg,${g}30,rgba(6,6,12,0.8))`}}>
                       <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy" onError={ev=>{ev.currentTarget.style.display='none'}}/>
                       <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 40%,rgba(6,6,12,0.8) 100%)"}}/>
-                      <div style={{position:"absolute",top:10,left:12}}>
+                      <div style={{position:"absolute",top:10,left:12,display:"flex",gap:6}}>
                         <span style={{fontSize:9,fontWeight:700,letterSpacing:1.5,color:g,textTransform:"uppercase",background:"rgba(6,6,12,0.7)",padding:"3px 8px",borderRadius:4}}>{e.brand}</span>
+                        {dateLabel&&<span style={{fontSize:9,fontWeight:700,color:"#F5F0E8",background:"rgba(212,168,83,0.6)",padding:"3px 8px",borderRadius:4}}>{dateLabel}</span>}
                       </div>
                       <div style={{position:"absolute",bottom:14,left:14,right:14,textShadow:"0 1px 6px rgba(0,0,0,0.9)"}}>
                         <div style={{fontSize:18,fontWeight:700,color:C.text,lineHeight:1.2,marginBottom:4}}>{e.title}</div>
@@ -1529,7 +1531,6 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                     </div>
                   </button>
                 );})}
-                {/* Grid + list for rest */}
                 {rest.length>0&&<EventGrid items={rest} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>}
                 {pool.length>9&&<button onClick={()=>navigate("calendar")} style={{...V(false),width:"100%",marginTop:10,padding:"10px",textAlign:"center",fontSize:12}}>See all {pool.length} {"\u2192"}</button>}
               </>);
@@ -1638,11 +1639,21 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             </>);
           })()}
 
-          {/* ═══ UPCOMING EVENTS — ALL upcoming, real ATL events ═══ */}
+          {/* ═══ UPCOMING EVENTS — ALL upcoming real ATL events including 404 Weekend ═══ */}
           {(()=>{
-            const evtPool=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event"&&e.source!=="sports_game"&&e.source!=="tonight_venue"&&e.source!=="happening");
-            const seen=new Set();const unique=evtPool.filter(e=>{const k=e.title;if(seen.has(k))return false;seen.add(k);return true;});
-            const evtItems=mark(unique,8);
+            // Use a FRESH pool — don't run through mark() dedup so upcoming always shows
+            const futurePool=cityEvents.filter(e=>{
+              if(!e.date||e.date<todayStr)return false;
+              if(e.date===todayStr)return false; // Today's events already show in Tonight section
+              if(e.source==="daily_event"||e.source==="sports_game"||e.source==="tonight_venue"||e.source==="happening"||e.source==="venue")return false;
+              return true;
+            }).sort((a,b)=>{
+              const pa=a.display_priority||50, pb=b.display_priority||50;
+              if(pa!==pb)return pa-pb;
+              return (a.date||"").localeCompare(b.date||"");
+            });
+            const seen2=new Set();const unique=futurePool.filter(e=>{const k=e.title;if(seen2.has(k))return false;seen2.add(k);return true;});
+            const evtItems=unique.slice(0,8);
             if(evtItems.length===0)return null;
             return(<>
               <SectionHead t="UPCOMING EVENTS" icon={"\u{1F4C5}"} color={C.gold} action={{l:"See All",fn:()=>navigate("calendar")}}/>
@@ -1669,21 +1680,6 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
               <SectionHead t="WEEKLY NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
               <div style={{padding:"0 16px",marginBottom:16}}>
                 <EventGrid items={nlItems} onSelect={e=>{setDetail(e);navigate("detail")}} max={8}/>
-              </div>
-            </>);
-          })()}
-
-          {/* ═══ CITY HIGHLIGHTS — Venues worth visiting (not events) ═══ */}
-          {(()=>{
-            const venueHighlights=cityEvents.filter(e=>{
-              if(e.source==="tonight_venue"||e.source==="venue")return true;
-              return false;
-            }).slice(0,6);
-            if(venueHighlights.length===0)return null;
-            return(<>
-              <SectionHead t="CITY HIGHLIGHTS" icon={"\u{2728}"} color={C.a4}/>
-              <div style={{padding:"0 16px",marginBottom:16}}>
-                <EventGrid items={venueHighlights} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
               </div>
             </>);
           })()}
