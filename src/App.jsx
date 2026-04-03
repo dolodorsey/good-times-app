@@ -1633,12 +1633,14 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             </>);
           })()}
 
-          {/* ═══ UPCOMING EVENTS — 404 Weekend + ALL future ATL events ═══ */}
+          {/* ═══ UPCOMING EVENTS — festivals, special events, nightlife (NO concerts) ═══ */}
           {(()=>{
             const futurePool=cityEvents.filter(e=>{
               if(!e.date||e.date<todayStr)return false;
               if(e.date===todayStr)return false;
-              if(e.source==="daily_event"||e.source==="sports_game"||e.source==="tonight_venue"||e.source==="happening"||e.source==="venue")return false;
+              if(e.source==="daily_event"||e.source==="sports_game"||e.source==="tonight_venue"||e.source==="happening"||e.source==="venue"||e.source==="weekly_party")return false;
+              // CONCERTS go in UPCOMING CONCERTS section, not here
+              if(e.type==="concert"||e.type==="comedy"||e.type==="musical"||e.type==="play")return false;
               return true;
             }).sort((a,b)=>{
               const pa=a.display_priority||50, pb=b.display_priority||50;
