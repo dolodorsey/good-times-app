@@ -764,10 +764,61 @@ const ScrollWrap=({children})=>(
 );
 
 // ═══ MAIN APP ═══
+// Inject collage background CSS
+if(typeof document!=="undefined"&&!document.getElementById("gt-collage-bg")){
+  const s=document.createElement("style");s.id="gt-collage-bg";
+  const imgs=[
+    "gt-homescreen-atlanta","gt-bg-rooftop-lounge","gt-bg-vip-arrival","gt-bg-penthouse-view",
+    "gt-bg-cocktail-lounge","gt-bg-skyline-terrace","gt-bg-nightlife-district","gt-bg-grand-venue",
+    "gt-bg-courtyard-evening","gt-bg-panoramic-skyline","gt-bg-future-city","gt-bg-aurora-complex",
+    "gt-bg-cigar-terrace","gt-bg-rainy-street","gt-bg-aerial-nightlife","gt-bg-social-scene",
+    "gt-bg-valet-entrance","gt-bg-infinity-bar","gt-bg-neon-skyline","gt-bg-waterfront-venue","gt-bg-spiral-lounge"
+  ].map(n=>`${GT_BG_BASE}/${n}.webp`);
+  s.textContent=`
+    .gt-collage-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:#06060C}
+    .gt-collage-grid{position:fixed;inset:-20px;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(3,1fr);gap:4px;opacity:0.18;filter:brightness(0.7) saturate(0.8);z-index:0;pointer-events:none;transform:rotate(-2deg) scale(1.15)}
+    .gt-collage-grid img{width:100%;height:100%;object-fit:cover;border-radius:4px}
+    .gt-collage-overlay{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(6,6,12,0.5) 0%,rgba(6,6,12,0.85) 70%,rgba(6,6,12,0.95) 100%);z-index:1;pointer-events:none}
+    .gt-collage-app{position:relative;z-index:2;width:100%;max-width:430px;min-height:100vh;box-shadow:0 0 100px rgba(0,0,0,0.6)}
+    @media(max-width:500px){.gt-collage-grid{display:none}.gt-collage-overlay{display:none}}
+  `;
+  document.head.appendChild(s);
+  // Build the grid
+  const grid=document.createElement("div");grid.className="gt-collage-grid";grid.id="gt-collage-grid-el";
+  imgs.forEach(u=>{const i=document.createElement("img");i.src=u;i.loading="lazy";i.alt="";grid.appendChild(i)});
+  // Duplicate to fill 21 cells (7x3)
+  document.addEventListener("DOMContentLoaded",()=>{
+    const g=document.getElementById("gt-collage-grid-el");
+    if(g&&g.parentElement){return;}
+    const wrap=document.querySelector(".gt-collage-wrap");
+    if(wrap){wrap.insertBefore(grid,wrap.firstChild);
+      const ov=document.createElement("div");ov.className="gt-collage-overlay";
+      wrap.insertBefore(ov,wrap.children[1]);
+    }
+  });
+}
+
 export default function GoodTimesAppWrapper(props){
+  useEffect(()=>{
+    const wrap=document.querySelector(".gt-collage-wrap");
+    if(wrap&&!wrap.querySelector(".gt-collage-grid")){
+      const imgs=[
+        "gt-homescreen-atlanta","gt-bg-rooftop-lounge","gt-bg-vip-arrival","gt-bg-penthouse-view",
+        "gt-bg-cocktail-lounge","gt-bg-skyline-terrace","gt-bg-nightlife-district","gt-bg-grand-venue",
+        "gt-bg-courtyard-evening","gt-bg-panoramic-skyline","gt-bg-future-city","gt-bg-aurora-complex",
+        "gt-bg-cigar-terrace","gt-bg-rainy-street","gt-bg-aerial-nightlife","gt-bg-social-scene",
+        "gt-bg-valet-entrance","gt-bg-infinity-bar","gt-bg-neon-skyline","gt-bg-waterfront-venue","gt-bg-spiral-lounge"
+      ].map(n=>`${GT_BG_BASE}/${n}.webp`);
+      const grid=document.createElement("div");grid.className="gt-collage-grid";
+      imgs.forEach(u=>{const i=document.createElement("img");i.src=u;i.loading="lazy";i.alt="";grid.appendChild(i)});
+      wrap.insertBefore(grid,wrap.firstChild);
+      const ov=document.createElement("div");ov.className="gt-collage-overlay";
+      wrap.insertBefore(ov,wrap.children[1]);
+    }
+  },[]);
   return React.createElement(GTErrorBoundary,null,
-    React.createElement('div',{style:{minHeight:'100vh',background:`url(${GT_BG_BASE}/gt-bg-aerial-nightlife.webp) center/cover fixed`,display:'flex',alignItems:'center',justifyContent:'center'}},
-      React.createElement('div',{style:{width:'100%',maxWidth:430,minHeight:'100vh',position:'relative',boxShadow:'0 0 80px rgba(0,0,0,0.5)'}},
+    React.createElement('div',{className:'gt-collage-wrap'},
+      React.createElement('div',{className:'gt-collage-app'},
         React.createElement(GoodTimesAuthGate,props)
       )
     )
