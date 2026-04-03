@@ -873,7 +873,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const[calMonth,setCalMonth]=useState(now.getMonth());
   const[calYear,setCalYear]=useState(now.getFullYear());
   const[calMode,setCalMode]=useState("month");
-  const[calCityFilter,setCalCityFilter]=useState("all");
+  const[calCityFilter,setCalCityFilter]=useState(city?.name||"Atlanta");
   const[calCatFilter,setCalCatFilter]=useState("all");
   // Social
   const[connectedSocials,setConnectedSocials]=useState([]);
@@ -1537,28 +1537,17 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             })()}
           </div>
 
-          {/* ═══ Teams ═══ */}
-          <div style={{padding:"0 16px",marginBottom:16}}>
-            <div style={{...K,padding:0,overflow:"hidden",position:"relative",border:"1px solid rgba(107,255,184,0.4)"}}>
-              <img src="https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600" alt="" style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",opacity:0.3}} loading="lazy"/>
-              <div style={{position:"absolute",inset:0,background:"linear-gradient(135deg,rgba(107,255,184,0.15),rgba(6,6,12,0.85))"}}/>
-              <div style={{position:"relative",zIndex:2,padding:"14px 16px"}}>
-              <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-                <span style={{fontSize:14}}>{"\u{1F3C6}"}</span>
-                <span style={{fontSize:11,letterSpacing:2.5,color:"#6BFFB8",fontWeight:700}}>YOUR CITY'S TEAMS</span>
-              </div>
-              <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+          {/* ═══ Teams — small, all logos on one line ═══ */}
+          <div style={{padding:"0 16px",marginBottom:12}}>
+            <div style={{display:"flex",alignItems:"center",gap:6,padding:"8px 12px",borderRadius:10,background:"rgba(107,255,184,0.06)",border:"1px solid rgba(107,255,184,0.15)"}}>
+              <span style={{fontSize:10,letterSpacing:1.5,color:"#6BFFB8",fontWeight:700,whiteSpace:"nowrap"}}>TEAMS</span>
+              <div style={{display:"flex",gap:6,flex:1,justifyContent:"center"}}>
                 {(city.teams||[]).map(t=>(
-                  <button key={t.n} onClick={()=>setTeamSheet(t)} style={{display:"flex",alignItems:"center",gap:8,padding:"8px 14px",borderRadius:12,background:"rgba(107,255,184,0.25)",border:"1px solid rgba(107,255,184,0.3)",cursor:"pointer",fontFamily:F.f,flex:"1 0 calc(50% - 4px)",minWidth:0}}>
-                    <img src={t.logo} alt={t.n} style={{width:24,height:24,objectFit:"contain",borderRadius:4}} onError={e=>{e.currentTarget.style.display="none"}}/>
-                    <div style={{minWidth:0}}>
-                      <div style={{fontSize:12,fontWeight:700,color:"#fff"}}>{t.n}</div>
-                      <div style={{fontSize:9,color:"#FFFFFF"}}>{t.s}</div>
-                    </div>
+                  <button key={t.n} onClick={()=>setTeamSheet(t)} style={{background:"none",border:"none",cursor:"pointer",padding:0}}>
+                    <img src={t.logo} alt={t.n} style={{width:28,height:28,objectFit:"contain"}} onError={e=>{e.currentTarget.style.display="none"}}/>
                   </button>
                 ))}
               </div>
-            </div>
             </div>
           </div>
 
@@ -1626,25 +1615,28 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
 
           <div style={{padding:"0 16px",marginBottom:16}}><SponsorBanner/></div>
 
-          {/* ═══ UPCOMING CONCERTS ═══ */}
+          {/* ═══ WEEKLY NIGHTLIFE — above upcoming ═══ */}
           {(()=>{
-            const concerts=mark(concertPool,8);
-            if(concerts.length===0)return null;
+            const nlPool=cityEvents.filter(e=>{
+              if(e.source==="happening"||e.source==="daily_event")return true;
+              if(e.event_type==="nightlife")return true;
+              return false;
+            });
+            const nlItems=mark(nlPool,8);
+            if(nlItems.length===0)return null;
             return(<>
-              <SectionHead t="UPCOMING CONCERTS" icon={"\u{1F3B5}"} color={C.gold} action={{l:"See All",fn:()=>navigate("calendar")}}/>
+              <SectionHead t="WEEKLY NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
               <div style={{padding:"0 16px",marginBottom:16}}>
-                <EventGrid items={concerts} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
-                {concertPool.length>6&&<button onClick={()=>navigate("calendar")} style={{...V(false),width:"100%",marginTop:10,padding:"10px",textAlign:"center",fontSize:12}}>See all {concertPool.length} concerts {"\u2192"}</button>}
+                <EventGrid items={nlItems} onSelect={e=>{setDetail(e);navigate("detail")}} max={8}/>
               </div>
             </>);
           })()}
 
-          {/* ═══ UPCOMING EVENTS — ALL upcoming real ATL events including 404 Weekend ═══ */}
+          {/* ═══ UPCOMING EVENTS — 404 Weekend + ALL future ATL events ═══ */}
           {(()=>{
-            // Use a FRESH pool — don't run through mark() dedup so upcoming always shows
             const futurePool=cityEvents.filter(e=>{
               if(!e.date||e.date<todayStr)return false;
-              if(e.date===todayStr)return false; // Today's events already show in Tonight section
+              if(e.date===todayStr)return false;
               if(e.source==="daily_event"||e.source==="sports_game"||e.source==="tonight_venue"||e.source==="happening"||e.source==="venue")return false;
               return true;
             }).sort((a,b)=>{
@@ -1664,22 +1656,14 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             </>);
           })()}
 
-          {/* ═══ NIGHTLIFE — Weekly party programming ═══ */}
+          {/* ═══ UPCOMING CONCERTS — last section ═══ */}
           {(()=>{
-            // Show weekly happenings and nightlife events (the actual parties, not just open venues)
-            const nlPool=cityEvents.filter(e=>{
-              if(e.source==="happening"||e.source==="daily_event")return true;
-              const cat=(e.category||"").toLowerCase();
-              if(cat.match(/nightclub|nightlife|lounge|hookah|speakeasy|party|club/))return true;
-              if(e.event_type==="nightlife")return true;
-              return false;
-            });
-            const nlItems=mark(nlPool,8);
-            if(nlItems.length===0)return null;
+            const concerts=mark(concertPool,6);
+            if(concerts.length===0)return null;
             return(<>
-              <SectionHead t="WEEKLY NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>navigate("explore")}}/>
+              <SectionHead t="UPCOMING CONCERTS" icon={"\u{1F3B5}"} color={C.gold} action={{l:"See All",fn:()=>navigate("calendar")}}/>
               <div style={{padding:"0 16px",marginBottom:16}}>
-                <EventGrid items={nlItems} onSelect={e=>{setDetail(e);navigate("detail")}} max={8}/>
+                <EventGrid items={concerts} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
               </div>
             </>);
           })()}
@@ -1700,14 +1684,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         <ScrollWrap>
           {CityBG}{SearchOverlay}{TeamModal}
           <div style={{padding:"0 0 40px"}}>
-            <div style={{position:"relative",height:200,overflow:"hidden",margin:"0 20px",borderRadius:22,marginBottom:20}}>
-              <img src={Ne.v[1]} alt="" style={{width:"100%",height:"100%",objectFit:"cover",}}/>
-              <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 65%,rgba(6,6,12,0.5))"}}/>
-              <div style={{position:"absolute",bottom:20,left:20,right:20}}>
-                <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>ENTERTAINMENT</div>
-                <div style={{fontSize:28,fontFamily:F.s,fontWeight:700,color:"#FFFFFF"}}>What's the move?</div>
-                <div style={{fontSize:14,color:C.textSec,marginTop:4}}>{city.name} {"\u00B7 "}{todayEvts.length>0?`${todayEvts.length} hot tonight`:"Check this week"}</div>
-              </div>
+            <div style={{padding:"16px 20px 0"}}>
+              <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:4}}>ENTERTAINMENT</div>
+              <div style={{fontSize:22,fontFamily:F.s,fontWeight:700,color:"#FFFFFF",marginBottom:4}}>What's the move?</div>
+              <div style={{fontSize:13,color:C.textSec}}>{city.name} {"\u00B7 "}{todayEvts.length>0?`${todayEvts.length} hot tonight`:"Check this week"}</div>
             </div>
             <div style={{padding:"0 20px",marginBottom:24}}><SponsorBanner/></div>
             {/* CHANGE #5 + #6: Browse cards — NO Gentleman's Club, UNIQUE images */}
@@ -1789,7 +1769,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             </div>
             <div style={{display:"flex",gap:8,marginBottom:16,justifyContent:"center"}}>
               <button onClick={()=>setCalMode(calMode==="month"?"week":"month")} style={V(false)}>{calMode==="month"?"\u{1F4C5} Week":"\u{1F4C6} Month"}</button>
-              <button onClick={()=>setCalCityFilter(calCityFilter==="all"?city.name:"all")} style={V(calCityFilter!=="all")}>{calCityFilter==="all"?"All Cities":city.name}</button>
+              <button onClick={()=>setCalCityFilter(calCityFilter===city.name?"all":city.name)} style={V(calCityFilter===city.name)}>{calCityFilter==="all"?"All Cities":calCityFilter}</button>
             </div>
             <div style={{display:"flex",gap:6,marginBottom:16,justifyContent:"center",flexWrap:"wrap"}}>
               {["all","dining","nightlife","sports","music","exclusive","culture"].map(cat=>(
@@ -1831,13 +1811,9 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       <ScrollWrap>
         {CityBG}{SearchOverlay}
         <div style={{padding:"0 20px"}}>
-          <div style={{height:160,borderRadius:22,overflow:"hidden",position:"relative",marginBottom:16}}>
-            <img src={Ne.v[5]} alt="" style={{width:"100%",height:"100%",objectFit:"cover",}}/>
-            <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(180,120,40,0.02),rgba(6,6,12,0.4) 95%)"}}/>
-            <div style={{position:"absolute",bottom:16,left:16}}>
-              <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:6}}>MAKE PLANS</div>
-              <div style={{fontSize:24,fontFamily:F.s,fontWeight:700}}>Build your night</div>
-            </div>
+          <div style={{marginBottom:16,paddingTop:8}}>
+            <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:4}}>ITINERARY</div>
+            <div style={{fontSize:22,fontFamily:F.s,fontWeight:700}}>Build your night</div>
           </div>
           {planStops.map((stop,i)=>(
             <div key={i} style={{...K,padding:16,marginBottom:12,display:"flex",alignItems:"center",gap:12,border:stop?`1px solid ${C.gold}40`:`1px solid rgba(255,255,255,0.12)`}}>
