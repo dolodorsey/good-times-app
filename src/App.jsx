@@ -1640,7 +1640,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
               if(e.date===todayStr)return false;
               if(e.source==="daily_event"||e.source==="sports_game"||e.source==="tonight_venue"||e.source==="happening"||e.source==="venue"||e.source==="weekly_party")return false;
               // CONCERTS go in UPCOMING CONCERTS section, not here
-              if(e.type==="concert"||e.type==="comedy"||e.type==="musical"||e.type==="play")return false;
+              if(e.category==="concert"||e.category==="comedy"||e.category==="musical"||e.category==="play")return false;
               return true;
             }).sort((a,b)=>{
               const pa=a.display_priority||50, pb=b.display_priority||50;
