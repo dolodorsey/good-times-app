@@ -452,8 +452,8 @@ const Ne={
   hero:`${GT_BG_BASE}/gt-bg-nightlife-district.webp`,
   // Trending carousel images (nightlife/party vibes)
   v:["https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-neon-skyline.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-infinity-bar.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-valet-entrance.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-social-scene.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aerial-nightlife.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rainy-street.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cigar-terrace.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aurora-complex.webp"],
-  // Explore category images — UNIQUE from trending & browse
-  ex:{nightlife:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-future-city.webp",sports:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-panoramic-skyline.webp",wellness:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-courtyard-evening.webp",dining:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-grand-venue.webp",music:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-nightlife-district.webp",culture:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-skyline-terrace.webp",adventure:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cocktail-lounge.webp",shopping:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-penthouse-view.webp",movies:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-vip-arrival.webp",gaming:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rooftop-lounge.webp",drinks:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-spiral-lounge.webp",exclusive:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-waterfront-venue.webp",family:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-neon-skyline.webp",dating:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-infinity-bar.webp",cosmetic:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-valet-entrance.webp",networking:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-social-scene.webp"},
+  // Explore category images — REAL photos matching each category
+  ex:{dining:`${GT_BG_BASE}/explore-cat-dining.jpg`,nightlife:`${GT_BG_BASE}/explore-cat-nightlife.jpg`,music:`${GT_BG_BASE}/explore-cat-music.jpg`,sports:`${GT_BG_BASE}/explore-cat-sports.jpg`,culture:`${GT_BG_BASE}/explore-cat-culture.jpg`,wellness:`${GT_BG_BASE}/explore-cat-wellness.jpg`,adventure:`${GT_BG_BASE}/explore-cat-adventure.jpg`,shopping:`${GT_BG_BASE}/explore-cat-shopping.jpg`,drinks:`${GT_BG_BASE}/explore-cat-drinks.jpg`,exclusive:`${GT_BG_BASE}/explore-cat-exclusive.jpg`,family:`${GT_BG_BASE}/explore-cat-family.jpg`,dating:`${GT_BG_BASE}/explore-cat-dating.jpg`,cosmetic:`${GT_BG_BASE}/explore-cat-cosmetic.jpg`,hookah:`${GT_BG_BASE}/explore-cat-hookah.jpg`},
   // Browse images — DIFFERENT from explore
   br:{jki:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aerial-nightlife.webp",nl:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rainy-street.webp",lm:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cigar-terrace.webp",sp:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aurora-complex.webp",ms:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-future-city.webp",gm:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-panoramic-skyline.webp"},
   city:{
@@ -1483,15 +1483,15 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
 
             return(<>
 
-          {/* ═══ 1. CITY HIGHLIGHTS — Top featured events today (NOT open venues) ═══ */}
+          {/* ═══ 1. CITY HIGHLIGHTS — Best events happening today ═══ */}
           {(()=>{
-            // Show REAL events that are featured or high-priority — NOT venue listings
-            const realHighlights=cityEvents.filter(e=>e.date===todayStr&&e.source!=="venue"&&e.source!=="tonight_venue"&&e.source!=="daily_event"&&(e.is_featured||e.display_priority<=10)).slice(0,6);
-            if(realHighlights.length===0)return null;
+            // Show top events TODAY with images — sorted by priority. NO venue listings.
+            const todayReal=cityEvents.filter(e=>e.date===todayStr&&e.source!=="venue"&&e.source!=="tonight_venue"&&e.source!=="daily_event"&&e.source!=="legacy"&&e.image_url).sort((a,b)=>(a.display_priority||50)-(b.display_priority||50)).slice(0,6);
+            if(todayReal.length===0)return null;
             return(<>
               <SectionHead t="CITY HIGHLIGHTS" icon={"\u{2728}"} color={C.a4}/>
               <div style={{padding:"0 16px",marginBottom:16}}>
-                <EventGrid items={realHighlights} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
+                <EventGrid items={todayReal} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
               </div>
             </>);
           })()}
