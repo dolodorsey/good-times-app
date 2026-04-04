@@ -1118,9 +1118,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         is_home_game:g.is_home_game
       }));
 
-      // Merge: OUR events → in-house shows → tonight happenings → tonight venues → daily blog events → sports → city events → legacy
+      // Merge: OUR events → in-house shows → tonight happenings → daily blog events → sports → city events → legacy
       // KHG events (mapped) always come first due to source:"huglife" and low display_priority
-      setEvents([...mapped,...showsMapped,...hapMapped,...weeklyMapped,...tonightMapped,...dailyMapped,...sportsMapped,...cityMapped,...legacyMapped]);
+      // NOTE: tonightMapped REMOVED — venues are NOT events. They belong in Explore tab only.
+      setEvents([...mapped,...showsMapped,...hapMapped,...weeklyMapped,...dailyMapped,...sportsMapped,...cityMapped,...legacyMapped]);
       setLoading(false);
 
       // Load venue map data (lat/lng for map pins)
@@ -1197,7 +1198,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   // KHG events (source: huglife) ALWAYS shown first, then sorted by image/priority/date
   // daily_event source is EXCLUDED — those only show in the Dates tab
   const upcoming=useMemo(()=>{
-    const future=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event");
+    const future=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event"&&e.source!=="venue"&&e.source!=="tonight_venue"&&e.source!=="legacy");
     return future.sort((a,b)=>{
       // KHG events ALWAYS come first
       const aKHG=a.source==="huglife"?0:1;
@@ -1466,8 +1467,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             const concertPool=cityEvents.filter(e=>{
               if(!e.date||e.date<todayStr)return false;
               if(e.source==="sports_game"||e.category==="sports")return false;
+              // EXCLUDE venue listings, daily events, happenings — only REAL shows
+              if(e.source==="venue"||e.source==="tonight_venue"||e.source==="daily_event"||e.source==="happening"||e.source==="weekly_party"||e.source==="legacy")return false;
               if(e.source==="show"||(e.event_type||"").match(/concert|comedy|musical|festival/))return true;
-              if((e.category||"").match(/concert|music|jazz/))return true;
+              if((e.category||"").match(/concert|music|jazz/)&&e.source!=="venue")return true;
               return false;
             }).sort((a,b)=>(a.date||"").localeCompare(b.date||""));
             const upcomingKHG=upcoming.filter(e=>e.source==="huglife");
@@ -1480,14 +1483,15 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
 
             return(<>
 
-          {/* ═══ 1. CITY HIGHLIGHTS — Venues worth visiting (FIRST) ═══ */}
+          {/* ═══ 1. CITY HIGHLIGHTS — Top featured events today (NOT open venues) ═══ */}
           {(()=>{
-            const venueHighlights=cityEvents.filter(e=>e.source==="tonight_venue"||e.source==="venue").slice(0,6);
-            if(venueHighlights.length===0)return null;
+            // Show REAL events that are featured or high-priority — NOT venue listings
+            const realHighlights=cityEvents.filter(e=>e.date===todayStr&&e.source!=="venue"&&e.source!=="tonight_venue"&&e.source!=="daily_event"&&(e.is_featured||e.display_priority<=10)).slice(0,6);
+            if(realHighlights.length===0)return null;
             return(<>
               <SectionHead t="CITY HIGHLIGHTS" icon={"\u{2728}"} color={C.a4}/>
               <div style={{padding:"0 16px",marginBottom:16}}>
-                <EventGrid items={venueHighlights} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
+                <EventGrid items={realHighlights} onSelect={e=>{setDetail(e);navigate("detail")}} max={6}/>
               </div>
             </>);
           })()}
