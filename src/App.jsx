@@ -452,8 +452,23 @@ const Ne={
   hero:`${GT_BG_BASE}/gt-bg-nightlife-district.webp`,
   // Trending carousel images (nightlife/party vibes)
   v:["https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-neon-skyline.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-infinity-bar.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-valet-entrance.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-social-scene.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aerial-nightlife.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rainy-street.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cigar-terrace.webp","https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aurora-complex.webp"],
-  // Explore category images — REAL photos matching each category
-  ex:{dining:`${GT_BG_BASE}/explore-cat-dining.jpg`,nightlife:`${GT_BG_BASE}/explore-cat-nightlife.jpg`,music:`${GT_BG_BASE}/explore-cat-music.jpg`,sports:`${GT_BG_BASE}/explore-cat-sports.jpg`,culture:`${GT_BG_BASE}/explore-cat-culture.jpg`,wellness:`${GT_BG_BASE}/explore-cat-wellness.jpg`,adventure:`${GT_BG_BASE}/explore-cat-adventure.jpg`,shopping:`${GT_BG_BASE}/explore-cat-shopping.jpg`,drinks:`${GT_BG_BASE}/explore-cat-drinks.jpg`,exclusive:`${GT_BG_BASE}/explore-cat-exclusive.jpg`,family:`${GT_BG_BASE}/explore-cat-family.jpg`,dating:`${GT_BG_BASE}/explore-cat-dating.jpg`,cosmetic:`${GT_BG_BASE}/explore-cat-cosmetic.jpg`,hookah:`${GT_BG_BASE}/explore-cat-hookah.jpg`},
+  // Explore category images — premium AI backgrounds, each UNIQUE and best-fit to category
+  ex:{
+    dining:`${GT_BG_BASE}/gt-bg-grand-venue.webp`,
+    nightlife:`${GT_BG_BASE}/gt-bg-nightlife-district.webp`,
+    music:`${GT_BG_BASE}/gt-bg-valet-entrance.webp`,
+    sports:`${GT_BG_BASE}/gt-bg-panoramic-skyline.webp`,
+    culture:`${GT_BG_BASE}/gt-bg-skyline-terrace.webp`,
+    wellness:`${GT_BG_BASE}/gt-bg-courtyard-evening.webp`,
+    adventure:`${GT_BG_BASE}/gt-bg-aerial-nightlife.webp`,
+    shopping:`${GT_BG_BASE}/gt-bg-penthouse-view.webp`,
+    drinks:`${GT_BG_BASE}/gt-bg-cocktail-lounge.webp`,
+    exclusive:`${GT_BG_BASE}/gt-bg-vip-arrival.webp`,
+    family:`${GT_BG_BASE}/gt-bg-rainy-street.webp`,
+    dating:`${GT_BG_BASE}/gt-bg-infinity-bar.webp`,
+    cosmetic:`${GT_BG_BASE}/gt-bg-spiral-lounge.webp`,
+    hookah:`${GT_BG_BASE}/gt-bg-cigar-terrace.webp`
+  },
   // Browse images — DIFFERENT from explore
   br:{jki:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aerial-nightlife.webp",nl:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rainy-street.webp",lm:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-cigar-terrace.webp",sp:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-aurora-complex.webp",ms:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-future-city.webp",gm:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-panoramic-skyline.webp"},
   city:{
@@ -605,7 +620,7 @@ const Gu=[
 
 // Plan For Me questions
 const kn=[
-  {id:"mood",q:"What's the mood?",sub:"Set the tone for tonight",multi:false,opts:[{id:"chill",l:"Chill",i:"\u{1F33F}",c:"#90EE90",d:"Low-key vibes",bg:`${GT_BG_BASE}/mood-chill.jpg`},{id:"turnt",l:"Turn Up",i:"\u{1F525}",c:"#FF6B6B",d:"Maximum energy",bg:`${GT_BG_BASE}/mood-turnt.jpg`},{id:"date",l:"Date Night",i:"\u{1F320}",c:"#C8A96E",d:"Intimate & beautiful",bg:`${GT_BG_BASE}/mood-date.jpg`},{id:"bougie",l:"Bougie",i:"\u{1F48E}",c:"#D4A853",d:"Luxury everything",bg:`${GT_BG_BASE}/mood-bougie.jpg`},{id:"family",l:"Family",i:"\u{1F46A}",c:"#BFA97A",d:"Fun for everyone",bg:`${GT_BG_BASE}/mood-family.jpg`},{id:"explore",l:"Explore",i:"\u{2728}",c:"#D4A853",d:"New experiences",bg:`${GT_BG_BASE}/mood-explore.jpg`}]},
+  {id:"mood",q:"What's the mood?",sub:"Set the tone for tonight",multi:false,opts:[{id:"chill",l:"Chill",i:"\u{1F33F}",c:"#90EE90",d:"Low-key vibes",bg:`${GT_BG_BASE}/gt-bg-aurora-complex.webp`},{id:"turnt",l:"Turn Up",i:"\u{1F525}",c:"#FF6B6B",d:"Maximum energy",bg:`${GT_BG_BASE}/gt-bg-future-city.webp`},{id:"date",l:"Date Night",i:"\u{1F320}",c:"#C8A96E",d:"Intimate & beautiful",bg:`${GT_BG_BASE}/gt-bg-waterfront-venue.webp`},{id:"bougie",l:"Bougie",i:"\u{1F48E}",c:"#D4A853",d:"Luxury everything",bg:`${GT_BG_BASE}/gt-bg-rooftop-lounge.webp`},{id:"family",l:"Family",i:"\u{1F46A}",c:"#BFA97A",d:"Fun for everyone",bg:`${GT_BG_BASE}/gt-bg-social-scene.webp`},{id:"explore",l:"Explore",i:"\u{2728}",c:"#D4A853",d:"New experiences",bg:`${GT_BG_BASE}/gt-bg-neon-skyline.webp`}]},
   {id:"group",q:"Who's coming?",sub:"How many in your crew",multi:false,opts:[{id:"solo",l:"Just Me",i:"\u{1F9D1}",c:"#D4A853"},{id:"duo",l:"Me + 1",i:"\u{1F46B}",c:"#C8A96E"},{id:"crew",l:"The Crew",i:"\u{1F46F}",c:"#FFB86B",d:"3-8 people"},{id:"mob",l:"Big Group",i:"\u{1F389}",c:"#FF6B6B",d:"8+ deep"}]},
   {id:"budget",q:"Budget vibe?",sub:"Per person for the night",multi:false,opts:[{id:"low",l:"Under $50",i:"\u{1F4B5}",c:"#6BFFB8"},{id:"mid",l:"$50\u2013150",i:"\u{1F4B3}",c:"#FFB86B"},{id:"high",l:"$150\u2013300",i:"\u{1F48E}",c:"#D4A853"},{id:"unlimited",l:"No Limit",i:"\u{1F451}",c:"#FF6B6B"}]},
   {id:"time",q:"What time?",sub:"When does it start",multi:false,opts:[{id:"afternoon",l:"Afternoon",i:"\u2600\uFE0F",c:"#FFB86B",d:"12-5pm"},{id:"evening",l:"Evening",i:"\u{1F305}",c:"#C8A96E",d:"5-9pm"},{id:"night",l:"Night",i:"\u{1F319}",c:"#B86BFF",d:"9pm-12am"},{id:"latenight",l:"Late Night",i:"\u{1F30C}",c:"#D4A853",d:"After midnight"}]},
