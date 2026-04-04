@@ -1439,7 +1439,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
               {realm==="today"?"Today":"Tonight"} in {city.name} {"\u00B7"} {realmEvents.length>0?`${realmEvents.length} experiences`:"Check this week"}
             </div>
           </div>
-          {/* ═══ REORGANIZED HOME ═══ */}
+          {/* ═══ REORGANIZED HOME — v2.1 ═══ */}
           {(()=>{
             const shownIds=new Set();
             const shownTitles=new Set();
