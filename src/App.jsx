@@ -592,7 +592,7 @@ const BRAND_IMAGES={
 // Explore categories — subcategories match REAL gt_venues data
 const Vu=[
   {id:"dining",name:"Dining",icon:"\u{1F37D}\uFE0F",color:"#FFB86B",subs:["Casual Dining","Brunch","Late Night / 24-Hour Eats","Food Trucks","Quick Bites / Fast Casual","Food Halls","Fine Dining"]},
-  {id:"nightlife",name:"Nightlife",icon:"\u{1F319}",color:"#D4A853",subs:["Nightclubs","Cocktail Bars","Rooftop Dining","Hookah Lounges","Lounges","Jazz Bars","Speakeasies","Day Parties","Pool Parties"]},
+  {id:"nightlife",name:"Nightlife",icon:"\u{1F319}",color:"#D4A853",subs:["Nightclubs","Cocktail Bars","Rooftop Dining","Hookah Lounges","Lounges","Jazz Bars","Speakeasies","Day Parties","Pool Parties","Gentleman's Clubs"]},
   {id:"music",name:"Live Music",icon:"\u{1F3B5}",color:"#FF6B6B",subs:["Jazz Bars","Comedy Clubs","Nightclubs","Luxury Theaters","Karaoke Bars","Arcades & Gaming"]},
   {id:"sports",name:"Sports",icon:"\u{1F3DF}\uFE0F",color:"#6BFFB8",subs:["Sports Bars"]},
   {id:"culture",name:"Culture",icon:"\u{1F3A8}",color:"#C8A96E",subs:["Comedy Clubs","Art Galleries","Arcades & Gaming","History Museums","Luxury Theaters","Science & Tech Museums","Historical Sites","Theater","Interactive Exhibits","Escape Rooms"]},
