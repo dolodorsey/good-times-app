@@ -853,6 +853,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const[realm,setRealm]=useState("tonight");
   const[nowCat,setNowCat]=useState("all");
   const[teamSheet,setTeamSheet]=useState(null);
+  const[citySheet,setCitySheet]=useState(false);
   const[toast,setToast]=useState(null);
   const[saved,setSaved]=useState([]);
   const[search,setSearch]=useState("");
@@ -911,30 +912,31 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     return()=>document.removeEventListener('error',handleImgError,true);
   }, []);
 
-  // Load events — ALL 3 TIERS of data
+  // Load events — ALL 3 TIERS of data — RELOADS when city changes
   useEffect(()=>{
     (async()=>{
       setLoading(true);
       const today=new Date().toISOString().split("T")[0];
       const dayNames=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
       const todayDay=dayNames[new Date().getDay()];
+      const cObj=city;
+      const ck=cObj.id.replace(/-/g,"_");
 
-      // TIER 1: Our events from eventbrite_events
+      // TIER 1: Our events from eventbrite_events (city field matches city name)
       const real=await khgF("eventbrite_events?select=id,event_name,brand_key,event_date,city,is_active,eventbrite_url,event_type,event_time,display_priority,image_url&is_active=eq.true&event_date=gte."+today+"&order=display_priority.asc,event_date.asc&limit=100");
 
-      // TIER 2a: In-house entertainment database (concerts, comedy, plays, festivals)
-      const shows=await khgF("gt_shows?select=id,event_name,event_type,genre,city_key,show_date,show_time,venue_name,ticket_url,image_url,status,display_priority,is_featured&show_date=gte."+today+"&status=in.(confirmed,tentative)&order=display_priority.asc,show_date.asc&limit=200");
+      // TIER 2a: In-house entertainment database — FILTERED BY CITY
+      const shows=await khgF("gt_shows?select=id,event_name,event_type,genre,city_key,show_date,show_time,venue_name,ticket_url,image_url,status,display_priority,is_featured&show_date=gte."+today+"&status=in.(confirmed,tentative)&city_key=eq."+ck+"&order=display_priority.asc,show_date.asc&limit=200");
 
-      // TIER 2a-legacy: Old scraped city events (will phase out as gt_shows grows)
-      const cityEvts=await khgF("gt_city_events?select=id,event_name,city_key,event_type,venue_name,start_date,start_time,ticket_url,organizer,image_url,is_free&start_date=gte."+today+"&status=in.(active,confirmed)&order=start_date.asc&limit=200");
+      // TIER 2a-legacy: Old scraped city events — FILTERED BY CITY
+      const cityEvts=await khgF("gt_city_events?select=id,event_name,city_key,event_type,venue_name,start_date,start_time,ticket_url,organizer,image_url,is_free&start_date=gte."+today+"&status=in.(active,confirmed)&city_key=eq."+ck+"&order=start_date.asc&limit=200");
 
-      // TIER 2d: Blog/influencer sourced daily events (curated city happenings)
-      const dailyEvts=await khgF("gt_daily_events?select=id,event_name,city_key,event_date,day_of_week,venue,event_type,time_slot,description,source_handle,is_free,vibe_tags,relevance_score,is_verified&event_date=gte."+today+"&is_verified=eq.true&order=event_date.asc,relevance_score.desc&limit=200");
+      // TIER 2d: Blog/influencer sourced daily events — FILTERED BY CITY
+      const dailyEvts=await khgF("gt_daily_events?select=id,event_name,city_key,event_date,day_of_week,venue,event_type,time_slot,description,source_handle,is_free,vibe_tags,relevance_score,is_verified&event_date=gte."+today+"&is_verified=eq.true&city_key=eq."+ck+"&order=event_date.asc,relevance_score.desc&limit=200");
 
-      // TIER 2b: Weekly venue happenings (tonight's programming) — with venue details
-      const happenings=await khgF("gt_venue_happenings?select=id,venue_id,city_key,day_of_week,happening_name,happening_type,time_slot,start_time,description,priority_score&is_active=eq.true&day_of_week=eq."+todayDay+"&order=priority_score.desc&limit=50");
-      // ALSO load ALL weekly happenings (all days) for Weekly Nightlife section
-      const allHappenings=await khgF("gt_venue_happenings?select=id,venue_id,city_key,day_of_week,happening_name,happening_type,time_slot,start_time,description,priority_score&is_active=eq.true&order=priority_score.desc&limit=100");
+      // TIER 2b: Weekly venue happenings — FILTERED BY CITY
+      const happenings=await khgF("gt_venue_happenings?select=id,venue_id,city_key,day_of_week,happening_name,happening_type,time_slot,start_time,description,priority_score&is_active=eq.true&day_of_week=eq."+todayDay+"&city_key=eq."+ck+"&order=priority_score.desc&limit=50");
+      const allHappenings=await khgF("gt_venue_happenings?select=id,venue_id,city_key,day_of_week,happening_name,happening_type,time_slot,start_time,description,priority_score&is_active=eq.true&city_key=eq."+ck+"&order=priority_score.desc&limit=100");
       // Pull venue details (name + hero_image) for happenings
       const allVenueIds=[...new Set([...happenings,...allHappenings].map(h=>h.venue_id).filter(Boolean))];
       let venueMap={};
@@ -1138,9 +1140,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       setEvents([...mapped,...showsMapped,...hapMapped,...weeklyMapped,...dailyMapped,...sportsMapped,...cityMapped,...legacyMapped]);
       setLoading(false);
 
-      // Load venue map data (lat/lng for map pins)
-      const cityKeyMap={"Atlanta":"atlanta","Houston":"houston","Los Angeles":"los_angeles","Charlotte":"charlotte","Washington":"washington_dc","Miami":"miami","Las Vegas":"las_vegas","New York":"new_york","Dallas":"dallas","Phoenix":"phoenix"};
-      const ck=cityKeyMap[cObj.name]||cObj.name.toLowerCase().replace(/\s+/g,"_");
+      // Load venue map data (lat/lng for map pins) — uses same ck from top of effect
       const mapVenues=await khgF(`gt_venues?select=id,name,category_key,subcategory,neighborhood,latitude,longitude,hero_image,short_desc,google_rating,price_range&status=eq.active&city_key=eq.${ck}&latitude=not.is.null&longitude=not.is.null&order=google_rating.desc.nullslast&limit=100`);
       setVenueMapList(mapVenues||[]);
 
@@ -1157,7 +1157,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         }catch{}
       }
     })();
-  },[]);
+  },[city.id]);
 
   const navigate=useCallback((s,n)=>{
     setPrev(screen);
@@ -1373,11 +1373,11 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   // ═══ HEADER BAR ═══
   const Header=(
     <div style={{position:"absolute",top:0,left:0,right:0,zIndex:10,padding:"10px 16px 8px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-      <div style={{background:"rgba(0,0,0,0.35)",borderRadius:20,padding:"6px 12px",display:"flex",alignItems:"center",gap:5,backdropFilter:"blur(10px)"}}>
+      <button onClick={()=>setCitySheet(true)} style={{background:"rgba(0,0,0,0.35)",borderRadius:20,padding:"6px 12px",display:"flex",alignItems:"center",gap:5,backdropFilter:"blur(10px)",border:"none",cursor:"pointer"}}>
         <span style={{fontSize:12}}>{"\u{1F4CD}"}</span>
         <span style={{fontFamily:F.f,fontSize:13,color:"#fff",fontWeight:600}}>{city.name}</span>
         <span style={{color:"#FFFFFF",fontSize:10,marginLeft:2}}>{"\u25BE"}</span>
-      </div>
+      </button>
       <span style={{fontFamily:F.f,fontSize:13,fontWeight:700,letterSpacing:3,color:C.gold,textShadow:"0 1px 8px rgba(0,0,0,0.6)"}}><img src="/good-times-logo.png" alt="Good Times" style={{height:28,objectFit:"contain",filter:"drop-shadow(0 1px 6px rgba(0,0,0,0.6))"}} /></span>
       <button onClick={()=>setSearchOpen(!searchOpen)} style={{width:34,height:34,borderRadius:"50%",background:"rgba(0,0,0,0.35)",backdropFilter:"blur(10px)",display:"flex",alignItems:"center",justifyContent:"center",border:"none",cursor:"pointer"}}>
         <svg width="16" height="16" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
@@ -1435,6 +1435,43 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
           </div>
         </a>
         <button onClick={()=>setTeamSheet(null)} style={{...V(false),width:"100%",padding:"14px",textAlign:"center",fontSize:15}}>Close</button>
+      </div>
+    </div>
+  );
+
+  // ═══ MINI HEADER — city toggle for non-NOW screens ═══
+  const MiniHeader=(
+    <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"8px 16px 4px"}}>
+      <button onClick={()=>setCitySheet(true)} style={{background:"rgba(212,168,83,0.08)",borderRadius:20,padding:"6px 12px",display:"flex",alignItems:"center",gap:5,border:`1px solid ${C.goldDim}`,cursor:"pointer"}}>
+        <span style={{fontSize:11}}>{"\u{1F4CD}"}</span>
+        <span style={{fontFamily:F.f,fontSize:12,color:C.gold,fontWeight:600}}>{city.name}</span>
+        <span style={{color:C.gold,fontSize:9,marginLeft:1}}>{"\u25BE"}</span>
+      </button>
+      <button onClick={()=>setSearchOpen(!searchOpen)} style={{width:30,height:30,borderRadius:"50%",background:"rgba(212,168,83,0.08)",display:"flex",alignItems:"center",justifyContent:"center",border:`1px solid ${C.goldDim}`,cursor:"pointer"}}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill={C.gold}><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zM9.5 14C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      </button>
+    </div>
+  );
+
+  // ═══ CITY PICKER SHEET ═══
+  const CitySheet=citySheet&&(
+    <div style={{position:"fixed",inset:0,zIndex:60,background:C.overlay,display:"flex",alignItems:"flex-end"}} onClick={()=>setCitySheet(false)}>
+      <div onClick={e=>e.stopPropagation()} style={{width:"100%",maxWidth:430,margin:"0 auto",background:C.bgSheet,borderRadius:"20px 20px 0 0",padding:"24px 20px 40px",maxHeight:"80vh",overflowY:"auto"}}>
+        <div style={{width:40,height:4,borderRadius:99,background:"rgba(212,168,83,0.08)",margin:"0 auto 16px"}}/>
+        <div style={{textAlign:"center",marginBottom:20}}>
+          <div style={{fontSize:11,letterSpacing:3,color:C.gold,fontWeight:700,marginBottom:6}}>SELECT CITY</div>
+          <div style={{fontSize:22,fontWeight:700,color:C.text,fontFamily:F.s}}>Where are you going?</div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+          {Ri.map(c=>(
+            <button key={c.id} onClick={()=>{setCity(c);setCitySheet(false);setScreen("now")}} style={{...K,padding:"16px 12px",textAlign:"center",border:city.id===c.id?`2px solid ${C.gold}`:`1px solid ${C.goldDim}`,cursor:"pointer",background:city.id===c.id?"rgba(212,168,83,0.12)":"transparent",position:"relative",overflow:"hidden"}}>
+              <div style={{fontSize:16,fontWeight:700,color:city.id===c.id?C.gold:C.text,fontFamily:F.s}}>{c.name}</div>
+              <div style={{fontSize:11,color:C.muted,marginTop:4}}>{c.teams?.length||0} teams</div>
+              {city.id===c.id&&<div style={{position:"absolute",top:8,right:8,width:8,height:8,borderRadius:"50%",background:C.gold}}/>}
+            </button>
+          ))}
+        </div>
+        <button onClick={()=>setCitySheet(false)} style={{...V(false),width:"100%",padding:"14px",textAlign:"center",fontSize:15,marginTop:16}}>Cancel</button>
       </div>
     </div>
   );
@@ -1704,6 +1741,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       return(
         <ScrollWrap>
           {SearchOverlay}
+          {MiniHeader}
           <div style={{padding:"0 0 40px"}}>
             <div style={{padding:"16px 20px 0"}}>
               <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:4}}>ENTERTAINMENT</div>
@@ -1786,8 +1824,9 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       return(
         <ScrollWrap>
           {SearchOverlay}
+          {MiniHeader}
           <div style={{padding:"0 20px"}}>
-            <div style={{textAlign:"center",marginBottom:16,paddingTop:8}}>
+            <div style={{textAlign:"center",marginBottom:16}}>
               <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>CALENDAR</div>
               <div style={{fontSize:28,fontFamily:F.s,fontWeight:700,color:"#FFFFFF"}}>What's happening</div>
             </div>
@@ -1834,6 +1873,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     if(screen==="plans")return(
       <ScrollWrap>
         {SearchOverlay}
+        {MiniHeader}
         <div style={{padding:"0 20px"}}>
           <div style={{marginBottom:16,paddingTop:8}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:4}}>ITINERARY</div>
@@ -1901,7 +1941,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     if(screen==="planforme")return(
       <ScrollWrap>
         {SearchOverlay}
-        <div style={{padding:"0 20px",minHeight:"calc(100vh - 160px)",display:"flex",flexDirection:"column",paddingTop:8}}>
+        {MiniHeader}
+        <div style={{padding:"0 20px",minHeight:"calc(100vh - 160px)",display:"flex",flexDirection:"column"}}>
           <div style={{textAlign:"center",marginBottom:24}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>CONCIERGE</div>
             <div style={{fontSize:28,fontFamily:F.s,fontWeight:700,marginBottom:6}}>Build your perfect night</div>
@@ -2004,7 +2045,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     if(screen==="explore")return(
       <ScrollWrap>
         {SearchOverlay}
-        <div style={{padding:"0 20px 40px",paddingTop:8}}>
+        {MiniHeader}
+        <div style={{padding:"0 20px 40px"}}>
           <div style={{textAlign:"center",marginBottom:24}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>EXPLORE</div>
             <div style={{fontSize:28,fontFamily:F.s,fontWeight:700,marginBottom:6}}>Discover {city.name}</div>
@@ -2142,7 +2184,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     if(screen==="map")return(
       <ScrollWrap>
         {SearchOverlay}
-        <div style={{padding:"0 20px",paddingTop:8}}>
+        {MiniHeader}
+        <div style={{padding:"0 20px"}}>
           <div style={{textAlign:"center",marginBottom:16}}>
             <div style={{fontSize:10,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:6}}>MAP</div>
             <div style={{fontSize:24,fontFamily:F.s,fontWeight:700}}>Around {city.name}</div>
@@ -2182,7 +2225,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     if(screen==="vault")return(
       <ScrollWrap>
         {SearchOverlay}
-        <div style={{padding:"0 20px",paddingTop:8}}>
+        {MiniHeader}
+        <div style={{padding:"0 20px"}}>
           <div style={{textAlign:"center",marginBottom:16}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>VAULT</div>
             <div style={{fontSize:28,fontFamily:F.s,fontWeight:700}}>Your Collection</div>
@@ -2365,6 +2409,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   return(
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:F.f,position:"relative",maxWidth:430,margin:"0 auto"}}>
       {renderScreen()}
+      {CitySheet}
       {/* Toast */}
       {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:100,background:"#ef4444",color:"#fff",textAlign:"center",padding:"6px 16px",fontSize:12,fontWeight:700,fontFamily:F.f}}>No internet connection</div>}
       {toast&&<div style={{position:"fixed",top:isOffline?30:50,left:"50%",transform:"translateX(-50%)",zIndex:60,background:`linear-gradient(135deg,${C.gold},#B8942F)`,color:"#0A0A0F",padding:"8px 20px",borderRadius:10,fontSize:12,fontWeight:700,fontFamily:F.f,boxShadow:"0 8px 32px rgba(212,168,83,0.3)",animation:"fadeIn 0.3s ease"}}>{toast}</div>}
