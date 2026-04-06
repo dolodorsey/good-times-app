@@ -538,7 +538,6 @@ const $u=[
   {brand:"SECRET SOCIETY",line:"Midnight Affair. Atlanta.",color:"#D4A853",sub:"HUGLIFE EVENTS",cta:"RSVP",img:_SB+"/secret_society/secret_society_landscape.png"},
   {brand:"FOREVER FUTBOL",line:"The World's Game. ATL.",color:"#00A651",sub:"KHG MUSEUMS",cta:"Experience",img:_SB+"/forever_futbol/forever_futbol_card.png"},
   {brand:"WRST BHVR",line:"Worst Behavior. Best Night.",color:"#FFD700",sub:"HUGLIFE EVENTS",cta:"Get Tickets",img:_SB+"/wrst_bhvr/wrst_bhvr_card.png"},
-  {brand:"CINCO DE DRINKO",line:"Cinco de Mayo. The DR. DORSEY Way.",color:"#FF6B6B",sub:"HUGLIFE EVENTS",cta:"Get Tickets",img:_SB+"/cinco_de_mayo/cinco_de_mayo_landscape.png"},
   {brand:"TASTE OF ART",line:"Art. Fashion. Music. Culture.",color:"#C8A96E",sub:"HUGLIFE EVENTS",cta:"Get Tickets",img:_SB+"/taste_of_art/taste_of_art_landscape.png"},
   {brand:"GANGSTA GOSPEL",line:"Where the streets meet the spirit.",color:"#9B59B6",sub:"HUGLIFE EVENTS",cta:"Experience",img:_SB+"/gangsta_gospel/gangsta_gospel_landscape.png"},
   {brand:"GOODFELLAS PIZZA",line:"Pizza with a side of loyalty.",color:"#FF6B6B",sub:"CASPER GROUP",cta:"Order",img:_SB+"/goodfellas/goodfellas_atlanta_landscape.png"},
@@ -577,7 +576,7 @@ const BRAND_IMAGES={
   // === BRAND EVENT FALLBACK IMAGES — from Supabase good-times-backgrounds ===
   black_ball:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-penthouse-view.webp",       // formal dark gala
   block_party:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-vip-arrival.webp",      // outdoor festival crowd
-  cinco_de_mayo:_SB+"/cinco_de_mayo/cinco_de_mayo_landscape.png",        // cocktail drinks / fiesta
+  // cinco_de_mayo image missing — add back when flyer is uploaded
   crvngs:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-rooftop-lounge.webp",               // gourmet food spread
   kulture:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-spiral-lounge.webp",              // sneakers / streetwear
   monsters_ball:"https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-waterfront-venue.webp",     // masquerade / halloween
