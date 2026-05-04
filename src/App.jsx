@@ -961,7 +961,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       }
 
       // TIER 2c: Tonight-eligible venues — clubs, rooftops, lounges with real photos (always show regardless of day)
-      const tonightVenues=await khgF("gt_venues?select=id,name,hero_image,neighborhood,category_key,google_rating,tonight_label,city_key,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags&tonight_eligible=eq.true&hero_image=not.is.null&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast&limit=30");
+      const tonightVenues=await khgF("gt_venues?select=id,name,hero_image,neighborhood,category_key,google_rating,tonight_label,city_key,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,sourced_from&tonight_eligible=eq.true&hero_image=not.is.null&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast&limit=30");
 
       // TIER 3: Sports games — real upcoming matchups with team logos
       const sportsGames=await khgF("gt_sports_games?select=id,league,home_team,home_abbr,away_team,away_abbr,game_date,game_time,venue,city_key,status,home_logo,away_logo,is_home_game&game_date=gte."+today+"&status=eq.scheduled&order=game_date.asc&limit=30");
@@ -1156,7 +1156,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       setLoading(false);
 
       // Load venue map data (lat/lng for map pins) — uses same ck from top of effect
-      const mapVenues=await khgF(`gt_venues?select=id,name,category_key,subcategory,neighborhood,latitude,longitude,hero_image,short_desc,google_rating,price_range,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags&status=eq.active&city_key=eq.${ck}&latitude=not.is.null&longitude=not.is.null&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast&limit=100`);
+      const mapVenues=await khgF(`gt_venues?select=id,name,category_key,subcategory,neighborhood,latitude,longitude,hero_image,short_desc,google_rating,price_range,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,sourced_from&status=eq.active&city_key=eq.${ck}&latitude=not.is.null&longitude=not.is.null&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast&limit=100`);
       setVenueMapList(mapVenues||[]);
 
       // Load saved items from Supabase
@@ -1815,7 +1815,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                 <div style={{display:"flex",flexWrap:"wrap",gap:10,justifyContent:"center",marginBottom:20}}>
                   {vibeSheet.subs.map(s=>(
                     <button key={s} onClick={()=>{setVibeSheet(null);setSubCatView({parent:vibeSheet,sub:s});setVenueLoading(true);setVenueResults([]);
-                      const ck="atlanta";const sel="id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key,tab_tags,search_tags,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,instagram_handle";
+                      const ck="atlanta";const sel="id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key,tab_tags,search_tags,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,instagram_handle,sourced_from";
                       khgF(`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&subcategory=eq.${encodeURIComponent(s)}&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast&limit=20`).then(r=>{if(r.length===0)return khgF(`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&subcategory=ilike.*${encodeURIComponent(s.split('/')[0].trim())}*&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast&limit=20`);return r}).then(r=>{setVenueResults(r);setVenueLoading(false)});
                     }} style={{...V(false),padding:"12px 20px",border:`1px solid ${vibeSheet.color}25`,color:vibeSheet.color,fontSize:14}}>{s}</button>
                   ))}
@@ -2115,7 +2115,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                     // Use subcategory directly — match against gt_venues.subcategory
                     const subKey=sub;
                     const tabId=exploreSheet.id;
-                    const sel="id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key,tab_tags,search_tags,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,instagram_handle";
+                    const sel="id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key,tab_tags,search_tags,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,instagram_handle,sourced_from";
                     // PRIMARY: Match subcategory exactly within this tab
                     let q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&tab_tags=cs.{${tabId}}&subcategory=eq.${encodeURIComponent(subKey)}&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
                     let results=await khgF(q);
@@ -2161,10 +2161,11 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                       <img src={place.hero_image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
                       <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 50%,rgba(6,6,12,0.7) 100%)"}}/>
                       {place.price_range&&<div style={{position:"absolute",top:8,right:8,padding:"3px 8px",borderRadius:6,background:"rgba(0,0,0,0.6)",color:C.gold,fontSize:11,fontWeight:700}}>{place.price_range}</div>}
-                      {(place.is_khg||place.is_friend||place.is_culture_pick||place.is_black_owned)&&(
+                      {(place.is_khg||place.is_friend||place.is_culture_pick||place.is_black_owned||(place.sourced_from&&place.sourced_from.includes("dolo_photos")))&&(
                         <div style={{position:"absolute",top:8,left:8,display:"flex",gap:4,flexWrap:"wrap",maxWidth:"calc(100% - 70px)"}}>
                           {place.is_khg&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"3px 7px",borderRadius:3,background:C.gold,color:"#000"}}>KHG</span>}
                           {!place.is_khg&&place.is_friend&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"3px 7px",borderRadius:3,background:"#9d4edd",color:"#fff"}}>FAMILY</span>}
+                          {place.sourced_from&&place.sourced_from.includes("dolo_photos")&&!place.is_khg&&!place.is_friend&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"3px 7px",borderRadius:3,background:"#9d4edd",color:"#fff"}}>VERIFIED</span>}
                           {!place.is_khg&&!place.is_friend&&place.is_culture_pick&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"3px 7px",borderRadius:3,background:"rgba(0,0,0,0.7)",color:C.gold,border:`1px solid ${C.gold}`}}>CULTURE</span>}
                           {place.is_black_owned&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"3px 7px",borderRadius:3,background:"rgba(0,0,0,0.85)",color:C.gold,border:`1px solid ${C.gold}`}}>BLACK-OWNED</span>}
                         </div>
@@ -2236,6 +2237,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                     {v.name}
                     {v.is_khg&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"2px 6px",borderRadius:3,background:C.gold,color:"#000"}}>KHG</span>}
                     {!v.is_khg&&v.is_friend&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"2px 6px",borderRadius:3,background:"#9d4edd",color:"#fff"}}>FAMILY</span>}
+                    {v.sourced_from&&v.sourced_from.includes("dolo_photos")&&!v.is_khg&&!v.is_friend&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"2px 6px",borderRadius:3,background:"#9d4edd",color:"#fff"}}>VERIFIED</span>}
                     {!v.is_khg&&!v.is_friend&&v.is_culture_pick&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"2px 6px",borderRadius:3,background:"transparent",color:C.gold,border:`1px solid ${C.gold}`}}>CULTURE</span>}
                     {v.is_black_owned&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"2px 6px",borderRadius:3,background:"#1a1a1a",color:C.gold,border:`1px solid ${C.gold}`}}>BLACK-OWNED</span>}
                   </div>
