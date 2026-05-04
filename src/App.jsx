@@ -2161,14 +2161,6 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                       <img src={place.hero_image} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
                       <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,transparent 50%,rgba(6,6,12,0.7) 100%)"}}/>
                       {place.price_range&&<div style={{position:"absolute",top:8,right:8,padding:"3px 8px",borderRadius:6,background:"rgba(0,0,0,0.6)",color:C.gold,fontSize:11,fontWeight:700}}>{place.price_range}</div>}
-                      {(place.is_khg||place.is_friend||place.is_culture_pick||(place.sourced_from&&place.sourced_from.includes("dolo_photos")))&&(
-                        <div style={{position:"absolute",top:8,left:8,display:"flex",gap:4,flexWrap:"wrap",maxWidth:"calc(100% - 70px)"}}>
-                          {place.is_khg&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"3px 7px",borderRadius:3,background:C.gold,color:"#000"}}>KHG</span>}
-                          {!place.is_khg&&place.is_friend&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"3px 7px",borderRadius:3,background:"#9d4edd",color:"#fff"}}>FAMILY</span>}
-                          {place.sourced_from&&place.sourced_from.includes("dolo_photos")&&!place.is_khg&&!place.is_friend&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"3px 7px",borderRadius:3,background:"#9d4edd",color:"#fff"}}>VERIFIED</span>}
-                          {!place.is_khg&&!place.is_friend&&place.is_culture_pick&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"3px 7px",borderRadius:3,background:"rgba(0,0,0,0.7)",color:C.gold,border:`1px solid ${C.gold}`}}>CULTURE</span>}
-                        </div>
-                      )}
                     </div>)}
                     <div style={{padding:14}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
@@ -2232,13 +2224,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
               <div key={v.id} style={{...K,display:"flex",gap:12,padding:12,marginBottom:8,border:`1px solid ${C.goldDim}`,cursor:"pointer"}} onClick={()=>{setDetail({id:v.id,title:v.name,venue:v.name,city:city.name,category:v.category_key,image_url:v.hero_image,description:v.short_desc,date:"",time:"",source:"venue"});navigate("detail")}}>
                 {v.hero_image&&<img src={v.hero_image} alt="" style={{width:60,height:60,borderRadius:10,objectFit:"cover"}}/>}
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontSize:14,fontWeight:700,color:C.text,display:"flex",alignItems:"center",gap:6,flexWrap:"wrap"}}>
-                    {v.name}
-                    {v.is_khg&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"2px 6px",borderRadius:3,background:C.gold,color:"#000"}}>KHG</span>}
-                    {!v.is_khg&&v.is_friend&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"2px 6px",borderRadius:3,background:"#9d4edd",color:"#fff"}}>FAMILY</span>}
-                    {v.sourced_from&&v.sourced_from.includes("dolo_photos")&&!v.is_khg&&!v.is_friend&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"2px 6px",borderRadius:3,background:"#9d4edd",color:"#fff"}}>VERIFIED</span>}
-                    {!v.is_khg&&!v.is_friend&&v.is_culture_pick&&<span style={{fontSize:9,fontWeight:800,letterSpacing:0.5,padding:"2px 6px",borderRadius:3,background:"transparent",color:C.gold,border:`1px solid ${C.gold}`}}>CULTURE</span>}
-                  </div>
+                  <div style={{fontSize:14,fontWeight:700,color:C.text}}>{v.name}</div>
                   <div style={{fontSize:11,color:C.gold,marginTop:2}}>{v.neighborhood||v.category_key}</div>
                   {v.google_rating&&<div style={{fontSize:11,color:C.muted,marginTop:2}}>{"\u2B50"} {v.google_rating}</div>}
                 </div>
