@@ -443,7 +443,7 @@ const CAT_MAP={
   exclusive:["event_venue","event_creative","special_events"],
   family:["experiences","outdoor_adventures","entertainment"],
   dating:["rooftop","lounge","restaurant","speakeasy","jazz"],
-  cosmetic:["beauty","services"],
+  world_cup:["sports_bar","bar","rooftop","restaurant"],
   networking:["event_venue","event_creative"]
 };
 
@@ -477,7 +477,7 @@ const Ne={
     exclusive:`${GT_BG_BASE}/gt-cat-exclusive.webp`,
     family:`${GT_BG_BASE}/gt-cat-family.webp`,
     dating:`${GT_BG_BASE}/gt-cat-dating.webp`,
-    cosmetic:`${GT_BG_BASE}/gt-cat-cosmetic.webp`,
+    world_cup:`${GT_BG_BASE}/gt-cat-world-cup.webp`,
     hookah:`${GT_BG_BASE}/gt-cat-hookah.webp`
   },
   // Browse images — Pool 3 ONLY (no overlap with trending, city, or catImgs)
@@ -600,12 +600,14 @@ const BRAND_IMAGES={
   soul_sessions:`${GT_BG_BASE}/gt-cat-music.webp`,            // R&B live performance → music
   underground_king:`${GT_BG_BASE}/gt-cat-music.webp`,         // underground hip hop → music
   remix:`${GT_BG_BASE}/gt-cat-nightlife.webp`,                // DJ mixing → nightlife
-  beauty_beast:`${GT_BG_BASE}/gt-cat-cosmetic.webp`,          // glam beauty / fashion → cosmetic
+  beauty_beast:`${GT_BG_BASE}/gt-cat-drinks.webp`,            // glam beauty / fashion → drinks fallback (cosmetic retired)
   stella:`${GT_BG_BASE}/gt-cat-drinks.webp`,                  // women celebrating → drinks
 };
 
 // Explore categories — subcategories match REAL gt_venues data
+// World Cup is featured #1 (temporary, active 2026-04-28 → 2026-07-19, replaces Cosmetic)
 const Vu=[
+  {id:"world_cup",name:"World Cup",icon:"\u26BD",color:"#D4A853",subs:["Watch Parties","Match Day Specials","Soccer Bars","Sports Bars","Stadium Experiences","Group Viewing"]},
   {id:"dining",name:"Dining",icon:"\u{1F37D}\uFE0F",color:"#FFB86B",subs:["Casual Dining","Brunch","Late Night / 24-Hour Eats","Food Trucks","Quick Bites / Fast Casual","Food Halls","Fine Dining"]},
   {id:"nightlife",name:"Nightlife",icon:"\u{1F319}",color:"#D4A853",subs:["Nightclubs","Cocktail Bars","Rooftop Dining","Hookah Lounges","Lounges","Jazz Bars","Speakeasies","Day Parties","Pool Parties","Gentleman's Clubs"]},
   {id:"music",name:"Live Music",icon:"\u{1F3B5}",color:"#FF6B6B",subs:["Jazz Bars","Comedy Clubs","Nightclubs","Luxury Theaters","Karaoke Bars","Arcades & Gaming"]},
@@ -618,7 +620,6 @@ const Vu=[
   {id:"exclusive",name:"Exclusive",icon:"\u2726",color:"#D4A853",subs:["Event Venues","Speakeasies","Seasonal Festivals","Rooftops","Corporate Events"]},
   {id:"family",name:"Family",icon:"\u{1F468}\u200D\u{1F469}\u200D\u{1F467}",color:"#BFA97A",subs:["Hiking","City Parks","Farmers Markets","Attractions","Botanical Gardens","Zoos & Aquariums"]},
   {id:"dating",name:"Date Night",icon:"\u{1F4AB}",color:"#FF6B6B",subs:["Coffee Shops","Rooftop Dining","Hookah Lounges","Lounges","Jazz Bars","Speakeasies","Wine Bars"]},
-  {id:"cosmetic",name:"Cosmetic",icon:"\u{1F484}",color:"#FF69B4",subs:["Day Spas","Facials","Grooming","Nails","Hair"]},
   {id:"hookah",name:"Hookah",icon:"\u{1F4A8}",color:"#D4A853",subs:["Hookah Lounges"]}
 ];
 
@@ -1562,25 +1563,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             </>);
           })()}
 
-          {/* ═══ 2. CITY SPOTLIGHT — Featured picks ═══ */}
-          <div style={{padding:"0 16px",marginBottom:16}}>
-            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
-              <span style={{fontSize:14}}>{"\u2726"}</span>
-              <span style={{fontSize:11,letterSpacing:2.5,color:C.gold,fontWeight:700}}>CITY SPOTLIGHT</span>
-            </div>
-            {featuredPicks.map(e=>(
-              <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:16,marginBottom:12,position:"relative",border:"1px solid "+C.gold+"20",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
-                <div style={{height:140,position:"relative",overflow:"hidden"}}>
-                  <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
-                  <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 50%,rgba(6,6,12,0.7) 100%)"}}/>
-                  <div style={{position:"absolute",bottom:14,left:14,right:14,textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>
-                    <div style={{fontSize:18,fontWeight:700,color:C.text,lineHeight:1.2,marginBottom:4}}>{e.title}</div>
-                    <div style={{fontSize:11,color:"#FFFFFF"}}>{e.venue} {"\u00B7"} {e.time}</div>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
+          {/* CITY SPOTLIGHT moved to bottom — see after UPCOMING CONCERTS */}
 
           {/* ═══ 3. TODAY / TONIGHT / THIS WEEK — tabs + content (2nd section) ═══ */}
           <div style={{padding:"0 16px",marginBottom:12}}>
@@ -1729,7 +1712,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             </>);
           })()}
 
-          {/* ═══ UPCOMING CONCERTS — last section ═══ */}
+          {/* ═══ UPCOMING CONCERTS ═══ */}
           {(()=>{
             const concerts=mark(concertPool,6);
             if(concerts.length===0)return null;
@@ -1740,6 +1723,28 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
               </div>
             </>);
           })()}
+
+          {/* ═══ CITY SPOTLIGHT — moved to bottom (Dr. Dorsey 2026-05-05) ═══ */}
+          {featuredPicks && featuredPicks.length>0 && (
+          <div style={{padding:"0 16px",marginBottom:16}}>
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+              <span style={{fontSize:14}}>{"\u2726"}</span>
+              <span style={{fontSize:11,letterSpacing:2.5,color:C.gold,fontWeight:700}}>CITY SPOTLIGHT</span>
+            </div>
+            {featuredPicks.map(e=>(
+              <button key={e.id} onClick={()=>{setDetail(e);navigate("detail")}} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:16,marginBottom:12,position:"relative",border:"1px solid "+C.gold+"20",boxShadow:"0 4px 20px rgba(0,0,0,0.3)"}}>
+                <div style={{height:140,position:"relative",overflow:"hidden"}}>
+                  <img src={wn(e)} alt="" style={{width:"100%",height:"100%",objectFit:"cover"}} loading="lazy"/>
+                  <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(6,6,12,0) 50%,rgba(6,6,12,0.7) 100%)"}}/>
+                  <div style={{position:"absolute",bottom:14,left:14,right:14,textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>
+                    <div style={{fontSize:18,fontWeight:700,color:C.text,lineHeight:1.2,marginBottom:4}}>{e.title}</div>
+                    <div style={{fontSize:11,color:"#FFFFFF"}}>{e.venue} {"\u00B7"} {e.time}</div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+          )}
 
           </>);
           })()}
