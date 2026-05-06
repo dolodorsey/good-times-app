@@ -162,6 +162,7 @@ const CITY_OPTIONS=[
   {id:'dallas',name:'Dallas',emoji:'⭐'},
   {id:'phoenix',name:'Phoenix',emoji:'🌵'},
   {id:'scottsdale',name:'Scottsdale',emoji:'🏜️'},
+  {id:'las_vegas',name:'Las Vegas',emoji:'🎰'},
 ];
 
 function GoodTimesOnboarding({onComplete}){
@@ -544,7 +545,9 @@ const Ri=[
   {id:"miami",name:"Miami",lat:25.761,lng:-80.192,teams:[{n:"Heat",s:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/mia.png",url:"https://www.nba.com/heat/schedule"},{n:"Dolphins",s:"NFL",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/mia.png",url:"https://www.miamidolphins.com/schedule/"},{n:"Inter Miami",s:"MLS",logo:"https://a.espncdn.com/i/teamlogos/soccer/500/19044.png",url:"https://www.intermiamicf.com/schedule"}]},
   {id:"las_vegas",name:"Las Vegas",lat:36.17,lng:-115.14,teams:[{n:"Aces",s:"WNBA",logo:"https://a.espncdn.com/i/teamlogos/wnba/500/lva.png",url:"https://aces.wnba.com/schedule/"},{n:"Raiders",s:"NFL",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/lv.png",url:"https://www.raiders.com/schedule/"},{n:"Golden Knights",s:"NHL",logo:"https://a.espncdn.com/i/teamlogos/nhl/500/vgk.png",url:"https://www.nhl.com/goldenknights/schedule"}]},
   {id:"new_york",name:"New York",lat:40.713,lng:-74.006,teams:[{n:"Knicks",s:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/ny.png",url:"https://www.nba.com/knicks/schedule"},{n:"Giants",s:"NFL",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/nyg.png",url:"https://www.giants.com/schedule/"},{n:"Yankees",s:"MLB",logo:"https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png",url:"https://www.mlb.com/yankees/schedule"}]},
-  {id:"dallas",name:"Dallas",lat:32.777,lng:-96.797,teams:[{n:"Mavericks",s:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/dal.png",url:"https://www.nba.com/mavericks/schedule"},{n:"Cowboys",s:"NFL",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/dal.png",url:"https://www.cowboys.com/schedule/"}]}
+  {id:"dallas",name:"Dallas",lat:32.777,lng:-96.797,teams:[{n:"Mavericks",s:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/dal.png",url:"https://www.nba.com/mavericks/schedule"},{n:"Cowboys",s:"NFL",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/dal.png",url:"https://www.cowboys.com/schedule/"}]},
+  {id:"phoenix",name:"Phoenix",lat:33.448,lng:-112.074,teams:[{n:"Suns",s:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/phx.png",url:"https://www.nba.com/suns/schedule"},{n:"Cardinals",s:"NFL",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/ari.png",url:"https://www.azcardinals.com/schedule/"},{n:"Diamondbacks",s:"MLB",logo:"https://a.espncdn.com/i/teamlogos/mlb/500/ari.png",url:"https://www.mlb.com/dbacks/schedule"},{n:"Mercury",s:"WNBA",logo:"https://a.espncdn.com/i/teamlogos/wnba/500/phx.png",url:"https://mercury.wnba.com/schedule/"}]},
+  {id:"scottsdale",name:"Scottsdale",lat:33.494,lng:-111.926,teams:[{n:"Suns",s:"NBA",logo:"https://a.espncdn.com/i/teamlogos/nba/500/phx.png",url:"https://www.nba.com/suns/schedule"},{n:"Cardinals",s:"NFL",logo:"https://a.espncdn.com/i/teamlogos/nfl/500/ari.png",url:"https://www.azcardinals.com/schedule/"}]}
 ];
 
 // Sponsors — Official Brand Graphics (Supabase CDN)
