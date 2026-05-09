@@ -888,8 +888,6 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   // Map state
   const[mapFilter,setMapFilter]=useState("all");
   const[venueMapList,setVenueMapList]=useState([]);
-  // CHANGE #8: subscription state
-  const[isSubscribed,setIsSubscribed]=useState(false);
   // Plan states
   const[planStops,setPlanStops]=useState([null,null,null]);
   const[planPickSlot,setPlanPickSlot]=useState(null);
@@ -2272,21 +2270,19 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             <EventGrid items={events.filter(e=>saved.includes(e.id))} onSelect={e=>{setDetail(e);navigate("detail")}}/>
           )}
 
-          {/* CHANGE #8: Deals section — enticing, subscription-gated */}
+          {/* Deals section */}
           {vaultTab==="deals"&&(
             <div>
-              {/* Teaser header — always visible */}
               <div style={{...K,padding:20,marginBottom:16,background:`linear-gradient(135deg,${C.gold}25,${C.bgCard})`,border:`1px solid ${C.gold}30`,textAlign:"center"}}>
                 <div style={{fontSize:32,marginBottom:8}}>{"\u{1F525}"}</div>
                 <div style={{fontSize:20,fontWeight:700,color:C.gold,fontFamily:F.s,marginBottom:4}}>Exclusive Deals</div>
                 <div style={{fontSize:14,color:C.textSec,marginBottom:4}}>{dealsData.length} active deals {"\u00B7"} Up to $500+ in savings</div>
-                {!isSubscribed&&<div style={{fontSize:12,color:"#FF6B6B",fontWeight:600,marginTop:8}}>Members save an average of $200/month</div>}
+                <div style={{fontSize:12,color:C.textSec,marginTop:8}}>Available inside the app while offers last</div>
               </div>
 
-              {/* Show blurred/locked deals for non-subscribers, full for subscribers */}
-              {dealsData.map((deal,i)=>(
-                <div key={deal.id} style={{...K,marginBottom:12,overflow:"hidden",position:"relative",border:isSubscribed?`1px solid ${C.gold}20`:K.border}}>
-                  <div style={{display:"flex",gap:12,padding:14,filter:!isSubscribed&&i>1?"blur(6px)":"none",transition:"filter 0.3s"}}>
+              {dealsData.map((deal)=>(
+                <div key={deal.id} style={{...K,marginBottom:12,overflow:"hidden",position:"relative",border:`1px solid ${C.gold}20`}}>
+                  <div style={{display:"flex",gap:12,padding:14}}>
                     <img src={deal.img} alt="" style={{width:70,height:70,borderRadius:10,objectFit:"cover",}}/>
                     <div style={{flex:1,minWidth:0}}>
                       <div style={{fontSize:14,fontWeight:700,color:C.text,marginBottom:2}}>{deal.title}</div>
@@ -2298,36 +2294,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                       </div>
                     </div>
                   </div>
-                  {/* Lock overlay for non-subscribers after first 2 */}
-                  {!isSubscribed&&i>1&&(
-                    <div style={{position:"absolute",inset:0,background:"rgba(6,6,12,0.6)",display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(2px)"}}>
-                      <div style={{textAlign:"center"}}>
-                        <div style={{fontSize:20,marginBottom:4}}>{"\u{1F512}"}</div>
-                        <div style={{fontSize:12,color:C.gold,fontWeight:600}}>Members Only</div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               ))}
-
-              {/* Subscribe CTA */}
-              {!isSubscribed&&(
-                <div style={{...K,padding:24,marginTop:8,background:`linear-gradient(135deg,rgba(212,168,83,0.12),${C.bgCard})`,border:`1px solid ${C.gold}40`,textAlign:"center"}}>
-                  <div style={{fontSize:11,letterSpacing:3,color:C.gold,fontWeight:700,marginBottom:10}}>GOOD TIMES+</div>
-                  <div style={{fontSize:20,fontWeight:700,color:C.text,fontFamily:F.s,marginBottom:6}}>Unlock All Deals</div>
-                  <div style={{fontSize:14,color:C.textSec,marginBottom:4}}>Get exclusive access to {dealsData.length}+ deals every month</div>
-                  <div style={{fontSize:13,color:C.textSec,marginBottom:16}}>VIP tables {"\u00B7"} Free entry {"\u00B7"} Restaurant specials {"\u00B7"} Early access</div>
-                  <button onClick={()=>{setIsSubscribed(true);showToast("Welcome to Good Times+ \u2726")}} style={{...V(true),width:"100%",padding:"16px",fontSize:16,fontWeight:700,letterSpacing:.5}}>
-                    Start Free Trial {"\u2192"} $9.99/mo
-                  </button>
-                  <div style={{fontSize:11,color:C.muted,marginTop:8}}>Cancel anytime {"\u00B7"} 7-day free trial</div>
-                </div>
-              )}
-              {isSubscribed&&(
-                <div style={{textAlign:"center",padding:"12px 0",color:C.gold,fontSize:13,fontWeight:600}}>
-                  {"\u2726"} Good Times+ Member {"\u2014"} All deals unlocked
-                </div>
-              )}
             </div>
           )}
 
