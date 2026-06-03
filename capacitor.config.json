@@ -1,5 +1,5 @@
 {
-  "appId": "com.goodtimes.app",
+  "appId": "com.kollective.goodtimes",
   "appName": "Good Times",
   "webDir": "dist",
   "server": {
