@@ -1,7 +1,7 @@
 # Good Times™ — City Nightlife & Events Concierge
 
 Live: [thegoodtimesworldwide.com](https://thegoodtimesworldwide.com)
-iOS bundle: `com.goodtimes.app`
+iOS bundle: `com.kollective.goodtimes`
 Web prod: `good-times-app.vercel.app`
 
 ---
@@ -163,7 +163,7 @@ Push to `main` → Vercel auto-deploys to production. Branch deploys are preview
 ### iOS
 Push to `main` → Codemagic auto-builds, signs, uploads to TestFlight.
 - App Store Connect ID: 6752312555
-- Bundle: `com.goodtimes.app`
+- Bundle: `com.kollective.goodtimes`
 - Current build: 16
 
 ---
