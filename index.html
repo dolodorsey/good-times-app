@@ -27,7 +27,9 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{background:#06060C;color:#F2F0EB;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+    html{min-height:100%;background:#020207}
+    body{background:radial-gradient(circle at 50% 0%,#171322 0%,#08070d 38%,#020207 100%);color:#F2F0EB;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;min-height:100dvh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+    #root{width:100%;max-width:430px;min-height:100dvh;margin:0 auto;position:relative;overflow:hidden;isolation:isolate;transform:translateZ(0);background:#06060C;box-shadow:0 0 0 1px rgba(212,168,83,.2),0 28px 90px rgba(0,0,0,.65)}
     ::-webkit-scrollbar{display:none}
     button{border:none;background:none;cursor:pointer;font-family:inherit;color:inherit}
     input{font-family:inherit}
@@ -37,9 +39,10 @@
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
     .skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.08) 50%,rgba(255,255,255,0.04) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
     img{-webkit-user-drag:none}
+    @media(min-width:521px){body{padding:24px}#root{min-height:calc(100dvh - 48px);border-radius:30px}}
+    @media(max-width:520px){#root{max-width:none;box-shadow:none;border-radius:0}}
   </style>
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Good Times","description":"Your personal concierge for nightlife, events, dining & culture. 1,000+ curated venues across 10 cities with AI-powered night planning.","url":"https://thegoodtimesworldwide.com","applicationCategory":"LifestyleApplication","operatingSystem":"iOS","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Organization","name":"The Kollective Hospitality Group"},"featureList":"AI Concierge, 1000+ Venues, 10 Cities, Nightlife Discovery, Event Tickets, Restaurant Finder, Bar Guide","softwareVersion":"1.0.0","datePublished":"2026-03-30","inLanguage":"en","contentRating":"Mature 17+"}</script>
-
+  <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Good Times","description":"Your personal concierge for nightlife, events, dining & culture. 1,000+ curated venues across 10 cities with AI-powered night planning.","url":"https://thegoodtimesworldwide.com","applicationCategory":"LifestyleApplication","operatingSystem":"iOS","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Organization","name":"The Kollective Hospitality Group"},"featureList":"AI Concierge, 1000+ Venues, 10 Cities, Nightlife Discovery, Event Tickets, Restaurant Finder, Bar Guide","softwareVersion":"1.0.0","datePublished":"2026-03-30","inLanguage":"en","contentRating":"Mature 17+"}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Good Times?","acceptedAnswer":{"@type":"Answer","text":"Good Times is a free mobile app that helps you discover the best nightlife, restaurants, bars, events, and experiences across 10 major US cities. Our AI concierge builds personalized night-out plans based on your mood, budget, and crew size."}},{"@type":"Question","name":"What cities does Good Times cover?","acceptedAnswer":{"@type":"Answer","text":"Good Times covers 10 cities: Atlanta, Houston, Los Angeles, Washington DC, Miami, Dallas, Charlotte, New York, Phoenix, and Scottsdale, with over 1,000 curated venues."}},{"@type":"Question","name":"Is Good Times free?","acceptedAnswer":{"@type":"Answer","text":"Yes, Good Times is completely free to download and use. No subscriptions, no hidden fees, no in-app purchases."}},{"@type":"Question","name":"How does the AI concierge work?","acceptedAnswer":{"@type":"Answer","text":"Tell us your mood, budget, group size, and preferred time. Our AI concierge instantly generates three curated plans with venues, restaurants, and events tailored to your vibe."}}]}</script>
   <meta property="og:title" content="Good Times — Your City. Your Vibe. Your Night." />
   <meta property="og:description" content="Discover the best nightlife, dining, hookah, events, and experiences in your city. 10 cities. 1,000+ venues." />
@@ -50,6 +53,6 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Good Times — Your City. Your Vibe. Your Night." />
   <meta name="twitter:description" content="Discover the best nightlife, dining, hookah, events, and experiences in your city." />
-  </head>
+</head>
 <body><div id="root"></div><script type="module" src="/src/main.jsx"></script></body>
 </html>
