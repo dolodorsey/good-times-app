@@ -9,9 +9,13 @@
     "preview": "vite preview",
     "ios:build": "vite build && npx cap sync ios",
     "ios:open": "npx cap open ios",
-    "ios:run": "npx cap run ios"
+    "ios:run": "npx cap run ios",
+    "android:build": "vite build && npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:run": "npx cap run android"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.1",
     "@capacitor/browser": "^6.0.6",
     "@capacitor/cli": "^6.2.1",
     "@capacitor/core": "^6.2.1",
