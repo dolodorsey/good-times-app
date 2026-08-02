@@ -5,10 +5,12 @@ on:
     paths:
       - 'src/**'
       - 'scripts/**'
+      - 'public/**'
       - 'android/**'
       - 'package.json'
       - 'package-lock.json'
       - 'capacitor.config.json'
+      - 'index.html'
       - 'vite.config.*'
       - '.github/workflows/good-times-audit.yml'
       - 'supabase/migrations/**'
@@ -37,6 +39,12 @@ jobs:
         run: node scripts/apply-verified-app-fixes.mjs
       - name: Refresh dependency tree and lockfile
         run: npm install --ignore-scripts
+      - name: Generate valid square PWA icons
+        run: |
+          mkdir -p public/icons
+          convert public/good-times-logo.png -resize 360x220 -gravity center -background '#06060C' -extent 512x512 public/icons/good-times-512.png
+          convert public/good-times-logo.png -resize 136x84 -gravity center -background '#06060C' -extent 192x192 public/icons/good-times-192.png
+          identify -format '%f %wx%h\n' public/icons/good-times-192.png public/icons/good-times-512.png
       - run: node --test scripts/gt-auth-session.test.mjs scripts/direct-request-validation.test.mjs
       - run: npm run build
       - name: Generate and synchronize Android project
@@ -49,16 +57,16 @@ jobs:
       - name: Build Android debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
-      - name: Commit generated app, lockfile, and Android project
+      - name: Commit generated app, lockfile, PWA icons, and Android project
         if: github.event_name == 'pull_request'
         run: |
-          if git diff --quiet -- src/App.jsx package-lock.json android; then
+          if git diff --quiet -- src/App.jsx package-lock.json public/icons android; then
             echo "Generated files are current"
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/App.jsx package-lock.json android
-            git commit -m "fix: correct app logic and complete Android project"
+            git add src/App.jsx package-lock.json public/icons android
+            git commit -m "fix: correct app logic and complete installable builds"
             git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
       - name: Capture dependency audit
