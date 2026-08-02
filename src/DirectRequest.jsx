@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { localTodayISO, validateDirectRequest } from './direct-request-validation.js';
 
 const SUPABASE_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR';
@@ -42,7 +43,7 @@ const initial = {
   interests: '',
   budget: '',
   notes: '',
-  sms_consent: true,
+  sms_consent: false,
 };
 
 export default function DirectRequest({ requestType }) {
@@ -50,27 +51,22 @@ export default function DirectRequest({ requestType }) {
   const [form, setForm] = useState(initial);
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
+  const todayISO = useMemo(() => localTodayISO(), []);
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
-
-  const canSubmit = useMemo(() => {
-    const base =
-      form.full_name.trim().length >= 2 &&
-      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) &&
-      (!form.phone || form.phone.replace(/\D/g, '').length >= 10) &&
-      status !== 'submitting';
-
-    if (!base) return false;
-    if (requestType === 'join') return form.city.trim().length >= 2 && form.interests.trim().length >= 2;
-    if (requestType === 'concierge-request') return form.city.trim().length >= 2 && form.preferred_date && form.notes.trim().length >= 10;
-    if (requestType === 'trip') return form.city.trim().length >= 2 && form.preferred_date && form.end_date && form.group_size;
-    if (requestType === 'group') return form.city.trim().length >= 2 && form.preferred_date && form.group_size && form.occasion.trim().length >= 2;
-    return true;
-  }, [form, requestType, status]);
+  const validation = useMemo(
+    () => validateDirectRequest(form, requestType, todayISO),
+    [form, requestType, todayISO],
+  );
+  const canSubmit = validation.valid && status !== 'submitting';
 
   const submit = async (event) => {
     event.preventDefault();
-    if (!canSubmit) return;
+    if (!canSubmit) {
+      setStatus('error');
+      setMessage(Object.values(validation.errors)[0] || 'Review the request details and try again.');
+      return;
+    }
 
     setStatus('submitting');
     setMessage('');
@@ -93,7 +89,7 @@ export default function DirectRequest({ requestType }) {
           details: {
             preferred_date: form.preferred_date || null,
             end_date: form.end_date || null,
-            group_size: form.group_size || null,
+            group_size: form.group_size ? Number(form.group_size) : null,
             occasion: form.occasion.trim() || null,
             interests: form.interests.trim() || null,
             budget: form.budget.trim() || null,
@@ -143,27 +139,27 @@ export default function DirectRequest({ requestType }) {
 
         <form onSubmit={submit} style={styles.card}>
           <div style={styles.grid}>
-            <Field label="Full name"><input value={form.full_name} onChange={(event) => update('full_name', event.target.value)} autoComplete="name" required style={styles.input} /></Field>
+            <Field label="Full name"><input value={form.full_name} onChange={(event) => update('full_name', event.target.value)} autoComplete="name" required minLength="2" maxLength="120" style={styles.input} /></Field>
             <Field label="Email"><input type="email" value={form.email} onChange={(event) => update('email', event.target.value)} autoComplete="email" required style={styles.input} /></Field>
             <Field label="Mobile phone" optional><input type="tel" value={form.phone} onChange={(event) => update('phone', event.target.value)} autoComplete="tel" style={styles.input} /></Field>
-            <Field label={requestType === 'trip' ? 'Destination city' : 'City'}><input value={form.city} onChange={(event) => update('city', event.target.value)} required style={styles.input} /></Field>
+            <Field label={requestType === 'trip' ? 'Destination city' : 'City'}><input value={form.city} onChange={(event) => update('city', event.target.value)} required minLength="2" maxLength="120" style={styles.input} /></Field>
 
-            {requestType !== 'join' && <Field label={requestType === 'trip' ? 'Trip start' : 'Preferred date'}><input type="date" value={form.preferred_date} onChange={(event) => update('preferred_date', event.target.value)} required style={styles.input} /></Field>}
-            {requestType === 'trip' && <Field label="Trip end"><input type="date" value={form.end_date} onChange={(event) => update('end_date', event.target.value)} required style={styles.input} /></Field>}
-            {(requestType === 'trip' || requestType === 'group' || requestType === 'concierge-request') && <Field label="Group size" optional={requestType === 'concierge-request'}><input type="number" min="1" max="1000" value={form.group_size} onChange={(event) => update('group_size', event.target.value)} required={requestType !== 'concierge-request'} style={styles.input} /></Field>}
+            {requestType !== 'join' && <Field label={requestType === 'trip' ? 'Trip start' : 'Preferred date'}><input type="date" min={todayISO} value={form.preferred_date} onChange={(event) => update('preferred_date', event.target.value)} required style={styles.input} /></Field>}
+            {requestType === 'trip' && <Field label="Trip end"><input type="date" min={form.preferred_date || todayISO} value={form.end_date} onChange={(event) => update('end_date', event.target.value)} required style={styles.input} /></Field>}
+            {(requestType === 'trip' || requestType === 'group' || requestType === 'concierge-request') && <Field label="Group size" optional={requestType === 'concierge-request'}><input type="number" min="1" max="1000" step="1" value={form.group_size} onChange={(event) => update('group_size', event.target.value)} required={requestType !== 'concierge-request'} style={styles.input} /></Field>}
             {(requestType === 'trip' || requestType === 'group' || requestType === 'concierge-request') && <Field label="Occasion" optional={requestType !== 'group'}><input value={form.occasion} onChange={(event) => update('occasion', event.target.value)} required={requestType === 'group'} style={styles.input} /></Field>}
             <Field label="Budget" optional><input value={form.budget} onChange={(event) => update('budget', event.target.value)} placeholder="Example: $1,500 total" style={styles.input} /></Field>
           </div>
 
           <Field label="Interests and vibe" optional={requestType !== 'join'}><textarea rows="4" value={form.interests} onChange={(event) => update('interests', event.target.value)} required={requestType === 'join'} style={styles.textarea} placeholder="Dining, nightlife, art, sports, wellness, family, VIP…" /></Field>
-          <Field label={requestType === 'concierge-request' ? 'What do you need planned?' : 'Additional details'} optional={requestType !== 'concierge-request'}><textarea rows="5" value={form.notes} onChange={(event) => update('notes', event.target.value)} required={requestType === 'concierge-request'} style={styles.textarea} /></Field>
+          <Field label={requestType === 'concierge-request' ? 'What do you need planned?' : 'Additional details'} optional={requestType !== 'concierge-request'}><textarea rows="5" value={form.notes} onChange={(event) => update('notes', event.target.value)} required={requestType === 'concierge-request'} minLength={requestType === 'concierge-request' ? 10 : undefined} style={styles.textarea} /></Field>
 
           <label style={styles.consent}>
             <input type="checkbox" checked={form.sms_consent} onChange={(event) => update('sms_consent', event.target.checked)} style={{ accentColor: '#D4A853' }} />
             <span>I agree to receive confirmation and follow-up messages about this request. Message and data rates may apply.</span>
           </label>
 
-          {status === 'error' && <div style={styles.error}>{message}</div>}
+          {status === 'error' && <div role="alert" style={styles.error}>{message}</div>}
           <button type="submit" disabled={!canSubmit} style={{ ...styles.button, opacity: canSubmit ? 1 : 0.4 }}>
             {status === 'submitting' ? 'Submitting…' : meta.submit}
           </button>
