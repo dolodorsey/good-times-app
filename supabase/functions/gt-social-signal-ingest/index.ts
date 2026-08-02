@@ -150,34 +150,52 @@ const sanitizeScrapeJob = (row: Record<string, unknown>) => ({
   result_counts: row.result_counts && typeof row.result_counts === "object" ? row.result_counts : {},
 });
 
+const sanitizeCompetitorTarget = (row: Record<string, unknown>) => ({
+  username: text(row.username, 100).replace(/^@/, "").toLowerCase(),
+  brand_key: nullableText(row.brand_key, 100),
+  category: nullableText(row.category, 100),
+  city: nullableText(row.city, 50) ?? "ATL",
+  notes: nullableText(row.notes, 500),
+  is_active: row.is_active === false ? false : true,
+});
+
+const sanitizeHashtagTarget = (row: Record<string, unknown>) => ({
+  hashtag: text(row.hashtag, 100).replace(/^#/, "").toLowerCase(),
+  category: nullableText(row.category, 100),
+  city: nullableText(row.city, 50) ?? "ATL",
+  is_active: row.is_active === false ? false : true,
+});
+
+const sanitizeLocationTarget = (row: Record<string, unknown>) => ({
+  location_id: text(row.location_id, 150),
+  location_name: text(row.location_name, 300),
+  city: nullableText(row.city, 50) ?? "ATL",
+  category: nullableText(row.category, 100) ?? "venue",
+  is_active: row.is_active === false ? false : true,
+});
+
 const configurations = {
-  profile_snapshots: {
-    table: "ig_profile_snapshots",
-    conflict: "username,snapshot_date",
-    sanitize: sanitizeProfile,
-    valid: (row: ReturnType<typeof sanitizeProfile>) => Boolean(row.username),
-  },
-  post_metadata: {
-    table: "ig_post_metadata",
-    conflict: "post_id",
-    sanitize: sanitizePost,
-    valid: (row: ReturnType<typeof sanitizePost>) => Boolean(row.username && row.post_id && row.post_url),
-  },
-  hashtag_results: {
-    table: "ig_hashtag_results",
-    conflict: "hashtag,post_url",
-    sanitize: sanitizeHashtagResult,
-    valid: (row: ReturnType<typeof sanitizeHashtagResult>) => Boolean(row.hashtag && row.post_url && row.username),
-  },
-  location_results: {
-    table: "ig_location_results",
-    conflict: "location_name,post_url",
-    sanitize: sanitizeLocationResult,
-    valid: (row: ReturnType<typeof sanitizeLocationResult>) => Boolean(row.location_name && row.post_url && row.username),
-  },
+  profile_snapshots: { table: "ig_profile_snapshots", conflict: "username,snapshot_date", sanitize: sanitizeProfile },
+  post_metadata: { table: "ig_post_metadata", conflict: "post_id", sanitize: sanitizePost },
+  hashtag_results: { table: "ig_hashtag_results", conflict: "hashtag,post_url", sanitize: sanitizeHashtagResult },
+  location_results: { table: "ig_location_results", conflict: "location_name,post_url", sanitize: sanitizeLocationResult },
+  competitor_target: { table: "ig_competitors", conflict: "username", sanitize: sanitizeCompetitorTarget },
+  hashtag_target: { table: "ig_hashtag_watchlist", conflict: "hashtag", sanitize: sanitizeHashtagTarget },
+  location_target: { table: "ig_location_watchlist", conflict: "location_id", sanitize: sanitizeLocationTarget },
 } as const;
 
 type Dataset = keyof typeof configurations | "scrape_job";
+
+const validRow = (dataset: Dataset, row: Record<string, unknown>): boolean => {
+  if (dataset === "profile_snapshots") return Boolean(row.username);
+  if (dataset === "post_metadata") return Boolean(row.username && row.post_id && row.post_url);
+  if (dataset === "hashtag_results") return Boolean(row.hashtag && row.post_url && row.username);
+  if (dataset === "location_results") return Boolean(row.location_name && row.post_url && row.username);
+  if (dataset === "competitor_target") return Boolean(row.username);
+  if (dataset === "hashtag_target") return Boolean(row.hashtag);
+  if (dataset === "location_target") return Boolean(row.location_id && row.location_name);
+  return true;
+};
 
 Deno.serve(async (request: Request) => {
   if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -218,27 +236,11 @@ Deno.serve(async (request: Request) => {
 
   if (action === "get_targets") {
     const [brands, competitors, hashtags, locations, cultureSources] = await Promise.all([
-      database.from("brand_social_handles")
-        .select("brand_key,brand_display_name,ig_handle")
-        .not("ig_handle", "is", null)
-        .eq("posting_paused", false)
-        .limit(500),
-      database.from("ig_competitors")
-        .select("username,brand_key,category,city")
-        .eq("is_active", true)
-        .limit(1000),
-      database.from("ig_hashtag_watchlist")
-        .select("hashtag,category,city")
-        .eq("is_active", true)
-        .limit(1000),
-      database.from("ig_location_watchlist")
-        .select("location_id,location_name,city,category")
-        .eq("is_active", true)
-        .limit(1000),
-      database.from("gt_culture_sources")
-        .select("instagram_handle,display_name,source_type,authority_score,city_key")
-        .eq("is_active", true)
-        .limit(1000),
+      database.from("brand_social_handles").select("brand_key,brand_display_name,ig_handle").not("ig_handle", "is", null).or("posting_paused.is.null,posting_paused.eq.false").limit(500),
+      database.from("ig_competitors").select("username,brand_key,category,city").eq("is_active", true).limit(1000),
+      database.from("ig_hashtag_watchlist").select("hashtag,category,city").eq("is_active", true).limit(1000),
+      database.from("ig_location_watchlist").select("location_id,location_name,city,category").eq("is_active", true).limit(1000),
+      database.from("gt_culture_sources").select("instagram_handle,display_name,source_type,authority_score,city_key").eq("is_active", true).limit(1000),
     ]);
 
     const failure = [brands, competitors, hashtags, locations, cultureSources].find((result) => result.error);
@@ -278,7 +280,6 @@ Deno.serve(async (request: Request) => {
       .filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === "object" && !Array.isArray(row))
       .map(sanitizeScrapeJob);
     if (rows.length === 0) return json(400, { ok: false, error: "no_valid_rows" });
-
     const { error } = await database.from("ig_scrape_jobs").insert(rows);
     if (error) return json(500, { ok: false, error: "ingest_failed", dataset });
     return json(200, { ok: true, dataset, accepted: rows.length });
@@ -289,8 +290,8 @@ Deno.serve(async (request: Request) => {
 
   const rows = inputRows
     .filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === "object" && !Array.isArray(row))
-    .map((row) => configuration.sanitize(row as never))
-    .filter((row) => configuration.valid(row as never));
+    .map((row) => configuration.sanitize(row))
+    .filter((row) => validRow(dataset, row));
 
   if (rows.length === 0) return json(400, { ok: false, error: "no_valid_rows" });
 
