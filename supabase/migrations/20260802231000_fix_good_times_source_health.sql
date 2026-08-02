@@ -32,27 +32,26 @@ set last_scrape_status = 'empty',
 where last_scrape_status = 'success'
   and coalesce(events_found_last_run, 0) = 0;
 
--- Current official calendar locations, verified 2026-08-02.
+-- Current official calendar locations, verified 2026-08-02. Preserve each
+-- source's legacy allowed scrape_method; the direct Edge Function collector is
+-- recorded in replacement_method rather than expanding a production enum here.
 update public.gt_event_sources
 set source_url = 'https://aisle5atl.com/calendar/',
-    scrape_method = 'direct_jsonld',
-    replacement_method = 'official_calendar_url_verified_2026_08_02',
+    replacement_method = 'direct_jsonld_official_calendar_verified_2026_08_02',
     is_active = true,
     updated_at = now()
 where id = '63de734f-309c-43f5-9571-a46263b2136b';
 
 update public.gt_event_sources
 set source_url = 'https://www.cocacolaroxy.com/',
-    scrape_method = 'direct_jsonld',
-    replacement_method = 'official_calendar_url_verified_2026_08_02',
+    replacement_method = 'direct_jsonld_official_calendar_verified_2026_08_02',
     is_active = true,
     updated_at = now()
 where id = '065aa875-b12e-44b7-b633-a4f80f8f47fb';
 
 update public.gt_event_sources
 set source_url = 'https://www.variety-playhouse.com/calendar/',
-    scrape_method = 'direct_jsonld',
-    replacement_method = 'official_calendar_url_verified_2026_08_02',
+    replacement_method = 'direct_jsonld_official_calendar_verified_2026_08_02',
     is_active = true,
     updated_at = now()
 where id = '289bdf4f-4be2-489c-8551-e15b6cfc3cec';
@@ -62,7 +61,7 @@ where id = '289bdf4f-4be2-489c-8551-e15b6cfc3cec';
 -- pausing repeated failed requests until a provider-specific adapter is added.
 update public.gt_event_sources
 set source_url = 'https://discoveratlanta.com/events/all/',
-    scrape_method = 'provider_adapter_required',
+    scrape_method = 'none',
     replacement_method = 'paused_http_403_pending_adapter_2026_08_02',
     is_active = false,
     updated_at = now()
@@ -70,7 +69,8 @@ where id = '849e861a-61bb-4eb8-a2a1-654537119a2f';
 
 -- Duplicate legacy Discover Atlanta record.
 update public.gt_event_sources
-set replacement_method = 'duplicate_of_849e861a_61bb_4eb8_a2a1_654537119a2f',
+set scrape_method = 'none',
+    replacement_method = 'duplicate_of_849e861a_61bb_4eb8_a2a1_654537119a2f',
     is_active = false,
     updated_at = now()
 where id = '5b732ede-f532-431f-960f-2a3942a28a8c';
@@ -78,7 +78,8 @@ where id = '5b732ede-f532-431f-960f-2a3942a28a8c';
 -- The former Atlanta CultureMap hostname no longer resolves. Preserve the row
 -- for provenance but stop repeated DNS failures.
 update public.gt_event_sources
-set replacement_method = 'retired_hostname_unresolvable_2026_08_02',
+set scrape_method = 'none',
+    replacement_method = 'retired_hostname_unresolvable_2026_08_02',
     is_active = false,
     updated_at = now()
 where id = 'bfa10c9f-1aa5-4711-aefa-eb95b270dd23';
