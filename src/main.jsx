@@ -36,3 +36,12 @@ async function bootstrap() {
 }
 
 bootstrap()
+
+const isNativeRuntime = Boolean(window.Capacitor?.isNativePlatform?.())
+if ('serviceWorker' in navigator && !isNativeRuntime) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((error) => {
+      console.warn('Good Times service worker registration failed', error)
+    })
+  })
+}
