@@ -25,14 +25,17 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      - name: Refresh dependency tree for diagnosis
+        run: npm install --ignore-scripts
       - run: node --test scripts/gt-auth-session.test.mjs
       - run: npm run build
       - name: Capture dependency audit
         run: npm audit --json > npm-audit.json || true
-      - name: Upload dependency audit
+      - name: Upload dependency diagnosis
         uses: actions/upload-artifact@v4
         with:
-          name: good-times-npm-audit
-          path: npm-audit.json
+          name: good-times-dependency-diagnosis
+          path: |
+            npm-audit.json
+            package-lock.json
           retention-days: 7
