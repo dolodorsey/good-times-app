@@ -1,0 +1,40 @@
+name: GOOD TIMES source operations ledger
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260802233000_add_good_times_source_operations_ledger.sql'
+      - 'supabase/rollbacks/20260802233000_add_good_times_source_operations_ledger.rollback.sql'
+      - '.github/workflows/good-times-source-operations.yml'
+  push:
+    branches:
+      - feature/good-times-culture-intelligence-engine
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify monitoring is private and additive
+        run: |
+          migration='supabase/migrations/20260802233000_add_good_times_source_operations_ledger.sql'
+          rollback='supabase/rollbacks/20260802233000_add_good_times_source_operations_ledger.rollback.sql'
+          grep -q 'create schema if not exists gt_private' "$migration"
+          grep -q 'revoke all on schema gt_private from public' "$migration"
+          grep -q 'revoke all on function public.gt_capture_source_health_snapshot' "$migration"
+          grep -q 'to service_role, postgres' "$migration"
+          grep -q 'gt-source-health-snapshot' "$migration"
+          grep -q 'cron.unschedule' "$rollback"
+          ! grep -Eiq 'delete[[:space:]]+from[[:space:]]+public\.(gt_venues|gt_shows|gt_sourced_events)|truncate[[:space:]]+table[[:space:]]+public\.' "$migration"
+      - name: Verify states and fresh-data evidence
+        run: |
+          migration='supabase/migrations/20260802233000_add_good_times_source_operations_ledger.sql'
+          for state in healthy degraded stalled unconfigured; do grep -q "$state" "$migration"; done
+          grep -q 'instagram_posts_7d' "$migration"
+          grep -q 'hashtag_rows_7d' "$migration"
+          grep -q 'location_rows_7d' "$migration"
+          grep -q 'scrape_jobs_24h' "$migration"
