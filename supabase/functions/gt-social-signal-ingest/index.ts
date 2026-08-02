@@ -236,11 +236,26 @@ Deno.serve(async (request: Request) => {
 
   if (action === "get_targets") {
     const [brands, competitors, hashtags, locations, cultureSources] = await Promise.all([
-      database.from("brand_social_handles").select("brand_key,brand_display_name,ig_handle").not("ig_handle", "is", null).or("posting_paused.is.null,posting_paused.eq.false").limit(500),
-      database.from("ig_competitors").select("username,brand_key,category,city").eq("is_active", true).limit(1000),
-      database.from("ig_hashtag_watchlist").select("hashtag,category,city").eq("is_active", true).limit(1000),
-      database.from("ig_location_watchlist").select("location_id,location_name,city,category").eq("is_active", true).limit(1000),
-      database.from("gt_culture_sources").select("instagram_handle,display_name,source_type,authority_score,city_key").eq("is_active", true).limit(1000),
+      database.from("brand_social_handles")
+        .select("brand_key,brand_display_name,ig_handle")
+        .not("ig_handle", "is", null)
+        .limit(500),
+      database.from("ig_competitors")
+        .select("username,brand_key,category,city")
+        .eq("is_active", true)
+        .limit(1000),
+      database.from("ig_hashtag_watchlist")
+        .select("hashtag,category,city")
+        .eq("is_active", true)
+        .limit(1000),
+      database.from("ig_location_watchlist")
+        .select("location_id,location_name,city,category")
+        .eq("is_active", true)
+        .limit(1000),
+      database.from("gt_culture_sources")
+        .select("instagram_handle,display_name,source_type,authority_score,city_key")
+        .eq("is_active", true)
+        .limit(1000),
     ]);
 
     const failure = [brands, competitors, hashtags, locations, cultureSources].find((result) => result.error);
@@ -280,6 +295,7 @@ Deno.serve(async (request: Request) => {
       .filter((row): row is Record<string, unknown> => Boolean(row) && typeof row === "object" && !Array.isArray(row))
       .map(sanitizeScrapeJob);
     if (rows.length === 0) return json(400, { ok: false, error: "no_valid_rows" });
+
     const { error } = await database.from("ig_scrape_jobs").insert(rows);
     if (error) return json(500, { ok: false, error: "ingest_failed", dataset });
     return json(200, { ok: true, dataset, accepted: rows.length });
