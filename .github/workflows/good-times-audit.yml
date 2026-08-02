@@ -29,7 +29,7 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
       - uses: actions/setup-java@v4
         with:
@@ -41,10 +41,31 @@ jobs:
         run: npm install --ignore-scripts
       - name: Generate valid square PWA icons
         run: |
-          mkdir -p public/icons
-          convert public/good-times-logo.png -resize 360x220 -gravity center -background '#06060C' -extent 512x512 public/icons/good-times-512.png
-          convert public/good-times-logo.png -resize 136x84 -gravity center -background '#06060C' -extent 192x192 public/icons/good-times-192.png
-          identify -format '%f %wx%h\n' public/icons/good-times-192.png public/icons/good-times-512.png
+          python3 -m pip install --disable-pip-version-check --quiet pillow
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+
+          source = Image.open('public/good-times-logo.png').convert('RGBA')
+          output = Path('public/icons')
+          output.mkdir(parents=True, exist_ok=True)
+
+          for size, max_width in ((192, 136), (512, 360)):
+              ratio = min(max_width / source.width, (size * 0.55) / source.height)
+              resized = source.resize(
+                  (max(1, round(source.width * ratio)), max(1, round(source.height * ratio))),
+                  Image.Resampling.LANCZOS,
+              )
+              canvas = Image.new('RGBA', (size, size), '#06060C')
+              position = ((size - resized.width) // 2, (size - resized.height) // 2)
+              canvas.alpha_composite(resized, position)
+              destination = output / f'good-times-{size}.png'
+              canvas.convert('RGB').save(destination, format='PNG', optimize=True)
+              with Image.open(destination) as verified:
+                  if verified.size != (size, size):
+                      raise SystemExit(f'{destination} is {verified.size}, expected {(size, size)}')
+                  print(destination, verified.size)
+          PY
       - run: node --test scripts/gt-auth-session.test.mjs scripts/direct-request-validation.test.mjs
       - run: npm run build
       - name: Generate and synchronize Android project
