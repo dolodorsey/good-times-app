@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { initNative, isNative, isIOS, tapHaptic, shareEvent, openLink, registerPush } from "./native";
+import { localTodayISO } from "./direct-request-validation.js";
 
 /* ═══════════════════════════════════════════════════════
    GT BACKGROUND SYSTEM — 20 AI-Generated Atlanta Scenes
@@ -692,7 +693,7 @@ const SponsorBanner=({style:st})=>{
 const EventTile=({e:S,onClick:A,wide})=>{
   const g=gt[S.brand]?.c||C.gold;
   const dt=S.date?new Date(S.date+"T12:00:00"):null;
-  const isTonight=S.date===new Date().toISOString().split("T")[0];
+  const isTonight=S.date===localTodayISO();
   return(
     <button onClick={A} style={{...K,width:"100%",padding:0,cursor:"pointer",textAlign:"left",fontFamily:F.f,overflow:"hidden",borderRadius:12,position:"relative",gridColumn:wide?"1 / -1":undefined,border:`1px solid ${g}25`,boxShadow:`0 2px 12px rgba(0,0,0,0.3), inset 0 0 0 1px ${g}30`}}>
       <div style={{height:wide?130:90,position:"relative",overflow:"hidden",background:`linear-gradient(135deg,${g}20,rgba(6,6,12,0.8))`}}>
@@ -779,7 +780,7 @@ const EventCard=({e:S,compact:cmp,onClick:g})=>{
 
 // Star rating component (for CHANGE #7)
 const StarRating=({rating,onRate,size=16})=>{
-  const capped=Math.min(rating,4);
+  const capped=Math.max(0,Math.min(Number(rating)||0,5));
   return(
     <div style={{display:"flex",gap:2}}>
       {[1,2,3,4,5].map(i=>(
@@ -919,21 +920,17 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   useEffect(() => {
     initNative();
     registerPush();
-    // Global image error handler — hides broken images
-    const imgErr=(e)=>{if(e.target.tagName==='IMG')e.target.setAttribute('data-error','true')};
+    // Global image error handler — remove broken media without leaving dead icons.
+    const imgErr=(e)=>{if(e.target.tagName==='IMG'){e.target.setAttribute('data-error','true');e.target.style.display='none';}};
     document.addEventListener('error',imgErr,true);
     return()=>document.removeEventListener('error',imgErr,true);
-    // Global image error handler — hides broken images instead of showing broken icon
-    const handleImgError=(e)=>{if(e.target.tagName==='IMG'){e.target.setAttribute('data-error','true');e.target.style.opacity='0';e.target.style.height='0';}};
-    document.addEventListener('error',handleImgError,true);
-    return()=>document.removeEventListener('error',handleImgError,true);
   }, []);
 
   // Load events — ALL 3 TIERS of data — RELOADS when city changes
   useEffect(()=>{
     (async()=>{
       setLoading(true);
-      const today=new Date().toISOString().split("T")[0];
+      const today=localTodayISO();
       const dayNames=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
       const todayDay=dayNames[new Date().getDay()];
       const cObj=city;
@@ -1193,7 +1190,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const cityEvents=useMemo(()=>events.filter(e=>e.city===city.name||e.city==="TBA"),[events,city]);
 
   // CHANGE #1: Realm-filtered events — TODAY / TONIGHT / THIS WEEK show DIFFERENT results
-  const todayStr=new Date().toISOString().split("T")[0];
+  const todayStr=localTodayISO();
   // Category filter mapping for Now screen chips
   const CAT_FILTER={
     eat:["dining","restaurant","food_hall","brunch","bbq","seafood","steakhouse","food_event"],
