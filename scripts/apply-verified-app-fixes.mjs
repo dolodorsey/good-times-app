@@ -3,29 +3,36 @@ import { readFile, writeFile } from 'node:fs/promises'
 const path = new URL('../src/App.jsx', import.meta.url)
 let source = await readFile(path, 'utf8')
 
-function replaceExact(search, replacement, expectedCount, label) {
-  const count = source.split(search).length - 1
-  if (count !== expectedCount) {
-    throw new Error(`${label}: expected ${expectedCount} matches, found ${count}`)
-  }
-  source = source.split(search).join(replacement)
+function countOf(value) {
+  return source.split(value).length - 1
 }
 
-replaceExact(
+function replacePending(search, replacement, pendingCount, label) {
+  const pending = countOf(search)
+  const applied = countOf(replacement)
+  if (pending === pendingCount) {
+    source = source.split(search).join(replacement)
+    return
+  }
+  if (pending === 0 && applied >= pendingCount) return
+  throw new Error(`${label}: expected ${pendingCount} pending or applied matches; found pending=${pending}, applied=${applied}`)
+}
+
+replacePending(
   'import { initNative, isNative, isIOS, tapHaptic, shareEvent, openLink, registerPush } from "./native";\n',
   'import { initNative, isNative, isIOS, tapHaptic, shareEvent, openLink, registerPush } from "./native";\nimport { localTodayISO } from "./direct-request-validation.js";\n',
   1,
   'local date import',
 )
 
-replaceExact(
+replacePending(
   'new Date().toISOString().split("T")[0]',
   'localTodayISO()',
   2,
   'local date calculation',
 )
 
-replaceExact(
+replacePending(
   'const capped=Math.min(rating,4);',
   'const capped=Math.max(0,Math.min(Number(rating)||0,5));',
   1,
