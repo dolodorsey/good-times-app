@@ -1,0 +1,76 @@
+name: Good Times audit checks
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'scripts/**'
+      - 'public/**'
+      - 'android/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - 'index.html'
+      - 'vite.config.*'
+      - '.github/workflows/good-times-audit.yml'
+      - 'supabase/migrations/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install exact locked dependencies
+        run: npm ci
+      - name: Verify app logic repairs are present
+        run: |
+          ! grep -q 'toISOString().split' src/App.jsx
+          grep -q 'localTodayISO()' src/App.jsx
+          grep -q 'Math.min(Number(rating)||0,5)' src/App.jsx
+      - name: Verify committed PWA icon dimensions
+        run: |
+          python3 - <<'PY'
+          import struct
+          from pathlib import Path
+          for size in (192, 512):
+              path = Path(f'public/icons/good-times-{size}.png')
+              data = path.read_bytes()
+              if data[:8] != b'\x89PNG\r\n\x1a\n':
+                  raise SystemExit(f'{path} is not a PNG')
+              width, height = struct.unpack('>II', data[16:24])
+              if (width, height) != (size, size):
+                  raise SystemExit(f'{path} is {(width, height)}, expected {(size, size)}')
+              print(path, width, height)
+          PY
+      - name: Run regression tests
+        run: node --test scripts/gt-auth-session.test.mjs scripts/direct-request-validation.test.mjs
+      - name: Build web application
+        run: npm run build
+      - name: Synchronize Android web assets
+        run: |
+          npx cap sync android
+          chmod +x android/gradlew
+      - name: Build Android debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Capture dependency audit
+        run: npm audit --json > npm-audit.json || true
+      - name: Upload dependency diagnosis
+        uses: actions/upload-artifact@v4
+        with:
+          name: good-times-dependency-diagnosis
+          path: npm-audit.json
+          retention-days: 7
