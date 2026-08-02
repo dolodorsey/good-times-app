@@ -24,7 +24,7 @@ jobs:
         with:
           deno-version: v2.x
       - name: Type-check official venue adapter
-        run: deno check supabase/functions/gt-atlanta-venue-adapters/index.ts
+        run: deno check --config supabase/functions/gt-atlanta-venue-adapters/deno.json supabase/functions/gt-atlanta-venue-adapters/index.ts
       - name: Verify timezone safeguards
         run: |
           grep -q 'America/New_York' supabase/functions/gt-atlanta-venue-adapters/index.ts
