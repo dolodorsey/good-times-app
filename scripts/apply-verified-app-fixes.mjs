@@ -28,7 +28,7 @@ replacePending(
 replacePending(
   'new Date().toISOString().split("T")[0]',
   'localTodayISO()',
-  2,
+  3,
   'local date calculation',
 )
 
@@ -37,6 +37,13 @@ replacePending(
   'const capped=Math.max(0,Math.min(Number(rating)||0,5));',
   1,
   'five-star rendering',
+)
+
+replacePending(
+  `    // Global image error handler — hides broken images\n    const imgErr=(e)=>{if(e.target.tagName==='IMG')e.target.setAttribute('data-error','true')};\n    document.addEventListener('error',imgErr,true);\n    return()=>document.removeEventListener('error',imgErr,true);\n    // Global image error handler — hides broken images instead of showing broken icon\n    const handleImgError=(e)=>{if(e.target.tagName==='IMG'){e.target.setAttribute('data-error','true');e.target.style.opacity='0';e.target.style.height='0';}};\n    document.addEventListener('error',handleImgError,true);\n    return()=>document.removeEventListener('error',handleImgError,true);`,
+  `    // Global image error handler — remove broken media without leaving dead icons.\n    const imgErr=(e)=>{if(e.target.tagName==='IMG'){e.target.setAttribute('data-error','true');e.target.style.display='none';}};\n    document.addEventListener('error',imgErr,true);\n    return()=>document.removeEventListener('error',imgErr,true);`,
+  1,
+  'image error handler',
 )
 
 await writeFile(path, source)
