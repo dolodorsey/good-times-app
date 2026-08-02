@@ -5,8 +5,10 @@ on:
     paths:
       - 'src/**'
       - 'scripts/**'
+      - 'android/**'
       - 'package.json'
       - 'package-lock.json'
+      - 'capacitor.config.json'
       - 'vite.config.*'
       - '.github/workflows/good-times-audit.yml'
       - 'supabase/migrations/**'
@@ -18,7 +20,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
@@ -27,24 +29,38 @@ jobs:
         with:
           node-version: 20
           cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - name: Apply counted verified logic changes
         run: node scripts/apply-verified-app-fixes.mjs
       - name: Refresh dependency tree and lockfile
         run: npm install --ignore-scripts
-      - name: Commit generated app and lockfile changes
+      - run: node --test scripts/gt-auth-session.test.mjs scripts/direct-request-validation.test.mjs
+      - run: npm run build
+      - name: Generate and synchronize Android project
+        run: |
+          if [ ! -f android/gradlew ]; then
+            npx cap add android
+          fi
+          npx cap sync android
+          chmod +x android/gradlew
+      - name: Build Android debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+      - name: Commit generated app, lockfile, and Android project
         if: github.event_name == 'pull_request'
         run: |
-          if git diff --quiet -- src/App.jsx package-lock.json; then
+          if git diff --quiet -- src/App.jsx package-lock.json android; then
             echo "Generated files are current"
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/App.jsx package-lock.json
-            git commit -m "fix: use local dates and render five-star ratings"
+            git add src/App.jsx package-lock.json android
+            git commit -m "fix: correct app logic and complete Android project"
             git push origin HEAD:${{ github.event.pull_request.head.ref }}
           fi
-      - run: node --test scripts/gt-auth-session.test.mjs scripts/direct-request-validation.test.mjs
-      - run: npm run build
       - name: Capture dependency audit
         run: npm audit --json > npm-audit.json || true
       - name: Upload dependency diagnosis
