@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   verify:
@@ -25,8 +25,6 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -35,61 +33,39 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Apply counted verified logic changes
-        run: node scripts/apply-verified-app-fixes.mjs
-      - name: Refresh dependency tree and lockfile
-        run: npm install --ignore-scripts
-      - name: Generate valid square PWA icons
+      - name: Install exact locked dependencies
+        run: npm ci
+      - name: Verify app logic repairs are present
         run: |
-          python3 -m pip install --disable-pip-version-check --quiet pillow
+          ! grep -q 'toISOString().split' src/App.jsx
+          grep -q 'localTodayISO()' src/App.jsx
+          grep -q 'Math.min(Number(rating)||0,5)' src/App.jsx
+      - name: Verify committed PWA icon dimensions
+        run: |
           python3 - <<'PY'
+          import struct
           from pathlib import Path
-          from PIL import Image
-
-          source = Image.open('public/good-times-logo.png').convert('RGBA')
-          output = Path('public/icons')
-          output.mkdir(parents=True, exist_ok=True)
-
-          for size, max_width in ((192, 136), (512, 360)):
-              ratio = min(max_width / source.width, (size * 0.55) / source.height)
-              resized = source.resize(
-                  (max(1, round(source.width * ratio)), max(1, round(source.height * ratio))),
-                  Image.Resampling.LANCZOS,
-              )
-              canvas = Image.new('RGBA', (size, size), '#06060C')
-              position = ((size - resized.width) // 2, (size - resized.height) // 2)
-              canvas.alpha_composite(resized, position)
-              destination = output / f'good-times-{size}.png'
-              canvas.convert('RGB').save(destination, format='PNG', optimize=True)
-              with Image.open(destination) as verified:
-                  if verified.size != (size, size):
-                      raise SystemExit(f'{destination} is {verified.size}, expected {(size, size)}')
-                  print(destination, verified.size)
+          for size in (192, 512):
+              path = Path(f'public/icons/good-times-{size}.png')
+              data = path.read_bytes()
+              if data[:8] != b'\x89PNG\r\n\x1a\n':
+                  raise SystemExit(f'{path} is not a PNG')
+              width, height = struct.unpack('>II', data[16:24])
+              if (width, height) != (size, size):
+                  raise SystemExit(f'{path} is {(width, height)}, expected {(size, size)}')
+              print(path, width, height)
           PY
-      - run: node --test scripts/gt-auth-session.test.mjs scripts/direct-request-validation.test.mjs
-      - run: npm run build
-      - name: Generate and synchronize Android project
+      - name: Run regression tests
+        run: node --test scripts/gt-auth-session.test.mjs scripts/direct-request-validation.test.mjs
+      - name: Build web application
+        run: npm run build
+      - name: Synchronize Android web assets
         run: |
-          if [ ! -f android/gradlew ]; then
-            npx cap add android
-          fi
           npx cap sync android
           chmod +x android/gradlew
       - name: Build Android debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
-      - name: Commit generated app, lockfile, PWA icons, and Android project
-        if: github.event_name == 'pull_request'
-        run: |
-          if git diff --quiet -- src/App.jsx package-lock.json public/icons android; then
-            echo "Generated files are current"
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add src/App.jsx package-lock.json public/icons android
-            git commit -m "fix: correct app logic and complete installable builds"
-            git push origin HEAD:${{ github.event.pull_request.head.ref }}
-          fi
       - name: Capture dependency audit
         run: npm audit --json > npm-audit.json || true
       - name: Upload dependency diagnosis
