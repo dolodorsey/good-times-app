@@ -1,6 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
+function splitVendorChunk(moduleId) {
+  if (!moduleId.includes('node_modules')) return undefined
+  if (moduleId.includes('/react/') || moduleId.includes('/react-dom/')) return 'react-runtime'
+  if (moduleId.includes('@capacitor')) return 'native-runtime'
+  return 'vendor'
+}
+
 export default defineConfig({
   plugins: [react()],
   build: {
@@ -11,18 +18,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 650,
     rollupOptions: {
       output: {
-        manualChunks: {
-          'react-runtime': ['react', 'react-dom'],
-          'native-runtime': [
-            '@capacitor/core',
-            '@capacitor/browser',
-            '@capacitor/haptics',
-            '@capacitor/push-notifications',
-            '@capacitor/share',
-            '@capacitor/splash-screen',
-            '@capacitor/status-bar',
-          ],
-        },
+        manualChunks: splitVendorChunk,
       },
     },
   },
