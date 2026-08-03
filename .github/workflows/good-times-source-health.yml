@@ -67,11 +67,12 @@ jobs:
         run: |
           migration='supabase/migrations/20260803002500_normalize_good_times_explicit_categories.sql'
           rollback='supabase/rollbacks/20260803002500_normalize_good_times_explicit_categories.rollback.sql'
-          grep -q 'gt_normalize_sourced_event_type' "$migration"
-          grep -q 'Stand-Up' "$migration" || grep -q 'stand\[- \]\?up' "$migration"
-          grep -q 'dj|dance|electronic' "$migration"
-          grep -q 'r&b|rnb|hip hop' "$migration"
-          grep -q 'drop trigger if exists trg_gt_normalize_sourced_event_type' "$rollback"
+          grep -Fq 'gt_normalize_sourced_event_type' "$migration"
+          grep -Fq "new.event_type := 'comedy';" "$migration"
+          grep -Fq "new.event_type := 'nightlife';" "$migration"
+          grep -Fq "new.event_type := 'concert';" "$migration"
+          grep -Fq "new.event_type := 'festival';" "$migration"
+          grep -Fq 'drop trigger if exists trg_gt_normalize_sourced_event_type' "$rollback"
       - name: Verify quarantine and rollback
         run: |
           migration='supabase/migrations/20260802234000_quarantine_non_atlanta_eventbrite_records.sql'
