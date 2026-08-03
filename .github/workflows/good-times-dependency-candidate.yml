@@ -41,17 +41,58 @@ jobs:
 
       - name: Generate conservative secure package set
         run: |
-          npm install --save-exact \
-            @capacitor/core@7.6.1 \
-            @capacitor/android@7.6.1 \
-            @capacitor/cli@7.6.1 \
-            @capacitor/browser@7.0.2 \
-            @capacitor/haptics@7.0.2 \
-            @capacitor/push-notifications@7.0.3 \
-            @capacitor/share@7.0.2 \
-            @capacitor/splash-screen@7.0.3 \
-            @capacitor/status-bar@7.0.3 \
-            vite@7.3.1
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'package.json';
+          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const dependencies = {
+            '@capacitor/android': '7.6.1',
+            '@capacitor/browser': '7.0.2',
+            '@capacitor/cli': '7.6.1',
+            '@capacitor/core': '7.6.1',
+            '@capacitor/haptics': '7.0.2',
+            '@capacitor/ios': '7.6.1',
+            '@capacitor/push-notifications': '7.0.3',
+            '@capacitor/share': '7.0.2',
+            '@capacitor/splash-screen': '7.0.3',
+            '@capacitor/status-bar': '7.0.3',
+          };
+          for (const [name, version] of Object.entries(dependencies)) {
+            if (!(name in pkg.dependencies)) {
+              throw new Error(`Expected existing dependency ${name}`);
+            }
+            pkg.dependencies[name] = version;
+          }
+          if (!pkg.devDependencies?.vite) throw new Error('Expected existing Vite dev dependency');
+          pkg.devDependencies.vite = '7.3.1';
+          fs.writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
+          NODE
+          npm install --ignore-scripts=false
+
+      - name: Verify aligned JavaScript package versions
+        run: |
+          node - <<'NODE'
+          const pkg = require('./package.json');
+          const expected = {
+            '@capacitor/android': '7.6.1',
+            '@capacitor/browser': '7.0.2',
+            '@capacitor/cli': '7.6.1',
+            '@capacitor/core': '7.6.1',
+            '@capacitor/haptics': '7.0.2',
+            '@capacitor/ios': '7.6.1',
+            '@capacitor/push-notifications': '7.0.3',
+            '@capacitor/share': '7.0.2',
+            '@capacitor/splash-screen': '7.0.3',
+            '@capacitor/status-bar': '7.0.3',
+          };
+          for (const [name, version] of Object.entries(expected)) {
+            if (pkg.dependencies[name] !== version) {
+              throw new Error(`${name}: expected ${version}, got ${pkg.dependencies[name]}`);
+            }
+          }
+          if (pkg.devDependencies.vite !== '7.3.1') throw new Error('Vite is not 7.3.1');
+          NODE
+          npm ls --depth=0
 
       - name: Apply Capacitor 7 Android migration
         run: |
@@ -99,9 +140,6 @@ jobs:
           grep -Fq 'gradle-8.11.1-all.zip' android/gradle/wrapper/gradle-wrapper.properties
           grep -Fq 'uiMode|navigation' android/app/src/main/AndroidManifest.xml
           java -version
-
-      - name: Show resolved versions
-        run: npm ls --depth=0
 
       - name: Run regression tests
         run: node --test scripts/gt-auth-session.test.mjs scripts/direct-request-validation.test.mjs
