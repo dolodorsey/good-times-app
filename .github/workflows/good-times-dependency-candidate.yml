@@ -1,0 +1,79 @@
+name: GOOD TIMES dependency candidate
+
+on:
+  push:
+    branches:
+      - chore/good-times-dependency-remediation-2026-08-02
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  generate-and-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Generate conservative secure package set
+        run: |
+          npm install --save-exact \
+            @capacitor/core@latest-7 \
+            @capacitor/android@latest-7 \
+            @capacitor/cli@latest-7 \
+            @capacitor/browser@latest-7 \
+            @capacitor/haptics@latest-7 \
+            @capacitor/push-notifications@latest-7 \
+            @capacitor/share@latest-7 \
+            @capacitor/splash-screen@latest-7 \
+            @capacitor/status-bar@latest-7 \
+            vite@7.3.1
+
+      - name: Show resolved versions
+        run: npm ls --depth=0
+
+      - name: Run regression tests
+        run: node --test scripts/gt-auth-session.test.mjs scripts/direct-request-validation.test.mjs
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Synchronize Android platform
+        run: |
+          npx cap sync android
+          chmod +x android/gradlew
+
+      - name: Build Android debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Capture upgraded dependency audit
+        run: npm audit --json > npm-audit-upgraded.json || true
+
+      - name: Create reviewable upgrade patch
+        run: |
+          git diff --binary -- package.json package-lock.json capacitor.config.json android > dependency-upgrade.patch
+          test -s dependency-upgrade.patch
+
+      - name: Upload verified candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: good-times-dependency-candidate
+          path: |
+            package.json
+            package-lock.json
+            capacitor.config.json
+            dependency-upgrade.patch
+            npm-audit-upgraded.json
+          retention-days: 7
