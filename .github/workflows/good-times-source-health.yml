@@ -1,0 +1,145 @@
+name: GOOD TIMES source health
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/gt-atlanta-venue-adapters/**'
+      - 'supabase/functions/gt-atlanta-aisle5-adapter/**'
+      - 'supabase/functions/gt-atlanta-eventbrite-refresh/**'
+      - 'supabase/migrations/2026080223*.sql'
+      - 'supabase/rollbacks/2026080223*.sql'
+      - 'supabase/migrations/20260803002500_normalize_good_times_explicit_categories.sql'
+      - 'supabase/rollbacks/20260803002500_normalize_good_times_explicit_categories.rollback.sql'
+      - 'supabase/migrations/20260803004000_lock_good_times_trigger_functions.sql'
+      - 'supabase/rollbacks/20260803004000_lock_good_times_trigger_functions.rollback.sql'
+      - 'supabase/migrations/20260803005000_harden_good_times_source_promotion.sql'
+      - 'supabase/rollbacks/20260803005000_harden_good_times_source_promotion.rollback.sql'
+      - 'supabase/migrations/20260803005500_lock_eventbrite_normalizer.sql'
+      - 'supabase/rollbacks/20260803005500_lock_eventbrite_normalizer.rollback.sql'
+      - 'supabase/migrations/20260803010000_normalize_good_times_scrape_run_status.sql'
+      - 'supabase/rollbacks/20260803010000_normalize_good_times_scrape_run_status.rollback.sql'
+      - '.github/workflows/good-times-source-health.yml'
+  push:
+    branches:
+      - fix/good-times-source-health-2026-08-02
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check source functions
+        run: |
+          deno check --config supabase/functions/gt-atlanta-venue-adapters/deno.json supabase/functions/gt-atlanta-venue-adapters/index.ts
+          deno check --config supabase/functions/gt-atlanta-aisle5-adapter/deno.json supabase/functions/gt-atlanta-aisle5-adapter/index.ts
+          deno check --config supabase/functions/gt-atlanta-eventbrite-refresh/deno.json supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+      - name: Verify timezone safeguards
+        run: |
+          grep -q 'America/New_York' supabase/functions/gt-atlanta-venue-adapters/index.ts
+          grep -q 'original_event_datetime' supabase/functions/gt-atlanta-venue-adapters/index.ts
+          ! grep -q 'dateValue.toISOString().slice(0, 10)' supabase/functions/gt-atlanta-venue-adapters/index.ts
+          grep -q 'America/New_York' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+          ! grep -q 'date.toISOString().slice(0, 10)' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+          grep -q 'America/New_York' supabase/functions/gt-atlanta-aisle5-adapter/index.ts
+          ! grep -q 'toISOString().slice(0, 10)' supabase/functions/gt-atlanta-aisle5-adapter/index.ts
+      - name: Verify Eventbrite Atlanta quality gate
+        run: |
+          file='supabase/functions/gt-atlanta-eventbrite-refresh/index.ts'
+          grep -q 'onlineeventattendancemode' "$file"
+          grep -q 'virtuallocation' "$file"
+          grep -q 'missing_physical_address' "$file"
+          grep -q 'outside_atlanta_metro' "$file"
+          grep -q 'non_georgia_region' "$file"
+          grep -q 'physical_atlanta_required' "$file"
+          grep -q 'last_scrape_status: accepted > 0 ? "success" : "empty"' "$file"
+      - name: Verify Aisle 5 parser safeguards
+        run: |
+          file='supabase/functions/gt-atlanta-aisle5-adapter/index.ts'
+          grep -q 'seetickets.us' "$file"
+          grep -q 'eventim.us' "$file"
+          grep -q 'byTicket' "$file"
+          grep -q 'ticket_link_count' "$file"
+          grep -q 'ticket_hosts' "$file"
+          grep -q 'MAX_FETCH_BYTES' "$file"
+          grep -q 'last_scrape_status: parsed.events.length > 0 ? "success" : "empty"' "$file"
+          grep -q 'dry_run' "$file"
+          grep -q 'source_inactive_or_missing' "$file"
+      - name: Verify explicit category normalization
+        run: |
+          migration='supabase/migrations/20260803002500_normalize_good_times_explicit_categories.sql'
+          rollback='supabase/rollbacks/20260803002500_normalize_good_times_explicit_categories.rollback.sql'
+          grep -Fq 'gt_normalize_sourced_event_type' "$migration"
+          grep -Fq "new.event_type := 'comedy';" "$migration"
+          grep -Fq "new.event_type := 'nightlife';" "$migration"
+          grep -Fq "new.event_type := 'concert';" "$migration"
+          grep -Fq "new.event_type := 'festival';" "$migration"
+          grep -Fq 'drop trigger if exists trg_gt_normalize_sourced_event_type' "$rollback"
+      - name: Verify promotion eligibility and counting
+        run: |
+          migration='supabase/migrations/20260803005000_harden_good_times_source_promotion.sql'
+          rollback='supabase/rollbacks/20260803005000_harden_good_times_source_promotion.rollback.sql'
+          grep -Fq "now() at time zone 'America/New_York'" "$migration"
+          grep -Fq 'coalesce(se.is_verified, false) = true' "$migration"
+          grep -Fq 'coalesce(se.is_published, false) = true' "$migration"
+          grep -Fq 'se.legacy_quarantined_at is null' "$migration"
+          grep -Fq 'se.legacy_quarantine_reason is null' "$migration"
+          grep -Fq 'get diagnostics v_inserted = row_count' "$migration"
+          grep -Fq 'duplicate_show_already_existed' "$migration"
+          grep -Fq 'revoke all on function public.gt_promote_sourced_to_shows' "$migration"
+          grep -Fq 'create or replace function public.gt_promote_sourced_to_shows' "$rollback"
+      - name: Verify trigger functions are server-only
+        run: |
+          migration='supabase/migrations/20260803004000_lock_good_times_trigger_functions.sql'
+          rollback='supabase/rollbacks/20260803004000_lock_good_times_trigger_functions.rollback.sql'
+          eventbrite_migration='supabase/migrations/20260803005500_lock_eventbrite_normalizer.sql'
+          eventbrite_rollback='supabase/rollbacks/20260803005500_lock_eventbrite_normalizer.rollback.sql'
+          grep -Fq 'revoke all on function public.gt_normalize_event_source_health()' "$migration"
+          grep -Fq 'revoke all on function public.gt_normalize_sourced_event_type()' "$migration"
+          grep -Fq 'to service_role, postgres' "$migration"
+          grep -Fq 'to public, anon, authenticated, service_role, postgres' "$rollback"
+          grep -Fq 'revoke all on function public.gt_normalize_eventbrite_source_url()' "$eventbrite_migration"
+          grep -Fq 'to service_role, postgres' "$eventbrite_migration"
+          grep -Fq 'to public, anon, authenticated, service_role, postgres' "$eventbrite_rollback"
+      - name: Verify scrape run ledger normalization
+        run: |
+          migration='supabase/migrations/20260803010000_normalize_good_times_scrape_run_status.sql'
+          rollback='supabase/rollbacks/20260803010000_normalize_good_times_scrape_run_status.rollback.sql'
+          grep -Fq 'gt_normalize_scrape_run_status' "$migration"
+          grep -Fq "new.status = 'completed'" "$migration"
+          grep -Fq "new.status := 'success';" "$migration"
+          grep -Fq "new.status = 'failed'" "$migration"
+          grep -Fq "new.status := 'error';" "$migration"
+          grep -Fq 'revoke all on function public.gt_normalize_scrape_run_status()' "$migration"
+          grep -Fq 'drop function if exists public.gt_normalize_scrape_run_status()' "$rollback"
+      - name: Verify quarantine and rollback
+        run: |
+          migration='supabase/migrations/20260802234000_quarantine_non_atlanta_eventbrite_records.sql'
+          rollback='supabase/rollbacks/20260802234000_quarantine_non_atlanta_eventbrite_records.rollback.sql'
+          grep -q 'eventbrite_virtual_or_non_atlanta' "$migration"
+          grep -q "status = 'cancelled'" "$migration"
+          grep -q "raw_data = coalesce(raw_data" "$migration"
+          grep -q "raw_data = coalesce(raw_data, '{}'::jsonb) - 'quality_quarantine'" "$rollback"
+      - name: Verify server-only grants and rollback
+        run: |
+          grep -q 'revoke all on function public.gt_run_atlanta_official_venue_adapters' supabase/migrations/20260802232000_schedule_good_times_official_venue_adapters.sql
+          grep -q 'to service_role, postgres' supabase/migrations/20260802232000_schedule_good_times_official_venue_adapters.sql
+          grep -q 'cron.unschedule' supabase/rollbacks/20260802232000_schedule_good_times_official_venue_adapters.rollback.sql
+          grep -q 'revoke all on function public.gt_run_atlanta_aisle5_adapter' supabase/migrations/20260802235000_schedule_good_times_aisle5_adapter.sql
+          grep -q 'gt-atlanta-aisle5-adapter' supabase/migrations/20260802235000_schedule_good_times_aisle5_adapter.sql
+          grep -q 'cron.unschedule' supabase/rollbacks/20260802235000_schedule_good_times_aisle5_adapter.rollback.sql
+      - name: Verify bounded source access
+        run: |
+          grep -q 'SUPPORTED_SOURCE_IDS' supabase/functions/gt-atlanta-venue-adapters/index.ts
+          grep -q 'MAX_BODY_BYTES' supabase/functions/gt-atlanta-venue-adapters/index.ts
+          grep -q 'MAX_FETCH_BYTES' supabase/functions/gt-atlanta-venue-adapters/index.ts
+          grep -q 'MAX_BODY_BYTES' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+          grep -q 'MAX_FETCH_BYTES' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+          grep -q 'SOURCE_ID' supabase/functions/gt-atlanta-aisle5-adapter/index.ts
+          grep -q 'MAX_BODY_BYTES' supabase/functions/gt-atlanta-aisle5-adapter/index.ts

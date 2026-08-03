@@ -1,0 +1,42 @@
+name: GOOD TIMES scrape ledger
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20260803010000_normalize_good_times_scrape_run_status.sql'
+      - 'supabase/rollbacks/20260803010000_normalize_good_times_scrape_run_status.rollback.sql'
+      - 'supabase/migrations/20260803010500_normalize_scrape_run_terminal_states.sql'
+      - 'supabase/rollbacks/20260803010500_normalize_scrape_run_terminal_states.rollback.sql'
+      - '.github/workflows/good-times-scrape-ledger.yml'
+  push:
+    branches:
+      - fix/good-times-source-health-2026-08-02
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify canonical scrape-run states
+        run: |
+          initial='supabase/migrations/20260803010000_normalize_good_times_scrape_run_status.sql'
+          final='supabase/migrations/20260803010500_normalize_scrape_run_terminal_states.sql'
+          rollback='supabase/rollbacks/20260803010500_normalize_scrape_run_terminal_states.rollback.sql'
+          grep -Fq "new.status := 'success';" "$initial"
+          grep -Fq "new.status := 'error';" "$initial"
+          grep -Fq "new.run_status := 'success';" "$final"
+          grep -Fq "new.run_status := 'error';" "$final"
+          grep -Fq 'before insert or update of status, run_status' "$final"
+          grep -Fq "where run_status in ('completed','failed')" "$final"
+          grep -Fq 'revoke all on function public.gt_normalize_scrape_run_status()' "$final"
+          grep -Fq 'to service_role, postgres' "$final"
+          grep -Fq 'before insert or update of status' "$rollback"
+      - name: Reject destructive telemetry changes
+        run: |
+          ! grep -Eiq 'delete[[:space:]]+from|truncate[[:space:]]+table|drop[[:space:]]+table' \
+            supabase/migrations/20260803010000_normalize_good_times_scrape_run_status.sql \
+            supabase/migrations/20260803010500_normalize_scrape_run_terminal_states.sql
