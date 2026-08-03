@@ -8,6 +8,8 @@ on:
       - 'supabase/functions/gt-atlanta-eventbrite-refresh/**'
       - 'supabase/migrations/2026080223*.sql'
       - 'supabase/rollbacks/2026080223*.sql'
+      - 'supabase/migrations/20260803002500_normalize_good_times_explicit_categories.sql'
+      - 'supabase/rollbacks/20260803002500_normalize_good_times_explicit_categories.rollback.sql'
       - '.github/workflows/good-times-source-health.yml'
   push:
     branches:
@@ -61,6 +63,15 @@ jobs:
           grep -q 'last_scrape_status: parsed.events.length > 0 ? "success" : "empty"' "$file"
           grep -q 'dry_run' "$file"
           grep -q 'source_inactive_or_missing' "$file"
+      - name: Verify explicit category normalization
+        run: |
+          migration='supabase/migrations/20260803002500_normalize_good_times_explicit_categories.sql'
+          rollback='supabase/rollbacks/20260803002500_normalize_good_times_explicit_categories.rollback.sql'
+          grep -q 'gt_normalize_sourced_event_type' "$migration"
+          grep -q 'Stand-Up' "$migration" || grep -q 'stand\[- \]\?up' "$migration"
+          grep -q 'dj|dance|electronic' "$migration"
+          grep -q 'r&b|rnb|hip hop' "$migration"
+          grep -q 'drop trigger if exists trg_gt_normalize_sourced_event_type' "$rollback"
       - name: Verify quarantine and rollback
         run: |
           migration='supabase/migrations/20260802234000_quarantine_non_atlanta_eventbrite_records.sql'
