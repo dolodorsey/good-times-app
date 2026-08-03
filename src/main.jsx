@@ -7,10 +7,12 @@ import {
   parseRecoverySession,
   refreshStoredSession,
 } from './gt-auth-session.js'
+import { readSession } from './features/auth/client.js'
 
 const LazyApp = lazy(() => import('./App.jsx'))
 const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
 const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
+const LazyOnboarding = lazy(() => import('./features/onboarding/GoodTimesOnboarding.jsx'))
 
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const directRoutes = {
@@ -106,6 +108,7 @@ async function bootstrap() {
   const requestType = directRoutes[pathname]
 
   if (!recoverySession) await refreshStoredSession()
+  const hasSession = Boolean(readSession())
   if (!requestType && !recoverySession) sessionStorage.setItem('gt_splash_shown', '1')
 
   let route
@@ -117,6 +120,9 @@ async function bootstrap() {
   } else if (requestType) {
     route = <LazyDirectRequest requestType={requestType} />
     loadingLabel = 'Opening your concierge request'
+  } else if (!hasSession) {
+    route = <LazyOnboarding onComplete={() => window.location.reload()} />
+    loadingLabel = 'Opening your private concierge'
   } else {
     route = <LazyApp />
   }
@@ -125,7 +131,7 @@ async function bootstrap() {
     <React.StrictMode>
       <RuntimeBoundary>
         <Suspense fallback={<RouteLoading label={loadingLabel} />}>
-          <PremiumRoot launch={!requestType && !recoverySession}>{route}</PremiumRoot>
+          <PremiumRoot launch={!requestType && !recoverySession && hasSession}>{route}</PremiumRoot>
         </Suspense>
       </RuntimeBoundary>
     </React.StrictMode>,
