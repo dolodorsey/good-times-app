@@ -14,6 +14,8 @@ on:
       - 'supabase/rollbacks/20260803004000_lock_good_times_trigger_functions.rollback.sql'
       - 'supabase/migrations/20260803005000_harden_good_times_source_promotion.sql'
       - 'supabase/rollbacks/20260803005000_harden_good_times_source_promotion.rollback.sql'
+      - 'supabase/migrations/20260803005500_lock_eventbrite_normalizer.sql'
+      - 'supabase/rollbacks/20260803005500_lock_eventbrite_normalizer.rollback.sql'
       - '.github/workflows/good-times-source-health.yml'
   push:
     branches:
@@ -94,10 +96,15 @@ jobs:
         run: |
           migration='supabase/migrations/20260803004000_lock_good_times_trigger_functions.sql'
           rollback='supabase/rollbacks/20260803004000_lock_good_times_trigger_functions.rollback.sql'
+          eventbrite_migration='supabase/migrations/20260803005500_lock_eventbrite_normalizer.sql'
+          eventbrite_rollback='supabase/rollbacks/20260803005500_lock_eventbrite_normalizer.rollback.sql'
           grep -Fq 'revoke all on function public.gt_normalize_event_source_health()' "$migration"
           grep -Fq 'revoke all on function public.gt_normalize_sourced_event_type()' "$migration"
           grep -Fq 'to service_role, postgres' "$migration"
           grep -Fq 'to public, anon, authenticated, service_role, postgres' "$rollback"
+          grep -Fq 'revoke all on function public.gt_normalize_eventbrite_source_url()' "$eventbrite_migration"
+          grep -Fq 'to service_role, postgres' "$eventbrite_migration"
+          grep -Fq 'to public, anon, authenticated, service_role, postgres' "$eventbrite_rollback"
       - name: Verify quarantine and rollback
         run: |
           migration='supabase/migrations/20260802234000_quarantine_non_atlanta_eventbrite_records.sql'
