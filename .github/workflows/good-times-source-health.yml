@@ -16,6 +16,8 @@ on:
       - 'supabase/rollbacks/20260803005000_harden_good_times_source_promotion.rollback.sql'
       - 'supabase/migrations/20260803005500_lock_eventbrite_normalizer.sql'
       - 'supabase/rollbacks/20260803005500_lock_eventbrite_normalizer.rollback.sql'
+      - 'supabase/migrations/20260803010000_normalize_good_times_scrape_run_status.sql'
+      - 'supabase/rollbacks/20260803010000_normalize_good_times_scrape_run_status.rollback.sql'
       - '.github/workflows/good-times-source-health.yml'
   push:
     branches:
@@ -105,6 +107,17 @@ jobs:
           grep -Fq 'revoke all on function public.gt_normalize_eventbrite_source_url()' "$eventbrite_migration"
           grep -Fq 'to service_role, postgres' "$eventbrite_migration"
           grep -Fq 'to public, anon, authenticated, service_role, postgres' "$eventbrite_rollback"
+      - name: Verify scrape run ledger normalization
+        run: |
+          migration='supabase/migrations/20260803010000_normalize_good_times_scrape_run_status.sql'
+          rollback='supabase/rollbacks/20260803010000_normalize_good_times_scrape_run_status.rollback.sql'
+          grep -Fq 'gt_normalize_scrape_run_status' "$migration"
+          grep -Fq "new.status = 'completed'" "$migration"
+          grep -Fq "new.status := 'success';" "$migration"
+          grep -Fq "new.status = 'failed'" "$migration"
+          grep -Fq "new.status := 'error';" "$migration"
+          grep -Fq 'revoke all on function public.gt_normalize_scrape_run_status()' "$migration"
+          grep -Fq 'drop function if exists public.gt_normalize_scrape_run_status()' "$rollback"
       - name: Verify quarantine and rollback
         run: |
           migration='supabase/migrations/20260802234000_quarantine_non_atlanta_eventbrite_records.sql'
