@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'supabase/functions/gt-atlanta-venue-adapters/**'
+      - 'supabase/functions/gt-atlanta-aisle5-adapter/**'
       - 'supabase/functions/gt-atlanta-eventbrite-refresh/**'
       - 'supabase/migrations/2026080223*.sql'
       - 'supabase/rollbacks/2026080223*.sql'
@@ -27,6 +28,7 @@ jobs:
       - name: Type-check source functions
         run: |
           deno check --config supabase/functions/gt-atlanta-venue-adapters/deno.json supabase/functions/gt-atlanta-venue-adapters/index.ts
+          deno check --config supabase/functions/gt-atlanta-aisle5-adapter/deno.json supabase/functions/gt-atlanta-aisle5-adapter/index.ts
           deno check --config supabase/functions/gt-atlanta-eventbrite-refresh/deno.json supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
       - name: Verify timezone safeguards
         run: |
@@ -35,6 +37,8 @@ jobs:
           ! grep -q 'dateValue.toISOString().slice(0, 10)' supabase/functions/gt-atlanta-venue-adapters/index.ts
           grep -q 'America/New_York' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
           ! grep -q 'date.toISOString().slice(0, 10)' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+          grep -q 'America/New_York' supabase/functions/gt-atlanta-aisle5-adapter/index.ts
+          ! grep -q 'toISOString().slice(0, 10)' supabase/functions/gt-atlanta-aisle5-adapter/index.ts
       - name: Verify Eventbrite Atlanta quality gate
         run: |
           file='supabase/functions/gt-atlanta-eventbrite-refresh/index.ts'
@@ -45,6 +49,15 @@ jobs:
           grep -q 'non_georgia_region' "$file"
           grep -q 'physical_atlanta_required' "$file"
           grep -q 'last_scrape_status: accepted > 0 ? "success" : "empty"' "$file"
+      - name: Verify Aisle 5 parser safeguards
+        run: |
+          file='supabase/functions/gt-atlanta-aisle5-adapter/index.ts'
+          grep -q 'seetickets' "$file"
+          grep -q 'byTicket' "$file"
+          grep -q 'MAX_FETCH_BYTES' "$file"
+          grep -q 'last_scrape_status: parsed.length > 0 ? "success" : "empty"' "$file"
+          grep -q 'dry_run' "$file"
+          grep -q 'source_inactive_or_missing' "$file"
       - name: Verify quarantine and rollback
         run: |
           migration='supabase/migrations/20260802234000_quarantine_non_atlanta_eventbrite_records.sql'
@@ -58,10 +71,15 @@ jobs:
           grep -q 'revoke all on function public.gt_run_atlanta_official_venue_adapters' supabase/migrations/20260802232000_schedule_good_times_official_venue_adapters.sql
           grep -q 'to service_role, postgres' supabase/migrations/20260802232000_schedule_good_times_official_venue_adapters.sql
           grep -q 'cron.unschedule' supabase/rollbacks/20260802232000_schedule_good_times_official_venue_adapters.rollback.sql
-      - name: Verify bounded supported sources
+          grep -q 'revoke all on function public.gt_run_atlanta_aisle5_adapter' supabase/migrations/20260802235000_schedule_good_times_aisle5_adapter.sql
+          grep -q 'gt-atlanta-aisle5-adapter' supabase/migrations/20260802235000_schedule_good_times_aisle5_adapter.sql
+          grep -q 'cron.unschedule' supabase/rollbacks/20260802235000_schedule_good_times_aisle5_adapter.rollback.sql
+      - name: Verify bounded source access
         run: |
           grep -q 'SUPPORTED_SOURCE_IDS' supabase/functions/gt-atlanta-venue-adapters/index.ts
           grep -q 'MAX_BODY_BYTES' supabase/functions/gt-atlanta-venue-adapters/index.ts
           grep -q 'MAX_FETCH_BYTES' supabase/functions/gt-atlanta-venue-adapters/index.ts
           grep -q 'MAX_BODY_BYTES' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
           grep -q 'MAX_FETCH_BYTES' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+          grep -q 'SOURCE_ID' supabase/functions/gt-atlanta-aisle5-adapter/index.ts
+          grep -q 'MAX_BODY_BYTES' supabase/functions/gt-atlanta-aisle5-adapter/index.ts
