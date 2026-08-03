@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "test": "node --test scripts/*.test.mjs",
+    "verify": "npm run test && npm run build && npm audit --omit=dev --audit-level=critical",
     "preview": "vite preview",
     "ios:build": "vite build && npx cap sync ios",
     "ios:open": "npx cap open ios",
@@ -34,7 +35,7 @@
     "vite": "^8.2.0"
   },
   "engines": {
-    "node": ">=22"
+    "node": "24.x"
   },
   "overrides": {
     "@xmldom/xmldom": "0.9.10",
