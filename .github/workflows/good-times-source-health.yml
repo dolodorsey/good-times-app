@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'supabase/functions/gt-atlanta-venue-adapters/**'
+      - 'supabase/functions/gt-atlanta-eventbrite-refresh/**'
       - 'supabase/migrations/2026080223*.sql'
       - 'supabase/rollbacks/2026080223*.sql'
       - '.github/workflows/good-times-source-health.yml'
@@ -17,19 +18,41 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - name: Type-check official venue adapter
-        run: deno check --config supabase/functions/gt-atlanta-venue-adapters/deno.json supabase/functions/gt-atlanta-venue-adapters/index.ts
+      - name: Type-check source functions
+        run: |
+          deno check --config supabase/functions/gt-atlanta-venue-adapters/deno.json supabase/functions/gt-atlanta-venue-adapters/index.ts
+          deno check --config supabase/functions/gt-atlanta-eventbrite-refresh/deno.json supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
       - name: Verify timezone safeguards
         run: |
           grep -q 'America/New_York' supabase/functions/gt-atlanta-venue-adapters/index.ts
           grep -q 'original_event_datetime' supabase/functions/gt-atlanta-venue-adapters/index.ts
           ! grep -q 'dateValue.toISOString().slice(0, 10)' supabase/functions/gt-atlanta-venue-adapters/index.ts
+          grep -q 'America/New_York' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+          ! grep -q 'date.toISOString().slice(0, 10)' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+      - name: Verify Eventbrite Atlanta quality gate
+        run: |
+          file='supabase/functions/gt-atlanta-eventbrite-refresh/index.ts'
+          grep -q 'OnlineEventAttendanceMode' "$file"
+          grep -q 'VirtualLocation' "$file"
+          grep -q 'missing_physical_address' "$file"
+          grep -q 'outside_atlanta_metro' "$file"
+          grep -q 'non_georgia_region' "$file"
+          grep -q 'physical_atlanta_required' "$file"
+          grep -q 'last_scrape_status: accepted > 0 ? "success" : "empty"' "$file"
+      - name: Verify quarantine and rollback
+        run: |
+          migration='supabase/migrations/20260802234000_quarantine_non_atlanta_eventbrite_records.sql'
+          rollback='supabase/rollbacks/20260802234000_quarantine_non_atlanta_eventbrite_records.rollback.sql'
+          grep -q 'eventbrite_virtual_or_non_atlanta' "$migration"
+          grep -q "status = 'cancelled'" "$migration"
+          grep -q "raw_data = coalesce(raw_data" "$migration"
+          grep -q "raw_data = coalesce(raw_data, '{}'::jsonb) - 'quality_quarantine'" "$rollback"
       - name: Verify server-only grants and rollback
         run: |
           grep -q 'revoke all on function public.gt_run_atlanta_official_venue_adapters' supabase/migrations/20260802232000_schedule_good_times_official_venue_adapters.sql
@@ -40,3 +63,5 @@ jobs:
           grep -q 'SUPPORTED_SOURCE_IDS' supabase/functions/gt-atlanta-venue-adapters/index.ts
           grep -q 'MAX_BODY_BYTES' supabase/functions/gt-atlanta-venue-adapters/index.ts
           grep -q 'MAX_FETCH_BYTES' supabase/functions/gt-atlanta-venue-adapters/index.ts
+          grep -q 'MAX_BODY_BYTES' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+          grep -q 'MAX_FETCH_BYTES' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
