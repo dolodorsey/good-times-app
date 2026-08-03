@@ -29,14 +29,14 @@
       return nativeFetch(input, init);
     }
 
-    if (
+    const shouldRewriteAtlantaDate =
       url.origin === GATEWAY_ORIGIN &&
       url.pathname === "/rest/v1/v_gt_atlanta_ranked_feed" &&
-      url.searchParams.has("event_date")
-    ) {
-      url.searchParams.set("event_date", `gte.${dateInTimeZone(ATLANTA_TIME_ZONE)}`);
-    }
+      url.searchParams.has("event_date");
 
+    if (!shouldRewriteAtlantaDate) return nativeFetch(input, init);
+
+    url.searchParams.set("event_date", `gte.${dateInTimeZone(ATLANTA_TIME_ZONE)}`);
     const nextInput = typeof input === "string"
       ? url.toString()
       : new Request(url.toString(), input);
