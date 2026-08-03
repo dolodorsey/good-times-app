@@ -4,19 +4,31 @@ on:
   push:
     branches:
       - chore/good-times-dependency-remediation-2026-08-02
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/good-times-dependency-candidate.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - 'android/**'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
+  pull-requests: read
 
 jobs:
   generate-and-verify:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -58,8 +70,18 @@ jobs:
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
-      - name: Capture upgraded dependency audit
-        run: npm audit --json > npm-audit-upgraded.json || true
+      - name: Capture and enforce dependency audit
+        run: |
+          npm audit --json > npm-audit-upgraded.json || true
+          node - <<'NODE'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit-upgraded.json', 'utf8'));
+          const vulnerabilities = audit.metadata?.vulnerabilities ?? {};
+          console.log('Upgraded audit:', vulnerabilities);
+          if ((vulnerabilities.critical ?? 0) > 0 || (vulnerabilities.high ?? 0) > 0) {
+            process.exitCode = 1;
+          }
+          NODE
 
       - name: Create reviewable upgrade patch
         run: |
@@ -77,3 +99,13 @@ jobs:
             dependency-upgrade.patch
             npm-audit-upgraded.json
           retention-days: 7
+
+      - name: Commit verified candidate to branch
+        if: github.event_name == 'push'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json capacitor.config.json android
+          git diff --cached --quiet && exit 1
+          git commit -m 'chore: apply tested Capacitor 7 and Vite 7 upgrade'
+          git push origin HEAD:chore/good-times-dependency-remediation-2026-08-02
