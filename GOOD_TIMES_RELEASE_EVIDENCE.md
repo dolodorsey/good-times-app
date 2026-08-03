@@ -12,6 +12,7 @@
 - The current source pipeline contains 4,016 shows, including 759 active future shows.
 - `gt_sourced_events` is healthy and was refreshed within three hours of this audit.
 - Public event and venue queries continue to read only from the `gt_*` content tables.
+- The customer feed no longer queries the orphan auth-database `events` table or stale `gt_city_events`; it renders current shows, daily events, venue happenings, sports, and active brand events.
 - Authentication, profiles, and saved items continue to use the separate customer-facing database.
 - Direct membership, concierge, trip, and group request routes retain validated server submissions.
 

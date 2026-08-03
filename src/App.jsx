@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { initNative, isNative, isIOS, tapHaptic, shareEvent, openLink, registerPush } from "./native";
 import { localTodayISO } from "./direct-request-validation.js";
 import { COLORS as C, FONTS as F, btnStyle as V, cardStyle as K } from "./styles/tokens.js";
-import { GT_SUPABASE_URL as GT_SB, GT_SUPABASE_ANON_KEY as GT_SK, sbF, khgF } from "./lib/supabase.js";
+import { GT_SUPABASE_URL as GT_SB, GT_SUPABASE_ANON_KEY as GT_SK, khgF } from "./lib/supabase.js";
 
 /* ═══════════════════════════════════════════════════════
    GT BACKGROUND SYSTEM — 20 AI-Generated Atlanta Scenes
@@ -907,7 +907,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
     return()=>document.removeEventListener('error',imgErr,true);
   }, []);
 
-  // Load events — ALL 3 TIERS of data — RELOADS when city changes
+  // Load current curated event and venue sources — reloads when city changes.
   useEffect(()=>{
     (async()=>{
       setLoading(true);
@@ -922,9 +922,6 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
 
       // TIER 2a: In-house entertainment database — FILTERED BY CITY
       const shows=await khgF("gt_shows?select=id,event_name,event_type,genre,city_key,show_date,show_time,venue_name,ticket_url,image_url,status,display_priority,is_featured&show_date=gte."+today+"&status=in.(confirmed,tentative)&city_key=eq."+ck+"&order=display_priority.asc,show_date.asc&limit=200");
-
-      // TIER 2a-legacy: Old scraped city events — FILTERED BY CITY
-      const cityEvts=await khgF("gt_city_events?select=id,event_name,city_key,event_type,venue_name,start_date,start_time,ticket_url,organizer,image_url,is_free&start_date=gte."+today+"&status=in.(active,confirmed)&city_key=eq."+ck+"&order=start_date.asc&limit=200");
 
       // TIER 2d: Blog/influencer sourced daily events — FILTERED BY CITY
       const dailyEvts=await khgF("gt_daily_events?select=id,event_name,city_key,event_date,day_of_week,venue,event_type,time_slot,description,source_handle,is_free,vibe_tags,relevance_score,is_verified&event_date=gte."+today+"&is_verified=eq.true&city_key=eq."+ck+"&order=event_date.asc,relevance_score.desc&limit=200");
@@ -945,9 +942,6 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
 
       // TIER 3: Sports games — real upcoming matchups with team logos
       const sportsGames=await khgF("gt_sports_games?select=id,league,home_team,home_abbr,away_team,away_abbr,game_date,game_time,venue,city_key,status,home_logo,away_logo,is_home_game&game_date=gte."+today+"&status=eq.scheduled&order=game_date.asc&limit=30");
-
-      // TIER 1 legacy nightlife (always-on ATL content)
-      const legacy=await sbF("events?select=*&order=date.asc&limit=100");
 
       // === MAP TIER 1: Our events ===
       const BRAND_DISPLAY={remix:"REMIX",taste_of_art:"TASTE OF ART",wrst_bhvr:"WRST BHVR",gangsta_gospel:"GANGSTA GOSPEL",soul_sessions:"SOUL SESSIONS",kulture:"THE KULTURE",underground_king:"UNDERGROUND KING",crvngs:"CRVNGS",block_party:"BLOCK PARTY",cinco_de_mayo:"CINCO DE DRINKO",parking_lot_pimpin:"PARKING LOT PIMPIN",monsters_ball:"MONSTER'S BALL",black_ball:"BLACK BALL",snow_ball:"SNOW BALL",beauty_beast:"BEAUTY & THE BEAST",secret_society:"SECRET SOCIETY",huglife:"HUGLIFE",forever_futbol:"FOREVER FUTBOL",stella:"STELLA",shut_up_dance:"SHUT UP & DANCE"};
@@ -988,32 +982,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         status:"upcoming"
       }));
 
-      // === MAP TIER 2a-legacy: Old city events (dedup against gt_shows by title+date) ===
-      const showTitleDates=new Set(showsMapped.map(s=>s.title+"|"+s.date));
-      const cityMapped=cityEvts.filter(e=>!showTitleDates.has(e.event_name+"|"+e.start_date)).map(e=>({
-        id:"ce-"+e.id,
-        title:e.event_name,
-        brand:e.organizer||e.event_type||"CITY EVENT",
-        city:CITY_KEY_MAP[e.city_key]||e.city_key,
-        date:e.start_date,
-        time:e.start_time||"TBA",
-        venue:e.venue_name||"TBA",
-        category:e.event_type||"event",
-        is_featured:false,
-        image_url:e.image_url||null,
-        ticket_url:e.ticket_url,
-        display_priority:40,
-        source:"city_event",
-        status:"upcoming"
-      }));
-
       // === MAP TIER 2d: Blog/influencer sourced daily events ===
       // These ONLY show in the Dates tab, NOT on the home screen
-      // Dedup: skip if same event_name+date already in shows or cityMapped
-      const existingTitleDates=new Set([
-        ...showsMapped.map(s=>s.title+"|"+s.date),
-        ...cityMapped.map(s=>s.title+"|"+s.date)
-      ]);
+      // Dedup: skip if the same event and date already exist in curated shows.
+      const existingTitleDates=new Set(showsMapped.map(s=>s.title+"|"+s.date));
       const TIME_SLOT_MAP={afternoon:"14:00",evening:"20:00",late_night:"23:00",all_day:"12:00"};
       const DAILY_TYPE_LABELS={concert:"CONCERT",nightlife:"NIGHTLIFE",food_event:"FOOD & DRINK",art:"ART & CULTURE",day_party:"DAY PARTY",community:"COMMUNITY",popup:"POP-UP"};
       const dailyMapped=dailyEvts.filter(e=>!existingTitleDates.has(e.event_name+"|"+e.event_date)).map(e=>({
@@ -1095,18 +1067,6 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         status:"tonight"
       }));
 
-      // === MAP TIER 1 legacy ===
-      // Filter out legacy events whose brand matches ANY KHG brand_key (active OR inactive) — prevents duplicates AND paused brands
-      const KHG_BRANDS=new Set(real.map(e=>e.brand_key).filter(Boolean));
-      // Also block paused/inactive brands that exist in eventbrite_events but aren't active
-      const PAUSED_BRANDS=new Set(["paparazzi","sundays_best","gangsta_gospel","noir","pawchella"]);
-      const legacyMapped=legacy.filter(e=>!KHG_BRANDS.has(e.brand)&&!PAUSED_BRANDS.has(e.brand)).map(e=>({
-        ...e,
-        date:e.category==="nightlife"||e.category==="experience"?today:e.date,
-        display_priority:45,
-        source:"legacy"
-      }));
-
       // === MAP TIER 3: Sports games with both team logos ===
       const sportsMapped=sportsGames.map(g=>({
         id:"game-"+g.id,
@@ -1129,10 +1089,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         is_home_game:g.is_home_game
       }));
 
-      // Merge: OUR events → in-house shows → tonight happenings → daily blog events → sports → city events → legacy
+      // Merge only current KHG-owned and verified sources. Orphan auth-DB content is never rendered.
       // KHG events (mapped) always come first due to source:"huglife" and low display_priority
       // NOTE: tonightMapped REMOVED — venues are NOT events. They belong in Explore tab only.
-      setEvents([...mapped,...showsMapped,...hapMapped,...weeklyMapped,...dailyMapped,...sportsMapped,...cityMapped,...legacyMapped]);
+      setEvents([...mapped,...showsMapped,...hapMapped,...weeklyMapped,...dailyMapped,...sportsMapped]);
       setLoading(false);
 
       // Load venue map data (lat/lng for map pins) — uses same ck from top of effect
@@ -1207,7 +1167,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   // KHG events (source: huglife) ALWAYS shown first, then sorted by image/priority/date
   // daily_event source is EXCLUDED — those only show in the Dates tab
   const upcoming=useMemo(()=>{
-    const future=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event"&&e.source!=="venue"&&e.source!=="tonight_venue"&&e.source!=="legacy");
+    const future=cityEvents.filter(e=>e.date>=todayStr&&e.source!=="daily_event"&&e.source!=="venue"&&e.source!=="tonight_venue");
     return future.sort((a,b)=>{
       // KHG events ALWAYS come first
       const aKHG=a.source==="huglife"?0:1;
@@ -1259,8 +1219,8 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
       const time=planChoices.time||"evening";
       const vibes=planVibes||[];
       
-      // Build venue pool from gt_venues data in events (source: venue, happening, legacy)
-      const venuePool=events.filter(e=>e.city===city.name&&(e.source==="venue"||e.source==="happening"||e.source==="legacy"));
+      // Build the venue pool only from current gt_venues-backed records.
+      const venuePool=events.filter(e=>e.city===city.name&&(e.source==="venue"||e.source==="happening"));
       const eventPool=upcoming.length>0?upcoming:allUpcoming;
       
       // Map mood → tab_tags for smarter matching
@@ -1514,7 +1474,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
               if(!e.date||e.date<todayStr)return false;
               if(e.source==="sports_game"||e.category==="sports")return false;
               // EXCLUDE venue listings, daily events, happenings — only REAL shows
-              if(e.source==="venue"||e.source==="tonight_venue"||e.source==="daily_event"||e.source==="happening"||e.source==="weekly_party"||e.source==="legacy")return false;
+              if(e.source==="venue"||e.source==="tonight_venue"||e.source==="daily_event"||e.source==="happening"||e.source==="weekly_party")return false;
               if(e.source==="show"||(e.event_type||"").match(/concert|comedy|musical|festival/))return true;
               if((e.category||"").match(/concert|music|jazz/)&&e.source!=="venue")return true;
               return false;
@@ -1532,7 +1492,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
           {/* ═══ 1. CITY HIGHLIGHTS — Best events happening today ═══ */}
           {(()=>{
             // Show top events TODAY with images — sorted by priority. NO venue listings.
-            const todayReal=cityEvents.filter(e=>e.date===todayStr&&e.source!=="venue"&&e.source!=="tonight_venue"&&e.source!=="daily_event"&&e.source!=="legacy"&&e.image_url).sort((a,b)=>(a.display_priority||50)-(b.display_priority||50)).slice(0,6);
+            const todayReal=cityEvents.filter(e=>e.date===todayStr&&e.source!=="venue"&&e.source!=="tonight_venue"&&e.source!=="daily_event"&&e.image_url).sort((a,b)=>(a.display_priority||50)-(b.display_priority||50)).slice(0,6);
             if(todayReal.length===0)return null;
             return(<>
               <SectionHead t="CITY HIGHLIGHTS" icon={"\u{2728}"} color={C.a4}/>
