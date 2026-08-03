@@ -1,14 +1,15 @@
-import React, { useEffect, useState } from 'react'
+import React, { Component, Suspense, lazy, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-import DirectRequest from './DirectRequest.jsx'
-import PasswordRecovery from './PasswordRecovery.jsx'
 import './premium-experience.css'
 import {
   installRecoveryRedirect,
   parseRecoverySession,
   refreshStoredSession,
 } from './gt-auth-session.js'
+
+const LazyApp = lazy(() => import('./App.jsx'))
+const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
+const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
 
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const directRoutes = {
@@ -20,6 +21,47 @@ const directRoutes = {
 
 installRecoveryRedirect()
 
+class RuntimeBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { error: null }
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+
+  componentDidCatch(error, details) {
+    console.error('GOOD TIMES runtime failure', error, details)
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children
+
+    return (
+      <div className="gt-runtime-fallback" role="alert">
+        <div className="gt-runtime-fallback__mark">GT</div>
+        <div className="gt-runtime-fallback__eyebrow">Concierge interrupted</div>
+        <h1>Let’s reopen your night.</h1>
+        <p>Your account and saved plans are still intact. Reload the experience to reconnect.</p>
+        <button type="button" onClick={() => window.location.reload()}>
+          Reload Good Times
+        </button>
+      </div>
+    )
+  }
+}
+
+function RouteLoading({ label = 'Curating your experience' }) {
+  return (
+    <div className="gt-route-loading" role="status" aria-live="polite">
+      <img src="/good-times-logo.png" alt="" />
+      <div className="gt-route-loading__line" />
+      <span>{label}</span>
+    </div>
+  )
+}
+
 function PremiumRoot({ children, launch = false }) {
   const [showLaunch, setShowLaunch] = useState(
     () => launch && sessionStorage.getItem('gt_premium_launch') !== '1',
@@ -28,7 +70,6 @@ function PremiumRoot({ children, launch = false }) {
   useEffect(() => {
     if (!showLaunch) return undefined
 
-    // Replace the old seven-second splash with a short, intentional brand entry.
     sessionStorage.setItem('gt_premium_launch', '1')
     sessionStorage.setItem('gt_splash_shown', '1')
     const timer = window.setTimeout(() => setShowLaunch(false), 1650)
@@ -57,30 +98,56 @@ function PremiumRoot({ children, launch = false }) {
 }
 
 async function bootstrap() {
-  const recoverySession = parseRecoverySession(window.location.hash)
-  if (recoverySession) {
-    ReactDOM.createRoot(document.getElementById('root')).render(
-      <PremiumRoot>
-        <PasswordRecovery recoverySession={recoverySession} />
-      </PremiumRoot>,
-    )
-    return
-  }
+  const rootElement = document.getElementById('root')
+  if (!rootElement) throw new Error('GOOD TIMES root element is missing')
 
-  await refreshStoredSession()
+  const recoverySession = parseRecoverySession(window.location.hash)
   const requestType = directRoutes[pathname]
 
-  // The premium launch replaces the legacy seven-second splash on the main app.
-  if (!requestType) sessionStorage.setItem('gt_splash_shown', '1')
+  if (!recoverySession) await refreshStoredSession()
+  if (!requestType && !recoverySession) sessionStorage.setItem('gt_splash_shown', '1')
 
-  ReactDOM.createRoot(document.getElementById('root')).render(
-    <PremiumRoot launch={!requestType}>
-      {requestType ? <DirectRequest requestType={requestType} /> : <App />}
-    </PremiumRoot>,
+  let route
+  let loadingLabel = 'Curating your experience'
+
+  if (recoverySession) {
+    route = <LazyPasswordRecovery recoverySession={recoverySession} />
+    loadingLabel = 'Securing your account'
+  } else if (requestType) {
+    route = <LazyDirectRequest requestType={requestType} />
+    loadingLabel = 'Opening your concierge request'
+  } else {
+    route = <LazyApp />
+  }
+
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <RuntimeBoundary>
+        <Suspense fallback={<RouteLoading label={loadingLabel} />}>
+          <PremiumRoot launch={!requestType && !recoverySession}>{route}</PremiumRoot>
+        </Suspense>
+      </RuntimeBoundary>
+    </React.StrictMode>,
   )
 }
 
-bootstrap()
+bootstrap().catch((error) => {
+  console.error('GOOD TIMES failed to start', error)
+  const rootElement = document.getElementById('root')
+  if (rootElement) {
+    ReactDOM.createRoot(rootElement).render(
+      <RuntimeBoundary>
+        <div className="gt-runtime-fallback" role="alert">
+          <div className="gt-runtime-fallback__mark">GT</div>
+          <h1>We couldn’t open Good Times.</h1>
+          <button type="button" onClick={() => window.location.reload()}>
+            Try again
+          </button>
+        </div>
+      </RuntimeBoundary>,
+    )
+  }
+})
 
 const isNativeRuntime = Boolean(window.Capacitor?.isNativePlatform?.())
 if ('serviceWorker' in navigator && !isNativeRuntime) {
