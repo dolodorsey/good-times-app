@@ -52,10 +52,13 @@ jobs:
       - name: Verify Aisle 5 parser safeguards
         run: |
           file='supabase/functions/gt-atlanta-aisle5-adapter/index.ts'
-          grep -q 'seetickets' "$file"
+          grep -q 'seetickets.us' "$file"
+          grep -q 'eventim.us' "$file"
           grep -q 'byTicket' "$file"
+          grep -q 'ticket_link_count' "$file"
+          grep -q 'ticket_hosts' "$file"
           grep -q 'MAX_FETCH_BYTES' "$file"
-          grep -q 'last_scrape_status: parsed.length > 0 ? "success" : "empty"' "$file"
+          grep -q 'last_scrape_status: parsed.events.length > 0 ? "success" : "empty"' "$file"
           grep -q 'dry_run' "$file"
           grep -q 'source_inactive_or_missing' "$file"
       - name: Verify quarantine and rollback
