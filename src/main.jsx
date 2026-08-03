@@ -1,6 +1,7 @@
 import React, { Component, Suspense, lazy, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import './premium-experience.css'
+import './runtime.css'
 import {
   installRecoveryRedirect,
   parseRecoverySession,
