@@ -10,6 +10,10 @@ on:
       - 'supabase/rollbacks/2026080223*.sql'
       - 'supabase/migrations/20260803002500_normalize_good_times_explicit_categories.sql'
       - 'supabase/rollbacks/20260803002500_normalize_good_times_explicit_categories.rollback.sql'
+      - 'supabase/migrations/20260803004000_lock_good_times_trigger_functions.sql'
+      - 'supabase/rollbacks/20260803004000_lock_good_times_trigger_functions.rollback.sql'
+      - 'supabase/migrations/20260803005000_harden_good_times_source_promotion.sql'
+      - 'supabase/rollbacks/20260803005000_harden_good_times_source_promotion.rollback.sql'
       - '.github/workflows/good-times-source-health.yml'
   push:
     branches:
@@ -73,6 +77,27 @@ jobs:
           grep -Fq "new.event_type := 'concert';" "$migration"
           grep -Fq "new.event_type := 'festival';" "$migration"
           grep -Fq 'drop trigger if exists trg_gt_normalize_sourced_event_type' "$rollback"
+      - name: Verify promotion eligibility and counting
+        run: |
+          migration='supabase/migrations/20260803005000_harden_good_times_source_promotion.sql'
+          rollback='supabase/rollbacks/20260803005000_harden_good_times_source_promotion.rollback.sql'
+          grep -Fq "now() at time zone 'America/New_York'" "$migration"
+          grep -Fq 'coalesce(se.is_verified, false) = true' "$migration"
+          grep -Fq 'coalesce(se.is_published, false) = true' "$migration"
+          grep -Fq 'se.legacy_quarantined_at is null' "$migration"
+          grep -Fq 'se.legacy_quarantine_reason is null' "$migration"
+          grep -Fq 'get diagnostics v_inserted = row_count' "$migration"
+          grep -Fq 'duplicate_show_already_existed' "$migration"
+          grep -Fq 'revoke all on function public.gt_promote_sourced_to_shows' "$migration"
+          grep -Fq 'create or replace function public.gt_promote_sourced_to_shows' "$rollback"
+      - name: Verify trigger functions are server-only
+        run: |
+          migration='supabase/migrations/20260803004000_lock_good_times_trigger_functions.sql'
+          rollback='supabase/rollbacks/20260803004000_lock_good_times_trigger_functions.rollback.sql'
+          grep -Fq 'revoke all on function public.gt_normalize_event_source_health()' "$migration"
+          grep -Fq 'revoke all on function public.gt_normalize_sourced_event_type()' "$migration"
+          grep -Fq 'to service_role, postgres' "$migration"
+          grep -Fq 'to public, anon, authenticated, service_role, postgres' "$rollback"
       - name: Verify quarantine and rollback
         run: |
           migration='supabase/migrations/20260802234000_quarantine_non_atlanta_eventbrite_records.sql'
