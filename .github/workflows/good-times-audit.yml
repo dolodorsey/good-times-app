@@ -22,7 +22,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -32,7 +32,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - name: Install exact locked dependencies
         run: npm ci
       - name: Verify app logic repairs are present
@@ -66,8 +66,18 @@ jobs:
       - name: Build Android debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
-      - name: Capture dependency audit
-        run: npm audit --json > npm-audit.json || true
+      - name: Enforce dependency audit
+        run: |
+          npm audit --json > npm-audit.json || true
+          node - <<'NODE'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit.json', 'utf8'));
+          const vulnerabilities = audit.metadata?.vulnerabilities ?? {};
+          console.log('Dependency audit:', vulnerabilities);
+          if ((vulnerabilities.critical ?? 0) > 0 || (vulnerabilities.high ?? 0) > 0) {
+            process.exitCode = 1;
+          }
+          NODE
       - name: Upload dependency diagnosis
         uses: actions/upload-artifact@v4
         with:
