@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { initNative, isNative, isIOS, tapHaptic, shareEvent, openLink, registerPush } from "./native";
 import { localTodayISO } from "./direct-request-validation.js";
+import { COLORS as C, FONTS as F, btnStyle as V, cardStyle as K } from "./styles/tokens.js";
+import { GT_SUPABASE_URL as GT_SB, GT_SUPABASE_ANON_KEY as GT_SK, sbF, khgF } from "./lib/supabase.js";
 
 /* ═══════════════════════════════════════════════════════
    GT BACKGROUND SYSTEM — 20 AI-Generated Atlanta Scenes
@@ -107,9 +109,6 @@ if(typeof document!=="undefined"&&!document.getElementById("gt-bg-styles")){
 /* ═══════════════════════════════════════════════════════
    GOOD TIMES AUTH + ONBOARDING SYSTEM
    ═══════════════════════════════════════════════════════ */
-const GT_SB="https://czocqfaovfpjweayniuw.supabase.co";
-const GT_SK="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6b2NxZmFvdmZwandlYXluaXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNzEzODAsImV4cCI6MjA4Mzk0NzM4MH0.6-3rmA9tZXHLVg5N6a_82rKA9Kvrj4gRrUUiSczovho";
-
 const gtAuth=async(ep,body)=>{
   const r=await fetch(`${GT_SB}/auth/v1/${ep}`,{method:'POST',headers:{'Content-Type':'application/json',apikey:GT_SK,Authorization:`Bearer ${GT_SK}`},body:JSON.stringify(body)});
   const d=await r.json();if(d.error||d.msg)throw new Error(d.error_description||d.msg||d.error||'Auth failed');return d;
@@ -410,24 +409,6 @@ function GoodTimesAuthGate(){
    8. Deals section in Vault (subscription-gated, enticing)
    ═══════════════════════════════════════════════════════ */
 
-const C = {
-  bg:"#06060C",bgCard:"#1A1A14",bgSheet:"#18180F",
-  gold:"#D4A853",goldDim:"rgba(212,168,83,0.35)",
-  text:"#FFFFFF",textSec:"#E8DCC8",muted:"#D4C49A",
-  a3:"#D4A853",a4:"#FFB86B",overlay:"rgba(6,6,12,0.88)"
-};
-const F={f:"'DM Sans',sans-serif",s:"'Playfair Display',Georgia,serif"};
-const V=a=>({background:a?`linear-gradient(135deg,${C.gold},#B8942F)`:"rgba(212,168,83,0.08)",color:a?"#0A0A0F":"#fff",border:a?"none":"1px solid rgba(212,168,83,0.25)",borderRadius:10,padding:"8px 16px",fontSize:13,fontWeight:600,cursor:"pointer",fontFamily:F.f,letterSpacing:.3,transition:"all 0.25s ease"});
-const K={background:C.bgCard,border:`1px solid rgba(255,255,255,0.4)`,borderRadius:12,boxShadow:"0 2px 8px rgba(0,0,0,0.3)"};
-
-// Supabase
-const SB="https://czocqfaovfpjweayniuw.supabase.co/rest/v1";
-const SK="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6b2NxZmFvdmZwandlYXluaXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNzEzODAsImV4cCI6MjA4Mzk0NzM4MH0.6-3rmA9tZXHLVg5N6a_82rKA9Kvrj4gRrUUiSczovho";
-const sbF=async q=>{try{const r=await fetch(`${SB}/${q}`,{headers:{apikey:SK,Authorization:`Bearer ${SK}`}});return r.ok?await r.json():[]}catch{return[]}};
-// KHG Supabase (gt_venues — real venue data for Explore)
-const KHG_SB="https://dzlmtvodpyhetvektfuo.supabase.co/rest/v1";
-const KHG_SK="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1ODQ4NjQsImV4cCI6MjA4NTE2MDg2NH0.qmnWB4aWdb7U8Iod9Hv8PQAOJO3AG0vYEGnPS--kfAo";
-const khgF=async q=>{try{const r=await fetch(`${KHG_SB}/${q}`,{headers:{apikey:KHG_SK,Authorization:`Bearer ${KHG_SK}`}});return r.ok?await r.json():[]}catch{return[]}};
 // Map explore categories → gt_venues category_keys
 const CAT_MAP={
   dining:["restaurant","food_and_dining","brunch","food_hall","food_truck"],

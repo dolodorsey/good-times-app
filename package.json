@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "test": "node --test scripts/*.test.mjs",
     "preview": "vite preview",
     "ios:build": "vite build && npx cap sync ios",
     "ios:open": "npx cap open ios",
@@ -15,21 +16,28 @@
     "android:run": "npx cap run android"
   },
   "dependencies": {
-    "@capacitor/android": "^6.2.1",
-    "@capacitor/browser": "^6.0.6",
-    "@capacitor/cli": "^6.2.1",
-    "@capacitor/core": "^6.2.1",
-    "@capacitor/haptics": "^6.0.3",
-    "@capacitor/ios": "^6.2.1",
-    "@capacitor/push-notifications": "^6.0.5",
-    "@capacitor/share": "^6.0.4",
-    "@capacitor/splash-screen": "^6.0.4",
-    "@capacitor/status-bar": "^6.0.3",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/haptics": "^8.0.2",
+    "@capacitor/push-notifications": "^8.1.2",
+    "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.3",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.2.1",
-    "vite": "^5.1.0"
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/cli": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
+    "@vitejs/plugin-react": "^6.0.5",
+    "vite": "^8.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "overrides": {
+    "@xmldom/xmldom": "0.9.10",
+    "uuid": "11.1.1"
   }
 }

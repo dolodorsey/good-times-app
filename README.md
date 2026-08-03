@@ -18,8 +18,8 @@ Currently shipping iOS (Capacitor) and web. Active cities: Atlanta, Houston, Mia
 
 | Layer | Tech |
 |---|---|
-| Frontend | React 18 + Vite 5 (no SSR, no router lib — single SPA) |
-| Mobile shell | Capacitor 6 (iOS only currently) |
+| Frontend | React 19 + Vite 8 (no SSR, no router lib — single SPA) |
+| Mobile shell | Capacitor 8 (iOS and Android projects) |
 | Backend | Two Supabase projects (see Architecture below) |
 | Hosting | Vercel (web), Codemagic + GitHub Actions (iOS) |
 | CDN | Supabase Storage public buckets |
@@ -96,7 +96,7 @@ npm run ios:open      # opens Xcode
 
 ## Environment variables
 
-Currently, Supabase URLs and anon keys are **hardcoded** in `src/App.jsx` (lines ~109, 422, 426). This is a known tech debt item — see the Refactor Plan section.
+Supabase configuration is centralized in `src/lib/supabase.js` and can be rotated through Vite environment variables. Public fallback keys preserve existing installs; all access remains protected by RLS.
 
 When migrating to env vars, use `import.meta.env.VITE_*`:
 ```
@@ -217,11 +217,11 @@ See [AGENTS.md](./AGENTS.md) for guidance on which Codex prompts produce which o
 | ID | Issue | Severity |
 |---|---|---|
 | TD-001 | App.jsx is 2,480 LOC monolith | High |
-| TD-002 | Supabase URLs/keys hardcoded (not env vars) | Medium |
+| TD-002 | Supabase configuration centralized with environment overrides (FIXED) | — |
 | TD-003 | `gt_shows.venue_id` FK points at orphaned `gt_entertainment_venues` table; all rows have NULL venue_id | Medium |
 | TD-004 | 4 RLS-disabled tables on GT auth DB (`spatial_ref_sys`, `event_sync_logs`, `source_posts`, `sources`) | High |
 | TD-005 | 1,019 venues missing `instagram_handle`; 437 missing GPS; 514 missing address | Medium |
-| TD-006 | No tests (no Vitest, no Playwright) | High |
+| TD-006 | Core request, auth-session, and database-boundary tests added; rendered-flow coverage remains to expand | Medium |
 | TD-007 | `gt_artists` is 42 days stale (no refresh workflow exists) | Medium |
 | TD-008 | `gt_city_events` is 7+ days stale (intake exists but is broken) | Medium |
 | TD-009 | Las Vegas was missing from CITY_OPTIONS in App.jsx (FIXED) | — |

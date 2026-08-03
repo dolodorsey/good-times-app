@@ -1,6 +1,6 @@
+import { GT_SUPABASE_URL, GT_SUPABASE_ANON_KEY } from './lib/supabase.js'
+
 export const GT_SESSION_KEY = 'gt_session'
-export const GT_SUPABASE_URL = 'https://czocqfaovfpjweayniuw.supabase.co'
-export const GT_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6b2NxZmFvdmZwandlYXluaXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNzEzODAsImV4cCI6MjA4Mzk0NzM4MH0.6-3rmA9tZXHLVg5N6a_82rKA9Kvrj4gRrUUiSczovho'
 
 const DEFAULT_SAFETY_WINDOW_SECONDS = 60
 const DEFAULT_TIMEOUT_MS = 7000
