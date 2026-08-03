@@ -42,8 +42,8 @@ jobs:
       - name: Verify Eventbrite Atlanta quality gate
         run: |
           file='supabase/functions/gt-atlanta-eventbrite-refresh/index.ts'
-          grep -q 'OnlineEventAttendanceMode' "$file"
-          grep -q 'VirtualLocation' "$file"
+          grep -q 'onlineeventattendancemode' "$file"
+          grep -q 'virtuallocation' "$file"
           grep -q 'missing_physical_address' "$file"
           grep -q 'outside_atlanta_metro' "$file"
           grep -q 'non_georgia_region' "$file"
