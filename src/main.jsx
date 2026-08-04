@@ -2,6 +2,7 @@ import React, { Component, Suspense, lazy, useEffect, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import './premium-experience.css'
 import './runtime.css'
+import './features/experience/good-times-command.css'
 import {
   installRecoveryRedirect,
   parseRecoverySession,
@@ -9,7 +10,8 @@ import {
 } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 
-const LazyApp = lazy(() => import('./App.jsx'))
+const LazyCommandApp = lazy(() => import('./features/experience/GoodTimesCommandApp.jsx'))
+const LazyLegacyApp = lazy(() => import('./App.jsx'))
 const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
 const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
 const LazyOnboarding = lazy(() => import('./features/onboarding/GoodTimesOnboarding.jsx'))
@@ -46,9 +48,9 @@ class RuntimeBoundary extends Component {
         <div className="gt-runtime-fallback__mark">GT</div>
         <div className="gt-runtime-fallback__eyebrow">Concierge interrupted</div>
         <h1>Let’s reopen your night.</h1>
-        <p>Your account and saved plans are still intact. Reload the experience to reconnect.</p>
+        <p>Your account, saved places and plans remain intact. Reload to reconnect to GOOD TIMES.</p>
         <button type="button" onClick={() => window.location.reload()}>
-          Reload Good Times
+          Reload GOOD TIMES
         </button>
       </div>
     )
@@ -81,12 +83,12 @@ function PremiumRoot({ children, launch = false }) {
 
   if (showLaunch) {
     return (
-      <div className="gt-launch" role="status" aria-label="Opening Good Times">
+      <div className="gt-launch" role="status" aria-label="Opening GOOD TIMES">
         <div className="gt-launch__scene" />
         <div className="gt-launch__content">
-          <img className="gt-launch__logo" src="/good-times-logo.png" alt="Good Times" />
-          <div className="gt-launch__eyebrow">Worldwide concierge</div>
-          <div className="gt-launch__title">Your night starts here.</div>
+          <img className="gt-launch__logo" src="/good-times-logo.png" alt="GOOD TIMES" />
+          <div className="gt-launch__eyebrow">Worldwide experience concierge</div>
+          <div className="gt-launch__title">Your next move starts here.</div>
           <div className="gt-launch__line" />
         </div>
       </div>
@@ -106,6 +108,7 @@ async function bootstrap() {
 
   const recoverySession = parseRecoverySession(window.location.hash)
   const requestType = directRoutes[pathname]
+  const legacyRoute = pathname === '/legacy'
 
   if (!recoverySession) await refreshStoredSession()
   const hasSession = Boolean(readSession())
@@ -123,15 +126,19 @@ async function bootstrap() {
   } else if (!hasSession) {
     route = <LazyOnboarding onComplete={() => window.location.reload()} />
     loadingLabel = 'Opening your private concierge'
+  } else if (legacyRoute) {
+    route = <LazyLegacyApp />
+    loadingLabel = 'Opening legacy GOOD TIMES'
   } else {
-    route = <LazyApp />
+    route = <LazyCommandApp />
+    loadingLabel = 'Opening the GOOD TIMES command experience'
   }
 
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
       <RuntimeBoundary>
         <Suspense fallback={<RouteLoading label={loadingLabel} />}>
-          <PremiumRoot launch={!requestType && !recoverySession && hasSession}>{route}</PremiumRoot>
+          <PremiumRoot launch={!requestType && !recoverySession && hasSession && !legacyRoute}>{route}</PremiumRoot>
         </Suspense>
       </RuntimeBoundary>
     </React.StrictMode>,
@@ -146,7 +153,7 @@ bootstrap().catch((error) => {
       <RuntimeBoundary>
         <div className="gt-runtime-fallback" role="alert">
           <div className="gt-runtime-fallback__mark">GT</div>
-          <h1>We couldn’t open Good Times.</h1>
+          <h1>We couldn’t open GOOD TIMES.</h1>
           <button type="button" onClick={() => window.location.reload()}>
             Try again
           </button>
@@ -160,7 +167,7 @@ const isNativeRuntime = Boolean(window.Capacitor?.isNativePlatform?.())
 if ('serviceWorker' in navigator && !isNativeRuntime) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((error) => {
-      console.warn('Good Times service worker registration failed', error)
+      console.warn('GOOD TIMES service worker registration failed', error)
     })
   })
 }
