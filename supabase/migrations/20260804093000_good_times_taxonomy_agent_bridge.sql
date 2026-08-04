@@ -1,42 +1,31 @@
 -- GOOD TIMES taxonomy stock-health bridge.
 -- Connects the Gateway stock matrix to the GOOD TIMES Data Gap Agent and QA ledger.
+-- The existing Gateway RPC implementation is patched in place so its credential is not copied.
 
-create or replace function public.gt_gateway_rpc(p_rpc text)
-returns jsonb
-language plpgsql
-security definer
-set search_path='pg_catalog','public','extensions'
-as $function$
+do $block$
 declare
-  v_response extensions.http_response;
+  v_definition text;
+  v_old_guard text := 'if p_rpc not in (''gt_get_public_pipeline_health'',''gt_get_public_city_readiness'') then';
+  v_new_guard text := 'if p_rpc not in (''gt_get_public_pipeline_health'',''gt_get_public_city_readiness'',''gt_get_public_atlanta_taxonomy_stock_health'') then';
 begin
-  if p_rpc not in (
-    'gt_get_public_pipeline_health',
-    'gt_get_public_city_readiness',
-    'gt_get_public_atlanta_taxonomy_stock_health'
-  ) then
-    raise exception 'Gateway RPC not allowed';
+  select pg_get_functiondef(p.oid)
+    into v_definition
+  from pg_proc p
+  join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname='public'
+    and p.proname='gt_gateway_rpc'
+    and pg_get_function_identity_arguments(p.oid)='p_rpc text';
+
+  if v_definition is null then
+    raise exception 'Existing gt_gateway_rpc(text) function not found';
+  end if;
+  if position(v_old_guard in v_definition)=0 then
+    raise exception 'Existing gt_gateway_rpc allowlist shape changed';
   end if;
 
-  v_response := extensions.http((
-    'POST',
-    'https://dzlmtvodpyhetvektfuo.supabase.co/rest/v1/rpc/'||p_rpc,
-    array[
-      extensions.http_header('apikey','sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'),
-      extensions.http_header('Authorization','Bearer sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'),
-      extensions.http_header('Content-Type','application/json')
-    ],
-    'application/json','{}'
-  )::extensions.http_request);
-
-  if v_response.status<>200 then
-    raise exception 'Gateway health RPC % returned HTTP %: %',
-      p_rpc,v_response.status,left(coalesce(v_response.content,''),300);
-  end if;
-
-  return v_response.content::jsonb;
-end;
-$function$;
+  execute replace(v_definition,v_old_guard,v_new_guard);
+end
+$block$;
 
 create or replace function public.gt_execute_taxonomy_stocking_cycle()
 returns jsonb
