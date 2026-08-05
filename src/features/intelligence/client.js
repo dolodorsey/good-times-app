@@ -18,12 +18,21 @@ const gatewayHeaders = {
 }
 
 async function fetchJson(url, options = {}) {
-  const response = await fetch(url, options)
-  const payload = await response.json().catch(() => null)
-  if (!response.ok) {
-    throw new Error(payload?.message || payload?.msg || payload?.error_description || payload?.error || 'Request failed')
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), 10000)
+  try {
+    const response = await fetch(url, { cache: 'no-store', ...options, signal: options.signal || controller.signal })
+    const payload = await response.json().catch(() => null)
+    if (!response.ok) {
+      throw new Error(payload?.detail || payload?.message || payload?.msg || payload?.error_description || payload?.error || `Request failed with HTTP ${response.status}`)
+    }
+    return payload
+  } catch (error) {
+    if (error?.name === 'AbortError') throw new Error('GOOD TIMES live data timed out. Please retry.')
+    throw error
+  } finally {
+    window.clearTimeout(timeout)
   }
-  return payload
 }
 
 export function todayISO() {
@@ -34,19 +43,35 @@ export function todayISO() {
   return `${year}-${month}-${day}`
 }
 
-export async function loadGoodTimesProfile(session = readSession()) {
-  if (!session?.access_token || !session?.user?.id) return null
-  const rows = await fetchJson(
-    `${GT_SUPABASE_URL}/rest/v1/gt_user_profiles?auth_id=eq.${encodeURIComponent(session.user.id)}&select=*&limit=1`,
-    { headers: gtHeaders(session.access_token) },
-  )
-  return rows?.[0] || null
+function normalizeCity(city) {
+  return String(city || 'atlanta').toLowerCase().trim().replace(/[\s-]+/g, '_')
 }
 
-export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}) {
-  const normalizedCity = String(city || 'atlanta').toLowerCase().replace(/[\s-]+/g, '_')
-  const today = todayISO()
+const liveDataCache = new Map()
+const liveDataInflight = new Map()
 
+async function loadSameOriginData(city) {
+  const normalizedCity = normalizeCity(city)
+  const cached = liveDataCache.get(normalizedCity)
+  if (cached && Date.now() - cached.loadedAt < 30000) return cached.payload
+  if (liveDataInflight.has(normalizedCity)) return liveDataInflight.get(normalizedCity)
+
+  const request = fetchJson(`/api/data?city=${encodeURIComponent(normalizedCity)}&event_limit=500&venue_limit=400`)
+    .then(payload => {
+      if (!payload?.ok || !payload?.connected || !Array.isArray(payload.events) || !Array.isArray(payload.venues)) {
+        throw new Error('GOOD TIMES data gateway returned an invalid response.')
+      }
+      liveDataCache.set(normalizedCity, { payload, loadedAt: Date.now() })
+      return payload
+    })
+    .finally(() => liveDataInflight.delete(normalizedCity))
+
+  liveDataInflight.set(normalizedCity, request)
+  return request
+}
+
+async function loadEventsDirect(normalizedCity, limit) {
+  const today = todayISO()
   if (normalizedCity === 'atlanta') {
     return fetchJson(
       `${KHG_SUPABASE_URL}/rest/v1/gt_public_atlanta_feed?select=event_key,source_table,source_id,city_key,title,event_date,event_time,venue_name,raw_type,raw_category,ticket_url,image_url,organizer,display_priority,good_times_score,category_key,subcategory_key,is_featured,is_curated,rank_order,refreshed_at&event_date=gte.${today}&order=rank_order.asc&limit=${limit}`,
@@ -83,12 +108,53 @@ export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}
   }))
 }
 
-export async function loadCanonicalVenues(city = 'atlanta', { limit = 400 } = {}) {
-  const normalizedCity = String(city || 'atlanta').toLowerCase().replace(/[\s-]+/g, '_')
+async function loadVenuesDirect(normalizedCity, limit) {
   return fetchJson(
     `${KHG_SUPABASE_URL}/rest/v1/gt_venues?select=id,name,slug,city_key,neighborhood,side_of_town,category_key,subcategory,address,latitude,longitude,phone,website,instagram_handle,short_desc,vibe_tags,best_for,best_time,price_range,dress_code,reservation_req,hours_summary,insider_tip,status,is_featured,is_verified,quality_score,hero_image,booking_link,booking_platform,google_rating,google_reviews,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_score,source_count,culture_tags&status=eq.active&city_key=eq.${encodeURIComponent(normalizedCity)}&hero_image=not.is.null&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast,quality_score.desc.nullslast&limit=${limit}`,
     { headers: gatewayHeaders },
   )
+}
+
+export async function loadGoodTimesProfile(session = readSession()) {
+  if (!session?.access_token || !session?.user?.id) return null
+  const rows = await fetchJson(
+    `${GT_SUPABASE_URL}/rest/v1/gt_user_profiles?auth_id=eq.${encodeURIComponent(session.user.id)}&select=*&limit=1`,
+    { headers: gtHeaders(session.access_token) },
+  )
+  return rows?.[0] || null
+}
+
+export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}) {
+  const normalizedCity = normalizeCity(city)
+  try {
+    const payload = await loadSameOriginData(normalizedCity)
+    return payload.events.slice(0, limit)
+  } catch (gatewayError) {
+    console.warn('[GOOD TIMES live data] Same-origin event gateway failed; using direct public feed.', gatewayError)
+    return loadEventsDirect(normalizedCity, limit)
+  }
+}
+
+export async function loadCanonicalVenues(city = 'atlanta', { limit = 400 } = {}) {
+  const normalizedCity = normalizeCity(city)
+  try {
+    const payload = await loadSameOriginData(normalizedCity)
+    return payload.venues.slice(0, limit)
+  } catch (gatewayError) {
+    console.warn('[GOOD TIMES live data] Same-origin venue gateway failed; using direct public feed.', gatewayError)
+    return loadVenuesDirect(normalizedCity, limit)
+  }
+}
+
+export async function checkGoodTimesLiveData(city = 'atlanta') {
+  const payload = await loadSameOriginData(city)
+  return {
+    connected: Boolean(payload?.connected),
+    city: payload?.city || normalizeCity(city),
+    events: Number(payload?.counts?.events || payload?.events?.length || 0),
+    venues: Number(payload?.counts?.venues || payload?.venues?.length || 0),
+    generatedAt: payload?.generated_at || null,
+  }
 }
 
 export async function loadSavedItems(profileId, session = readSession()) {
@@ -204,9 +270,9 @@ export async function askGoodTimesConcierge(input, session = readSession()) {
 
 export function cityLabel(city) {
   return ({
-    atlanta: 'Atlanta', houston: 'Houston', los_angeles: 'Los Angeles', miami: 'Miami',
-    charlotte: 'Charlotte', washington_dc: 'Washington, DC', new_york: 'New York',
-    dallas: 'Dallas', phoenix: 'Phoenix', scottsdale: 'Scottsdale', las_vegas: 'Las Vegas',
+    atlanta: 'Atlanta', houston: 'Houston', los_angeles: 'Los Angeles', washington_dc: 'Washington, DC',
+    miami: 'Miami', dallas: 'Dallas', charlotte: 'Charlotte', new_york: 'New York',
+    phoenix: 'Phoenix', scottsdale: 'Scottsdale', las_vegas: 'Las Vegas',
   })[city] || String(city || '').replaceAll('_', ' ').replace(/\b\w/g, value => value.toUpperCase())
 }
 
