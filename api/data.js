@@ -140,11 +140,12 @@ export default async function handler(request, response) {
     return sendJson(response, 405, { ok: false, error: 'Method not allowed' })
   }
 
+  const requestUrl = new URL(request.url || '/api/data', 'https://thegoodtimesworldwide.com')
   const contentUrl = process.env.VITE_CONTENT_SUPABASE_URL || process.env.VITE_KHG_SUPABASE_URL || CANONICAL_CONTENT_URL
   const contentKey = process.env.VITE_CONTENT_SUPABASE_ANON_KEY || process.env.VITE_KHG_SUPABASE_ANON_KEY || CANONICAL_CONTENT_KEY
-  const city = normalizeCity(request.query?.city)
-  const eventLimit = clampLimit(request.query?.event_limit, 500, 500)
-  const venueLimit = clampLimit(request.query?.venue_limit, 400, 400)
+  const city = normalizeCity(requestUrl.searchParams.get('city'))
+  const eventLimit = clampLimit(requestUrl.searchParams.get('event_limit'), 500, 500)
+  const venueLimit = clampLimit(requestUrl.searchParams.get('venue_limit'), 400, 400)
   const generatedAt = new Date().toISOString()
   const queries = buildGatewayQueries({ city, today: todayISO(), eventLimit, venueLimit })
 
