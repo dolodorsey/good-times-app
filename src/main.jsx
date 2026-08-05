@@ -17,6 +17,7 @@ const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
 const LazyOnboarding = lazy(() => import('./features/onboarding/GoodTimesOnboarding.jsx'))
 
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
+const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
 const directRoutes = {
   '/join': 'join',
   '/concierge-request': 'concierge-request',
@@ -96,7 +97,7 @@ function PremiumRoot({ children, launch = false }) {
   }
 
   return (
-    <div className="gt-premium-experience" data-app="good-times">
+    <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>
       {children}
     </div>
   )
@@ -165,9 +166,30 @@ bootstrap().catch((error) => {
 
 const isNativeRuntime = Boolean(window.Capacitor?.isNativePlatform?.())
 if ('serviceWorker' in navigator && !isNativeRuntime) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((error) => {
+  let updateReloadStarted = false
+  const reloadForCurrentBuild = () => {
+    if (updateReloadStarted) return
+    const key = `gt-build-reload:${buildId}`
+    if (sessionStorage.getItem(key) === '1') return
+    updateReloadStarted = true
+    sessionStorage.setItem(key, '1')
+    window.location.reload()
+  }
+
+  navigator.serviceWorker.addEventListener('controllerchange', reloadForCurrentBuild)
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'GOOD_TIMES_FORCE_RELOAD') reloadForCurrentBuild()
+  })
+
+  window.addEventListener('load', async () => {
+    try {
+      const registration = await navigator.serviceWorker.register(
+        `/sw.js?v=${encodeURIComponent(buildId)}`,
+        { updateViaCache: 'none' },
+      )
+      await registration.update()
+    } catch (error) {
       console.warn('GOOD TIMES service worker registration failed', error)
-    })
+    }
   })
 }
