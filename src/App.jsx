@@ -3,6 +3,7 @@ import { initNative, isNative, isIOS, tapHaptic, shareEvent, openLink, registerP
 import { localTodayISO } from "./direct-request-validation.js";
 import { COLORS as C, FONTS as F, btnStyle as V, cardStyle as K } from "./styles/tokens.js";
 import { GT_SUPABASE_URL as GT_SB, GT_SUPABASE_ANON_KEY as GT_SK, khgF } from "./lib/supabase.js";
+import { loadExploreTaxonomy } from "./taxonomy.js";
 
 /* ═══════════════════════════════════════════════════════
    GT BACKGROUND SYSTEM — 20 AI-Generated Atlanta Scenes
@@ -867,6 +868,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const[subRatings,setSubRatings]=useState({});
   const[venueLoading,setVenueLoading]=useState(false);
   const[venueResults,setVenueResults]=useState([]);
+  const[exploreCategories,setExploreCategories]=useState(Vu);
   // Map state
   const[mapFilter,setMapFilter]=useState("all");
   const[venueMapList,setVenueMapList]=useState([]);
@@ -896,6 +898,15 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   const[lockedPlans,setLockedPlans]=useState([]);
 
   const showToast=msg=>{setToast(msg);setTimeout(()=>setToast(null),2000)};
+
+  // Load the canonical Good Times taxonomy from Supabase. The legacy list remains an offline fallback.
+  useEffect(()=>{
+    let mounted=true;
+    loadExploreTaxonomy(khgF)
+      .then(categories=>{if(mounted&&categories.length)setExploreCategories(categories)})
+      .catch(()=>{});
+    return()=>{mounted=false};
+  },[]);
 
   // Initialize native platform (Capacitor iOS)
   useEffect(() => {
@@ -1618,7 +1629,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             const nlItems=mark(sorted,8);
             if(nlItems.length===0)return null;
             return(<>
-              <SectionHead t="WEEKLY NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>{setExploreSheet&&setExploreSheet(Vu.find(c=>c.id==="nightlife"));navigate("explore")}}}/>
+              <SectionHead t="WEEKLY NIGHTLIFE" icon={"\u{1F319}"} color={C.gold} action={{l:"See All",fn:()=>{setExploreSheet&&setExploreSheet(exploreCategories.find(c=>c.taxonomyKey==="nightlife"||c.id==="nightlife")||Vu.find(c=>c.id==="nightlife"));navigate("explore")}}}/>
               <div style={{padding:"0 16px",marginBottom:16}}>
                 <EventGrid items={nlItems} onSelect={e=>{setDetail(e);navigate("detail")}} max={8}/>
               </div>
@@ -2009,10 +2020,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
           <div style={{textAlign:"center",marginBottom:24}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>EXPLORE</div>
             <div style={{fontSize:28,fontFamily:F.s,fontWeight:700,marginBottom:6}}>Discover {city.name}</div>
-            <div style={{fontSize:14,color:C.textSec}}>{Vu.length} categories to explore</div>
+            <div style={{fontSize:14,color:C.textSec}}>{exploreCategories.length} categories to explore</div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:24}}>
-            {Vu.map(cat=>(
+            {exploreCategories.map(cat=>(
               <button key={cat.id} onClick={()=>setExploreSheet(cat)} style={{...K,padding:0,cursor:"pointer",overflow:"hidden",height:130,position:"relative",border:`1px solid ${cat.color}90`}}>
                 <img src={Ne.ex[cat.id]||Ne.v[0]} alt="" style={{width:"100%",height:"100%",objectFit:"cover",filter:"brightness(1.0)"}}/>
                 <div style={{position:"absolute",inset:0,background:"linear-gradient(180deg,rgba(0,0,0,0.05) 0%,rgba(0,0,0,0.5) 100%)"}}/>
@@ -2055,22 +2066,15 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
                     setVenueLoading(true);setVenueResults([]);
                     const cityKeyMap={"Atlanta":"atlanta","Houston":"houston","Los Angeles":"los_angeles","Charlotte":"charlotte","Washington":"washington_dc","Miami":"miami","Las Vegas":"las_vegas","New York":"new_york","Dallas":"dallas","Phoenix":"phoenix","Scottsdale":"scottsdale"};
                     const ck=cityKeyMap[city.name]||city.name.toLowerCase().replace(/\s+/g,'_');
-                    const subMap={"Nightclubs":"nightclub","Cocktail Bars":"cocktail_bar","Rooftop Dining":"rooftop","Hookah Lounges":"hookah","Lounges":"lounge","Jazz Bars":"jazz","Speakeasies":"speakeasy","Day Parties":"day_party","Pool Parties":"pool_party","Sports Bars":"sports_bar","Comedy Clubs":"comedy","Art Galleries":"culture","Arcades & Gaming":"entertainment","History Museums":"culture","Luxury Theaters":"event_venue","Science & Tech Museums":"culture","Casual Dining":"restaurant","Brunch":"brunch","Late Night / 24-Hour Eats":"restaurant","Food Trucks":"food_truck","Quick Bites / Fast Casual":"restaurant","Food Halls":"food_hall","Fine Dining":"restaurant","Coffee Shops":"coffee","Wine Bars":"wine_bar","Day Spas":"spa","Performance Gyms":"gym","Dance Studios":"fitness","Yoga Studios":"fitness","Boutiques":"shopping","Vintage Shops":"shopping","Luxury Stores":"shopping","Event Venues":"event_venue","Hiking":"outdoor_adventures","City Parks":"outdoor_adventures","Farmers Markets":"outdoor_adventures","Attractions":"entertainment","Botanical Gardens":"outdoor_adventures","Zoos & Aquariums":"outdoor_adventures"};
-                    // Use subcategory directly — match against gt_venues.subcategory
                     const subKey=sub;
-                    const tabId=exploreSheet.id;
-                    const sel="id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key,tab_tags,search_tags,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,instagram_handle,sourced_from";
-                    // PRIMARY: Match subcategory exactly within this tab
-                    let q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&tab_tags=cs.{${tabId}}&subcategory=eq.${encodeURIComponent(subKey)}&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
+                    const taxonomyCategory=exploreSheet.taxonomyKey||exploreSheet.id;
+                    const sel="id,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,subcategory,category_key,tab_tags,search_tags,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,instagram_handle,sourced_from,website,phone,booking_link";
+                    // PRIMARY: canonical taxonomy eligibility view. One venue may correctly serve multiple subcategories.
+                    let q=`v_gt_venue_taxonomy_directory?select=${sel}&city_key=eq.${ck}&category_key=eq.${encodeURIComponent(taxonomyCategory)}&subcategory=eq.${encodeURIComponent(subKey)}&order=taxonomy_confidence.desc,quality_score.desc.nullslast,google_rating.desc.nullslast&limit=30`;
                     let results=await khgF(q);
-                    // FALLBACK 1: Broader — subcategory ilike match
+                    // FALLBACK: show the strongest venues in the selected taxonomy category.
                     if(results.length===0){
-                      q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&subcategory=ilike.*${encodeURIComponent(subKey.split('/')[0].trim())}*&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast&limit=20`;
-                      results=await khgF(q);
-                    }
-                    // FALLBACK 2: Tab tag only (all venues in this category)
-                    if(results.length===0){
-                      q=`gt_venues?select=${sel}&status=eq.active&city_key=eq.${ck}&tab_tags=cs.{${tabId}}&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast,quality_score.desc.nullslast&limit=20`;
+                      q=`v_gt_venue_taxonomy_directory?select=${sel}&city_key=eq.${ck}&category_key=eq.${encodeURIComponent(taxonomyCategory)}&order=taxonomy_confidence.desc,quality_score.desc.nullslast,google_rating.desc.nullslast&limit=30`;
                       results=await khgF(q);
                     }
                     setVenueResults(results);setVenueLoading(false);
