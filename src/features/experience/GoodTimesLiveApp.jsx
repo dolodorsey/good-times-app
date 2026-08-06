@@ -234,12 +234,12 @@ export default function GoodTimesLiveApp() {
   const openVenue=item=>{setSelectedVenue(item);recordProductEvent({eventName:'venue_opened',surface:screen,objectType:'venue',objectId:item.id,city},session);recordTasteSignal({entityType:'venue',entityId:item.id,signalType:'view',city},session)}
 
   const loadDirectory=async(categoryId,subcategoryId=null)=>{
-    setSelectedCategory(categoryId);setSelectedSubcategory(subcategoryId);setDirectoryLoading(true);setQuery('');setCatalogError('')
+    setSelectedCategory(categoryId);setSelectedSubcategory(subcategoryId);setDirectoryLoading(true);setQuery('');setCatalogError('');setCatalogError('')
     try{
       const params=new URLSearchParams({mode:'directory',city,category:categoryId,limit:'600'})
       if(subcategoryId)params.set('subcategory',subcategoryId)
       const payload=await getJson(`/api/catalog?${params}`)
-      setDirectory(payload.venues||[]);setCatalogError('')
+      setDirectory(payload.venues||[]);setCatalogError('');setCatalogError('')
     }catch(error){
       setDirectory(venues.slice(0,120));setCatalogError(error.message||'Directory is reconnecting.')
     }finally{setDirectoryLoading(false)}
