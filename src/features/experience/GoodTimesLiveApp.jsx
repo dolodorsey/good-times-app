@@ -14,6 +14,7 @@ import {
   unsaveItem,
 } from '../intelligence/client.js'
 import { CATEGORY_META, FALLBACK_TAXONOMY, GT_SCENE_BASE, TAXONOMY_TOTALS, categoryScene } from './live-taxonomy.js'
+import { GT_SUPABASE_ANON_KEY, GT_SUPABASE_URL } from '../../lib/supabase.js'
 
 const NAV = [
   ['home','⌂','Now'],['dates','▦','Dates'],['build','✦','Build'],['plans','≋','Plans'],['explore','◇','Explore'],['vault','▣','Vault'],
@@ -69,8 +70,32 @@ function mergeTaxonomy(live=[]) {
     }
   })
 }
-function eventImage(event) { return event?.image_url || BG_FALLBACK }
-function venueImage(venue) { return venue?.hero_image || BG_FALLBACK }
+function mediaUrl(value) {
+  const text=String(value||'').trim()
+  if(!text)return BG_FALLBACK
+  if(text.startsWith('/')||text.startsWith('data:')||text.startsWith('blob:')||text.includes('dzlmtvodpyhetvektfuo.supabase.co'))return text
+  return `/api/media?url=${encodeURIComponent(text)}`
+}
+function eventImage(event) { return mediaUrl(event?.image_url || BG_FALLBACK) }
+function venueImage(venue) { return mediaUrl(venue?.hero_image || BG_FALLBACK) }
+function buildDateRange(when) {
+  const start=new Date(`${todayISO()}T12:00:00`)
+  const normalized=String(when||'tonight').toLowerCase()
+  if(normalized.includes('tomorrow'))start.setDate(start.getDate()+1)
+  else if(normalized.includes('weekend')){const delta=(5-start.getDay()+7)%7;start.setDate(start.getDate()+delta)}
+  const end=new Date(start)
+  if(normalized.includes('weekend'))end.setDate(end.getDate()+2)
+  const iso=value=>`${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`
+  return {start:iso(start),end:iso(end)}
+}
+async function persistFallbackPlan(plan,session) {
+  if(!session?.access_token||!session?.user?.id)return null
+  const payload={user_id:session.user.id,name:plan.name,city_id:plan.city_id,itinerary_date:plan.itinerary_date,stops:plan.stops,estimated_duration:'4-6 hours',group_size:plan.group_size,status:'draft',created_by:'ai',metadata:{source:'good-times-live-client-fallback'}}
+  const response=await fetch(`${GT_SUPABASE_URL}/rest/v1/itineraries`,{method:'POST',headers:{apikey:GT_SUPABASE_ANON_KEY,Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json',Prefer:'return=representation'},body:JSON.stringify(payload)})
+  if(!response.ok)throw new Error('Could not sync this plan to your account.')
+  const rows=await response.json().catch(()=>[])
+  return rows?.[0]||null
+}
 function uniqueBy(rows,keyFn) {
   const seen=new Set();return rows.filter(row=>{const key=keyFn(row);if(!key||seen.has(key))return false;seen.add(key);return true})
 }
@@ -117,7 +142,7 @@ export default function GoodTimesLiveApp() {
   const [dataError,setDataError]=useState('')
   const [catalogError,setCatalogError]=useState('')
   const [query,setQuery]=useState('')
-  const [dateMode,setDateMode]=useState('week')
+  const [dateMode,setDateMode]=useState('upcoming')
   const [eventCategory,setEventCategory]=useState('all')
   const [selectedEvent,setSelectedEvent]=useState(null)
   const [selectedVenue,setSelectedVenue]=useState(null)
@@ -209,48 +234,74 @@ export default function GoodTimesLiveApp() {
   const openVenue=item=>{setSelectedVenue(item);recordProductEvent({eventName:'venue_opened',surface:screen,objectType:'venue',objectId:item.id,city},session);recordTasteSignal({entityType:'venue',entityId:item.id,signalType:'view',city},session)}
 
   const loadDirectory=async(categoryId,subcategoryId=null)=>{
-    setSelectedCategory(categoryId);setSelectedSubcategory(subcategoryId);setDirectoryLoading(true);setQuery('')
+    setSelectedCategory(categoryId);setSelectedSubcategory(subcategoryId);setDirectoryLoading(true);setQuery('');setCatalogError('')
     try{
       const params=new URLSearchParams({mode:'directory',city,category:categoryId,limit:'600'})
       if(subcategoryId)params.set('subcategory',subcategoryId)
       const payload=await getJson(`/api/catalog?${params}`)
-      setDirectory(payload.venues||[])
+      setDirectory(payload.venues||[]);setCatalogError('')
     }catch(error){
       setDirectory(venues.slice(0,120));setCatalogError(error.message||'Directory is reconnecting.')
     }finally{setDirectoryLoading(false)}
   }
 
   const deterministicPlan=useCallback(()=>{
+    const range=buildDateRange(build.when)
+    const areaNeedle=build.area.trim().toLowerCase()
     const categorySet=new Set(build.vibes.flatMap(vibe=>VIBE_CATEGORY[vibe]||[]))
-    const eventPool=events.filter(item=>!categorySet.size||categorySet.has(item.category_key))
+    const eventPool=events.filter(item=>{
+      const dateOk=item.event_date>=range.start&&item.event_date<=range.end
+      const categoryOk=!categorySet.size||categorySet.has(item.category_key)
+      const areaOk=!areaNeedle||String(item.venue_name||'').toLowerCase().includes(areaNeedle)
+      return dateOk&&categoryOk&&areaOk
+    })
     const venuePool=venues.filter(item=>{
       const text=`${item.category_key||''} ${item.subcategory||''} ${(item.vibe_tags||[]).join(' ')}`.toLowerCase()
+      const location=`${item.neighborhood||''} ${item.side_of_town||''} ${item.address||''}`.toLowerCase()
+      if(areaNeedle&&!location.includes(areaNeedle))return false
       if(build.vibes.includes('food'))return /restaurant|food|brunch|wine|cocktail/.test(text)
-      if(build.vibes.includes('date'))return /restaurant|rooftop|speakeasy|lounge|jazz|wine/.test(text)
-      if(build.vibes.includes('turnt'))return /nightclub|lounge|hookah|rooftop|bar/.test(text)
+      if(build.vibes.includes('date'))return /restaurant|rooftop|speakeasy|lounge|jazz|wine|culture/.test(text)
+      if(build.vibes.includes('turnt'))return /nightclub|lounge|hookah|rooftop|bar|entertainment/.test(text)
       return true
     })
-    const dinner=venues.find(item=>/restaurant|food_hall|brunch/.test(item.category_key||''))||venuePool[0]||venues[0]
-    const vibe=venuePool.find(item=>item.id!==dinner?.id)||venues.find(item=>item.id!==dinner?.id)
-    const event=eventPool[0]||events[0]
+    const dining=venuePool.find(item=>/restaurant|food_hall|brunch|wine_bar|fine_dining/.test(item.category_key||''))||venuePool[0]||venues[0]
+    const vibe=venuePool.find(item=>item.id!==dining?.id)||venues.find(item=>item.id!==dining?.id)
+    const event=eventPool[0]||events.find(item=>item.event_date>=range.start&&item.event_date<=range.end)||null
     const stops=[
-      dinner&&{id:`venue:${dinner.id}`,type:'venue',role:'Start',name:dinner.name,venue:dinner.name,address:dinner.address,time:'19:00',image:dinner.hero_image},
-      vibe&&{id:`venue:${vibe.id}`,type:'venue',role:'Vibe',name:vibe.name,venue:vibe.name,address:vibe.address,time:'21:00',image:vibe.hero_image},
-      event&&{id:event.event_key,type:'event',role:'Main Move',name:event.title,venue:event.venue_name,time:event.event_time||'23:00',ticket_url:event.ticket_url,image:event.image_url},
+      dining&&{id:`venue:${dining.id}`,type:'venue',role:'Start',name:dining.name,venue:dining.name,address:dining.address,time:'19:00',image:venueImage(dining)},
+      event&&{id:event.event_key,type:'event',role:'Main Move',name:event.title,venue:event.venue_name,time:event.event_time||'21:30',ticket_url:event.ticket_url,image:eventImage(event)},
+      vibe&&{id:`venue:${vibe.id}`,type:'venue',role:'Finish',name:vibe.name,venue:vibe.name,address:vibe.address,time:event?'23:30':'21:30',image:venueImage(vibe)},
     ].filter(Boolean)
-    return {id:`local-${Date.now()}`,name:build.vibes.includes('date')?'Date Night, Done Right':build.vibes.includes('turnt')?'No Sleep Tonight':'Good Times, Curated',itinerary_date:todayISO(),city_id:city,group_size:Number(build.group)||2,status:'ready',created_by:'good_times_live',stops}
+    return {id:`local-${Date.now()}`,name:build.vibes.includes('date')?'Date Night, Done Right':build.vibes.includes('turnt')?'No Sleep Tonight':'Good Times, Curated',itinerary_date:range.start,city_id:city,group_size:Number(build.group)||2,status:'draft',created_by:'ai',stops}
   },[build,city,events,venues])
 
   const buildNight=async()=>{
-    if(building)return;setBuilding(true);setBuildResult(null)
+    if(building)return
+    setBuilding(true);setBuildResult(null)
     const vibeLabels=build.vibes.map(id=>VIBES.find(item=>item[0]===id)?.[1]).filter(Boolean)
     const prompt=`Build a complete ${build.occasion.toLowerCase()} in ${cityLabel(city)} ${build.when}. Group of ${build.group}. Budget ${build.budget}. Area ${build.area||'no preference'}. Vibes: ${vibeLabels.join(', ')||'surprise me'}.`
     try{
-      const result=await askGoodTimesConcierge({query:prompt,action:'itinerary',city},session)
-      if(result?.itinerary){setBuildResult(result.itinerary);setServerPlans(rows=>[result.itinerary,...rows.filter(item=>item.id!==result.itinerary.id)]);setToast('Your night is ready and saved.');return}
-    }catch{}
-    const plan=deterministicPlan();setBuildResult(plan);setLocalPlans(rows=>{const next=[plan,...rows];localStorage.setItem('gt_live_plans',JSON.stringify(next));return next});setToast('Built from live Good Times inventory.')
-    setBuilding(false)
+      const result=await askGoodTimesConcierge({query:prompt,action:'itinerary',city,when:build.when,occasion:build.occasion,party_size:Number(build.group)||2,budget:build.budget,area:build.area,vibes:build.vibes},session)
+      if(result?.itinerary){
+        const normalized={...result.itinerary,stops:(result.itinerary.stops||[]).map(stop=>({...stop,image:stop.image||stop.image_url||stop.hero_image}))}
+        setBuildResult(normalized);setServerPlans(rows=>[normalized,...rows.filter(item=>item.id!==normalized.id)]);setToast('Your night is ready and saved.');return
+      }
+      throw new Error('No itinerary returned')
+    }catch(error){
+      console.warn('[GOOD TIMES Build My Night] primary planner fallback',error)
+      const localPlan=deterministicPlan()
+      let finalPlan=localPlan
+      try{
+        const synced=await persistFallbackPlan(localPlan,session)
+        if(synced){finalPlan={...synced,stops:(synced.stops||[]).map(stop=>({...stop,image:stop.image||stop.image_url||stop.hero_image}))};setServerPlans(rows=>[finalPlan,...rows.filter(item=>item.id!==finalPlan.id)])}
+      }catch(syncError){
+        console.warn('[GOOD TIMES Build My Night] account sync fallback',syncError)
+        setLocalPlans(rows=>{const next=[localPlan,...rows];localStorage.setItem('gt_live_plans',JSON.stringify(next));return next})
+      }
+      setBuildResult(finalPlan);setToast(finalPlan.id?.startsWith('local-')?'Built from live inventory and saved on this device.':'Built from live inventory and saved to Plans.')
+    }finally{
+      setBuilding(false)
+    }
   }
   useEffect(()=>{if(buildResult||!building)return;const timer=setTimeout(()=>setBuilding(false),15000);return()=>clearTimeout(timer)},[buildResult,building])
 
@@ -300,7 +351,7 @@ export default function GoodTimesLiveApp() {
 
       {screen==='plans'&&<section className="gtlive-page"><div className="gtlive-page-head"><span>PLANS</span><h1>Your nights.</h1><p>Agent-built and personally saved itineraries.</p></div>{plans.length?<div className="gtlive-plans">{plans.map(plan=><article key={plan.id}><div><span>{plan.created_by==='good_times_live'?'LIVE-BUILT':'SAVED PLAN'}</span><h2>{plan.name||'Your Good Times plan'}</h2><p>{formatDate(plan.itinerary_date,true)} · {cityLabel(plan.city_id||city)} · {plan.group_size||1} guests</p></div>{(plan.stops||[]).map((stop,index)=><div className="gtlive-mini-stop" key={`${stop.id}-${index}`}><b>{index+1}</b><span><small>{stop.role||stop.type||'STOP'}</small><strong>{stop.name}</strong><em>{formatTime(stop.time)} · {stop.venue||stop.address||''}</em></span></div>)}</article>)}</div>:<div className="gtlive-compact-empty"><span>✦</span><h2>Your first plan starts now.</h2><p>Build a full night from live events and verified places.</p><button onClick={()=>setScreen('build')}>Build my night</button></div>}</section>}
 
-      {screen==='explore'&&<section className="gtlive-page"><div className="gtlive-page-head"><span>EXPLORE</span><h1>{selectedTaxonomy?.name||'The whole city.'}</h1><p>{TAXONOMY_TOTALS.categories} categories · {TAXONOMY_TOTALS.subcategories} subcategories · {venues.length||'800+'} verified places</p></div>{catalogError&&<InlineNotice>{catalogError} Live counts may be temporarily hidden.</InlineNotice>}<div className="gtlive-search"><span>⌕</span><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="Venue, neighborhood, category or vibe…"/>{query&&<button onClick={()=>setQuery('')}>×</button>}</div>{!selectedTaxonomy?<div className="gtlive-explore-grid">{taxonomy.map(item=><button key={item.id} style={{'--accent':item.accent,backgroundImage:`url(${categoryScene(item)})`}} onClick={()=>loadDirectory(item.id)}><div/><span>{item.icon}</span><strong>{item.name}</strong><small>{item.subcategories.length} subcategories · {item.count||'live'} places</small></button>)}</div>:<><div className="gtlive-explore-tools"><button onClick={()=>{setSelectedCategory(null);setSelectedSubcategory(null);setDirectory([])}}>‹ All categories</button><div><button className={!mapMode?'active':''} onClick={()=>setMapMode(false)}>Cards</button><button className={mapMode?'active':''} onClick={()=>setMapMode(true)}>Map</button></div></div><div className="gtlive-chips"><button className={!selectedSubcategory?'active':''} onClick={()=>loadDirectory(selectedCategory)}>All</button>{selectedTaxonomy.subcategories.map(item=><button className={selectedSubcategory===item.id?'active':''} key={item.id} onClick={()=>loadDirectory(selectedCategory,item.id)}>{item.name} <small>{item.count||''}</small></button>)}</div>{directoryLoading?<div className="gtlive-inline-loader">Finding the best-matched places…</div>:mapMode?<><div className="gtlive-map"><iframe title={`${cityLabel(city)} map`} src="https://www.openstreetmap.org/export/embed.html?bbox=-84.62%2C33.60%2C-84.15%2C34.02&layer=mapnik"/><div><b>{filteredDirectory.filter(item=>item.latitude!=null).length}</b> map-ready places</div></div><div className="gtlive-rail">{filteredDirectory.slice(0,20).map(item=><VenueCard key={item.id} venue={item} saved={savedKeys.has(`venue:${item.id}`)} onOpen={()=>openVenue(item)} onSave={()=>toggleSave('venue',item.id)}/>)}</div></>:filteredDirectory.length?<div className="gtlive-grid">{filteredDirectory.map(item=><VenueCard key={item.id} venue={item} saved={savedKeys.has(`venue:${item.id}`)} onOpen={()=>openVenue(item)} onSave={()=>toggleSave('venue',item.id)}/>)}</div>:<div className="gtlive-compact-empty"><span>{selectedTaxonomy.icon}</span><h2>This lane is being stocked.</h2><p>Browse another subcategory or check the live event calendar.</p><button onClick={()=>setScreen('dates')}>See events</button></div>}</>}</section>}
+      {screen==='explore'&&<section className="gtlive-page"><div className="gtlive-page-head"><span>EXPLORE</span><h1>{selectedTaxonomy?.name||'The whole city.'}</h1><p>{TAXONOMY_TOTALS.categories} categories · {TAXONOMY_TOTALS.subcategories} subcategories · {venues.length||'800+'} verified places</p></div>{catalogError&&<InlineNotice>Some live counts are refreshing. Categories and saved features remain available.</InlineNotice>}<div className="gtlive-search"><span>⌕</span><input value={query} onChange={event=>setQuery(event.target.value)} placeholder="Venue, neighborhood, category or vibe…"/>{query&&<button onClick={()=>setQuery('')}>×</button>}</div>{!selectedTaxonomy?<div className="gtlive-explore-grid">{taxonomy.map(item=><button key={item.id} style={{'--accent':item.accent,backgroundImage:`url(${categoryScene(item)})`}} onClick={()=>loadDirectory(item.id)}><div/><span>{item.icon}</span><strong>{item.name}</strong><small>{item.subcategories.length} subcategories · {item.count||'live'} places</small></button>)}</div>:<><div className="gtlive-explore-tools"><button onClick={()=>{setSelectedCategory(null);setSelectedSubcategory(null);setDirectory([])}}>‹ All categories</button><div><button className={!mapMode?'active':''} onClick={()=>setMapMode(false)}>Cards</button><button className={mapMode?'active':''} onClick={()=>setMapMode(true)}>Map</button></div></div><div className="gtlive-chips"><button className={!selectedSubcategory?'active':''} onClick={()=>loadDirectory(selectedCategory)}>All</button>{selectedTaxonomy.subcategories.map(item=><button className={selectedSubcategory===item.id?'active':''} key={item.id} onClick={()=>loadDirectory(selectedCategory,item.id)}>{item.name} <small>{item.count||''}</small></button>)}</div>{directoryLoading?<div className="gtlive-inline-loader">Finding the best-matched places…</div>:mapMode?<><div className="gtlive-map"><iframe title={`${cityLabel(city)} map`} src="https://www.openstreetmap.org/export/embed.html?bbox=-84.62%2C33.60%2C-84.15%2C34.02&layer=mapnik"/><div><b>{filteredDirectory.filter(item=>item.latitude!=null).length}</b> map-ready places</div></div><div className="gtlive-rail">{filteredDirectory.slice(0,20).map(item=><VenueCard key={item.id} venue={item} saved={savedKeys.has(`venue:${item.id}`)} onOpen={()=>openVenue(item)} onSave={()=>toggleSave('venue',item.id)}/>)}</div></>:filteredDirectory.length?<div className="gtlive-grid">{filteredDirectory.map(item=><VenueCard key={item.id} venue={item} saved={savedKeys.has(`venue:${item.id}`)} onOpen={()=>openVenue(item)} onSave={()=>toggleSave('venue',item.id)}/>)}</div>:<div className="gtlive-compact-empty"><span>{selectedTaxonomy.icon}</span><h2>This lane is being stocked.</h2><p>Browse another subcategory or check the live event calendar.</p><button onClick={()=>setScreen('dates')}>See events</button></div>}</>}</section>}
 
       {screen==='vault'&&<section className="gtlive-page"><div className="gtlive-page-head"><span>VAULT</span><h1>Keep the good ones.</h1><p>{savedItems.length} saved moves and places.</p></div><div className="gtlive-segment"><button className={vaultType==='events'?'active':''} onClick={()=>setVaultType('events')}>Events ({savedEvents.length})</button><button className={vaultType==='places'?'active':''} onClick={()=>setVaultType('places')}>Places ({savedVenues.length})</button></div>{vaultType==='events'?(savedEvents.length?<div className="gtlive-grid">{savedEvents.map(item=><EventCard key={item.event_key} event={item} saved onOpen={()=>openEvent(item)} onSave={()=>toggleSave('event',item.event_key)}/>)}</div>:<div className="gtlive-compact-empty"><span>☆</span><h2>Save your next move.</h2><p>Tap the star on any event to keep it here.</p><button onClick={()=>setScreen('dates')}>Find events</button></div>):(savedVenues.length?<div className="gtlive-grid">{savedVenues.map(item=><VenueCard key={item.id} venue={item} saved onOpen={()=>openVenue(item)} onSave={()=>toggleSave('venue',item.id)}/>)}</div>:<div className="gtlive-compact-empty"><span>◇</span><h2>Build your city list.</h2><p>Save the places you want to try next.</p><button onClick={()=>setScreen('explore')}>Explore Atlanta</button></div>)}</section>}
 

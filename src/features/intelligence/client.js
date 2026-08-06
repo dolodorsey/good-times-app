@@ -72,13 +72,6 @@ async function loadSameOriginData(city) {
 
 async function loadEventsDirect(normalizedCity, limit) {
   const today = todayISO()
-  if (normalizedCity === 'atlanta') {
-    return fetchJson(
-      `${KHG_SUPABASE_URL}/rest/v1/gt_public_atlanta_feed?select=event_key,source_table,source_id,city_key,title,event_date,event_time,venue_name,raw_type,raw_category,ticket_url,image_url,organizer,display_priority,good_times_score,category_key,subcategory_key,is_featured,is_curated,rank_order,refreshed_at&event_date=gte.${today}&order=rank_order.asc&limit=${limit}`,
-      { headers: gatewayHeaders },
-    )
-  }
-
   const rows = await fetchJson(
     `${KHG_SUPABASE_URL}/rest/v1/gt_shows?select=id,event_name,event_type,genre,city_key,show_date,show_time,venue_name,ticket_url,image_url,organizer,display_priority,good_times_score,category_key_v2,subcategory_key_v2,is_featured,is_curated&city_key=eq.${encodeURIComponent(normalizedCity)}&show_date=gte.${today}&status=in.(confirmed,tentative)&order=show_date.asc,display_priority.asc&limit=${limit}`,
     { headers: gatewayHeaders },
@@ -296,7 +289,7 @@ export async function recordTasteSignal({
 
 export async function askGoodTimesConcierge(input, session = readSession()) {
   if (!session?.access_token) throw new Error('Please sign in again.')
-  return fetchJson(`${GT_SUPABASE_URL}/functions/v1/good-times-concierge`, {
+  return fetchJson(`${GT_SUPABASE_URL}/functions/v1/good-times-live-concierge`, {
     method: 'POST',
     headers: gtHeaders(session.access_token),
     body: JSON.stringify({ today: todayISO(), ...input }),

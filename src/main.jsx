@@ -61,7 +61,7 @@ async function bootstrap(){
   else if(commandRoute){route=<LazyCommandApp/>;loadingLabel='Opening command interface'}
   else route=<LazyLiveApp/>
 
-  ReactDOM.createRoot(rootElement).render(<React.StrictMode><RuntimeBoundary><Suspense fallback={<RouteLoading label={loadingLabel}/>}><PremiumRoot launch={!requestType&&!recoverySession&&hasSession&&!legacyRoute&&!commandRoute}>{route}</PremiumRoot></Suspense></RuntimeBoundary></React.StrictMode>)
+  ReactDOM.createRoot(rootElement).render(<RuntimeBoundary><Suspense fallback={<RouteLoading label={loadingLabel}/>}><PremiumRoot launch={!requestType&&!recoverySession&&hasSession&&!legacyRoute&&!commandRoute}>{route}</PremiumRoot></Suspense></RuntimeBoundary>)
 }
 
 bootstrap().catch(error=>{
@@ -70,11 +70,3 @@ bootstrap().catch(error=>{
   if(rootElement)ReactDOM.createRoot(rootElement).render(<RuntimeBoundary><div className="gt-runtime-fallback" role="alert"><div className="gt-runtime-fallback__mark">GT</div><h1>We couldn’t open GOOD TIMES.</h1><button type="button" onClick={()=>window.location.reload()}>Try again</button></div></RuntimeBoundary>)
 })
 
-const isNativeRuntime=Boolean(window.Capacitor?.isNativePlatform?.())
-if('serviceWorker' in navigator&&!isNativeRuntime){
-  let updateReloadStarted=false
-  const reloadForCurrentBuild=()=>{if(updateReloadStarted)return;const key=`gt-build-reload:${buildId}`;if(sessionStorage.getItem(key)==='1')return;updateReloadStarted=true;sessionStorage.setItem(key,'1');window.location.reload()}
-  navigator.serviceWorker.addEventListener('controllerchange',reloadForCurrentBuild)
-  navigator.serviceWorker.addEventListener('message',event=>{if(event.data?.type==='GOOD_TIMES_FORCE_RELOAD')reloadForCurrentBuild()})
-  window.addEventListener('load',async()=>{try{const registration=await navigator.serviceWorker.register(`/sw.js?v=${encodeURIComponent(buildId)}`,{updateViaCache:'none'});await registration.update()}catch(error){console.warn('GOOD TIMES service worker registration failed',error)}})
-}
