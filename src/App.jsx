@@ -2052,6 +2052,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
             <button onClick={()=>navigate("planforme","planforme")} style={{...V(true),padding:"15px 12px",fontSize:13,fontWeight:800,textAlign:"center"}}>✨ Build My Night</button>
             <button onClick={()=>navigate("plans","plans")} style={{...V(false),padding:"15px 12px",fontSize:13,fontWeight:700,textAlign:"center"}}>📋 My Itinerary</button>
           </div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,margin:"4px 0 22px"}}>
+            <button onClick={()=>navigate("planforme","planforme")} style={{...V(true),padding:"15px 12px",fontSize:13,fontWeight:800,textAlign:"center"}}>✨ Build My Night</button>
+            <button onClick={()=>navigate("plans","plans")} style={{...V(false),padding:"15px 12px",fontSize:13,fontWeight:700,textAlign:"center"}}>📋 My Itinerary</button>
+          </div>
                     {/* Ad Space instead of HugLife events */}
           <div style={{borderRadius:14,overflow:"hidden",position:"relative",border:`1px solid ${C.gold}20`,background:"linear-gradient(135deg,rgba(212,168,83,0.08),rgba(6,6,12,0.5))",marginTop:8}}>
             <div style={{padding:"20px",textAlign:"center"}}>
@@ -2392,6 +2396,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         *{box-sizing:border-box;margin:0;padding:0;}
         body{background:${C.bg};margin:0;overflow-x:hidden;}
         ::-webkit-scrollbar{display:none;}
+        html,body,#root{height:100%;min-height:0;overflow:hidden;}
+        .gt-screen-scroll{scrollbar-width:none;touch-action:pan-y;}
+        .gt-screen-host{isolation:isolate;}
+        @supports(height:100dvh){.gt-app-shell,.gt-collage-wrap,.gt-collage-app{height:100dvh!important;}}
         html,body,#root{height:100%;min-height:0;overflow:hidden;}
         .gt-screen-scroll{scrollbar-width:none;touch-action:pan-y;}
         .gt-screen-host{isolation:isolate;}
