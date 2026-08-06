@@ -114,7 +114,9 @@ const gtAuth=async(ep,body)=>{
   const r=await fetch(`${GT_SB}/auth/v1/${ep}`,{method:'POST',headers:{'Content-Type':'application/json',apikey:GT_SK,Authorization:`Bearer ${GT_SK}`},body:JSON.stringify(body)});
   const d=await r.json();if(d.error||d.msg)throw new Error(d.error_description||d.msg||d.error||'Auth failed');return d;
 };
-const gtSignUp=async(email,pw,name,city)=>gtAuth('signup',{email,password:pw,data:{full_name:name,home_city:city}});
+const GT_CONFIRM_URL='https://thegoodtimesworldwide.com/auth/confirm';
+const gtSignUp=async(email,pw,name,city)=>gtAuth(`signup?redirect_to=${encodeURIComponent(GT_CONFIRM_URL)}`,{email,password:pw,data:{full_name:name,home_city:city}});
+const gtResendConfirmation=async(email)=>gtAuth('resend',{type:'signup',email,options:{emailRedirectTo:GT_CONFIRM_URL}});
 const gtSignIn=async(email,pw)=>gtAuth('token?grant_type=password',{email,password:pw});
 const gtResetPassword=async(email)=>{
   const r=await fetch(`${GT_SB}/auth/v1/recover`,{method:'POST',headers:{'Content-Type':'application/json',apikey:GT_SK},body:JSON.stringify({email})});
@@ -189,8 +191,8 @@ function GoodTimesOnboarding({onComplete}){
     try{
       if(mode==='signup'){
         if(!name.trim()||name.trim().length<2){setErr('Enter your name');setLoading(false);return;}
-        await gtSignUp(email,pw,name.trim(),city);
-        const d=await gtSignIn(email,pw);
+        const d=await gtSignUp(email,pw,name.trim(),city);
+        if(!d.access_token){setErr('Check your email to confirm your account. Use only the newest link; it expires and works once.');setMode('signin');return;}
         storeGtSession(d);setAuthData(d);setStep('city');
       }else{
         const d=await gtSignIn(email,pw);
@@ -202,6 +204,7 @@ function GoodTimesOnboarding({onComplete}){
       let m=e.message||'Failed';
       if(m.includes('Invalid login'))m='Wrong email or password';
       if(m.includes('already registered'))m='Email taken. Try signing in.';
+      if(m.includes('Email not confirmed'))m='Confirm your email first. You can resend a fresh confirmation below.';
       setErr(m);
     }finally{setLoading(false);}
   };
@@ -270,6 +273,7 @@ function GoodTimesOnboarding({onComplete}){
             {err&&<div style={{padding:'12px 16px',background:'rgba(239,68,68,0.12)',border:'1px solid rgba(239,68,68,0.3)',borderRadius:12,marginBottom:16,fontSize:13,color:'#ef4444',fontWeight:600}}>{err}</div>}
             <button onClick={doAuth} disabled={!canSubmit||loading} style={{width:'100%',padding:'16px',background:canSubmit&&!loading?`linear-gradient(135deg,${accentGold},#B8942F)`:'rgba(255,255,255,0.08)',color:canSubmit?'#0A0A0F':'rgba(255,255,255,0.3)',border:'none',borderRadius:14,fontSize:16,fontWeight:700,cursor:canSubmit&&!loading?'pointer':'not-allowed',fontFamily:ff}}>{loading?'...':(mode==='signup'?'Create Account':'Sign In')}</button>
             {mode==='signin'&&<button onClick={()=>{setStep('forgot');setErr('');setResetSent(false)}} style={{background:'none',border:'none',color:'rgba(255,255,255,0.4)',fontSize:13,cursor:'pointer',fontFamily:ff,marginTop:12,width:'100%',textAlign:'center'}}>Forgot password?</button>}
+            {mode==='signin'&&<button onClick={async()=>{if(!validEmail){setErr('Enter your email first');return}setLoading(true);setErr('');try{await gtResendConfirmation(email);setErr('A fresh confirmation email is on the way. Open only the newest link.')}catch(e){setErr(e.message||'Unable to resend confirmation')}finally{setLoading(false)}}} style={{background:'none',border:'none',color:accentGold,fontSize:13,cursor:'pointer',fontFamily:ff,marginTop:10,width:'100%',textAlign:'center'}}>Resend confirmation email</button>}
           </div>
         </div>
       </div>
@@ -357,6 +361,14 @@ function GoodTimesOnboarding({onComplete}){
   );
 
   return null;
+}
+
+function GoodTimesAuthConfirm(){
+  const[status,setStatus]=useState('Confirming your email…');const[failed,setFailed]=useState(false);const[email,setEmail]=useState('');
+  useEffect(()=>{(async()=>{const url=new URL(window.location.href);const hash=new URLSearchParams(url.hash.slice(1));const tokenHash=url.searchParams.get('token_hash');const code=url.searchParams.get('code');let response;
+    if(tokenHash)response=await fetch(`${GT_SB}/auth/v1/verify`,{method:'POST',headers:{'Content-Type':'application/json',apikey:GT_SK},body:JSON.stringify({token_hash:tokenHash,type:'signup'})});else if(code)response=await fetch(`${GT_SB}/auth/v1/token?grant_type=pkce`,{method:'POST',headers:{'Content-Type':'application/json',apikey:GT_SK},body:JSON.stringify({auth_code:code})});else if(hash.get('access_token')){storeGtSession(Object.fromEntries(hash));setStatus('Email confirmed. Opening GOOD TIMES…');setTimeout(()=>window.location.replace('/'),900);return}else response=null;
+    if(!response?.ok){setFailed(true);setStatus('This confirmation link expired or was already used. Request a fresh email below.');return}const session=await response.json();storeGtSession(session);setStatus('Email confirmed. Opening GOOD TIMES…');setTimeout(()=>window.location.replace('/'),900)})()},[]);
+  return <main style={{minHeight:'100vh',display:'grid',placeItems:'center',background:'#06060C',color:'#F5F0E8',padding:24,fontFamily:'DM Sans,sans-serif'}}><section style={{maxWidth:480,textAlign:'center'}}><h1 style={{fontFamily:'Cormorant Garamond,serif',letterSpacing:4}}>GOOD TIMES</h1><p>{status}</p>{failed&&<form onSubmit={async e=>{e.preventDefault();await gtResendConfirmation(email);setStatus('A fresh email is on the way. Open only the newest link.')}}><input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="Email address" style={{padding:12,borderRadius:8,width:'100%',marginBottom:12}}/><button style={{padding:'12px 18px',borderRadius:8,border:0,fontWeight:700,background:'#D4A853'}}>Resend confirmation</button></form>}</section></main>
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -815,6 +827,7 @@ if(typeof document!=="undefined"&&!document.getElementById("gt-collage-bg")){
 }
 
 export default function GoodTimesAppWrapper(props){
+  if(window.location.pathname==='/auth/confirm')return <GoodTimesAuthConfirm/>;
   useEffect(()=>{
     const wrap=document.querySelector(".gt-collage-wrap");
     if(wrap&&!wrap.querySelector(".gt-collage-grid")){
