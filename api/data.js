@@ -1,14 +1,153 @@
-const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
-const CONTENT_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1ODQ4NjQsImV4cCI6MjA4NTE2MDg2NH0.qmnWB4aWdb7U8Iod9Hv8PQAOJO3AG0vYEGnPS--kfAo'
-const CITY_ALIASES={atlanta:'atlanta',houston:'houston',los_angeles:'los_angeles','los-angeles':'los_angeles',miami:'miami',charlotte:'charlotte',washington_dc:'washington_dc','washington-dc':'washington_dc',dallas:'dallas',new_york:'new_york','new-york':'new_york',phoenix:'phoenix',scottsdale:'scottsdale',las_vegas:'las_vegas','las-vegas':'las_vegas'}
-const SHOW_SELECT=['id','event_name','event_type','genre','city_key','show_date','show_time','venue_name','ticket_url','image_url','organizer','display_priority','good_times_score','category_key_v2','subcategory_key_v2','is_featured','is_curated'].join(',')
-const VENUE_SELECT=['id','name','slug','city_key','neighborhood','side_of_town','category_key','subcategory','address','latitude','longitude','phone','website','instagram_handle','short_desc','vibe_tags','best_for','best_time','price_range','dress_code','reservation_req','hours_summary','insider_tip','status','is_featured','is_verified','quality_score','hero_image','booking_link','booking_platform','google_rating','google_reviews','culture_tier','is_khg','is_culture_pick','is_black_owned','culture_score','source_count','culture_tags'].join(',')
-export function normalizeCity(value){const normalized=String(value||'atlanta').trim().toLowerCase().replace(/[\s]+/g,'_');return CITY_ALIASES[normalized]||'atlanta'}
-export function clampLimit(value,fallback,maximum){const parsed=Number.parseInt(String(value??''),10);return Number.isFinite(parsed)&&parsed>0?Math.min(parsed,maximum):fallback}
-export function buildGatewayQueries({city='atlanta',today,eventLimit=500,venueLimit=500}){const normalizedCity=normalizeCity(city);return{normalizedCity,eventPath:`gt_shows?select=${SHOW_SELECT}&city_key=eq.${encodeURIComponent(normalizedCity)}&show_date=gte.${today}&status=in.(confirmed,tentative)&order=show_date.asc,display_priority.asc.nullslast&limit=${eventLimit}`,venuePath:`gt_venues?select=${VENUE_SELECT}&status=eq.active&city_key=eq.${encodeURIComponent(normalizedCity)}&hero_image=not.is.null&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast,quality_score.desc.nullslast&limit=${venueLimit}`}}
-function todayISO(){const date=new Date();return`${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,'0')}-${String(date.getUTCDate()).padStart(2,'0')}`}
-function headers(){return{apikey:CONTENT_KEY,Authorization:`Bearer ${CONTENT_KEY}`,Accept:'application/json'}}
-async function fetchRows(path,label){const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),12000);try{const response=await fetch(`${CONTENT_URL}/rest/v1/${path}`,{headers:headers(),cache:'no-store',signal:controller.signal});const text=await response.text();if(!response.ok)throw new Error(`${label} returned HTTP ${response.status}: ${text.slice(0,240)}`);const rows=text?JSON.parse(text):[];if(!Array.isArray(rows))throw new Error(`${label} returned an invalid payload`);return rows}finally{clearTimeout(timeout)}}
-function mapShows(rows){return rows.map((item,index)=>({event_key:`show:${item.id}`,source_table:'gt_shows',source_id:item.id,city_key:item.city_key,title:item.event_name,event_date:item.show_date,event_time:item.show_time,venue_name:item.venue_name,raw_type:item.event_type,raw_category:item.genre,ticket_url:item.ticket_url,image_url:item.image_url,organizer:item.organizer,display_priority:item.display_priority,good_times_score:item.good_times_score,category_key:item.category_key_v2||item.event_type,subcategory_key:item.subcategory_key_v2,is_featured:item.is_featured,is_curated:item.is_curated,rank_order:index+1}))}
-function sendJson(response,status,payload){response.statusCode=status;response.setHeader('Content-Type','application/json; charset=utf-8');response.setHeader('Cache-Control',status===200?'public, s-maxage=60, stale-while-revalidate=300':'no-store');response.setHeader('X-Content-Type-Options','nosniff');response.end(JSON.stringify(payload))}
-export default async function handler(request,response){if(!['GET','HEAD'].includes(request.method||'GET')){response.setHeader('Allow','GET, HEAD');return sendJson(response,405,{ok:false,error:'Method not allowed'})}const requestUrl=new URL(request.url||'/api/data','https://thegoodtimesworldwide.com');const city=normalizeCity(requestUrl.searchParams.get('city'));const eventLimit=clampLimit(requestUrl.searchParams.get('event_limit'),500,500);const venueLimit=clampLimit(requestUrl.searchParams.get('venue_limit'),500,800);const generatedAt=new Date().toISOString();const queries=buildGatewayQueries({city,today:todayISO(),eventLimit,venueLimit});try{const[rawEvents,venues]=await Promise.all([fetchRows(queries.eventPath,'GOOD TIMES events'),fetchRows(queries.venuePath,'GOOD TIMES venues')]);const events=mapShows(rawEvents);if(request.method==='HEAD'){response.statusCode=200;response.setHeader('Cache-Control','no-store');response.setHeader('X-Good-Times-Events',String(events.length));response.setHeader('X-Good-Times-Venues',String(venues.length));return response.end()}return sendJson(response,200,{ok:true,connected:true,city,source:'good-times-canonical-content',generated_at:generatedAt,counts:{events:events.length,venues:venues.length},events,venues})}catch(error){console.error('[GOOD TIMES data gateway]',{city,message:error?.message||String(error),generatedAt});return sendJson(response,503,{ok:false,connected:false,city,source:'good-times-canonical-content',generated_at:generatedAt,error:'GOOD TIMES live data is temporarily unavailable.',detail:error?.message||String(error)})}}
+const CONTENT_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
+const CONTENT_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
+
+const CITY_ALIASES = {
+  atlanta:'atlanta', houston:'houston', los_angeles:'los_angeles', 'los-angeles':'los_angeles',
+  miami:'miami', charlotte:'charlotte', washington_dc:'washington_dc', 'washington-dc':'washington_dc',
+  dallas:'dallas', new_york:'new_york', 'new-york':'new_york', phoenix:'phoenix',
+  scottsdale:'scottsdale', las_vegas:'las_vegas', 'las-vegas':'las_vegas',
+}
+const SHOW_SELECT = [
+  'id','event_name','event_type','genre','city_key','show_date','show_time','venue_name','ticket_url',
+  'image_url','organizer','display_priority','good_times_score','category_key_v2','subcategory_key_v2',
+  'is_featured','is_curated',
+].join(',')
+const VENUE_SELECT = [
+  'id','name','slug','city_key','neighborhood','side_of_town','category_key','subcategory','address',
+  'latitude','longitude','phone','website','instagram_handle','short_desc','vibe_tags','best_for','best_time',
+  'price_range','dress_code','reservation_req','hours_summary','insider_tip','status','is_featured','is_verified',
+  'quality_score','hero_image','booking_link','booking_platform','google_rating','google_reviews','culture_tier',
+  'is_khg','is_culture_pick','is_black_owned','culture_score','source_count','culture_tags',
+].join(',')
+
+export function normalizeCity(value) {
+  const normalized = String(value || 'atlanta').trim().toLowerCase().replace(/[\s]+/g, '_')
+  return CITY_ALIASES[normalized] || 'atlanta'
+}
+export function clampLimit(value, fallback, maximum) {
+  const parsed = Number.parseInt(String(value ?? ''), 10)
+  return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, maximum) : fallback
+}
+export function buildGatewayQueries({ city='atlanta', today, eventLimit=500, venueLimit=500 }) {
+  const normalizedCity = normalizeCity(city)
+  return {
+    normalizedCity,
+    eventPath: `gt_shows?select=${SHOW_SELECT}&city_key=eq.${encodeURIComponent(normalizedCity)}&show_date=gte.${today}&status=in.(confirmed,tentative)&order=show_date.asc,display_priority.asc.nullslast&limit=${eventLimit}`,
+    venuePath: `gt_venues?select=${VENUE_SELECT}&status=eq.active&city_key=eq.${encodeURIComponent(normalizedCity)}&hero_image=not.is.null&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast,quality_score.desc.nullslast&limit=${venueLimit}`,
+  }
+}
+function todayISO() {
+  const date = new Date()
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,'0')}-${String(date.getUTCDate()).padStart(2,'0')}`
+}
+function headers() {
+  return { apikey: CONTENT_KEY, Authorization: `Bearer ${CONTENT_KEY}`, Accept: 'application/json' }
+}
+function safePublicImage(value) {
+  if (!value) return null
+  const text = String(value).trim()
+  if (!text || /maps\.googleapis\.com\/maps\/api\/place\/photo/i.test(text) || /[?&]key=/i.test(text)) return null
+  return text.startsWith('http://') ? text.replace(/^http:\/\//i, 'https://') : text
+}
+async function fetchRows(path, label) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 12000)
+  try {
+    const response = await fetch(`${CONTENT_URL}/rest/v1/${path}`, {
+      headers: headers(),
+      cache: 'no-store',
+      signal: controller.signal,
+    })
+    const text = await response.text()
+    if (!response.ok) throw new Error(`${label} returned HTTP ${response.status}: ${text.slice(0, 240)}`)
+    const rows = text ? JSON.parse(text) : []
+    if (!Array.isArray(rows)) throw new Error(`${label} returned an invalid payload`)
+    return rows
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+function mapShows(rows) {
+  return rows.map((item, index) => ({
+    event_key: `show:${item.id}`,
+    source_table: 'gt_shows',
+    source_id: item.id,
+    city_key: item.city_key,
+    title: item.event_name,
+    event_date: item.show_date,
+    event_time: item.show_time,
+    venue_name: item.venue_name,
+    raw_type: item.event_type,
+    raw_category: item.genre,
+    ticket_url: item.ticket_url,
+    image_url: safePublicImage(item.image_url),
+    organizer: item.organizer,
+    display_priority: item.display_priority,
+    good_times_score: item.good_times_score,
+    category_key: item.category_key_v2 || item.event_type,
+    subcategory_key: item.subcategory_key_v2,
+    is_featured: item.is_featured,
+    is_curated: item.is_curated,
+    rank_order: index + 1,
+  }))
+}
+function sendJson(response, status, payload) {
+  response.statusCode = status
+  response.setHeader('Content-Type', 'application/json; charset=utf-8')
+  response.setHeader('Cache-Control', status === 200 ? 'public, s-maxage=60, stale-while-revalidate=300' : 'no-store')
+  response.setHeader('X-Content-Type-Options', 'nosniff')
+  response.end(JSON.stringify(payload))
+}
+
+export default async function handler(request, response) {
+  if (!['GET','HEAD'].includes(request.method || 'GET')) {
+    response.setHeader('Allow', 'GET, HEAD')
+    return sendJson(response, 405, { ok:false, error:'Method not allowed' })
+  }
+
+  const requestUrl = new URL(request.url || '/api/data', 'https://thegoodtimesworldwide.com')
+  const city = normalizeCity(requestUrl.searchParams.get('city'))
+  const eventLimit = clampLimit(requestUrl.searchParams.get('event_limit'), 500, 500)
+  const venueLimit = clampLimit(requestUrl.searchParams.get('venue_limit'), 500, 800)
+  const generatedAt = new Date().toISOString()
+  const queries = buildGatewayQueries({ city, today:todayISO(), eventLimit, venueLimit })
+
+  try {
+    const [rawEvents, rawVenues] = await Promise.all([
+      fetchRows(queries.eventPath, 'GOOD TIMES events'),
+      fetchRows(queries.venuePath, 'GOOD TIMES venues'),
+    ])
+    const events = mapShows(rawEvents)
+    const venues = rawVenues.map(item => ({ ...item, hero_image:safePublicImage(item.hero_image) }))
+
+    if (request.method === 'HEAD') {
+      response.statusCode = 200
+      response.setHeader('Cache-Control', 'no-store')
+      response.setHeader('X-Good-Times-Events', String(events.length))
+      response.setHeader('X-Good-Times-Venues', String(venues.length))
+      return response.end()
+    }
+
+    return sendJson(response, 200, {
+      ok:true,
+      connected:true,
+      city,
+      source:'good-times-canonical-content',
+      generated_at:generatedAt,
+      counts:{ events:events.length, venues:venues.length },
+      events,
+      venues,
+    })
+  } catch (error) {
+    console.error('[GOOD TIMES data gateway]', { city, message:error?.message || String(error), generatedAt })
+    return sendJson(response, 503, {
+      ok:false,
+      connected:false,
+      city,
+      source:'good-times-canonical-content',
+      generated_at:generatedAt,
+      error:'GOOD TIMES live data is temporarily unavailable.',
+      detail:error?.message || String(error),
+    })
+  }
+}
