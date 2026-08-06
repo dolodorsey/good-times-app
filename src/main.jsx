@@ -5,6 +5,7 @@ import './runtime.css'
 import './features/experience/good-times-command.css'
 import './features/experience/good-times-command-v2.css'
 import './features/experience/good-times-live.css'
+import './features/experience/good-times-scenes.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 
