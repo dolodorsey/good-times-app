@@ -1,0 +1,40 @@
+name: Repair Good Times Live Runtime
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Apply signed-in runtime repair
+        run: |
+          node scripts/repair-live-runtime.mjs
+          node scripts/finalize-live-runtime-repair.mjs
+      - name: Verify tests and production build
+        run: |
+          npm install --legacy-peer-deps
+          npm run test
+          npm run build
+      - name: Commit verified runtime repair
+        run: |
+          if git diff --quiet; then
+            echo "No generated changes needed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/main.jsx src/features/experience/GoodTimesLiveApp.jsx public/sw.js api/data.js api/catalog.js
+          git commit -m "Stabilize signed-in Good Times live data and images"
+          git push
