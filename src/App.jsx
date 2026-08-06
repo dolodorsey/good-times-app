@@ -774,8 +774,8 @@ const StarRating=({rating,onRate,size=16})=>{
 
 // Scroll container
 const ScrollWrap=({children})=>(
-  <div style={{minHeight:"100vh",background:C.bg,fontFamily:F.f,position:"relative",overflowY:"auto",WebkitOverflowScrolling:"touch",paddingBottom:90,color:C.text}}>
-    <div style={{position:"relative",zIndex:10}}>{children}</div>
+  <div className="gt-screen-scroll" style={{height:"100%",minHeight:0,background:C.bg,fontFamily:F.f,position:"relative",overflowY:"auto",overflowX:"hidden",overscrollBehavior:"contain",WebkitOverflowScrolling:"touch",paddingBottom:"calc(104px + env(safe-area-inset-bottom, 0px))",color:C.text}}>
+    <div style={{position:"relative",zIndex:10,minHeight:"100%"}}>{children}</div>
   </div>
 );
 
@@ -791,11 +791,11 @@ if(typeof document!=="undefined"&&!document.getElementById("gt-collage-bg")){
     "gt-bg-valet-entrance","gt-bg-infinity-bar","gt-bg-neon-skyline","gt-bg-waterfront-venue","gt-bg-spiral-lounge"
   ].map(n=>`${GT_BG_BASE}/${n}.webp`);
   s.textContent=`
-    .gt-collage-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:#06060C}
+    .gt-collage-wrap{height:100vh;height:100dvh;min-height:0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:#06060C}
     .gt-collage-grid{position:fixed;inset:-20px;display:grid;grid-template-columns:repeat(7,1fr);grid-template-rows:repeat(3,1fr);gap:4px;opacity:0.18;filter:brightness(0.7) saturate(0.8);z-index:0;pointer-events:none;transform:rotate(-2deg) scale(1.15)}
     .gt-collage-grid img{width:100%;height:100%;object-fit:cover;border-radius:4px}
     .gt-collage-overlay{position:fixed;inset:0;background:radial-gradient(ellipse at center,rgba(6,6,12,0.5) 0%,rgba(6,6,12,0.85) 70%,rgba(6,6,12,0.95) 100%);z-index:1;pointer-events:none}
-    .gt-collage-app{position:relative;z-index:2;width:100%;max-width:430px;min-height:100vh;box-shadow:0 0 100px rgba(0,0,0,0.6)}
+    .gt-collage-app{position:relative;z-index:2;width:100%;max-width:430px;height:100vh;height:100dvh;min-height:0;overflow:hidden;box-shadow:0 0 100px rgba(0,0,0,0.6)}
     @media(max-width:500px){.gt-collage-grid{display:none}.gt-collage-overlay{display:none}}
   `;
   document.head.appendChild(s);
@@ -2020,7 +2020,7 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
           <div style={{textAlign:"center",marginBottom:24}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>EXPLORE</div>
             <div style={{fontSize:28,fontFamily:F.s,fontWeight:700,marginBottom:6}}>Discover {city.name}</div>
-            <div style={{fontSize:14,color:C.textSec}}>{exploreCategories.length} categories to explore</div>
+            <div style={{fontSize:14,color:C.textSec}}>{exploreCategories.length} categories · {exploreCategories.reduce((n,c)=>n+(c.subs?.length||0),0)} subcategories</div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:24}}>
             {exploreCategories.map(cat=>(
@@ -2035,7 +2035,11 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
               </button>
             ))}
           </div>
-          {/* Ad Space instead of HugLife events */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,margin:"4px 0 22px"}}>
+            <button onClick={()=>navigate("planforme","planforme")} style={{...V(true),padding:"15px 12px",fontSize:13,fontWeight:800,textAlign:"center"}}>✨ Build My Night</button>
+            <button onClick={()=>navigate("plans","plans")} style={{...V(false),padding:"15px 12px",fontSize:13,fontWeight:700,textAlign:"center"}}>📋 My Itinerary</button>
+          </div>
+                    {/* Ad Space instead of HugLife events */}
           <div style={{borderRadius:14,overflow:"hidden",position:"relative",border:`1px solid ${C.gold}20`,background:"linear-gradient(135deg,rgba(212,168,83,0.08),rgba(6,6,12,0.5))",marginTop:8}}>
             <div style={{padding:"20px",textAlign:"center"}}>
               <div style={{fontSize:9,letterSpacing:3,color:C.gold,fontWeight:700,marginBottom:6}}>SPONSORED</div>
@@ -2329,19 +2333,17 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
   // ═══ NAV BAR — styled icons ═══
   const navDefs=[
     {id:"now",l:"Now",emoji:"🔥"},
-    {id:"calendar",l:"Dates",emoji:"📅"},
-    {id:"plans",l:"Itinerary",emoji:"📋"},
-    {id:"planforme",l:"Build My Night",emoji:"✨"},
     {id:"explore",l:"Explore",emoji:"🧭"},
-    {id:"map",l:"Map",emoji:"📍"},
+    {id:"planforme",l:"Build My Night",emoji:"✨",primary:true},
+    {id:"calendar",l:"Dates",emoji:"📅"},
     {id:"vault",l:"Vault",emoji:"🔒"}
   ];
 
   if(showSplash)return <GTSplashScreen onComplete={()=>{sessionStorage.setItem("gt_splash_shown","1");setShowSplash(false)}} duration={7000}/>;
 
   return(
-    <div style={{minHeight:"100vh",background:C.bg,fontFamily:F.f,position:"relative",maxWidth:430,margin:"0 auto"}}>
-      {renderScreen()}
+    <div className="gt-app-shell" style={{height:"100vh",height:"100dvh",minHeight:0,background:C.bg,fontFamily:F.f,position:"relative",maxWidth:430,margin:"0 auto",overflow:"hidden",display:"flex",flexDirection:"column"}}>
+      <main className="gt-screen-host" style={{flex:"1 1 auto",minHeight:0,overflow:"hidden",position:"relative"}}>{renderScreen()}</main>
       {CitySheet}
       {/* Toast */}
       {isOffline&&<div style={{position:"fixed",top:0,left:0,right:0,zIndex:100,background:"#ef4444",color:"#fff",textAlign:"center",padding:"6px 16px",fontSize:12,fontWeight:700,fontFamily:F.f}}>No internet connection</div>}
@@ -2359,13 +2361,13 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         </div>
       </div>}
       {/* Bottom nav — styled emoji icons */}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,zIndex:40,background:"linear-gradient(180deg,rgba(6,6,12,0.95),rgba(6,6,12,1.0))",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",borderTop:"1px solid rgba(212,168,83,0.1)",padding:"6px 0 calc(10px + env(safe-area-inset-bottom, 0px))",display:"flex",justifyContent:"space-around"}}>
+      <div style={{position:"absolute",bottom:0,left:0,right:0,width:"100%",maxWidth:430,zIndex:40,background:"linear-gradient(180deg,rgba(6,6,12,0.95),rgba(6,6,12,1.0))",backdropFilter:"blur(30px)",WebkitBackdropFilter:"blur(30px)",borderTop:"1px solid rgba(212,168,83,0.1)",padding:"6px 0 calc(10px + env(safe-area-inset-bottom, 0px))",display:"flex",justifyContent:"space-around"}}>
         {navDefs.map(n=>{
           const active=navScreen===n.id;
           return(
             <button key={n.id} onClick={()=>{tapHaptic();navigate(n.id,n.id)}} style={{background:"none",border:"none",cursor:"pointer",display:"flex",flexDirection:"column",alignItems:"center",gap:3,padding:"2px 0",minWidth:0,flex:1,position:"relative"}}>
               {active&&<div style={{position:"absolute",top:-5,width:20,height:2,borderRadius:99,background:C.gold,boxShadow:`0 0 8px ${C.gold}80`}}/>}
-              <div style={{width:36,height:36,borderRadius:12,background:active?`linear-gradient(135deg,rgba(212,168,83,0.2),rgba(212,168,83,0.08))`:"rgba(212,168,83,0.04)",border:active?`1px solid ${C.gold}40`:"1px solid rgba(212,168,83,0.12)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.25s",boxShadow:active?"0 0 12px rgba(212,168,83,0.2)":"none"}}>
+              <div style={{width:n.primary?46:36,height:n.primary?46:36,borderRadius:n.primary?16:12,marginTop:n.primary?-9:0,background:n.primary?`linear-gradient(135deg,${C.gold},#B8942F)`:active?`linear-gradient(135deg,rgba(212,168,83,0.2),rgba(212,168,83,0.08))`:"rgba(212,168,83,0.04)",border:n.primary?"1px solid rgba(255,255,255,.35)":active?`1px solid ${C.gold}40`:"1px solid rgba(212,168,83,0.12)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.25s",boxShadow:n.primary?"0 8px 24px rgba(212,168,83,.42)":active?"0 0 12px rgba(212,168,83,0.2)":"none"}}>
                 <span style={{fontSize:18,filter:active?"brightness(1.3) saturate(1.3)":"brightness(1.0) saturate(0.8)",transition:"all 0.25s"}}>{n.emoji}</span>
               </div>
               <span style={{fontSize:8,letterSpacing:.3,color:active?C.gold:"rgba(245,240,232,0.7)",fontWeight:active?700:500,fontFamily:F.f,whiteSpace:"nowrap"}}>{n.l}</span>
@@ -2377,6 +2379,10 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         *{box-sizing:border-box;margin:0;padding:0;}
         body{background:${C.bg};margin:0;overflow-x:hidden;}
         ::-webkit-scrollbar{display:none;}
+        html,body,#root{height:100%;min-height:0;overflow:hidden;}
+        .gt-screen-scroll{scrollbar-width:none;touch-action:pan-y;}
+        .gt-screen-host{isolation:isolate;}
+        @supports(height:100dvh){.gt-app-shell,.gt-collage-wrap,.gt-collage-app{height:100dvh!important;}}
         button{font-family:${F.f};}
         img{transition:opacity 0.3s;}
         img[data-error]{opacity:0;height:0!important;min-height:0!important;overflow:hidden;}
