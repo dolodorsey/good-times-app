@@ -58,6 +58,8 @@ test('customer taxonomy corrects strong contradictions before display', () => {
   assert.match(data, /dining_culinary.*wine_cocktails/)
   assert.match(data, /rawType === 'concert'/)
   assert.match(data, /reviewed === 'sports_watch'/)
+  assert.match(data, /venue_name/)
+  assert.match(data, /arena_concerts/)
 })
 
 test('customer server APIs retry transient upstream failures', () => {

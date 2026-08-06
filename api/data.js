@@ -93,13 +93,15 @@ function inferMusicSubcategory(text, fallback) {
   if (/\bgospel\b/.test(text)) return 'gospel'
   if (/karaoke/.test(text)) return 'karaoke'
   if (/open mic/.test(text)) return 'open_mic'
+  if (/\barena\b|\bstadium\b|gateway center|state farm|mercedes[- ]benz/.test(text)) return 'arena_concerts'
+  if (/\btheatre\b|\btheater\b|symphony hall|cobb energy/.test(text)) return 'theater_concerts'
   return fallback && !['combat_sports','watch_parties','racing'].includes(fallback) ? fallback : 'intimate_shows'
 }
 export function inferCustomerTaxonomy(item) {
   const reviewed = cleanKey(item?.category_key_v2)
   const fallbackSub = cleanKey(item?.subcategory_key_v2) || null
   const rawType = cleanKey(item?.event_type)
-  const text = normalizeText(`${item?.event_type || ''} ${item?.genre || ''} ${item?.event_name || ''}`)
+  const text = normalizeText(`${item?.event_type || ''} ${item?.genre || ''} ${item?.event_name || ''} ${item?.venue_name || ''}`)
 
   if (/\b(5k|10k|marathon|run club|fun run|road race)\b/.test(text)) return { category:'wellness_fitness', subcategory:'runs_races' }
   if (/film tv tour|film tour|studio tour|sightseeing tour|walking tour|city tour/.test(text)) return { category:'attractions_experiences', subcategory:'tours_sightseeing' }
