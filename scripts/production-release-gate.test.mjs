@@ -31,6 +31,13 @@ test('Explore retains all product taxonomy even when live counts fail', () => {
   assert.match(live, /setCatalogError\(''\)/)
 })
 
+test('Explore counts come from the complete aggregate directory summary', () => {
+  const catalog = read('api/catalog.js')
+  assert.match(catalog, /v_gt_venue_taxonomy_directory_counts/)
+  assert.doesNotMatch(catalog, /limit=10000/)
+  assert.doesNotMatch(catalog, /countUnique\(/)
+})
+
 test('customer server APIs retry transient upstream failures', () => {
   const data = read('api/data.js')
   const catalog = read('api/catalog.js')
