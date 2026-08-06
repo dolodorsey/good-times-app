@@ -41,6 +41,25 @@ test('Explore counts come from the indexed count cache and cannot take taxonomy 
   assert.doesNotMatch(catalog, /limit=10000/)
 })
 
+test('customer inventory dedupes canonical venues and duplicate events', () => {
+  const data = read('api/data.js')
+  assert.match(data, /dedupeCustomerVenues/)
+  assert.match(data, /venueCanonicalKey/)
+  assert.match(data, /normalizeAddress/)
+  assert.match(data, /dedupeCustomerEvents/)
+  assert.match(data, /eventCanonicalKey/)
+})
+
+test('customer taxonomy corrects strong contradictions before display', () => {
+  const data = read('api/data.js')
+  assert.match(data, /inferCustomerTaxonomy/)
+  assert.match(data, /wellness_fitness.*runs_races/)
+  assert.match(data, /attractions_experiences.*tours_sightseeing/)
+  assert.match(data, /dining_culinary.*wine_cocktails/)
+  assert.match(data, /rawType === 'concert'/)
+  assert.match(data, /reviewed === 'sports_watch'/)
+})
+
 test('customer server APIs retry transient upstream failures', () => {
   const data = read('api/data.js')
   const catalog = read('api/catalog.js')
