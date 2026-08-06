@@ -54,19 +54,13 @@ function safePublicImage(value) {
 function cleanKey(value) { return String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_') }
 function normalizeText(value) { return String(value || '').toLowerCase().replace(/&[a-z0-9#]+;/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim() }
 function compact(value) { return normalizeText(value).replace(/\s+/g, '') }
-function normalizeVenueName(value) {
-  return compact(String(value || '').replace(/\b(venue|event)\s*$/i, ''))
-}
+function normalizeVenueName(value) { return compact(String(value || '').replace(/\b(venue|event)\s*$/i, '')) }
 function normalizeAddress(value) {
   return compact(String(value || '')
-    .replace(/\b(street|st\.)\b/gi,'st')
-    .replace(/\b(road|rd\.)\b/gi,'rd')
-    .replace(/\b(avenue|ave\.)\b/gi,'ave')
-    .replace(/\b(boulevard|blvd\.)\b/gi,'blvd')
-    .replace(/\b(northwest|nw\.)\b/gi,'nw')
-    .replace(/\b(northeast|ne\.)\b/gi,'ne')
-    .replace(/\b(southwest|sw\.)\b/gi,'sw')
-    .replace(/\b(southeast|se\.)\b/gi,'se'))
+    .replace(/\b(street|st\.)\b/gi,'st').replace(/\b(road|rd\.)\b/gi,'rd')
+    .replace(/\b(avenue|ave\.)\b/gi,'ave').replace(/\b(boulevard|blvd\.)\b/gi,'blvd')
+    .replace(/\b(northwest|nw\.)\b/gi,'nw').replace(/\b(northeast|ne\.)\b/gi,'ne')
+    .replace(/\b(southwest|sw\.)\b/gi,'sw').replace(/\b(southeast|se\.)\b/gi,'se'))
 }
 function venueCanonicalKey(item) {
   const name = normalizeVenueName(item?.name)
@@ -110,6 +104,7 @@ export function inferCustomerTaxonomy(item) {
   if (/\b(5k|10k|marathon|run club|fun run|road race)\b/.test(text)) return { category:'wellness_fitness', subcategory:'runs_races' }
   if (/film tv tour|film tour|studio tour|sightseeing tour|walking tour|city tour/.test(text)) return { category:'attractions_experiences', subcategory:'tours_sightseeing' }
   if (/happy hour|cocktail night|wine tasting|wine down/.test(text)) return { category:'dining_culinary', subcategory:'wine_cocktails' }
+  if (/career fair|job fair|college expo|business expo|entrepreneur expo|professional expo|startup expo/.test(text)) return { category:'business_professional', subcategory:/career|job/.test(text)?'career_fairs':'conferences_summits' }
   if (/stand up|stand-up|\bcomedy\b/.test(text)) return { category:'comedy_performing_arts', subcategory:'stand_up' }
   if (/\bimprov\b/.test(text)) return { category:'comedy_performing_arts', subcategory:'improv' }
   if (/burlesque|cabaret|variety show/.test(text)) return { category:'comedy_performing_arts', subcategory:'theater' }
@@ -153,12 +148,8 @@ function customerReadyEvent(item, verifiedVenueNames, city) {
   }
   return true
 }
-function customerReadyVenue(item) {
-  return Boolean(item?.id && item.name && item.is_verified && (item.address || item.website || item.phone || item.booking_link || item.instagram_handle))
-}
-function eventCanonicalKey(item) {
-  return `${compact(item?.event_name)}|${item?.show_date || ''}|${normalizeVenueName(item?.venue_name)}`
-}
+function customerReadyVenue(item) { return Boolean(item?.id && item.name && item.is_verified && (item.address || item.website || item.phone || item.booking_link || item.instagram_handle)) }
+function eventCanonicalKey(item) { return `${compact(item?.event_name)}|${item?.show_date || ''}|${normalizeVenueName(item?.venue_name)}` }
 function eventRecordScore(item) {
   return Number(item?.good_times_score || 0) * 10 - Number(item?.display_priority || 50)
     + (item?.is_curated ? 20 : 0) + (item?.is_featured ? 12 : 0) + (item?.show_time ? 6 : 0)
@@ -220,9 +211,7 @@ function sendJson(response, status, payload) {
   response.end(JSON.stringify(payload))
 }
 export default async function handler(request, response) {
-  if (!['GET','HEAD'].includes(request.method || 'GET')) {
-    response.setHeader('Allow', 'GET, HEAD'); return sendJson(response, 405, { ok:false, error:'Method not allowed' })
-  }
+  if (!['GET','HEAD'].includes(request.method || 'GET')) { response.setHeader('Allow', 'GET, HEAD'); return sendJson(response, 405, { ok:false, error:'Method not allowed' }) }
   const requestUrl = new URL(request.url || '/api/data', 'https://thegoodtimesworldwide.com')
   const city = normalizeCity(requestUrl.searchParams.get('city'))
   const eventLimit = clampLimit(requestUrl.searchParams.get('event_limit'), 500, 500)
