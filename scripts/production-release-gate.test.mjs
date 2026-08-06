@@ -31,11 +31,14 @@ test('Explore retains all product taxonomy even when live counts fail', () => {
   assert.match(live, /setCatalogError\(''\)/)
 })
 
-test('Explore counts come from the complete aggregate directory summary', () => {
+test('Explore counts come from the indexed count cache and cannot take taxonomy down', () => {
   const catalog = read('api/catalog.js')
-  assert.match(catalog, /v_gt_venue_taxonomy_directory_counts/)
+  assert.match(catalog, /gt_venue_taxonomy_count_cache/)
+  assert.match(catalog, /Promise\.allSettled/)
+  assert.match(catalog, /counts_live/)
+  assert.match(catalog, /countsResult\.status==='fulfilled'/)
+  assert.doesNotMatch(catalog, /v_gt_venue_taxonomy_directory_counts/)
   assert.doesNotMatch(catalog, /limit=10000/)
-  assert.doesNotMatch(catalog, /countUnique\(/)
 })
 
 test('customer server APIs retry transient upstream failures', () => {
