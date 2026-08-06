@@ -2,10 +2,11 @@ const CONTENT_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 const MAX_DIRECTORY_ROWS = 800
 const CACHE = 'gt_venue_taxonomy_directory_cache'
+const COUNT_VIEW = 'v_gt_venue_taxonomy_directory_counts'
 
 const CATEGORY_SELECT = 'category_key,category_name,description,sort_order'
 const SUBCATEGORY_SELECT = 'category_key,subcategory_key,subcategory_name,description,sort_order,minimum_upcoming_inventory'
-const MEMBERSHIP_SELECT = 'id,category_key,subcategory_key,hero_image,quality_score'
+const COUNT_SELECT = 'category_key,subcategory_key,venue_count'
 const DIRECTORY_SELECT = [
   'id','city_key','name','neighborhood','side_of_town','short_desc','hero_image','google_rating',
   'google_reviews','quality_score','price_range','vibe_tags','category_key','category_name','subcategory',
@@ -59,16 +60,6 @@ function send(response, status, payload) {
   response.setHeader('X-Content-Type-Options','nosniff')
   response.end(JSON.stringify(payload))
 }
-function countUnique(rows, field) {
-  const result=new Map()
-  for (const row of rows) {
-    const key=row[field]
-    if(!key)continue
-    if(!result.has(key))result.set(key,new Set())
-    result.get(key).add(row.id)
-  }
-  return result
-}
 
 export default async function handler(request,response) {
   if ((request.method || 'GET') !== 'GET') {
@@ -95,25 +86,46 @@ export default async function handler(request,response) {
       return send(response,200,{ok:true,city,category,subcategory,count:venues.length,venues})
     }
 
-    const [categories,subcategories,memberships]=await Promise.all([
+    const [categories,subcategories,counts]=await Promise.all([
       fetchRows(`gt_taxonomy_categories?select=${CATEGORY_SELECT}&is_active=eq.true&order=sort_order.asc,category_name.asc`,'GOOD TIMES categories'),
       fetchRows(`gt_taxonomy_subcategories?select=${SUBCATEGORY_SELECT}&is_active=eq.true&order=category_key.asc,sort_order.asc,subcategory_name.asc`,'GOOD TIMES subcategories'),
-      fetchRows(`${CACHE}?select=${MEMBERSHIP_SELECT}&city_key=eq.${encodeURIComponent(city)}&order=quality_score.desc.nullslast&limit=10000`,'GOOD TIMES category membership'),
+      fetchRows(`${COUNT_VIEW}?select=${COUNT_SELECT}&city_key=eq.${encodeURIComponent(city)}`,'GOOD TIMES taxonomy counts'),
     ])
-    const categoryCounts=countUnique(memberships,'category_key')
-    const subcategoryCounts=countUnique(memberships,'subcategory_key')
-    const categoryImages=new Map(),subcategoryImages=new Map()
-    for(const row of memberships){
-      const image=safePublicImage(row.hero_image)
-      if(image&&row.category_key&&!categoryImages.has(row.category_key))categoryImages.set(row.category_key,image)
-      if(image&&row.subcategory_key&&!subcategoryImages.has(row.subcategory_key))subcategoryImages.set(row.subcategory_key,image)
+
+    const categoryCounts=new Map()
+    const subcategoryCounts=new Map()
+    for(const row of counts){
+      const value=Number(row.venue_count||0)
+      if(row.subcategory_key)subcategoryCounts.set(`${row.category_key}:${row.subcategory_key}`,value)
+      else categoryCounts.set(row.category_key,value)
     }
+
     const grouped=new Map()
     for(const row of subcategories){
       if(!grouped.has(row.category_key))grouped.set(row.category_key,[])
-      grouped.get(row.category_key).push({id:row.subcategory_key,name:row.subcategory_name,description:row.description,minimum_inventory:row.minimum_upcoming_inventory,count:subcategoryCounts.get(row.subcategory_key)?.size||0,image:subcategoryImages.get(row.subcategory_key)||null})
+      grouped.get(row.category_key).push({
+        id:row.subcategory_key,
+        name:row.subcategory_name,
+        description:row.description,
+        minimum_inventory:row.minimum_upcoming_inventory,
+        count:subcategoryCounts.get(`${row.category_key}:${row.subcategory_key}`)||0,
+        image:null,
+      })
     }
-    return send(response,200,{ok:true,city,counts:{categories:categories.length,subcategories:subcategories.length},categories:categories.map(category=>({id:category.category_key,name:category.category_name,description:category.description,count:categoryCounts.get(category.category_key)?.size||0,image:categoryImages.get(category.category_key)||null,subcategories:grouped.get(category.category_key)||[]}))})
+
+    return send(response,200,{
+      ok:true,
+      city,
+      counts:{categories:categories.length,subcategories:subcategories.length},
+      categories:categories.map(category=>({
+        id:category.category_key,
+        name:category.category_name,
+        description:category.description,
+        count:categoryCounts.get(category.category_key)||0,
+        image:null,
+        subcategories:grouped.get(category.category_key)||[],
+      })),
+    })
   } catch(error){
     console.error('[GOOD TIMES catalog]',{city,mode,message:error?.message||String(error)})
     return send(response,503,{ok:false,city,mode,error:'GOOD TIMES catalog is temporarily unavailable.',detail:error?.message||String(error)})
