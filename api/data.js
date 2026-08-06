@@ -30,10 +30,12 @@ export function clampLimit(value, fallback, maximum) {
 }
 export function buildGatewayQueries({ city='atlanta', today, eventLimit=500, venueLimit=500 }) {
   const normalizedCity = normalizeCity(city)
+  const eventFetchLimit = Math.min(Math.max(eventLimit * 3, 150), 1000)
+  const venueFetchLimit = Math.min(Math.max(venueLimit * 2, 200), 1200)
   return {
     normalizedCity,
-    eventPath: `gt_shows?select=${SHOW_SELECT}&city_key=eq.${encodeURIComponent(normalizedCity)}&show_date=gte.${today}&status=in.(confirmed,tentative)&order=show_date.asc,display_priority.asc.nullslast&limit=${eventLimit}`,
-    venuePath: `gt_venues?select=${VENUE_SELECT}&status=eq.active&city_key=eq.${encodeURIComponent(normalizedCity)}&hero_image=not.is.null&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast,quality_score.desc.nullslast&limit=${venueLimit}`,
+    eventPath: `gt_shows?select=${SHOW_SELECT}&city_key=eq.${encodeURIComponent(normalizedCity)}&show_date=gte.${today}&status=in.(confirmed,tentative)&category_key_v2=not.is.null&image_url=not.is.null&order=good_times_score.desc.nullslast,show_date.asc,display_priority.asc.nullslast&limit=${eventFetchLimit}`,
+    venuePath: `gt_venues?select=${VENUE_SELECT}&status=eq.active&city_key=eq.${encodeURIComponent(normalizedCity)}&is_verified=eq.true&hero_image=not.is.null&order=quality_score.desc.nullslast,culture_score.desc.nullslast,google_rating.desc.nullslast&limit=${venueFetchLimit}`,
   }
 }
 function todayISO() {
@@ -48,6 +50,22 @@ function safePublicImage(value) {
   const text = String(value).trim()
   if (!text || /maps\.googleapis\.com\/maps\/api\/place\/photo/i.test(text) || /[?&]key=/i.test(text)) return null
   return text.startsWith('http://') ? text.replace(/^http:\/\//i, 'https://') : text
+}
+function customerReadyEvent(item) {
+  const title = String(item.event_name || '').trim()
+  const venue = String(item.venue_name || '').trim()
+  const category = String(item.category_key_v2 || '').trim()
+  if (!title || !category || category === 'needs_review') return false
+  if (!safePublicImage(item.image_url)) return false
+  if (!item.ticket_url) return false
+  if (!venue || /^(atlanta|tba|online|virtual)$/i.test(venue)) return false
+  if (/\b(sold out|mon-fri 2026|make money fast|timeshare|webinar)\b/i.test(title)) return false
+  return true
+}
+function customerReadyVenue(item) {
+  if (!item?.id || !item.name || !item.is_verified) return false
+  if (!(item.address || item.website || item.phone || item.booking_link || item.instagram_handle)) return false
+  return true
 }
 async function fetchRows(path, label) {
   const controller = new AbortController()
@@ -117,8 +135,11 @@ export default async function handler(request, response) {
       fetchRows(queries.eventPath, 'GOOD TIMES events'),
       fetchRows(queries.venuePath, 'GOOD TIMES venues'),
     ])
-    const events = mapShows(rawEvents)
-    const venues = rawVenues.map(item => ({ ...item, hero_image:safePublicImage(item.hero_image) }))
+    const events = mapShows(rawEvents.filter(customerReadyEvent)).slice(0, eventLimit)
+    const venues = rawVenues
+      .filter(customerReadyVenue)
+      .map(item => ({ ...item, hero_image:safePublicImage(item.hero_image) }))
+      .slice(0, venueLimit)
 
     if (request.method === 'HEAD') {
       response.statusCode = 200
@@ -132,7 +153,7 @@ export default async function handler(request, response) {
       ok:true,
       connected:true,
       city,
-      source:'good-times-canonical-content',
+      source:'good-times-customer-ready-inventory',
       generated_at:generatedAt,
       counts:{ events:events.length, venues:venues.length },
       events,
@@ -144,7 +165,7 @@ export default async function handler(request, response) {
       ok:false,
       connected:false,
       city,
-      source:'good-times-canonical-content',
+      source:'good-times-customer-ready-inventory',
       generated_at:generatedAt,
       error:'GOOD TIMES live data is temporarily unavailable.',
       detail:error?.message || String(error),
