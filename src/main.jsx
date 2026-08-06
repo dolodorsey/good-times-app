@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client'
 import './premium-experience.css'
 import './runtime.css'
 import './features/experience/good-times-command.css'
+import './features/experience/good-times-command-v2.css'
 import {
   installRecoveryRedirect,
   parseRecoverySession,

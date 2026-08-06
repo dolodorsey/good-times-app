@@ -6,6 +6,8 @@ import {
   cityOptions,
   loadCanonicalEvents,
   loadCanonicalVenues,
+  loadExploreDirectory,
+  loadExploreTaxonomy,
   loadGoodTimesProfile,
   loadItineraries,
   loadSavedItems,
@@ -15,6 +17,8 @@ import {
   todayISO,
   unsaveItem,
 } from '../intelligence/client.js'
+import BuildMyNightPanel from './BuildMyNightPanel.jsx'
+import ExploreTaxonomyBrowser from './ExploreTaxonomyBrowser.jsx'
 
 const CATEGORY_LABELS = {
   concerts_live_music: 'Concerts & Live Music',
@@ -50,7 +54,7 @@ const VENUE_LABELS = {
 const TAB_CONFIG = [
   ['home', '⌂', 'Now'],
   ['dates', '◫', 'Dates'],
-  ['concierge', '✦', 'Concierge'],
+  ['concierge', '✦', 'Build Night'],
   ['plans', '≋', 'Plans'],
   ['explore', '◇', 'Explore'],
   ['vault', '▣', 'Vault'],
@@ -211,6 +215,10 @@ export default function GoodTimesCommandApp() {
   const [profile, setProfile] = useState(null)
   const [events, setEvents] = useState([])
   const [venues, setVenues] = useState([])
+  const [taxonomy, setTaxonomy] = useState([])
+  const [exploreDirectory, setExploreDirectory] = useState([])
+  const [exploreCategory, setExploreCategory] = useState(null)
+  const [exploreSubcategory, setExploreSubcategory] = useState(null)
   const [savedItems, setSavedItems] = useState([])
   const [itineraries, setItineraries] = useState([])
   const [loading, setLoading] = useState(true)
@@ -245,12 +253,16 @@ export default function GoodTimesCommandApp() {
     setLoading(true)
     setLoadError('')
     try {
-      const [nextEvents, nextVenues] = await Promise.all([
+      const [nextEvents, nextVenues, nextTaxonomy, nextExploreDirectory] = await Promise.all([
         loadCanonicalEvents(nextCity),
         loadCanonicalVenues(nextCity),
+        loadExploreTaxonomy().catch(() => []),
+        loadExploreDirectory(nextCity).catch(() => []),
       ])
       setEvents(nextEvents || [])
       setVenues(nextVenues || [])
+      setTaxonomy(nextTaxonomy || [])
+      setExploreDirectory(nextExploreDirectory || [])
       recordProductEvent({ eventName: 'feed_loaded', surface: 'app', objectType: 'city', objectId: nextCity, city: nextCity, properties: { events: nextEvents?.length || 0, venues: nextVenues?.length || 0 } }, session)
     } catch (error) {
       setLoadError(error.message || 'The GOOD TIMES feed could not be loaded.')
@@ -380,6 +392,8 @@ export default function GoodTimesCommandApp() {
   const changeCity = async nextCity => {
     setCity(nextCity)
     setQuery('')
+    setExploreCategory(null)
+    setExploreSubcategory(null)
     await updatePreferences(session.user.id, { last_city: nextCity }, session.access_token).catch(() => false)
     await loadExperience(nextCity)
   }
@@ -402,17 +416,17 @@ export default function GoodTimesCommandApp() {
             <span>{isTonight(heroEvent) ? 'TONIGHT IN ' : 'CURATED FOR '}{cityLabel(city).toUpperCase()}</span>
             <h1>{heroEvent.title}</h1>
             <p>{formatDate(heroEvent.event_date)} · {formatTime(heroEvent.event_time)}<br/>{heroEvent.venue_name || 'Location TBA'}</p>
-            <div><button onClick={() => openEvent(heroEvent)}>See the move</button><button onClick={() => { setTab('concierge');setConciergeQuery('Plan my night tonight') }}>Ask concierge</button></div>
+            <div><button onClick={() => openEvent(heroEvent)}>See the move</button><button onClick={() => { setTab('concierge');setConciergeQuery('Build my night tonight') }}>Build my night</button></div>
           </div>
           <div className="gt2-hero-index"><strong>{events.length}</strong><small>upcoming experiences</small></div>
         </section> : <EmptyState title="No current experiences" body="The source feed has no current records for this city." />}
 
-        <button className="gt2-command-launch" onClick={() => setTab('concierge')}><span>✦</span><div><small>GOOD TIMES CONCIERGE</small><strong>Tell us the night you need.</strong></div><em>›</em></button>
+        <button className="gt2-command-launch" onClick={() => setTab('concierge')}><span>✦</span><div><small>BUILD MY NIGHT</small><strong>Turn your vibe into a complete plan.</strong></div><em>›</em></button>
 
         <section className="gt2-pulse">
           <div><strong>{events.length}</strong><span>Experiences</span></div>
           <div><strong>{venues.length}</strong><span>Places</span></div>
-          <div><strong>{categories.length}</strong><span>Categories</span></div>
+          <div><strong>{taxonomy.length || categories.length}</strong><span>Categories</span></div>
           <div><strong>{savedItems.length}</strong><span>Saved</span></div>
         </section>
 
@@ -447,7 +461,7 @@ export default function GoodTimesCommandApp() {
       </section>}
 
       {tab === 'concierge' && <section className="gt2-concierge-screen">
-        <div className="gt2-concierge-hero"><div className="gt2-agent-orbit"><i/><i/><span>GT</span></div><span>LIVE EXPERIENCE AGENT</span><h1>What kind of<br/>night do you need?</h1><p>The concierge ranks real events and venues using quality, timing, source confidence, actionability and your first-party taste signals.</p></div>
+        <div className="gt2-concierge-hero"><div className="gt2-agent-orbit"><i/><i/><span>GT</span></div><span>LIVE EXPERIENCE AGENT</span><h1>Build My Night.</h1><p>Start with the guided builder, then use the concierge chat to refine the plan around real events and verified places.</p></div><BuildMyNightPanel cityName={cityLabel(city)} busy={conciergeBusy} onBuild={prompt => runConcierge({ prompt, action: 'itinerary' })}/>
         <div className="gt2-quick-prompts">{QUICK_PROMPTS.map(prompt => <button key={prompt} onClick={() => runConcierge({ prompt, action: prompt.startsWith('Build') ? 'itinerary' : 'recommend' })}>{prompt}</button>)}</div>
         <div className="gt2-thread">
           {conciergeMessages.length===0 && <div className="gt2-agent-intro"><span>✦</span><p>Tell me the date, vibe, area, budget, occasion or group size. I’ll return only current source-backed options.</p></div>}
@@ -468,12 +482,20 @@ export default function GoodTimesCommandApp() {
         {itineraries.length===0 ? <EmptyState mark="≋" title="No plans built yet" body="Give the concierge a date, vibe, area and occasion. It will build a source-backed sequence and save it here." action={<button className="gt2-primary" onClick={() => setTab('concierge')}>Build my first night</button>}/> : <div className="gt2-plans-list">{itineraries.map(plan => <article key={plan.id} className="gt2-plan-card"><div className="gt2-plan-head"><div><span>{plan.created_by==='ai'?'AGENT-BUILT':'YOUR PLAN'}</span><h2>{plan.name}</h2><p>{formatDate(plan.itinerary_date,true)} · {cityLabel(plan.city_id)} · {plan.group_size || 1} guest{Number(plan.group_size||1)===1?'':'s'}</p></div><em>{plan.status}</em></div><div className="gt2-plan-stops">{(plan.stops||[]).map((stop,index) => <div key={`${stop.id}-${index}`}><span>{index+1}</span><div><small>{String(stop.role||stop.type||'stop').toUpperCase()}</small><strong>{stop.name}</strong><p>{stop.time ? `${formatTime(stop.time)} · ` : ''}{stop.venue || stop.address || ''}</p></div>{stop.ticket_url&&<a href={stop.ticket_url} target="_blank" rel="noreferrer">Tickets</a>}{stop.booking_link&&<a href={stop.booking_link} target="_blank" rel="noreferrer">Book</a>}</div>)}</div><p className="gt2-truth">This is a planning sequence, not a reservation confirmation. Use the listed ticket and booking links to secure access.</p></article>)}</div>}
       </section>}
 
-      {tab === 'explore' && <section className="gt2-screen">
-        <div className="gt2-screen-heading"><span>EXPLORE</span><h1>Know the city.</h1><p>{filteredVenues.length} active places with current profile data.</p></div>
-        <div className="gt2-search"><span>⌕</span><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search venue, neighborhood, food, vibe…"/>{query&&<button onClick={() => setQuery('')}>×</button>}</div>
-        <div className="gt2-explore-toggle"><button className={!mapMode?'active':''} onClick={() => setMapMode(false)}>Directory</button><button className={mapMode?'active':''} onClick={() => setMapMode(true)}>Map</button></div>
-        {mapMode ? <div className="gt2-map-view"><div className="gt2-map-frame"><iframe title={`${cityLabel(city)} map`} src={`https://www.openstreetmap.org/export/embed.html?bbox=-84.62%2C33.60%2C-84.15%2C34.02&layer=mapnik`}/><div className="gt2-map-veil"/><div className="gt2-map-count">⌖ {filteredVenues.filter(venue=>venue.latitude!=null&&venue.longitude!=null).length} map-ready places</div></div><div className="gt2-horizontal">{filteredVenues.filter(venue=>venue.latitude!=null&&venue.longitude!=null).slice(0,20).map(venue => <VenueCard compact key={venue.id} venue={venue} saved={savedKeySet.has(`venue:${venue.id}`)} onOpen={() => openVenue(venue)} onSave={() => toggleSave('venue',venue.id)}/>)}</div></div> : filteredVenues.length===0 ? <EmptyState mark="⌕" title="No places match" body="Try another venue, neighborhood or vibe."/> : <div className="gt2-venue-grid">{filteredVenues.map(venue => <VenueCard key={venue.id} venue={venue} saved={savedKeySet.has(`venue:${venue.id}`)} onOpen={() => openVenue(venue)} onSave={() => toggleSave('venue',venue.id)}/>)}</div>}
-      </section>}
+      {tab === 'explore' && <ExploreTaxonomyBrowser
+        taxonomy={taxonomy}
+        directory={exploreDirectory}
+        cityName={cityLabel(city)}
+        query={query}
+        onQuery={setQuery}
+        selectedCategory={exploreCategory}
+        selectedSubcategory={exploreSubcategory}
+        onCategory={setExploreCategory}
+        onSubcategory={setExploreSubcategory}
+        mapMode={mapMode}
+        onMapMode={setMapMode}
+        renderVenue={(venue, compact) => <VenueCard compact={compact} key={`${venue.id}-${venue.subcategory_key || "all"}`} venue={venue} saved={savedKeySet.has(`venue:${venue.id}`)} onOpen={() => openVenue(venue)} onSave={() => toggleSave('venue', venue.id)}/>} 
+      />}
 
       {tab === 'vault' && <section className="gt2-screen">
         <div className="gt2-screen-heading"><span>VAULT</span><h1>Keep the good ones.</h1><p>{savedItems.length} saved event{savedItems.length===1?'':'s'} and places.</p></div>

@@ -115,6 +115,41 @@ async function loadVenuesDirect(normalizedCity, limit) {
   )
 }
 
+
+export async function loadExploreTaxonomy() {
+  const [categories, subcategories] = await Promise.all([
+    fetchJson(
+      `${KHG_SUPABASE_URL}/rest/v1/gt_taxonomy_categories?select=category_key,category_name,description,sort_order&is_active=eq.true&order=sort_order.asc,category_name.asc`,
+      { headers: gatewayHeaders },
+    ),
+    fetchJson(
+      `${KHG_SUPABASE_URL}/rest/v1/gt_taxonomy_subcategories?select=category_key,subcategory_key,subcategory_name,description,sort_order,minimum_upcoming_inventory&is_active=eq.true&order=category_key.asc,sort_order.asc,subcategory_name.asc`,
+      { headers: gatewayHeaders },
+    ),
+  ])
+
+  const grouped = new Map()
+  for (const row of subcategories || []) {
+    if (!grouped.has(row.category_key)) grouped.set(row.category_key, [])
+    grouped.get(row.category_key).push(row)
+  }
+
+  return (categories || []).map(category => ({
+    id: category.category_key,
+    name: category.category_name,
+    description: category.description,
+    subcategoryRows: grouped.get(category.category_key) || [],
+  }))
+}
+
+export async function loadExploreDirectory(city = 'atlanta', { limit = 2500 } = {}) {
+  const normalizedCity = normalizeCity(city)
+  return fetchJson(
+    `${KHG_SUPABASE_URL}/rest/v1/v_gt_venue_taxonomy_directory?select=id,city_key,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,category_key,category_name,subcategory,subcategory_key,venue_category_key,venue_subcategory,tab_tags,search_tags,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,instagram_handle,sourced_from,website,phone,booking_link,status,taxonomy_confidence,latitude,longitude&city_key=eq.${encodeURIComponent(normalizedCity)}&order=taxonomy_confidence.desc,quality_score.desc.nullslast,google_rating.desc.nullslast&limit=${limit}`,
+    { headers: gatewayHeaders },
+  )
+}
+
 export async function loadGoodTimesProfile(session = readSession()) {
   if (!session?.access_token || !session?.user?.id) return null
   const rows = await fetchJson(
