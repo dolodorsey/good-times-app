@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
-import { buildGatewayQueries, clampLimit, normalizeCity } from '../api/data.js'
+import { buildGatewayQueries, clampLimit, inferCustomerCategory, normalizeCity } from '../api/data.js'
 
 const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
@@ -14,25 +14,29 @@ test('GOOD TIMES data gateway canonicalizes city values and caps public limits',
 })
 
 test('Atlanta customer gateway reads bounded current shows and verified venues', () => {
-  const queries = buildGatewayQueries({
-    city: 'atlanta',
-    today: '2026-08-06',
-    eventLimit: 500,
-    venueLimit: 400,
-  })
+  const queries = buildGatewayQueries({ city:'atlanta', today:'2026-08-06', eventLimit:500, venueLimit:400 })
   assert.match(queries.eventPath, /^gt_shows\?/)
   assert.match(queries.eventPath, /city_key=eq\.atlanta/)
   assert.match(queries.eventPath, /show_date=gte\.2026-08-06/)
   assert.match(queries.eventPath, /status=in\.\(confirmed,tentative\)/)
+  assert.doesNotMatch(queries.eventPath, /category_key_v2=not\.is\.null/)
   assert.match(queries.venuePath, /^gt_venues\?/)
-  assert.match(queries.venuePath, /status=eq\.active/)
+  assert.match(queries.venuePath, /is_verified=eq\.true/)
 })
 
-test('Frontend uses same-origin customer inventory before any direct fallback', () => {
+test('legacy cross-city events receive conservative customer categories', () => {
+  assert.equal(inferCustomerCategory({ event_name:'Duelo', event_type:'concert' }), 'concerts_live_music')
+  assert.equal(inferCustomerCategory({ event_name:'Underground Rave', event_type:'special_event' }), 'nightlife')
+  assert.equal(inferCustomerCategory({ event_name:'Houston Black College Expo', event_type:'special_event' }), 'business_professional')
+  assert.equal(inferCustomerCategory({ event_name:'Unknown listing', event_type:'special_event' }), null)
+})
+
+test('Frontend uses same-origin customer inventory and no expensive public-feed fallback', () => {
   const client = read('src/features/intelligence/client.js')
   assert.match(client, /\/api\/data\?city=/)
   assert.match(client, /Same-origin event gateway failed; using direct public feed/)
   assert.match(client, /Same-origin venue gateway failed; using direct public feed/)
+  assert.doesNotMatch(client, /gt_public_atlanta_feed/)
 })
 
 test('Service worker is retired and customer bootstrap does not register it', () => {

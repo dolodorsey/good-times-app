@@ -5,14 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/apply-production-release.mjs && npm run test && vite build",
+    "build": "node scripts/apply-production-release.mjs && node scripts/harden-production-fallback.mjs && npm run test && vite build",
     "test": "node --test scripts/*.test.mjs",
     "verify": "npm run build && npm audit --omit=dev --audit-level=critical",
     "preview": "vite preview",
-    "ios:build": "node scripts/apply-production-release.mjs && npm run test && vite build && npx cap sync ios",
+    "ios:build": "node scripts/apply-production-release.mjs && node scripts/harden-production-fallback.mjs && npm run test && vite build && npx cap sync ios",
     "ios:open": "npx cap open ios",
     "ios:run": "npx cap run ios",
-    "android:build": "node scripts/apply-production-release.mjs && npm run test && vite build && npx cap sync android",
+    "android:build": "node scripts/apply-production-release.mjs && node scripts/harden-production-fallback.mjs && npm run test && vite build && npx cap sync android",
     "android:open": "npx cap open android",
     "android:run": "npx cap run android"
   },
@@ -34,11 +34,6 @@
     "@vitejs/plugin-react": "^6.0.5",
     "vite": "^8.2.0"
   },
-  "engines": {
-    "node": "24.x"
-  },
-  "overrides": {
-    "@xmldom/xmldom": "0.9.10",
-    "uuid": "11.1.1"
-  }
+  "engines": { "node": "24.x" },
+  "overrides": { "@xmldom/xmldom": "0.9.10", "uuid": "11.1.1" }
 }
