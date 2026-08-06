@@ -31,6 +31,13 @@ test('Explore retains all product taxonomy even when live counts fail', () => {
   assert.match(live, /setCatalogError\(''\)/)
 })
 
+test('customer server APIs retry transient upstream failures', () => {
+  const data = read('api/data.js')
+  const catalog = read('api/catalog.js')
+  assert.match(data, /for \(let attempt = 0; attempt < 3; attempt \+= 1\)/)
+  assert.match(catalog, /for \(let attempt = 0; attempt < 3; attempt \+= 1\)/)
+})
+
 test('images have a same-origin resilient media path and fallback', () => {
   const live = read('src/features/experience/GoodTimesLiveApp.jsx')
   const stabilizer = read('public/gt-stabilizer.js')

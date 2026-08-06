@@ -76,9 +76,7 @@ function customerReadyEvent(item, verifiedVenueNames, city) {
   const title = String(item.event_name || '').trim()
   const venue = String(item.venue_name || '').trim()
   const category = inferCustomerCategory(item)
-  if (!title || !category) return false
-  if (!safePublicImage(item.image_url)) return false
-  if (!item.ticket_url) return false
+  if (!title || !category || !safePublicImage(item.image_url) || !item.ticket_url) return false
   if (!venue || /^(atlanta|houston|miami|dallas|charlotte|phoenix|scottsdale|las vegas|los angeles|new york|washington dc|tba|online|virtual|warehouse)$/i.test(venue)) return false
   if (/\b(sold out|mon-fri 2026|make money fast|timeshare|webinar)\b/i.test(title)) return false
   if (city !== 'atlanta') {
@@ -89,32 +87,42 @@ function customerReadyEvent(item, verifiedVenueNames, city) {
   return true
 }
 function customerReadyVenue(item) {
-  if (!item?.id || !item.name || !item.is_verified) return false
-  if (!(item.address || item.website || item.phone || item.booking_link || item.instagram_handle)) return false
-  return true
+  return Boolean(item?.id && item.name && item.is_verified && (item.address || item.website || item.phone || item.booking_link || item.instagram_handle))
 }
+const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 async function fetchRows(path, label) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), 12000)
-  try {
-    const response = await fetch(`${CONTENT_URL}/rest/v1/${path}`, {
-      headers: headers(), cache: 'no-store', signal: controller.signal,
-    })
-    const text = await response.text()
-    if (!response.ok) throw new Error(`${label} returned HTTP ${response.status}: ${text.slice(0, 240)}`)
-    const rows = text ? JSON.parse(text) : []
-    if (!Array.isArray(rows)) throw new Error(`${label} returned an invalid payload`)
-    return rows
-  } finally { clearTimeout(timeout) }
+  let lastError = null
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 6500)
+    try {
+      const response = await fetch(`${CONTENT_URL}/rest/v1/${path}`, { headers: headers(), cache:'no-store', signal:controller.signal })
+      const text = await response.text()
+      if (!response.ok) {
+        const error = new Error(`${label} returned HTTP ${response.status}: ${text.slice(0, 240)}`)
+        if (response.status < 500) throw error
+        lastError = error
+      } else {
+        const rows = text ? JSON.parse(text) : []
+        if (!Array.isArray(rows)) throw new Error(`${label} returned an invalid payload`)
+        return rows
+      }
+    } catch (error) {
+      lastError = error?.name === 'AbortError' ? new Error(`${label} request timed out`) : error
+      if (attempt === 2) throw lastError
+    } finally { clearTimeout(timeout) }
+    if (attempt < 2) await wait(180 * (attempt + 1))
+  }
+  throw lastError || new Error(`${label} failed`)
 }
 function mapShows(rows) {
   return rows.map((item, index) => ({
-    event_key: `show:${item.id}`, source_table: 'gt_shows', source_id: item.id, city_key: item.city_key,
-    title: item.event_name, event_date: item.show_date, event_time: item.show_time, venue_name: item.venue_name,
-    raw_type: item.event_type, raw_category: item.genre, ticket_url: item.ticket_url,
-    image_url: safePublicImage(item.image_url), organizer: item.organizer, display_priority: item.display_priority,
-    good_times_score: item.good_times_score, category_key: inferCustomerCategory(item),
-    subcategory_key: item.subcategory_key_v2, is_featured: item.is_featured, is_curated: item.is_curated, rank_order: index + 1,
+    event_key:`show:${item.id}`, source_table:'gt_shows', source_id:item.id, city_key:item.city_key,
+    title:item.event_name, event_date:item.show_date, event_time:item.show_time, venue_name:item.venue_name,
+    raw_type:item.event_type, raw_category:item.genre, ticket_url:item.ticket_url, image_url:safePublicImage(item.image_url),
+    organizer:item.organizer, display_priority:item.display_priority, good_times_score:item.good_times_score,
+    category_key:inferCustomerCategory(item), subcategory_key:item.subcategory_key_v2,
+    is_featured:item.is_featured, is_curated:item.is_curated, rank_order:index + 1,
   }))
 }
 function sendJson(response, status, payload) {
@@ -124,11 +132,9 @@ function sendJson(response, status, payload) {
   response.setHeader('X-Content-Type-Options', 'nosniff')
   response.end(JSON.stringify(payload))
 }
-
 export default async function handler(request, response) {
   if (!['GET','HEAD'].includes(request.method || 'GET')) {
-    response.setHeader('Allow', 'GET, HEAD')
-    return sendJson(response, 405, { ok:false, error:'Method not allowed' })
+    response.setHeader('Allow', 'GET, HEAD'); return sendJson(response, 405, { ok:false, error:'Method not allowed' })
   }
   const requestUrl = new URL(request.url || '/api/data', 'https://thegoodtimesworldwide.com')
   const city = normalizeCity(requestUrl.searchParams.get('city'))
@@ -137,26 +143,16 @@ export default async function handler(request, response) {
   const generatedAt = new Date().toISOString()
   const queries = buildGatewayQueries({ city, today:todayISO(), eventLimit, venueLimit })
   try {
-    const [rawEvents, rawVenues] = await Promise.all([
-      fetchRows(queries.eventPath, 'GOOD TIMES events'), fetchRows(queries.venuePath, 'GOOD TIMES venues'),
-    ])
-    const venues = rawVenues.filter(customerReadyVenue).map(item => ({ ...item, hero_image:safePublicImage(item.hero_image) })).slice(0, venueLimit)
+    const [rawEvents, rawVenues] = await Promise.all([fetchRows(queries.eventPath,'GOOD TIMES events'),fetchRows(queries.venuePath,'GOOD TIMES venues')])
+    const venues = rawVenues.filter(customerReadyVenue).map(item => ({...item,hero_image:safePublicImage(item.hero_image)})).slice(0,venueLimit)
     const verifiedVenueNames = new Set(venues.map(item => normalizeName(item.name)).filter(Boolean))
-    const events = mapShows(rawEvents.filter(item => customerReadyEvent(item, verifiedVenueNames, city))).slice(0, eventLimit)
+    const events = mapShows(rawEvents.filter(item => customerReadyEvent(item,verifiedVenueNames,city))).slice(0,eventLimit)
     if (request.method === 'HEAD') {
-      response.statusCode = 200; response.setHeader('Cache-Control', 'no-store')
-      response.setHeader('X-Good-Times-Events', String(events.length)); response.setHeader('X-Good-Times-Venues', String(venues.length))
-      return response.end()
+      response.statusCode=200; response.setHeader('Cache-Control','no-store'); response.setHeader('X-Good-Times-Events',String(events.length)); response.setHeader('X-Good-Times-Venues',String(venues.length)); return response.end()
     }
-    return sendJson(response, 200, {
-      ok:true, connected:true, city, source:'good-times-customer-ready-inventory', generated_at:generatedAt,
-      counts:{ events:events.length, venues:venues.length }, events, venues,
-    })
+    return sendJson(response,200,{ok:true,connected:true,city,source:'good-times-customer-ready-inventory',generated_at:generatedAt,counts:{events:events.length,venues:venues.length},events,venues})
   } catch (error) {
-    console.error('[GOOD TIMES data gateway]', { city, message:error?.message || String(error), generatedAt })
-    return sendJson(response, 503, {
-      ok:false, connected:false, city, source:'good-times-customer-ready-inventory', generated_at:generatedAt,
-      error:'GOOD TIMES live data is temporarily unavailable.', detail:error?.message || String(error),
-    })
+    console.error('[GOOD TIMES data gateway]',{city,message:error?.message||String(error),generatedAt})
+    return sendJson(response,503,{ok:false,connected:false,city,source:'good-times-customer-ready-inventory',generated_at:generatedAt,error:'GOOD TIMES live data is temporarily unavailable.',detail:error?.message||String(error)})
   }
 }
