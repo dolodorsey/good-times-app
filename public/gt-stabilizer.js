@@ -6,7 +6,7 @@
   const originalFetch = window.fetch.bind(window)
   const inflight = new Map()
   const responseCache = new Map()
-  const storagePrefix = 'gt_api_cache_v3:'
+  const storagePrefix = 'gt_api_cache_v4:'
   const fallbackImage = 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-homescreen-atlanta.webp'
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -21,12 +21,43 @@
     }
   }
 
+  function mediaUrl(value) {
+    if (!value || typeof value !== 'string') return value
+    const text = value.trim()
+    if (!text || text.startsWith('/api/media?') || text.startsWith('data:') || text.startsWith('blob:')) return text
+    try {
+      const parsed = new URL(text, location.href)
+      if (parsed.origin === location.origin || parsed.hostname === 'dzlmtvodpyhetvektfuo.supabase.co') return parsed.href
+      return `/api/media?url=${encodeURIComponent(parsed.href)}`
+    } catch {
+      return fallbackImage
+    }
+  }
+
+  function rewriteImages(value) {
+    if (Array.isArray(value)) return value.map(rewriteImages)
+    if (!value || typeof value !== 'object') return value
+    const output = {}
+    for (const [key, child] of Object.entries(value)) {
+      output[key] = ['image_url', 'hero_image', 'image'].includes(key) && typeof child === 'string'
+        ? mediaUrl(child)
+        : rewriteImages(child)
+    }
+    return output
+  }
+
+  function normalizeJsonText(text, contentType) {
+    if (!String(contentType || '').includes('application/json')) return text
+    try { return JSON.stringify(rewriteImages(JSON.parse(text))) } catch { return text }
+  }
+
   function store(key, text, response) {
+    const contentType = response.headers.get('content-type') || 'application/json; charset=utf-8'
     const record = {
-      text,
+      text: normalizeJsonText(text, contentType),
       status: response.status,
       statusText: response.statusText,
-      contentType: response.headers.get('content-type') || 'application/json; charset=utf-8',
+      contentType,
       storedAt: Date.now(),
     }
     responseCache.set(key, record)
@@ -85,8 +116,7 @@
           ])
           const text = await response.text()
           if (!response.ok) throw new Error(`Good Times API ${response.status}: ${text.slice(0, 240)}`)
-          const record = store(key, text, response)
-          return record
+          return store(key, text, response)
         } catch (error) {
           lastError = error
           if (attempt < 2) await sleep(350 * (attempt + 1))
