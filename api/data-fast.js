@@ -4,21 +4,84 @@ const MAX_EVENTS = 120
 const MAX_VENUES = 180
 const STALE_TTL_MS = 10 * 60 * 1000
 const cache = globalThis.__GOOD_TIMES_FAST_DATA_CACHE__ || (globalThis.__GOOD_TIMES_FAST_DATA_CACHE__ = new Map())
+const ALLOWED_VIBES = new Set(['grown','turnt','date','live','food','culture','free','vip'])
+const EVENT_CATEGORIES = {
+  grown:new Set(['nightlife','dining_culinary','dating_social']),
+  turnt:new Set(['nightlife','concerts_live_music','day_parties_brunch']),
+  date:new Set(['dating_social','dining_culinary','arts_museums_culture']),
+  live:new Set(['concerts_live_music']),
+  food:new Set(['dining_culinary','day_parties_brunch']),
+  culture:new Set(['black_culture_diaspora','arts_museums_culture','community_civic']),
+  free:new Set(['free_things_to_do','community_civic']),
+  vip:new Set(['vip_exclusive','nightlife']),
+}
 
 function clamp(value, fallback, max) {
   const parsed = Number.parseInt(String(value ?? ''), 10)
   return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, max) : fallback
 }
-
-function cityKey(value) {
-  return String(value || 'atlanta').trim().toLowerCase().replace(/[\s-]+/g, '_')
+function cityKey(value) { return String(value || 'atlanta').trim().toLowerCase().replace(/[\s-]+/g, '_') }
+function parseVibes(value) {
+  return [...new Set(String(value || '').split(',').map(v=>v.trim().toLowerCase()).filter(v=>ALLOWED_VIBES.has(v)))].slice(0,5)
 }
-
-function captureResponse(response, onFinish) {
+function textOf(item) {
+  return [item?.title,item?.name,item?.category_key,item?.subcategory_key,item?.subcategory,...(item?.vibe_tags||[])].filter(Boolean).join(' ').toLowerCase()
+}
+function eventScore(item,index,vibes) {
+  let score = Number(item?.good_times_score || 0) * 10 - Number(item?.display_priority || 50) - index / 1000
+  const text=textOf(item)
+  for (const vibe of vibes) {
+    if (EVENT_CATEGORIES[vibe]?.has(item?.category_key)) score += 180
+    if (vibe==='grown' && /grown|r&b|soul|cocktail|lounge|rooftop/.test(text)) score += 80
+    if (vibe==='turnt' && /party|club|dj|hip hop|rap|edm/.test(text)) score += 80
+    if (vibe==='date' && /date|dinner|wine|art|comedy|rooftop/.test(text)) score += 80
+    if (vibe==='live' && /concert|live music|jazz|r&b|rap|soul|gospel/.test(text)) score += 90
+    if (vibe==='food' && /food|brunch|chef|tasting|dining/.test(text)) score += 90
+    if (vibe==='culture' && /black|culture|museum|art|hbcu|diaspora/.test(text)) score += 90
+    if (vibe==='free' && /free|community|market|park/.test(text)) score += 100
+    if (vibe==='vip' && /vip|exclusive|premium|celebrity|table/.test(text)) score += 100
+  }
+  if (item?.is_curated) score += 25
+  if (item?.is_featured) score += 15
+  return score
+}
+function venueScore(item,index,vibes) {
+  let score = Number(item?.quality_score || 0) * 10 + Number(item?.culture_score || 0) * 2 + Number(item?.google_rating || 0) * 20 - index / 1000
+  const text=textOf(item)
+  for (const vibe of vibes) {
+    if (vibe==='grown' && /lounge|cocktail|rooftop|restaurant|fine dining|jazz/.test(text)) score += 170
+    if (vibe==='turnt' && /nightclub|club|party|hookah|late night/.test(text)) score += 170
+    if (vibe==='date' && /restaurant|rooftop|cocktail|wine|date|brunch/.test(text)) score += 170
+    if (vibe==='live' && /live music|jazz|concert|music|bar/.test(text)) score += 150
+    if (vibe==='food' && /restaurant|brunch|coffee|food|dining|chef/.test(text)) score += 170
+    if (vibe==='culture' && (item?.is_black_owned || item?.is_culture_pick || /culture|museum|gallery|black/.test(text))) score += 190
+    if (vibe==='free' && /park|market|museum|community|public/.test(text)) score += 120
+    if (vibe==='vip' && (item?.is_featured || /vip|exclusive|luxury|premium|bottle/.test(text))) score += 180
+  }
+  if (item?.booking_link) score += 18
+  if (item?.is_culture_pick) score += 25
+  if (item?.is_featured) score += 15
+  return score
+}
+function personalizeBody(body,vibes) {
+  if (!vibes.length || typeof body !== 'string') return body
+  try {
+    const payload=JSON.parse(body)
+    if (!payload?.ok || !Array.isArray(payload.events) || !Array.isArray(payload.venues)) return body
+    payload.events=[...payload.events].map((item,index)=>({item,index,score:eventScore(item,index,vibes)})).sort((a,b)=>b.score-a.score).map(({item})=>item)
+    payload.venues=[...payload.venues].map((item,index)=>({item,index,score:venueScore(item,index,vibes)})).sort((a,b)=>b.score-a.score).map(({item})=>item)
+    payload.personalized=true
+    payload.personalization={vibes}
+    return JSON.stringify(payload)
+  } catch { return body }
+}
+function captureResponse(response,vibes,onFinish) {
   const originalEnd = response.end.bind(response)
   response.end = body => {
-    try { onFinish(response.statusCode || 200, body, response.getHeaders?.() || {}) } catch {}
-    return originalEnd(body)
+    const status=response.statusCode || 200
+    const output=status===200 ? personalizeBody(body,vibes) : body
+    try { onFinish(status, output, response.getHeaders?.() || {}) } catch {}
+    return originalEnd(output)
   }
 }
 
@@ -27,14 +90,17 @@ export default async function handler(request, response) {
   const city = cityKey(incoming.searchParams.get('city'))
   const eventLimit = clamp(incoming.searchParams.get('event_limit'), 100, MAX_EVENTS)
   const venueLimit = clamp(incoming.searchParams.get('venue_limit'), 140, MAX_VENUES)
-  const key = `${city}:${eventLimit}:${venueLimit}`
+  const vibes=parseVibes(incoming.searchParams.get('vibes'))
+  const vibeKey=vibes.join(',') || 'default'
+  const key = `${city}:${eventLimit}:${venueLimit}:${vibeKey}`
   const cached = cache.get(key)
 
   if (cached && Date.now() - cached.at < 60_000 && request.method !== 'HEAD') {
     response.statusCode = 200
     response.setHeader('Content-Type', 'application/json; charset=utf-8')
-    response.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=600')
+    response.setHeader('Cache-Control', 'private, max-age=0, s-maxage=60, stale-while-revalidate=600')
     response.setHeader('X-Good-Times-Cache', 'HIT')
+    if(vibes.length)response.setHeader('X-Good-Times-Personalized','true')
     response.end(cached.body)
     return
   }
@@ -45,10 +111,11 @@ export default async function handler(request, response) {
   rewritten.searchParams.set('venue_limit', String(venueLimit))
   request.url = `${rewritten.pathname}${rewritten.search}`
 
-  captureResponse(response, (status, body) => {
+  captureResponse(response,vibes,(status,body)=>{
     if (status === 200 && typeof body === 'string' && body.length > 20 && request.method !== 'HEAD') {
       cache.set(key, { at: Date.now(), body })
-      if (cache.size > 40) {
+      if(vibes.length)response.setHeader('X-Good-Times-Personalized','true')
+      if (cache.size > 80) {
         const oldest = [...cache.entries()].sort((a,b) => a[1].at - b[1].at)[0]?.[0]
         if (oldest) cache.delete(oldest)
       }
@@ -62,8 +129,9 @@ export default async function handler(request, response) {
     if (stale && Date.now() - stale.at < STALE_TTL_MS && !response.headersSent && request.method !== 'HEAD') {
       response.statusCode = 200
       response.setHeader('Content-Type', 'application/json; charset=utf-8')
-      response.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=600')
+      response.setHeader('Cache-Control', 'private, max-age=0, s-maxage=30, stale-while-revalidate=600')
       response.setHeader('X-Good-Times-Cache', 'STALE')
+      if(vibes.length)response.setHeader('X-Good-Times-Personalized','true')
       response.end(stale.body)
       return
     }
