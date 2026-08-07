@@ -29,7 +29,10 @@ export default async function handler(request,response){
   if((request.method||'GET')!=='POST'){response.setHeader('Allow','POST');return send(response,405,{ok:false,error:'Method not allowed'})}
   if(!allowed(request))return send(response,429,{ok:false,error:'Too many submissions. Try again shortly.'})
 
-  const body=typeof request.body==='string'?JSON.parse(request.body||'{}'):request.body||{}
+  let body={}
+  try{body=typeof request.body==='string'?JSON.parse(request.body||'{}'):request.body||{}}
+  catch{return send(response,400,{ok:false,error:'Invalid JSON payload.'})}
+
   const formType=clean(body.form_type,40).toLowerCase()
   const formData=body.form_data&&typeof body.form_data==='object'?body.form_data:{}
   const fullName=clean(formData.full_name||body.full_name,100)
@@ -47,7 +50,7 @@ export default async function handler(request,response){
     safeData[safeKey]=clean(value,2500)
   }
   safeData.submission_source='good_times_partner_hub'
-  safeData.submission_origin=clean(request.headers.origin||request.headers.referer||'',300)
+  safeData.routing_mode='first_party'
 
   try{
     const upstream=await fetch(`${CONTENT_URL}/rest/v1/form_submissions`,{
@@ -65,7 +68,10 @@ export default async function handler(request,response){
         email,
         phone,
         form_data:safeData,
-        ghl_push_status:'pending',
+        source:'good_times_partner_hub',
+        user_agent:clean(request.headers['user-agent']||'',500),
+        referer:clean(request.headers.referer||'',500),
+        workflow_status:'pending',
       }),
     })
     const text=await upstream.text()
