@@ -28,9 +28,9 @@ const json = value => JSON.stringify(value).replace(/</g,'\\u003c')
 
 async function topVenues(city) {
   const params = new URLSearchParams({
-    select:'name,neighborhood,short_desc,quality_score,google_rating,website,category_key,subcategory',
+    select:'name,neighborhood,short_desc,quality_score,google_rating,website,category_key,subcategory,is_black_owned,vibe_tags',
     city_key:`eq.${city}`,status:'eq.active',is_verified:'eq.true',hero_image:'not.is.null',
-    order:'quality_score.desc.nullslast,google_rating.desc.nullslast',limit:'8',
+    order:'quality_score.desc.nullslast,google_rating.desc.nullslast',limit:'80',
   })
   try {
     const response = await fetch(`${CONTENT_URL}/rest/v1/gt_venues?${params}`, { headers:{apikey:CONTENT_KEY,Authorization:`Bearer ${CONTENT_KEY}`,Accept:'application/json'} })
@@ -38,6 +38,22 @@ async function topVenues(city) {
     const rows = await response.json()
     return Array.isArray(rows) ? rows : []
   } catch { return [] }
+}
+
+function filterVenues(rows, intent) {
+  const text = item => `${item.category_key || ''} ${item.subcategory || ''} ${item.short_desc || ''} ${(item.vibe_tags || []).join(' ')}`.toLowerCase()
+  const matchers = {
+    nightlife: item => /nightclub|lounge|bar|rooftop|hookah|late night|speakeasy|club/.test(text(item)),
+    restaurants: item => /restaurant|dining|brunch|food|coffee|chef|culinary|cocktail|wine/.test(text(item)),
+    'date-night': item => /restaurant|dining|rooftop|lounge|bar|speakeasy|jazz|wine|museum|gallery|romantic|date/.test(text(item)),
+    'black-owned': item => Boolean(item.is_black_owned),
+    'live-music': item => /live music|concert|jazz|r&b|rnb|hip-hop|hip hop|music hall|performance|dj/.test(text(item)),
+    rooftops: item => /rooftop|skyline|roof top/.test(text(item)),
+    'free-things-to-do': item => /free|park|museum|gallery|market|community|public art/.test(text(item)),
+    'this-weekend': () => true,
+  }
+  const predicate = matchers[intent] || (() => true)
+  return rows.filter(predicate)
 }
 
 function pageHtml({cityKey,citySlug,cityLabel,intentSlug,intentLabel,intentDesc,venues}) {
@@ -74,7 +90,8 @@ for (const [cityKey,citySlug,cityLabel] of CITIES) {
   for (const [intentSlug,intentLabel,intentDesc] of INTENTS) {
     const filename = `${citySlug}-${intentSlug}.html`
     guideUrls.push(`${ORIGIN}/guides/${filename}`)
-    await fs.writeFile(path.join('public/guides',filename),pageHtml({cityKey,citySlug,cityLabel,intentSlug,intentLabel,intentDesc,venues:cityInventory.get(cityKey)||[]}))
+    const intentVenues = filterVenues(cityInventory.get(cityKey)||[], intentSlug)
+    await fs.writeFile(path.join('public/guides',filename),pageHtml({cityKey,citySlug,cityLabel,intentSlug,intentLabel,intentDesc,venues:intentVenues}))
   }
 }
 
