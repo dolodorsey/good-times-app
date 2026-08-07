@@ -6,6 +6,7 @@ import './features/experience/good-times-command.css'
 import './features/experience/good-times-command-v2.css'
 import './features/experience/good-times-live.css'
 import './features/experience/good-times-scenes.css'
+import './features/experience/good-times-connect.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 
@@ -15,7 +16,8 @@ const LazyLegacyApp = lazy(() => import('./App.jsx'))
 const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
 const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
 const LazyOnboarding = lazy(() => import('./features/onboarding/GoodTimesOnboarding.jsx'))
-const LazyPaymentsLauncher = lazy(() => import('./features/experience/GoodTimesPaymentsLauncher.jsx'))
+const LazyPaymentsLauncher = lazy(() => import('./features/experience/GoodTimesPaymentsBridge.jsx'))
+const LazyConnectHub = lazy(() => import('./features/experience/GoodTimesConnectHub.jsx'))
 
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
@@ -62,13 +64,13 @@ async function bootstrap(){
   else if(commandRoute){route=<LazyCommandApp/>;loadingLabel='Opening command interface'}
   else route=<LazyLiveApp/>
 
-  const showPayments=hasSession&&!requestType&&!recoverySession&&!legacyRoute&&!commandRoute
+  const showMemberTools=hasSession&&!requestType&&!recoverySession&&!legacyRoute&&!commandRoute
   ReactDOM.createRoot(rootElement).render(
     <RuntimeBoundary>
       <Suspense fallback={<RouteLoading label={loadingLabel}/>}>
-        <PremiumRoot launch={showPayments}>
+        <PremiumRoot launch={showMemberTools}>
           {route}
-          {showPayments?<LazyPaymentsLauncher/>:null}
+          {showMemberTools?<><LazyConnectHub/><LazyPaymentsLauncher/></>:null}
         </PremiumRoot>
       </Suspense>
     </RuntimeBoundary>
@@ -80,4 +82,3 @@ bootstrap().catch(error=>{
   const rootElement=document.getElementById('root')
   if(rootElement)ReactDOM.createRoot(rootElement).render(<RuntimeBoundary><div className="gt-runtime-fallback" role="alert"><div className="gt-runtime-fallback__mark">GT</div><h1>We couldn’t open GOOD TIMES.</h1><button type="button" onClick={()=>window.location.reload()}>Try again</button></div></RuntimeBoundary>)
 })
-
