@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
-import { buildGatewayQueries, clampLimit, inferCustomerCategory, inferCustomerTaxonomy, normalizeCity } from '../api/data.js'
+import { buildGatewayQueries, clampLimit, getEventFreshness, inferCustomerCategory, inferCustomerTaxonomy, normalizeCity } from '../api/data.js'
 
 const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
@@ -19,9 +19,23 @@ test('Atlanta customer gateway reads bounded current shows and verified venues',
   assert.match(queries.eventPath, /city_key=eq\.atlanta/)
   assert.match(queries.eventPath, /show_date=gte\.2026-08-06/)
   assert.match(queries.eventPath, /status=in\.\(confirmed,tentative\)/)
+  assert.match(queries.eventPath, /updated_at/)
   assert.doesNotMatch(queries.eventPath, /category_key_v2=not\.is\.null/)
   assert.match(queries.venuePath, /^gt_venues\?/)
   assert.match(queries.venuePath, /is_verified=eq\.true/)
+})
+
+test('event freshness fails closed after 72 hours', () => {
+  const now = new Date('2026-08-07T22:00:00.000Z')
+  const fresh = getEventFreshness([{ updated_at:'2026-08-07T21:00:00.000Z' }], now)
+  const stale = getEventFreshness([{ updated_at:'2026-08-03T21:00:00.000Z' }], now)
+  const empty = getEventFreshness([], now)
+  assert.equal(fresh.status, 'live')
+  assert.equal(fresh.live, true)
+  assert.equal(stale.status, 'stale')
+  assert.equal(stale.live, false)
+  assert.equal(empty.status, 'empty')
+  assert.equal(empty.live, false)
 })
 
 test('legacy cross-city events receive conservative customer categories', () => {
