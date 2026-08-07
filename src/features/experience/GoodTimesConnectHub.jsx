@@ -36,6 +36,7 @@ export default function GoodTimesConnectHub(){
   const[data,setData]=useState({events:[],venues:[]})
   const[loading,setLoading]=useState(false)
   const[error,setError]=useState('')
+  const[retryNonce,setRetryNonce]=useState(0)
 
   useEffect(()=>{
     const onKey=e=>{if(e.key==='Escape')setOpen(false)}
@@ -55,7 +56,7 @@ export default function GoodTimesConnectHub(){
       .catch(err=>{if(alive)setError(err.message||'Live city network unavailable')})
       .finally(()=>{if(alive)setLoading(false)})
     return()=>{alive=false}
-  },[city,open,tab])
+  },[city,open,tab,retryNonce])
 
   const current=useMemo(()=>data.events.slice(0,10),[data.events])
   const network=useMemo(()=>{
@@ -86,7 +87,7 @@ export default function GoodTimesConnectHub(){
 
         <div className="gt-connect-body">
           {loading&&tab!=='links'&&<div className="gt-connect-state"><i/>Updating the city…</div>}
-          {error&&tab!=='links'&&<div className="gt-connect-state error"><b>Live network reconnecting.</b><span>{error}</span><button onClick={()=>setCity(v=>v==='atlanta'?'atlanta ':v.trim())}>Retry</button></div>}
+          {error&&tab!=='links'&&<div className="gt-connect-state error"><b>Live network reconnecting.</b><span>{error}</span><button type="button" onClick={()=>setRetryNonce(value=>value+1)}>Retry</button></div>}
 
           {!loading&&!error&&tab==='current'&&<>
             <div className="gt-connect-section-title"><span>HAPPENING NEXT</span><h3>Current</h3><p>The quickest read on what is actually worth opening right now.</p></div>
@@ -106,7 +107,7 @@ export default function GoodTimesConnectHub(){
             <div className="gt-network-grid">
               {network.map(item=><article key={item.id}>
                 <div className="gt-network-img" style={{backgroundImage:`url(${item.hero_image||'/good-times-logo.png'})`}}><span>{item.is_khg?'KOLLECTIVE':item.is_black_owned?'BLACK-OWNED':item.is_culture_pick?'CULTURE PICK':'CITY PICK'}</span></div>
-                <div><small>{item.neighborhood||item.city_key?.replaceAll('_',' ')}</small><h4>{item.name}</h4><p>{item.short_desc||item.category_key?.replaceAll('_',' ')||'GOOD TIMES network'}</p><div>{item.website&&<button onClick={()=>safeOpen(item.website)}>Website</button>}{item.booking_link&&<button onClick={()=>safeOpen(item.booking_link)}>Book</button>}{item.instagram_handle&&<button onClick={()=>safeOpen(`https://instagram.com/${String(item.instagram_handle).replace('@','')}`)}>IG</button>}</div></div>
+                <div><small>{item.neighborhood||item.city_key?.replaceAll('_',' ')}</small><h4>{item.name}</h4><p>{item.short_desc||item.category_key?.replaceAll('_',' ')||'GOOD TIMES network'}</p><div>{item.website&&<button type="button" onClick={()=>safeOpen(item.website)}>Website</button>}{item.booking_link&&<button type="button" onClick={()=>safeOpen(item.booking_link)}>Book</button>}{item.instagram_handle&&<button type="button" onClick={()=>safeOpen(`https://instagram.com/${String(item.instagram_handle).replace('@','')}`)}>IG</button>}</div></div>
               </article>)}
               {!network.length&&<div className="gt-connect-empty">Network data is still being qualified for this city.</div>}
             </div>
@@ -119,6 +120,7 @@ export default function GoodTimesConnectHub(){
               <a href="/group"><b>◎</b><span><strong>Group Plans</strong><small>Coordinate the whole crew</small></span><em>›</em></a>
               <a href="/trip"><b>↗</b><span><strong>Plan a Trip</strong><small>Build beyond one night</small></span><em>›</em></a>
               <a href="/join"><b>+</b><span><strong>Join GOOD TIMES</strong><small>Bring somebody into the network</small></span><em>›</em></a>
+              <a href="/connect.html"><b>◇</b><span><strong>Partner With GOOD TIMES</strong><small>Venues, events, artists, vendors, creators, sponsors and hiring</small></span><em>›</em></a>
               <button type="button" onClick={()=>window.dispatchEvent(new CustomEvent('gt:open-payments'))}><b>▣</b><span><strong>Tickets + VIP</strong><small>Paid experiences and access</small></span><em>›</em></button>
               <button type="button" onClick={shareGoodTimes}><b>⌁</b><span><strong>Share GOOD TIMES</strong><small>Send the app instantly</small></span><em>›</em></button>
             </div>
