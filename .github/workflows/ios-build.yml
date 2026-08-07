@@ -82,7 +82,10 @@ jobs:
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
             echo "::group::Xcode signing/build diagnostics"
-            grep -E -i 'error:|provision|signing|certificate|profile|entitlement|bundle identifier' $RUNNER_TEMP/xcode-archive.log | tail -120 || true
+            grep -E -i 'error:|provision|signing|certificate|profile|entitlement|bundle identifier|requires a development team|No Accounts|doesn.t include signing certificate' $RUNNER_TEMP/xcode-archive.log | tail -120 | while IFS= read -r line; do
+              SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
+              echo "::error title=GOOD TIMES iOS archive::$SAFE"
+            done
             echo "::endgroup::"
             exit "$STATUS"
           fi
