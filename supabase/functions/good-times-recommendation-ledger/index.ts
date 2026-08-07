@@ -1,10 +1,15 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
 
-const PROD=new Set(['https://thegoodtimesworldwide.com','https://www.thegoodtimesworldwide.com'])
+const ALLOWED=new Set([
+  'https://thegoodtimesworldwide.com','https://www.thegoodtimesworldwide.com','https://good-times-app.vercel.app',
+  'https://good-times-app-dr-dorseys-projects.vercel.app','https://good-times-app-git-main-dr-dorseys-projects.vercel.app',
+  'capacitor://localhost','http://localhost','http://localhost:5173',
+])
 const PREVIEW=/^https:\/\/good-times-[a-z0-9-]+-dr-dorseys-projects\.vercel\.app$/i
+const BRANCH_PREVIEW=/^https:\/\/good-times-app-git-[a-z0-9-]+-dr-dorseys-projects\.vercel\.app$/i
 const clean=(v:unknown,max=300)=>String(v??'').trim().slice(0,max)
 const num=(v:unknown,min=0,max=100)=>Math.max(min,Math.min(max,Number(v)||0))
-const allowed=(origin:string|null)=>Boolean(origin&&(PROD.has(origin)||PREVIEW.test(origin)))
+const allowed=(origin:string|null)=>Boolean(origin&&(ALLOWED.has(origin)||PREVIEW.test(origin)||BRANCH_PREVIEW.test(origin)))
 const headers=(origin:string|null)=>({'Content-Type':'application/json','Access-Control-Allow-Origin':allowed(origin)?origin!:'https://thegoodtimesworldwide.com','Access-Control-Allow-Headers':'authorization, content-type, apikey','Access-Control-Allow-Methods':'POST, OPTIONS','Vary':'Origin','Cache-Control':'no-store'})
 const out=(status:number,body:unknown,origin:string|null)=>new Response(JSON.stringify(body),{status,headers:headers(origin)})
 
