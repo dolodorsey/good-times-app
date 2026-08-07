@@ -46,6 +46,9 @@ function installDataRequestGuard(){
               if(vibes.length)url.searchParams.set('vibes',vibes.join(','))
             }catch{}
           }
+          // Vercel's /api/data rewrite can discard the personalization query before the function sees it.
+          // Member requests go directly to the fast endpoint so vibe ranking survives end-to-end.
+          if(url.searchParams.has('vibes'))url.pathname='/api/data-fast'
           if(typeof input==='string')input=`${url.pathname}${url.search}${url.hash}`
           else input=new Request(url.toString(),input)
         }
