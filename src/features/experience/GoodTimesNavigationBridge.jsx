@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { KHG_SUPABASE_ANON_KEY, KHG_SUPABASE_URL } from '../../lib/supabase.js'
 
 const NAV=[['home','⌂','Home'],['map','⌖','Map'],['planner','✦','Planner'],['calendar','▦','Calendar'],['vault','▣','Vault']]
 const CITY_BBOX={
@@ -61,12 +60,10 @@ export default function GoodTimesNavigationBridge(){
   async function openMap(){
     const nextCity=currentCity();setCity(nextCity);setMapOpen(true);setTab('map');setLoading(true);setMapError('');setQuery('')
     try{
-      const select='id,name,city_key,neighborhood,category_key,subcategory,address,latitude,longitude,hero_image,short_desc,google_rating,quality_score,website,booking_link,is_black_owned,is_khg'
-      const url=`${KHG_SUPABASE_URL}/rest/v1/gt_venues?select=${select}&city_key=eq.${encodeURIComponent(nextCity)}&status=eq.active&latitude=not.is.null&longitude=not.is.null&order=quality_score.desc.nullslast,google_rating.desc.nullslast&limit=120`
-      const response=await fetch(url,{headers:{apikey:KHG_SUPABASE_ANON_KEY,Authorization:`Bearer ${KHG_SUPABASE_ANON_KEY}`,Accept:'application/json'},cache:'no-store'})
-      const data=await response.json().catch(()=>[])
-      if(!response.ok)throw new Error(data?.message||'Map inventory unavailable')
-      setVenues(Array.isArray(data)?data:[])
+      const response=await fetch(`/api/data?city=${encodeURIComponent(nextCity)}&event_limit=1&venue_limit=120`,{headers:{Accept:'application/json'},cache:'no-store'})
+      const data=await response.json().catch(()=>null)
+      if(!response.ok||!data?.ok||!Array.isArray(data.venues))throw new Error(data?.detail||data?.error||'Map inventory unavailable')
+      setVenues(data.venues.filter(venue=>venue?.latitude!=null&&venue?.longitude!=null))
     }catch(error){setMapError(error instanceof Error?error.message:'Map inventory unavailable')}
     finally{setLoading(false)}
   }
@@ -89,10 +86,10 @@ export default function GoodTimesNavigationBridge(){
     {mapOpen&&<section aria-label={`GOOD TIMES map for ${cityLabel(city)}`} style={{position:'fixed',inset:'0 0 calc(70px + env(safe-area-inset-bottom,0px)) 0',zIndex:7900,background:'#07070C',color:'#F5F0E8',overflowY:'auto'}}>
       <div style={{position:'sticky',top:0,zIndex:3,padding:'calc(14px + env(safe-area-inset-top,0px)) 16px 12px',background:'linear-gradient(180deg,rgba(7,7,12,.98),rgba(7,7,12,.90))',backdropFilter:'blur(14px)',borderBottom:'1px solid rgba(255,255,255,.07)'}}>
         <div style={{fontSize:9,letterSpacing:'.18em',fontWeight:900,color:'#D4A853'}}>LIVE CITY MAP</div>
-        <div style={{display:'flex',alignItems:'end',gap:12,marginTop:3}}><div style={{flex:1}}><h1 style={{fontSize:28,margin:0,fontFamily:"'Playfair Display',serif"}}>{cityLabel(city)}</h1><p style={{fontSize:11,color:'rgba(245,240,232,.5)',margin:'4px 0 0'}}>{filtered.length} map-ready GOOD TIMES places</p></div><button onClick={()=>{setMapOpen(false);navigate('home')}} style={{width:38,height:38,borderRadius:99,border:'1px solid rgba(255,255,255,.12)',background:'rgba(255,255,255,.05)',color:'#fff',fontSize:20}}>×</button></div>
+        <div style={{display:'flex',alignItems:'end',gap:12,marginTop:3}}><div style={{flex:1}}><h1 style={{fontSize:28,margin:0,fontFamily:"'Playfair Display',serif"}}>{cityLabel(city)}</h1><p style={{fontSize:11,color:'rgba(245,240,232,.5)',margin:'4px 0 0'}}>{filtered.length} verified, deduped GOOD TIMES places</p></div><button onClick={()=>{setMapOpen(false);navigate('home')}} style={{width:38,height:38,borderRadius:99,border:'1px solid rgba(255,255,255,.12)',background:'rgba(255,255,255,.05)',color:'#fff',fontSize:20}}>×</button></div>
         <div style={{marginTop:12,display:'flex',gap:8,alignItems:'center',border:'1px solid rgba(255,255,255,.1)',borderRadius:14,padding:'0 12px',background:'rgba(255,255,255,.04)'}}><span>⌕</span><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Neighborhood, food, nightlife, Black-owned…" style={{flex:1,minWidth:0,height:42,border:0,outline:0,background:'transparent',color:'#fff',fontSize:13}}/>{query&&<button onClick={()=>setQuery('')} style={{border:0,background:'transparent',color:'rgba(255,255,255,.55)',fontSize:18}}>×</button>}</div>
       </div>
-      <div style={{height:'42vh',minHeight:270,position:'relative',borderBottom:'1px solid rgba(255,255,255,.08)'}}><iframe title={`${cityLabel(city)} GOOD TIMES map`} src={`https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik`} style={{width:'100%',height:'100%',border:0,filter:'saturate(.75) contrast(1.05)'}}/><div style={{position:'absolute',left:12,bottom:12,padding:'7px 10px',borderRadius:999,background:'rgba(7,7,12,.82)',backdropFilter:'blur(8px)',fontSize:9,fontWeight:900,letterSpacing:'.08em',color:'#F2D58F'}}>LIVE VERIFIED INVENTORY</div></div>
+      <div style={{height:'42vh',minHeight:270,position:'relative',borderBottom:'1px solid rgba(255,255,255,.08)'}}><iframe title={`${cityLabel(city)} GOOD TIMES map`} src={`https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik`} style={{width:'100%',height:'100%',border:0,filter:'saturate(.75) contrast(1.05)'}}/><div style={{position:'absolute',left:12,bottom:12,padding:'7px 10px',borderRadius:999,background:'rgba(7,7,12,.82)',backdropFilter:'blur(8px)',fontSize:9,fontWeight:900,letterSpacing:'.08em',color:'#F2D58F'}}>CANONICAL LIVE INVENTORY</div></div>
       <div style={{padding:'14px 14px 36px'}}>
         {loading&&<div style={{padding:36,textAlign:'center',color:'rgba(245,240,232,.52)'}}>Loading live places…</div>}
         {mapError&&<div style={{padding:14,borderRadius:12,background:'rgba(255,80,80,.08)',color:'#ffb8b8'}}>{mapError}</div>}
