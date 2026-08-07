@@ -9,64 +9,57 @@ jobs:
   build-ios:
     runs-on: macos-15
     timeout-minutes: 30
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Build web app
         run: npm run build
-      
+
       - name: Sync Capacitor iOS
         run: npx cap sync ios
-      
+
       - name: Install CocoaPods
         run: cd ios/App && pod install
-      
-      - name: Normalize app release signing
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('ios/App/App.xcodeproj/project.pbxproj')
-          text = path.read_text()
-          text = text.replace('\t\t\t\tCODE_SIGN_IDENTITY = "iPhone Developer";\n', '')
-          path.write_text(text)
-          PY
-      
-      - name: Install distribution signing certificate
+
+      - name: Install signing certificates
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
           KEYCHAIN_PASSWORD=$(openssl rand -hex 12)
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          echo "${{ secrets.DEVELOPMENT_CERTIFICATE_P12 }}" | base64 --decode > $RUNNER_TEMP/dev_cert.p12
+          security import $RUNNER_TEMP/dev_cert.p12 -P "${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           echo "${{ secrets.DISTRIBUTION_CERTIFICATE_P12 }}" | base64 --decode > $RUNNER_TEMP/dist_cert.p12
           security import $RUNNER_TEMP/dist_cert.p12 -P "${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security list-keychain -d user -s $KEYCHAIN_PATH
-      
+          security find-identity -v -p codesigning $KEYCHAIN_PATH
+
       - name: Setup App Store Connect API Key
         run: |
           mkdir -p ~/private_keys
           echo "${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}" > ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
           chmod 600 ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
-      
+
       - name: Auto-increment build number
         run: |
           cd ios/App
           BUILD_NUM=${{ github.run_number }}
           agvtool new-version -all $BUILD_NUM
           echo "✅ Build number set to $BUILD_NUM"
-      
+
       - name: Build & Archive
         run: |
           cd ios/App
@@ -80,9 +73,9 @@ jobs:
             -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
-            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGNING_ALLOWED=YES \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }}
-      
+
       - name: Export IPA
         run: |
           cat > $RUNNER_TEMP/ExportOptions.plist << EOF
@@ -101,7 +94,7 @@ jobs:
           </dict>
           </plist>
           EOF
-          
+
           xcodebuild -exportArchive \
             -archivePath $RUNNER_TEMP/App.xcarchive \
             -exportPath $RUNNER_TEMP/output \
@@ -110,10 +103,10 @@ jobs:
             -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-      
+
       - name: Cleanup
         if: always()
         run: |
           security delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true
-          rm -f $RUNNER_TEMP/dist_cert.p12
+          rm -f $RUNNER_TEMP/dev_cert.p12 $RUNNER_TEMP/dist_cert.p12
           rm -rf ~/private_keys
