@@ -126,8 +126,7 @@ export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}
     const payload = await loadSameOriginData(normalizedCity)
     return payload.events.slice(0, limit)
   } catch (gatewayError) {
-    // Events intentionally fail closed here. Direct REST fallback would bypass the
-    // server freshness/customer-readiness gate and could republish stale inventory.
+    // Do not bypass the server freshness/customer-readiness gate with a direct event feed.
     console.warn('[GOOD TIMES live data] Same-origin event gateway failed; event inventory is hidden until the verified gateway recovers.', gatewayError)
     return []
   }
@@ -262,40 +261,25 @@ export async function recordTasteSignal({
   }
 }
 
-export async function loadTasteProfile(session = readSession()) {
-  if (!session?.access_token || !session?.user?.id) return null
-  const rows = await fetchJson(
-    `${GT_SUPABASE_URL}/rest/v1/gt_taste_profiles?auth_id=eq.${encodeURIComponent(session.user.id)}&select=*&limit=1`,
-    { headers: gtHeaders(session.access_token) },
-  ).catch(() => [])
-  return rows?.[0] || null
-}
-
-export async function loadRecommendationSnapshot({ city = 'atlanta', profileId } = {}, session = readSession()) {
-  if (!session?.access_token || !profileId) return null
-  const response = await fetch(`${GT_SUPABASE_URL}/rest/v1/rpc/gt_get_recommendation_snapshot`, {
+export async function askGoodTimesConcierge(input, session = readSession()) {
+  if (!session?.access_token) throw new Error('Please sign in again.')
+  return fetchJson(`${GT_SUPABASE_URL}/functions/v1/good-times-live-concierge`, {
     method: 'POST',
     headers: gtHeaders(session.access_token),
-    body: JSON.stringify({ p_city_slug: normalizeCity(city), p_profile_id: profileId }),
+    body: JSON.stringify({ today: todayISO(), ...input }),
   })
-  if (!response.ok) return null
-  return response.json().catch(() => null)
 }
 
-export async function updateTasteProfile({ profileId, city, settings }, session = readSession()) {
-  if (!session?.access_token || !profileId) throw new Error('Please sign in again.')
-  const response = await fetch(`${GT_SUPABASE_URL}/rest/v1/gt_taste_profiles?profile_id=eq.${encodeURIComponent(profileId)}`, {
-    method: 'PATCH',
-    headers: { ...gtHeaders(session.access_token), Prefer: 'return=representation' },
-    body: JSON.stringify({
-      home_city: normalizeCity(city),
-      ...settings,
-      updated_at: new Date().toISOString(),
-    }),
-  })
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({}))
-    throw new Error(payload.message || payload.error || 'Could not update your taste profile.')
-  }
-  return response.json().catch(() => [])
+export function cityLabel(city) {
+  return ({
+    atlanta: 'Atlanta', houston: 'Houston', los_angeles: 'Los Angeles', washington_dc: 'Washington, DC',
+    miami: 'Miami', dallas: 'Dallas', charlotte: 'Charlotte', new_york: 'New York',
+    phoenix: 'Phoenix', scottsdale: 'Scottsdale', las_vegas: 'Las Vegas',
+  })[city] || String(city || '').replaceAll('_', ' ').replace(/\b\w/g, value => value.toUpperCase())
 }
+
+export const cityOptions = [
+  ['atlanta', 'Atlanta'], ['houston', 'Houston'], ['los_angeles', 'Los Angeles'], ['miami', 'Miami'],
+  ['charlotte', 'Charlotte'], ['washington_dc', 'Washington, DC'], ['new_york', 'New York'],
+  ['dallas', 'Dallas'], ['phoenix', 'Phoenix'], ['scottsdale', 'Scottsdale'], ['las_vegas', 'Las Vegas'],
+]
