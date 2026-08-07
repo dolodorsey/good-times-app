@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import { getProfile, readSession } from '../auth/client.js'
 
 const TABS=[['current','Current'],['network','Network'],['links','Links']]
 
@@ -18,6 +19,7 @@ function safeOpen(url){
   if(!url)return
   try{window.open(url,'_blank','noopener,noreferrer')}catch{window.location.href=url}
 }
+function label(value){return String(value||'').replaceAll('_',' ').replace(/\b\w/g,char=>char.toUpperCase())}
 async function shareGoodTimes(){
   const payload={title:'GOOD TIMES',text:'Find the move, build the night, and keep the plan in GOOD TIMES.',url:window.location.origin}
   if(navigator.share){try{await navigator.share(payload);return}catch{}}
@@ -34,7 +36,9 @@ export default function GoodTimesConnectHub(){
   const[tab,setTab]=useState('current')
   const[city,setCity]=useState('atlanta')
   const[data,setData]=useState({events:[],venues:[]})
+  const[profile,setProfile]=useState(null)
   const[loading,setLoading]=useState(false)
+  const[profileLoading,setProfileLoading]=useState(false)
   const[error,setError]=useState('')
   const[retryNonce,setRetryNonce]=useState(0)
 
@@ -45,6 +49,22 @@ export default function GoodTimesConnectHub(){
     window.addEventListener('gt:open-connect',onOpen)
     return()=>{window.removeEventListener('keydown',onKey);window.removeEventListener('gt:open-connect',onOpen)}
   },[])
+
+  useEffect(()=>{
+    if(!open||profile)return
+    const session=readSession()
+    if(!session?.user?.id||!session?.access_token)return
+    let alive=true
+    setProfileLoading(true)
+    getProfile(session.user.id,session.access_token)
+      .then(next=>{
+        if(!alive||!next)return
+        setProfile(next)
+        if(next.home_city)setCity(String(next.home_city).trim().toLowerCase().replace(/[\s-]+/g,'_'))
+      })
+      .finally(()=>{if(alive)setProfileLoading(false)})
+    return()=>{alive=false}
+  },[open,profile])
 
   useEffect(()=>{
     if(!open||tab==='links')return
@@ -63,6 +83,7 @@ export default function GoodTimesConnectHub(){
     const preferred=data.venues.filter(v=>v.is_khg||v.is_black_owned||v.is_culture_pick||v.is_featured)
     return (preferred.length?preferred:data.venues).slice(0,14)
   },[data.venues])
+  const vibes=Array.isArray(profile?.vibe_preferences)?profile.vibe_preferences:Array.isArray(profile?.tab_interests)?profile.tab_interests:[]
 
   return <>
     <button className="gt-connect-fab" type="button" onClick={()=>setOpen(true)} aria-label="Open Current, Network and Links">
@@ -71,11 +92,11 @@ export default function GoodTimesConnectHub(){
     {open&&<div className="gt-connect-backdrop" role="presentation" onMouseDown={()=>setOpen(false)}>
       <section className="gt-connect-sheet" role="dialog" aria-modal="true" aria-label="GOOD TIMES Connect" onMouseDown={e=>e.stopPropagation()}>
         <header className="gt-connect-head">
-          <div><small>GOOD TIMES</small><h2>Connect</h2><p>Your city, your people, your shortcuts.</p></div>
+          <div><small>GOOD TIMES</small><h2>Connect</h2><p>Your city, your profile, your shortcuts.</p></div>
           <button type="button" onClick={()=>setOpen(false)} aria-label="Close">×</button>
         </header>
         <nav className="gt-connect-tabs" aria-label="Connect sections">
-          {TABS.map(([id,label])=><button type="button" key={id} className={tab===id?'active':''} onClick={()=>setTab(id)}>{label}</button>)}
+          {TABS.map(([id,name])=><button type="button" key={id} className={tab===id?'active':''} onClick={()=>setTab(id)}>{name}</button>)}
         </nav>
 
         {tab!=='links'&&<div className="gt-connect-city">
@@ -102,7 +123,17 @@ export default function GoodTimesConnectHub(){
           </>}
 
           {!loading&&!error&&tab==='network'&&<>
-            <div className="gt-connect-section-title"><span>CITY NETWORK</span><h3>People + places that move culture</h3><p>Start with the venues and operators already carrying real signal in GOOD TIMES.</p></div>
+            <div className="gt-connect-section-title"><span>YOUR NETWORK</span><h3>Your identity + city signal</h3><p>GOOD TIMES now starts with your real member profile, then layers the places and operators carrying culture around you.</p></div>
+            <div className="gt-member-card">
+              <div className="gt-member-avatar">{profile?.full_name?.trim()?.charAt(0)?.toUpperCase()||'GT'}</div>
+              <div className="gt-member-copy">
+                <small>{profileLoading?'LOADING MEMBER':'GOOD TIMES MEMBER'}</small>
+                <strong>{profile?.full_name||'Your GOOD TIMES profile'}</strong>
+                <span>{label(profile?.home_city||city)}{profile?.age_range?` · ${profile.age_range}`:''}</span>
+                {vibes.length>0&&<div>{vibes.slice(0,4).map(vibe=><i key={vibe}>{label(vibe)}</i>)}</div>}
+              </div>
+              <button type="button" onClick={inviteCrew}>Invite</button>
+            </div>
             <div className="gt-network-actions"><button type="button" onClick={inviteCrew}>Invite your crew</button><button type="button" onClick={shareGoodTimes}>Share GOOD TIMES</button></div>
             <div className="gt-network-grid">
               {network.map(item=><article key={item.id}>
