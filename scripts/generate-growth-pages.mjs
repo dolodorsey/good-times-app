@@ -25,12 +25,13 @@ const INTENTS = [
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))
 const json = value => JSON.stringify(value).replace(/</g,'\\u003c')
+const key = value => String(value || '').trim().toLowerCase().replace(/[\s-]+/g,'_')
 
 async function topVenues(city) {
   const params = new URLSearchParams({
     select:'name,neighborhood,short_desc,quality_score,google_rating,website,category_key,subcategory,is_black_owned,vibe_tags',
     city_key:`eq.${city}`,status:'eq.active',is_verified:'eq.true',hero_image:'not.is.null',
-    order:'quality_score.desc.nullslast,google_rating.desc.nullslast',limit:'80',
+    order:'quality_score.desc.nullslast,google_rating.desc.nullslast',limit:'100',
   })
   try {
     const response = await fetch(`${CONTENT_URL}/rest/v1/gt_venues?${params}`, { headers:{apikey:CONTENT_KEY,Authorization:`Bearer ${CONTENT_KEY}`,Accept:'application/json'} })
@@ -41,15 +42,17 @@ async function topVenues(city) {
 }
 
 function filterVenues(rows, intent) {
-  const text = item => `${item.category_key || ''} ${item.subcategory || ''} ${item.short_desc || ''} ${(item.vibe_tags || []).join(' ')}`.toLowerCase()
+  const text = item => `${item.subcategory || ''} ${item.short_desc || ''} ${(item.vibe_tags || []).join(' ')}`.toLowerCase()
+  const category = item => key(item.category_key)
+  const inCategory = (item, allowed) => allowed.includes(category(item))
   const matchers = {
-    nightlife: item => /nightclub|lounge|bar|rooftop|hookah|late night|speakeasy|club/.test(text(item)),
-    restaurants: item => /restaurant|dining|brunch|food|coffee|chef|culinary|cocktail|wine/.test(text(item)),
-    'date-night': item => /restaurant|dining|rooftop|lounge|bar|speakeasy|jazz|wine|museum|gallery|romantic|date/.test(text(item)),
+    nightlife: item => inCategory(item,['nightclub','lounge','bar','rooftop','hookah','nightlife']) || /\b(nightclub|nightclubs|lounge|lounges|rooftop|hookah|speakeasy|supper club|bottle service)\b/i.test(text(item)),
+    restaurants: item => inCategory(item,['restaurant','brunch','coffee','food_and_dining','food_hall']) || /\b(restaurant|dining|brunch|culinary|chef|food hall|wine bar|cocktail bar)\b/i.test(text(item)),
+    'date-night': item => inCategory(item,['restaurant','brunch','bar','rooftop','lounge','museum','gallery']) || /\b(date night|romantic|speakeasy|wine bar|jazz|rooftop|fine dining|intimate)\b/i.test(text(item)),
     'black-owned': item => Boolean(item.is_black_owned),
-    'live-music': item => /live music|concert|jazz|r&b|rnb|hip-hop|hip hop|music hall|performance|dj/.test(text(item)),
-    rooftops: item => /rooftop|skyline|roof top/.test(text(item)),
-    'free-things-to-do': item => /free|park|museum|gallery|market|community|public art/.test(text(item)),
+    'live-music': item => /\b(live music|concert|jazz|r&b|rnb|hip-hop|hip hop|music hall|live performance|dj sets?)\b/i.test(text(item)),
+    rooftops: item => inCategory(item,['rooftop']) || /\b(rooftop|roof top|skyline view|skyline views)\b/i.test(text(item)),
+    'free-things-to-do': item => /\b(free admission|free entry|public art|community market|park|museum|gallery)\b/i.test(text(item)),
     'this-weekend': () => true,
   }
   const predicate = matchers[intent] || (() => true)
