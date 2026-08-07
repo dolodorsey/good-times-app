@@ -10,6 +10,7 @@ import './features/experience/good-times-connect.css'
 import './features/experience/good-times-profile.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
+import { installGrowthTracking, recordGrowthEvent } from './growth.js'
 
 const LazyLiveApp = lazy(() => import('./features/experience/GoodTimesLiveApp.jsx'))
 const LazyCommandApp = lazy(() => import('./features/experience/GoodTimesCommandApp.jsx'))
@@ -38,6 +39,13 @@ function installDataRequestGuard(){
           const venueLimit=Number.parseInt(url.searchParams.get('venue_limit')||'0',10)
           if(!Number.isFinite(eventLimit)||eventLimit<=0||eventLimit>120)url.searchParams.set('event_limit','120')
           if(!Number.isFinite(venueLimit)||venueLimit<=0||venueLimit>180)url.searchParams.set('venue_limit','180')
+          if(!url.searchParams.has('vibes')){
+            try{
+              const personalization=JSON.parse(localStorage.getItem('gt_personalization')||'{}')
+              const vibes=Array.isArray(personalization?.vibes)?personalization.vibes.filter(Boolean).slice(0,5):[]
+              if(vibes.length)url.searchParams.set('vibes',vibes.join(','))
+            }catch{}
+          }
           if(typeof input==='string')input=`${url.pathname}${url.search}${url.hash}`
           else input=new Request(url.toString(),input)
         }
@@ -49,6 +57,7 @@ function installDataRequestGuard(){
 
 installRecoveryRedirect()
 installDataRequestGuard()
+installGrowthTracking()
 
 class RuntimeBoundary extends Component {
   constructor(props){super(props);this.state={error:null}}
@@ -78,13 +87,14 @@ async function bootstrap(){
   const commandRoute=pathname==='/command'
   if(!recoverySession)await refreshStoredSession()
   const hasSession=Boolean(readSession())
+  recordGrowthEvent('app_open',{member:hasSession,route:requestType||pathname})
   if(!requestType&&!recoverySession)sessionStorage.setItem('gt_splash_shown','1')
 
   let route
   let loadingLabel='Opening GOOD TIMES Live'
   if(recoverySession){route=<LazyPasswordRecovery recoverySession={recoverySession}/>;loadingLabel='Securing your account'}
   else if(requestType){route=<LazyDirectRequest requestType={requestType}/>;loadingLabel='Opening your concierge request'}
-  else if(!hasSession){route=<LazyOnboarding onComplete={()=>window.location.reload()}/>;loadingLabel='Opening your private concierge'}
+  else if(!hasSession){route=<LazyOnboarding onComplete={(nextSession,prefs)=>{if(prefs){try{localStorage.setItem('gt_personalization',JSON.stringify({...prefs,updated_at:new Date().toISOString()}))}catch{}}window.location.reload()}}/>;loadingLabel='Opening your private concierge'}
   else if(legacyRoute){route=<LazyLegacyApp/>;loadingLabel='Opening legacy GOOD TIMES'}
   else if(commandRoute){route=<LazyCommandApp/>;loadingLabel='Opening command interface'}
   else route=<LazyLiveApp/>
