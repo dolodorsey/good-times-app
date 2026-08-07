@@ -8,7 +8,7 @@ on:
 jobs:
   build-ios:
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - name: Checkout
@@ -43,33 +43,98 @@ jobs:
           print('Removed legacy iPhone Developer identity overrides from Xcode project')
           PY
 
-      - name: Install signing certificates
+      - name: Install Apple Distribution certificate
         run: |
+          set -euo pipefail
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
           KEYCHAIN_PASSWORD=$(openssl rand -hex 12)
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          echo "${{ secrets.DEVELOPMENT_CERTIFICATE_P12 }}" | base64 --decode > $RUNNER_TEMP/dev_cert.p12
-          security import $RUNNER_TEMP/dev_cert.p12 -P "${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          echo "${{ secrets.DISTRIBUTION_CERTIFICATE_P12 }}" | base64 --decode > $RUNNER_TEMP/dist_cert.p12
-          security import $RUNNER_TEMP/dist_cert.p12 -P "${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security list-keychain -d user -s $KEYCHAIN_PATH
-          security find-identity -v -p codesigning $KEYCHAIN_PATH
+          echo "KEYCHAIN_PATH=$KEYCHAIN_PATH" >> "$GITHUB_ENV"
+          echo "KEYCHAIN_PASSWORD=$KEYCHAIN_PASSWORD" >> "$GITHUB_ENV"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          echo "${{ secrets.DISTRIBUTION_CERTIFICATE_P12 }}" | base64 --decode > "$RUNNER_TEMP/dist_cert.p12"
+          security import "$RUNNER_TEMP/dist_cert.p12" \
+            -P "${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          security default-keychain -d user -s "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
+
+          if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -q "Apple Distribution"; then
+            echo "::error::Apple Distribution signing identity was not imported."
+            exit 1
+          fi
 
       - name: Setup App Store Connect API Key
         run: |
+          set -euo pipefail
           mkdir -p ~/private_keys
           echo "${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}" > ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
           chmod 600 ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          key_path = Path.home()/"private_keys"/f"AuthKey_{os.environ['ASC_KEY_ID']}.p8"
+          payload = {
+              "key_id": os.environ["ASC_KEY_ID"],
+              "issuer_id": os.environ["ASC_ISSUER_ID"],
+              "key": key_path.read_text(),
+              "in_house": False,
+          }
+          out = Path(os.environ["RUNNER_TEMP"])/"appstore_api_key.json"
+          out.write_text(json.dumps(payload))
+          print(f"Wrote App Store Connect API config to {out}")
+          PY
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+
+      - name: Install Fastlane provisioning helper
+        run: |
+          if ! command -v fastlane >/dev/null 2>&1; then
+            gem install fastlane --no-document
+          fi
+          fastlane --version
+
+      - name: Download App Store provisioning profile
+        run: |
+          set -euo pipefail
+          PROFILE_PATH="$RUNNER_TEMP/good-times-appstore.mobileprovision"
+          fastlane sigh \
+            --app_identifier "com.kollective.goodtimes" \
+            --team_id "${{ secrets.APPLE_TEAM_ID }}" \
+            --api_key_path "$RUNNER_TEMP/appstore_api_key.json" \
+            --filename "$PROFILE_PATH" \
+            --skip_install true \
+            --readonly true
+
+          security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
+          PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$RUNNER_TEMP/profile.plist")
+          PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print Name' "$RUNNER_TEMP/profile.plist")
+          PROFILE_TEAM=$(/usr/libexec/PlistBuddy -c 'Print TeamIdentifier:0' "$RUNNER_TEMP/profile.plist")
+
+          if [ "$PROFILE_TEAM" != "${{ secrets.APPLE_TEAM_ID }}" ]; then
+            echo "::error::Provisioning profile belongs to unexpected Apple team."
+            exit 1
+          fi
+
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/$PROFILE_UUID.mobileprovision"
+          echo "PROFILE_UUID=$PROFILE_UUID" >> "$GITHUB_ENV"
+          echo "PROFILE_NAME=$PROFILE_NAME" >> "$GITHUB_ENV"
+          echo "Installed provisioning profile: $PROFILE_NAME ($PROFILE_UUID)"
 
       - name: Auto-increment build number
         run: |
           cd ios/App
           BUILD_NUM=${{ github.run_number }}
-          agvtool new-version -all $BUILD_NUM
-          echo "✅ Build number set to $BUILD_NUM"
+          agvtool new-version -all "$BUILD_NUM"
+          echo "Build number set to $BUILD_NUM"
 
       - name: Build & Archive
         shell: bash
@@ -81,19 +146,17 @@ jobs:
             -workspace App.xcworkspace \
             -scheme App \
             -configuration Release \
-            -archivePath $RUNNER_TEMP/App.xcarchive \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination 'generic/platform=iOS' \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
-            -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
-            CODE_SIGN_STYLE=Automatic \
-            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
-            2>&1 | tee $RUNNER_TEMP/xcode-archive.log
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
+            PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
+            2>&1 | tee "$RUNNER_TEMP/xcode-archive.log"
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
             echo "::group::Xcode signing/build diagnostics"
-            grep -E -i 'error:|provision|signing|certificate|profile|entitlement|bundle identifier|requires a development team|No Accounts|doesn.t include signing certificate' $RUNNER_TEMP/xcode-archive.log | tail -120 | while IFS= read -r line; do
+            grep -E -i 'error:|provision|signing|certificate|profile|entitlement|bundle identifier|requires a development team|No Accounts|doesn.t include signing certificate' "$RUNNER_TEMP/xcode-archive.log" | tail -120 | while IFS= read -r line; do
               SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
               echo "::error title=GOOD TIMES iOS archive::$SAFE"
             done
@@ -101,9 +164,10 @@ jobs:
             exit "$STATUS"
           fi
 
-      - name: Export IPA
+      - name: Export and upload IPA to App Store Connect
         run: |
-          cat > $RUNNER_TEMP/ExportOptions.plist << EOF
+          set -euo pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" << EOF
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -113,25 +177,32 @@ jobs:
             <key>destination</key>
             <string>upload</string>
             <key>signingStyle</key>
-            <string>automatic</string>
+            <string>manual</string>
+            <key>signingCertificate</key>
+            <string>Apple Distribution</string>
             <key>teamID</key>
             <string>${{ secrets.APPLE_TEAM_ID }}</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>com.kollective.goodtimes</key>
+              <string>$PROFILE_NAME</string>
+            </dict>
           </dict>
           </plist>
           EOF
 
           xcodebuild -exportArchive \
-            -archivePath $RUNNER_TEMP/App.xcarchive \
-            -exportPath $RUNNER_TEMP/output \
-            -exportOptionsPlist $RUNNER_TEMP/ExportOptions.plist \
+            -archivePath "$RUNNER_TEMP/App.xcarchive" \
+            -exportPath "$RUNNER_TEMP/output" \
+            -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
             -allowProvisioningUpdates \
             -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
-            -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
-            -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+            -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
+            -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}"
 
       - name: Cleanup
         if: always()
         run: |
-          security delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true
-          rm -f $RUNNER_TEMP/dev_cert.p12 $RUNNER_TEMP/dist_cert.p12
+          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/dist_cert.p12" "$RUNNER_TEMP/appstore_api_key.json" "$RUNNER_TEMP/good-times-appstore.mobileprovision" "$RUNNER_TEMP/profile.plist"
           rm -rf ~/private_keys
