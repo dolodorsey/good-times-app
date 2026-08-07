@@ -1,15 +1,17 @@
-name: Repair Good Times Live Runtime
+name: Verify Good Times Live Runtime
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  repair:
-    if: github.actor != 'github-actions[bot]'
+  verify:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,23 +20,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
-      - name: Apply signed-in runtime repair
-        run: |
-          node scripts/repair-live-runtime.mjs
-          node scripts/finalize-live-runtime-repair.mjs
-      - name: Verify tests and production build
-        run: |
-          npm install --legacy-peer-deps
-          npm run test
-          npm run build
-      - name: Commit verified runtime repair
-        run: |
-          if git diff --quiet; then
-            echo "No generated changes needed."
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/main.jsx src/features/experience/GoodTimesLiveApp.jsx public/sw.js api/data.js api/catalog.js
-          git commit -m "Stabilize signed-in Good Times live data and images"
-          git push
+      - name: Install exact application dependencies
+        run: npm install --legacy-peer-deps
+      - name: Verify GOOD TIMES regression suite
+        run: npm run test
+      - name: Verify production build pipeline
+        run: npm run build
