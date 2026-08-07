@@ -38,9 +38,14 @@ replaceOnce(
 )
 
 replaceOnce(
-  "  const blackOwned=useMemo(()=>venues.filter(item=>item.is_black_owned),[venues])\n  const hotPlaces=useMemo(()=>venues.filter(item=>item.is_featured||item.is_culture_pick||Number(item.google_rating)>=4.5),[venues])",
-  "  const blackOwned=useMemo(()=>personalizedVenues.filter(item=>item.is_black_owned),[personalizedVenues])\n  const hotPlaces=useMemo(()=>personalizedVenues.filter(item=>item.is_featured||item.is_culture_pick||Number(item.google_rating)>=4.5),[personalizedVenues])",
-  'personalized venue rails',
+  "  const blackOwned=useMemo(()=>venues.filter(item=>item.is_black_owned),[venues])",
+  "  const blackOwned=useMemo(()=>personalizedVenues.filter(item=>item.is_black_owned),[personalizedVenues])",
+  'personalized Black-Owned rail',
+)
+replaceOnce(
+  "  const hotPlaces=useMemo(()=>venues.filter(item=>item.is_featured||item.is_culture_pick||Number(item.google_rating)>=4.5),[venues])",
+  "  const hotPlaces=useMemo(()=>personalizedVenues.filter(item=>item.is_featured||item.is_culture_pick||Number(item.google_rating)>=4.5),[personalizedVenues])",
+  'personalized hot places',
 )
 
 replaceOnce(
