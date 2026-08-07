@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { readSession } from '../auth/client.js'
-import { GT_SUPABASE_ANON_KEY, GT_SUPABASE_URL } from '../../lib/supabase.js'
+import { GT_SUPABASE_ANON_KEY, GT_SUPABASE_URL, KHG_SUPABASE_ANON_KEY, KHG_SUPABASE_URL } from '../../lib/supabase.js'
 
 const LEDGER_URL=`${GT_SUPABASE_URL}/functions/v1/good-times-recommendation-ledger`
 const MAP_BBOX={
@@ -10,6 +10,8 @@ const MAP_BBOX={
   phoenix:'-112.32,33.25,-111.80,33.78',scottsdale:'-112.02,33.42,-111.75,33.76',
 }
 const EXTRA_CONNECT_CITIES=[['washington_dc','Washington, DC'],['phoenix','Phoenix'],['scottsdale','Scottsdale']]
+const cultureAvailability=new Map()
+const cultureInflight=new Map()
 const cityName=value=>String(value||'atlanta').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase()).replace('Washington Dc','Washington, DC')
 const currentCity=()=>document.querySelector('.gtlive-topbar select')?.value||'atlanta'
 const readPersonalization=()=>{try{return JSON.parse(localStorage.getItem('gt_personalization')||'{}')}catch{return{}}}
@@ -23,6 +25,23 @@ function makeContextButton(id,label,onClick){
   button=document.createElement('button');button.id=id;button.type='button';button.textContent=label
   Object.assign(button.style,{border:'1px solid rgba(212,168,83,.30)',background:'rgba(212,168,83,.08)',color:'#F2D58F',borderRadius:'999px',padding:'8px 12px',fontSize:'10px',fontWeight:'900',letterSpacing:'.08em',textTransform:'uppercase',cursor:'pointer',marginTop:'10px'})
   button.addEventListener('click',onClick);return button
+}
+async function loadBlackOwned(city,limit=80){
+  const normalized=String(city||'atlanta').toLowerCase().replace(/[\s-]+/g,'_')
+  const cacheKey=`${normalized}:${limit}`
+  if(cultureInflight.has(cacheKey))return cultureInflight.get(cacheKey)
+  const select='id,name,city_key,neighborhood,category_key,short_desc,hero_image,website,booking_link,instagram_handle,google_rating,quality_score,is_verified,is_black_owned'
+  const url=`${KHG_SUPABASE_URL}/rest/v1/gt_venues?select=${select}&city_key=eq.${encodeURIComponent(normalized)}&status=eq.active&is_black_owned=eq.true&order=quality_score.desc.nullslast,google_rating.desc.nullslast&limit=${Math.max(1,Math.min(100,limit))}`
+  const request=fetch(url,{headers:{apikey:KHG_SUPABASE_ANON_KEY,Authorization:`Bearer ${KHG_SUPABASE_ANON_KEY}`,Accept:'application/json'},cache:'no-store'})
+    .then(async response=>{const rows=await response.json().catch(()=>[]);if(!response.ok)throw new Error(rows?.message||'Culture directory unavailable');return Array.isArray(rows)?rows:[]})
+    .finally(()=>cultureInflight.delete(cacheKey))
+  cultureInflight.set(cacheKey,request)
+  return request
+}
+async function cultureReady(city){
+  const normalized=String(city||'atlanta').toLowerCase().replace(/[\s-]+/g,'_')
+  if(cultureAvailability.has(normalized))return cultureAvailability.get(normalized)
+  try{const rows=await loadBlackOwned(normalized,1);const ready=rows.length>0;cultureAvailability.set(normalized,ready);return ready}catch{cultureAvailability.set(normalized,false);return false}
 }
 
 export default function GoodTimesCompletionBridge(){
@@ -104,6 +123,7 @@ export default function GoodTimesCompletionBridge(){
   },[])
 
   useEffect(()=>{
+    let lastCultureCity=''
     const syncMapAndQuickActions=()=>{
       const city=currentCity()
       const iframe=document.querySelector('.gtlive-map iframe')
@@ -112,9 +132,15 @@ export default function GoodTimesCompletionBridge(){
         const desired=`https://www.openstreetmap.org/export/embed.html?bbox=${encodeURIComponent(bbox)}&layer=mapnik`
         if(iframe.src!==desired)iframe.src=desired
       }
-      document.querySelectorAll('.gtlive-quick-row button').forEach(button=>{
-        if(String(button.textContent||'').trim().startsWith('Black-Owned'))button.style.display=city==='atlanta'?'':'none'
-      })
+      const cultureButtons=[...document.querySelectorAll('.gtlive-quick-row button')].filter(button=>String(button.textContent||'').trim().startsWith('Black-Owned'))
+      if(city!==lastCultureCity||!cultureButtons.every(button=>button.dataset.cultureChecked===city)){
+        lastCultureCity=city
+        cultureButtons.forEach(button=>{button.dataset.cultureChecked=city;button.style.display='none'})
+        void cultureReady(city).then(ready=>{
+          if(currentCity()!==city)return
+          cultureButtons.forEach(button=>{button.style.display=ready?'':'none';button.dataset.cultureChecked=city})
+        })
+      }
       document.querySelectorAll('.gt-connect-city select,.gt-profile-editor select').forEach(select=>EXTRA_CONNECT_CITIES.forEach(([id,label])=>ensureOption(select,id,label)))
 
       const page=document.querySelector('.gtlive-page')
@@ -144,12 +170,10 @@ export default function GoodTimesCompletionBridge(){
       if(!String(target.textContent||'').trim().startsWith('Black-Owned'))return
       event.preventDefault();event.stopPropagation()
       const city=currentCity()
-      if(city!=='atlanta')return
-      setBlackCity(city);setBlackOpen(true);setBlackLoading(true);setBlackError('')
-      fetch(`/api/data?city=${encodeURIComponent(city)}&event_limit=12&venue_limit=180`,{headers:{Accept:'application/json'},cache:'no-store'})
-        .then(async response=>{const data=await response.json().catch(()=>null);if(!response.ok||!data?.ok)throw new Error(data?.error||'Directory unavailable');return data})
-        .then(data=>setBlackVenues((data.venues||[]).filter(item=>item.is_black_owned).slice(0,80)))
-        .catch(error=>setBlackError(error?.message||'Directory unavailable'))
+      setBlackCity(city);setBlackOpen(true);setBlackLoading(true);setBlackError('');setBlackVenues([])
+      loadBlackOwned(city,80)
+        .then(rows=>setBlackVenues(rows))
+        .catch(error=>setBlackError(error?.message||'Culture directory unavailable'))
         .finally(()=>setBlackLoading(false))
     }
     document.addEventListener('click',onClick,true)
@@ -163,8 +187,8 @@ export default function GoodTimesCompletionBridge(){
       <div style={{overflowY:'auto',maxHeight:'calc(88vh - 118px)',padding:'16px 18px 34px'}}>
         {blackLoading&&<div style={{padding:40,textAlign:'center',color:'rgba(245,240,232,.55)'}}>Opening the verified directory…</div>}
         {blackError&&<div style={{padding:14,borderRadius:12,background:'rgba(255,80,80,.08)',color:'#ffb8b8'}}>{blackError}</div>}
-        {!blackLoading&&!blackError&&!blackVenues.length&&<div style={{padding:40,textAlign:'center'}}>No verified ownership records are ready for this city yet.</div>}
-        <div style={{display:'grid',gap:10}}>{blackVenues.map(venue=><article key={venue.id} style={{display:'flex',gap:12,padding:12,borderRadius:16,border:'1px solid rgba(255,255,255,.08)',background:'rgba(255,255,255,.03)'}}>{venue.hero_image&&<img src={venue.hero_image} alt="" style={{width:72,height:72,borderRadius:12,objectFit:'cover'}}/>}<div style={{flex:1,minWidth:0}}><small style={{color:'#D4A853',fontWeight:800}}>{venue.neighborhood||'Atlanta'}</small><strong style={{display:'block',fontSize:16,marginTop:3}}>{venue.name}</strong><p style={{margin:'4px 0 8px',fontSize:11,color:'rgba(245,240,232,.52)'}}>{venue.short_desc||String(venue.category_key||'place').replaceAll('_',' ')}</p><div style={{display:'flex',gap:7}}>{venue.website&&<button onClick={()=>openExternal(venue.website)} style={{border:'1px solid rgba(212,168,83,.3)',background:'rgba(212,168,83,.09)',color:'#F2D58F',borderRadius:9,padding:'7px 10px',fontSize:10,fontWeight:800}}>Website</button>}{venue.booking_link&&<button onClick={()=>openExternal(venue.booking_link)} style={{border:'1px solid rgba(255,255,255,.12)',background:'rgba(255,255,255,.05)',color:'#fff',borderRadius:9,padding:'7px 10px',fontSize:10,fontWeight:800}}>Book</button>}</div></div></article>)}</div>
+        {!blackLoading&&!blackError&&!blackVenues.length&&<div style={{padding:40,textAlign:'center'}}>Ownership verification is still being qualified for this city.</div>}
+        <div style={{display:'grid',gap:10}}>{blackVenues.map(venue=><article key={venue.id} style={{display:'flex',gap:12,padding:12,borderRadius:16,border:'1px solid rgba(255,255,255,.08)',background:'rgba(255,255,255,.03)'}}>{venue.hero_image&&<img src={venue.hero_image} alt="" style={{width:72,height:72,borderRadius:12,objectFit:'cover'}}/>}<div style={{flex:1,minWidth:0}}><small style={{color:'#D4A853',fontWeight:800}}>{venue.neighborhood||cityName(blackCity)}</small><strong style={{display:'block',fontSize:16,marginTop:3}}>{venue.name}</strong><p style={{margin:'4px 0 8px',fontSize:11,color:'rgba(245,240,232,.52)'}}>{venue.short_desc||String(venue.category_key||'place').replaceAll('_',' ')}</p><div style={{display:'flex',gap:7}}>{venue.website&&<button onClick={()=>openExternal(venue.website)} style={{border:'1px solid rgba(212,168,83,.3)',background:'rgba(212,168,83,.09)',color:'#F2D58F',borderRadius:9,padding:'7px 10px',fontSize:10,fontWeight:800}}>Website</button>}{venue.booking_link&&<button onClick={()=>openExternal(venue.booking_link)} style={{border:'1px solid rgba(255,255,255,.12)',background:'rgba(255,255,255,.05)',color:'#fff',borderRadius:9,padding:'7px 10px',fontSize:10,fontWeight:800}}>Book</button>}</div></div></article>)}</div>
       </div>
     </section>
   </div>
