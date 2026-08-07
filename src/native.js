@@ -50,25 +50,38 @@ export async function heavyHaptic() {
 
 /** Native share sheet */
 export async function shareEvent(event) {
+  return shareContent({
+    title: event.title,
+    text: `${event.title} — ${event.venue || 'TBA'}\n${event.date || ''}\nFound on Good Times™`,
+    url: 'https://thegoodtimesworldwide.com',
+    dialogTitle: 'Share this event',
+  });
+}
+
+/** Reusable native/web share sheet for plans, places, tickets, and events */
+export async function shareContent({ title='GOOD TIMES', text='', url='https://thegoodtimesworldwide.com', dialogTitle='Share from GOOD TIMES' } = {}) {
   if (!isNative) {
-    // Web fallback
     if (navigator.share) {
-      await navigator.share({
-        title: event.title,
-        text: `Check out ${event.title} on Good Times!`,
-        url: `https://thegoodtimesworldwide.com`,
-      });
+      try {
+        await navigator.share({ title, text, url });
+        return true;
+      } catch (error) {
+        if (error?.name === 'AbortError') return false;
+      }
     }
-    return;
+    try {
+      await navigator.clipboard?.writeText([text, url].filter(Boolean).join('\n'));
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
   try {
-    await Share.share({
-      title: event.title,
-      text: `${event.title} — ${event.venue || 'TBA'}\n${event.date || ''}\nFound on Good Times™`,
-      url: 'https://thegoodtimesworldwide.com',
-      dialogTitle: 'Share this event',
-    });
-  } catch (e) {}
+    await Share.share({ title, text, url, dialogTitle });
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
 /** Open external links in native browser */
