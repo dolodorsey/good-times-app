@@ -52,11 +52,12 @@ test('arena concerts do not inherit the intimate-shows fallback', () => {
   )
 })
 
-test('Frontend uses same-origin customer inventory and no expensive public-feed fallback', () => {
+test('Frontend uses same-origin event inventory and cannot bypass freshness', () => {
   const client = read('src/features/intelligence/client.js')
   assert.match(client, /\/api\/data\?city=/)
-  assert.match(client, /Same-origin event gateway failed; using direct public feed/)
-  assert.match(client, /Same-origin venue gateway failed; using direct public feed/)
+  assert.match(client, /Same-origin event gateway failed; event inventory is hidden/)
+  assert.doesNotMatch(client, /loadEventsDirect/)
+  assert.match(client, /Same-origin venue gateway failed; using direct verified venue feed/)
   assert.doesNotMatch(client, /gt_public_atlanta_feed/)
 })
 
