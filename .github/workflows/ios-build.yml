@@ -61,8 +61,11 @@ jobs:
           echo "✅ Build number set to $BUILD_NUM"
 
       - name: Build & Archive
+        shell: bash
         run: |
           cd ios/App
+          set +e
+          set -o pipefail
           xcodebuild archive \
             -workspace App.xcworkspace \
             -scheme App \
@@ -73,10 +76,16 @@ jobs:
             -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
-            CODE_SIGNING_ALLOWED=YES \
             CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="iPhone Distribution" \
-            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }}
+            DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }} \
+            2>&1 | tee $RUNNER_TEMP/xcode-archive.log
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            echo "::group::Xcode signing/build diagnostics"
+            grep -E -i 'error:|provision|signing|certificate|profile|entitlement|bundle identifier' $RUNNER_TEMP/xcode-archive.log | tail -120 || true
+            echo "::endgroup::"
+            exit "$STATUS"
+          fi
 
       - name: Export IPA
         run: |
