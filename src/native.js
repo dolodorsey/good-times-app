@@ -22,7 +22,7 @@ export async function initNative() {
   if (!isNative) return;
 
   try {
-    await StatusBar.setStyle({ style: Style.Dark });
+    await StatusBar.setStyle({ style: Style.Light });
     await StatusBar.setBackgroundColor({ color: '#06060C' });
   } catch (e) {
     console.log('StatusBar not available:', e);
