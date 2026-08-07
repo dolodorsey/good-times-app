@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { getProfile, readSession } from '../auth/client.js'
+import { getProfile, readSession, updatePreferences } from '../auth/client.js'
+import { VIBE_OPTIONS } from '../onboarding/options.js'
 
 const TABS=[['current','Current'],['network','Network'],['links','Links']]
+const CITY_OPTIONS=[['atlanta','Atlanta'],['houston','Houston'],['miami','Miami'],['dallas','Dallas'],['charlotte','Charlotte'],['los_angeles','Los Angeles'],['new_york','New York'],['las_vegas','Las Vegas']]
 
 function eventDateLabel(value){
   if(!value)return 'Date TBA'
@@ -37,6 +39,10 @@ export default function GoodTimesConnectHub(){
   const[city,setCity]=useState('atlanta')
   const[data,setData]=useState({events:[],venues:[]})
   const[profile,setProfile]=useState(null)
+  const[profileDraft,setProfileDraft]=useState({full_name:'',home_city:'atlanta',vibes:[]})
+  const[editingProfile,setEditingProfile]=useState(false)
+  const[savingProfile,setSavingProfile]=useState(false)
+  const[profileNotice,setProfileNotice]=useState('')
   const[loading,setLoading]=useState(false)
   const[profileLoading,setProfileLoading]=useState(false)
   const[error,setError]=useState('')
@@ -59,8 +65,11 @@ export default function GoodTimesConnectHub(){
     getProfile(session.user.id,session.access_token)
       .then(next=>{
         if(!alive||!next)return
+        const nextCity=String(next.home_city||'atlanta').trim().toLowerCase().replace(/[\s-]+/g,'_')
+        const nextVibes=Array.isArray(next.vibe_preferences)?next.vibe_preferences:Array.isArray(next.tab_interests)?next.tab_interests:[]
         setProfile(next)
-        if(next.home_city)setCity(String(next.home_city).trim().toLowerCase().replace(/[\s-]+/g,'_'))
+        setProfileDraft({full_name:next.full_name||'',home_city:nextCity,vibes:nextVibes})
+        setCity(nextCity)
       })
       .finally(()=>{if(alive)setProfileLoading(false)})
     return()=>{alive=false}
@@ -85,6 +94,33 @@ export default function GoodTimesConnectHub(){
   },[data.venues])
   const vibes=Array.isArray(profile?.vibe_preferences)?profile.vibe_preferences:Array.isArray(profile?.tab_interests)?profile.tab_interests:[]
 
+  const toggleDraftVibe=id=>setProfileDraft(current=>({
+    ...current,
+    vibes:current.vibes.includes(id)?current.vibes.filter(value=>value!==id):[...current.vibes,id],
+  }))
+  const saveProfile=async()=>{
+    const session=readSession()
+    if(!session?.user?.id||!session?.access_token||savingProfile)return
+    const fullName=profileDraft.full_name.trim()
+    if(fullName.length<2){setProfileNotice('Add a name with at least 2 characters.');return}
+    setSavingProfile(true);setProfileNotice('')
+    const payload={
+      full_name:fullName,
+      home_city:profileDraft.home_city,
+      vibe_preferences:profileDraft.vibes,
+      tab_interests:profileDraft.vibes,
+    }
+    try{
+      const saved=await updatePreferences(session.user.id,payload,session.access_token)
+      if(!saved)throw new Error('Profile update was not accepted')
+      setProfile(current=>({...current,...payload}))
+      setCity(profileDraft.home_city)
+      setEditingProfile(false)
+      setProfileNotice('Profile updated. Your city and discovery preferences are live.')
+    }catch(error){setProfileNotice(error?.message||'Could not update your profile.')}
+    finally{setSavingProfile(false)}
+  }
+
   return <>
     <button className="gt-connect-fab" type="button" onClick={()=>setOpen(true)} aria-label="Open Current, Network and Links">
       <span>+</span><b>CONNECT</b>
@@ -100,9 +136,9 @@ export default function GoodTimesConnectHub(){
         </nav>
 
         {tab!=='links'&&<div className="gt-connect-city">
-          <span>City</span>
+          <span>Viewing</span>
           <select value={city} onChange={e=>setCity(e.target.value)}>
-            <option value="atlanta">Atlanta</option><option value="houston">Houston</option><option value="miami">Miami</option><option value="dallas">Dallas</option><option value="charlotte">Charlotte</option><option value="los_angeles">Los Angeles</option><option value="new_york">New York</option><option value="las_vegas">Las Vegas</option>
+            {CITY_OPTIONS.map(([id,name])=><option key={id} value={id}>{name}</option>)}
           </select>
         </div>}
 
@@ -123,7 +159,7 @@ export default function GoodTimesConnectHub(){
           </>}
 
           {!loading&&!error&&tab==='network'&&<>
-            <div className="gt-connect-section-title"><span>YOUR NETWORK</span><h3>Your identity + city signal</h3><p>GOOD TIMES now starts with your real member profile, then layers the places and operators carrying culture around you.</p></div>
+            <div className="gt-connect-section-title"><span>YOUR NETWORK</span><h3>Your identity + city signal</h3><p>GOOD TIMES starts with your member profile, then layers the places and operators carrying culture around you.</p></div>
             <div className="gt-member-card">
               <div className="gt-member-avatar">{profile?.full_name?.trim()?.charAt(0)?.toUpperCase()||'GT'}</div>
               <div className="gt-member-copy">
@@ -132,8 +168,15 @@ export default function GoodTimesConnectHub(){
                 <span>{label(profile?.home_city||city)}{profile?.age_range?` · ${profile.age_range}`:''}</span>
                 {vibes.length>0&&<div>{vibes.slice(0,4).map(vibe=><i key={vibe}>{label(vibe)}</i>)}</div>}
               </div>
-              <button type="button" onClick={inviteCrew}>Invite</button>
+              <button type="button" onClick={()=>{setProfileNotice('');setEditingProfile(value=>!value)}}>{editingProfile?'Close':'Edit'}</button>
             </div>
+            {editingProfile&&<div className="gt-profile-editor">
+              <label><span>Name</span><input value={profileDraft.full_name} onChange={e=>setProfileDraft(current=>({...current,full_name:e.target.value}))} maxLength={80}/></label>
+              <label><span>Home city</span><select value={profileDraft.home_city} onChange={e=>setProfileDraft(current=>({...current,home_city:e.target.value}))}>{CITY_OPTIONS.map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></label>
+              <div className="gt-profile-vibes"><span>Your vibes</span><div>{VIBE_OPTIONS.map(option=><button type="button" key={option.id} className={profileDraft.vibes.includes(option.id)?'active':''} onClick={()=>toggleDraftVibe(option.id)}>{option.icon} {option.label}</button>)}</div></div>
+              <button className="gt-profile-save" type="button" disabled={savingProfile} onClick={saveProfile}>{savingProfile?'Saving…':'Save profile'}</button>
+            </div>}
+            {profileNotice&&<div className="gt-profile-notice">{profileNotice}</div>}
             <div className="gt-network-actions"><button type="button" onClick={inviteCrew}>Invite your crew</button><button type="button" onClick={shareGoodTimes}>Share GOOD TIMES</button></div>
             <div className="gt-network-grid">
               {network.map(item=><article key={item.id}>
