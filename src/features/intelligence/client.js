@@ -70,44 +70,12 @@ async function loadSameOriginData(city) {
   return request
 }
 
-async function loadEventsDirect(normalizedCity, limit) {
-  const today = todayISO()
-  const rows = await fetchJson(
-    `${KHG_SUPABASE_URL}/rest/v1/gt_shows?select=id,event_name,event_type,genre,city_key,show_date,show_time,venue_name,ticket_url,image_url,organizer,display_priority,good_times_score,category_key_v2,subcategory_key_v2,is_featured,is_curated&city_key=eq.${encodeURIComponent(normalizedCity)}&show_date=gte.${today}&status=in.(confirmed,tentative)&order=show_date.asc,display_priority.asc&limit=${limit}`,
-    { headers: gatewayHeaders },
-  )
-
-  return (rows || []).map((item, index) => ({
-    event_key: `show:${item.id}`,
-    source_table: 'gt_shows',
-    source_id: item.id,
-    city_key: item.city_key,
-    title: item.event_name,
-    event_date: item.show_date,
-    event_time: item.show_time,
-    venue_name: item.venue_name,
-    raw_type: item.event_type,
-    raw_category: item.genre,
-    ticket_url: item.ticket_url,
-    image_url: item.image_url,
-    organizer: item.organizer,
-    display_priority: item.display_priority,
-    good_times_score: item.good_times_score,
-    category_key: item.category_key_v2 || item.event_type,
-    subcategory_key: item.subcategory_key_v2,
-    is_featured: item.is_featured,
-    is_curated: item.is_curated,
-    rank_order: index + 1,
-  }))
-}
-
 async function loadVenuesDirect(normalizedCity, limit) {
   return fetchJson(
     `${KHG_SUPABASE_URL}/rest/v1/gt_venues?select=id,name,slug,city_key,neighborhood,side_of_town,category_key,subcategory,address,latitude,longitude,phone,website,instagram_handle,short_desc,vibe_tags,best_for,best_time,price_range,dress_code,reservation_req,hours_summary,insider_tip,status,is_featured,is_verified,quality_score,hero_image,booking_link,booking_platform,google_rating,google_reviews,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_score,source_count,culture_tags&status=eq.active&city_key=eq.${encodeURIComponent(normalizedCity)}&hero_image=not.is.null&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast,quality_score.desc.nullslast&limit=${limit}`,
     { headers: gatewayHeaders },
   )
 }
-
 
 export async function loadExploreTaxonomy() {
   const [categories, subcategories] = await Promise.all([
@@ -158,8 +126,10 @@ export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}
     const payload = await loadSameOriginData(normalizedCity)
     return payload.events.slice(0, limit)
   } catch (gatewayError) {
-    console.warn('[GOOD TIMES live data] Same-origin event gateway failed; using direct public feed.', gatewayError)
-    return loadEventsDirect(normalizedCity, limit)
+    // Events intentionally fail closed here. Direct REST fallback would bypass the
+    // server freshness/customer-readiness gate and could republish stale inventory.
+    console.warn('[GOOD TIMES live data] Same-origin event gateway failed; event inventory is hidden until the verified gateway recovers.', gatewayError)
+    return []
   }
 }
 
@@ -169,7 +139,7 @@ export async function loadCanonicalVenues(city = 'atlanta', { limit = 400 } = {}
     const payload = await loadSameOriginData(normalizedCity)
     return payload.venues.slice(0, limit)
   } catch (gatewayError) {
-    console.warn('[GOOD TIMES live data] Same-origin venue gateway failed; using direct public feed.', gatewayError)
+    console.warn('[GOOD TIMES live data] Same-origin venue gateway failed; using direct verified venue feed.', gatewayError)
     return loadVenuesDirect(normalizedCity, limit)
   }
 }
@@ -178,9 +148,14 @@ export async function checkGoodTimesLiveData(city = 'atlanta') {
   const payload = await loadSameOriginData(city)
   return {
     connected: Boolean(payload?.connected),
+    degraded: Boolean(payload?.degraded),
     city: payload?.city || normalizeCity(city),
     events: Number(payload?.counts?.events || payload?.events?.length || 0),
     venues: Number(payload?.counts?.venues || payload?.venues?.length || 0),
+    eventStatus: payload?.coverage?.event_status || null,
+    eventsLive: Boolean(payload?.coverage?.events_live),
+    eventAgeHours: payload?.coverage?.event_age_hours ?? null,
+    notice: payload?.coverage?.notice || null,
     generatedAt: payload?.generated_at || null,
   }
 }
@@ -287,25 +262,40 @@ export async function recordTasteSignal({
   }
 }
 
-export async function askGoodTimesConcierge(input, session = readSession()) {
-  if (!session?.access_token) throw new Error('Please sign in again.')
-  return fetchJson(`${GT_SUPABASE_URL}/functions/v1/good-times-live-concierge`, {
+export async function loadTasteProfile(session = readSession()) {
+  if (!session?.access_token || !session?.user?.id) return null
+  const rows = await fetchJson(
+    `${GT_SUPABASE_URL}/rest/v1/gt_taste_profiles?auth_id=eq.${encodeURIComponent(session.user.id)}&select=*&limit=1`,
+    { headers: gtHeaders(session.access_token) },
+  ).catch(() => [])
+  return rows?.[0] || null
+}
+
+export async function loadRecommendationSnapshot({ city = 'atlanta', profileId } = {}, session = readSession()) {
+  if (!session?.access_token || !profileId) return null
+  const response = await fetch(`${GT_SUPABASE_URL}/rest/v1/rpc/gt_get_recommendation_snapshot`, {
     method: 'POST',
     headers: gtHeaders(session.access_token),
-    body: JSON.stringify({ today: todayISO(), ...input }),
+    body: JSON.stringify({ p_city_slug: normalizeCity(city), p_profile_id: profileId }),
   })
+  if (!response.ok) return null
+  return response.json().catch(() => null)
 }
 
-export function cityLabel(city) {
-  return ({
-    atlanta: 'Atlanta', houston: 'Houston', los_angeles: 'Los Angeles', washington_dc: 'Washington, DC',
-    miami: 'Miami', dallas: 'Dallas', charlotte: 'Charlotte', new_york: 'New York',
-    phoenix: 'Phoenix', scottsdale: 'Scottsdale', las_vegas: 'Las Vegas',
-  })[city] || String(city || '').replaceAll('_', ' ').replace(/\b\w/g, value => value.toUpperCase())
+export async function updateTasteProfile({ profileId, city, settings }, session = readSession()) {
+  if (!session?.access_token || !profileId) throw new Error('Please sign in again.')
+  const response = await fetch(`${GT_SUPABASE_URL}/rest/v1/gt_taste_profiles?profile_id=eq.${encodeURIComponent(profileId)}`, {
+    method: 'PATCH',
+    headers: { ...gtHeaders(session.access_token), Prefer: 'return=representation' },
+    body: JSON.stringify({
+      home_city: normalizeCity(city),
+      ...settings,
+      updated_at: new Date().toISOString(),
+    }),
+  })
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}))
+    throw new Error(payload.message || payload.error || 'Could not update your taste profile.')
+  }
+  return response.json().catch(() => [])
 }
-
-export const cityOptions = [
-  ['atlanta', 'Atlanta'], ['houston', 'Houston'], ['los_angeles', 'Los Angeles'], ['miami', 'Miami'],
-  ['charlotte', 'Charlotte'], ['washington_dc', 'Washington, DC'], ['new_york', 'New York'],
-  ['dallas', 'Dallas'], ['phoenix', 'Phoenix'], ['scottsdale', 'Scottsdale'], ['las_vegas', 'Las Vegas'],
-]
