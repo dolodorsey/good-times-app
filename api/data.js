@@ -1,5 +1,6 @@
 const CONTENT_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
+const EVENT_FRESHNESS_MAX_HOURS = 72
 
 const CITY_ALIASES = {
   atlanta:'atlanta', houston:'houston', los_angeles:'los_angeles', 'los-angeles':'los_angeles',
@@ -10,7 +11,7 @@ const CITY_ALIASES = {
 const SHOW_SELECT = [
   'id','event_name','event_type','genre','city_key','show_date','show_time','venue_name','ticket_url',
   'image_url','organizer','display_priority','good_times_score','category_key_v2','subcategory_key_v2',
-  'is_featured','is_curated',
+  'is_featured','is_curated','updated_at',
 ].join(',')
 const VENUE_SELECT = [
   'id','name','slug','city_key','neighborhood','side_of_town','category_key','subcategory','address',
@@ -206,6 +207,23 @@ export function dedupeCustomerEvents(rows) {
   }
   return [...best.values()].sort((a,b) => eventRecordScore(b) - eventRecordScore(a) || String(a.show_date || '').localeCompare(String(b.show_date || '')))
 }
+export function getEventFreshness(rows, nowValue = new Date()) {
+  const now = nowValue instanceof Date ? nowValue : new Date(nowValue)
+  let latest = null
+  for (const item of rows || []) {
+    const stamp = item?.updated_at ? new Date(item.updated_at) : null
+    if (!stamp || Number.isNaN(stamp.getTime())) continue
+    if (!latest || stamp > latest) latest = stamp
+  }
+  if (!latest) return { status: rows?.length ? 'unknown' : 'empty', live:false, latest_update:null, age_hours:null }
+  const ageHours = Math.max(0, (now.getTime() - latest.getTime()) / 3_600_000)
+  return {
+    status: ageHours <= EVENT_FRESHNESS_MAX_HOURS ? 'live' : 'stale',
+    live: ageHours <= EVENT_FRESHNESS_MAX_HOURS,
+    latest_update: latest.toISOString(),
+    age_hours: Number(ageHours.toFixed(2)),
+  }
+}
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 async function fetchRows(path, label) {
   let lastError = null
@@ -274,20 +292,30 @@ export default async function handler(request, response) {
   }
   const rawEvents = eventResult.status === 'fulfilled' ? eventResult.value : []
   const rawVenues = venueResult.status === 'fulfilled' ? venueResult.value : []
+  const eventFreshness = eventResult.status === 'fulfilled' ? getEventFreshness(rawEvents, new Date(generatedAt)) : { status:'unavailable', live:false, latest_update:null, age_hours:null }
   const venues = dedupeCustomerVenues(rawVenues).map(item => ({...item,hero_image:safePublicImage(item.hero_image)})).slice(0,venueLimit)
   const verifiedVenueNames = new Set(venues.map(item => normalizeVenueName(item.name)).filter(Boolean))
-  const filteredEvents = rawEvents.filter(item => customerReadyEvent(item,verifiedVenueNames,city))
+  const filteredEvents = eventFreshness.live ? rawEvents.filter(item => customerReadyEvent(item,verifiedVenueNames,city)) : []
   const events = mapShows(dedupeCustomerEvents(filteredEvents)).slice(0,eventLimit)
-  const degraded = eventResult.status === 'rejected' || venueResult.status === 'rejected'
+  const degraded = eventResult.status === 'rejected' || venueResult.status === 'rejected' || eventFreshness.status === 'stale'
+  const coverage = {
+    events_live:eventFreshness.live,
+    event_status:eventFreshness.status,
+    event_latest_update:eventFreshness.latest_update,
+    event_age_hours:eventFreshness.age_hours,
+    event_freshness_max_hours:EVENT_FRESHNESS_MAX_HOURS,
+    venues_live:venueResult.status === 'fulfilled',
+    notice:eventFreshness.status === 'stale' ? 'Live event coverage is refreshing for this city. Venue discovery remains available.' : null,
+  }
   if (degraded) {
     console.warn('[GOOD TIMES data gateway degraded]',{
-      city, generatedAt,
+      city, generatedAt, event_freshness:eventFreshness,
       events:eventResult.status === 'rejected' ? eventResult.reason?.message || String(eventResult.reason) : null,
       venues:venueResult.status === 'rejected' ? venueResult.reason?.message || String(venueResult.reason) : null,
     })
   }
   if (request.method === 'HEAD') {
-    response.statusCode=200; response.setHeader('Cache-Control','no-store'); response.setHeader('X-Good-Times-Events',String(events.length)); response.setHeader('X-Good-Times-Venues',String(venues.length)); response.setHeader('X-Good-Times-Degraded',String(degraded)); return response.end()
+    response.statusCode=200; response.setHeader('Cache-Control','no-store'); response.setHeader('X-Good-Times-Events',String(events.length)); response.setHeader('X-Good-Times-Venues',String(venues.length)); response.setHeader('X-Good-Times-Degraded',String(degraded)); response.setHeader('X-Good-Times-Event-Status',eventFreshness.status); return response.end()
   }
-  return sendJson(response,200,{ok:true,connected:true,degraded,city,source:'good-times-customer-ready-inventory',generated_at:generatedAt,counts:{events:events.length,venues:venues.length},events,venues})
+  return sendJson(response,200,{ok:true,connected:true,degraded,city,source:'good-times-customer-ready-inventory',generated_at:generatedAt,coverage,counts:{events:events.length,venues:venues.length},events,venues})
 }
