@@ -49,6 +49,17 @@ export function clearSession(storage = globalThis.localStorage) {
   storage?.removeItem?.(GT_SESSION_KEY)
 }
 
+export async function getProfile(authId, accessToken) {
+  if (!authId || !accessToken) return null
+  const response = await fetch(
+    `${GT_SUPABASE_URL}/rest/v1/gt_user_profiles?auth_id=eq.${encodeURIComponent(authId)}&select=id,full_name,home_city,vibe_preferences,tab_interests,age_range,created_at&limit=1`,
+    { headers: headers(accessToken) },
+  )
+  if (!response.ok) return null
+  const profiles = await response.json().catch(() => [])
+  return Array.isArray(profiles) ? profiles[0] || null : null
+}
+
 export async function updatePreferences(authId, preferences, accessToken) {
   if (!authId || !accessToken) return false
   const profileResponse = await fetch(
