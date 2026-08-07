@@ -74,34 +74,57 @@ source = source.replace(
 `<div style={{width:n.primary?46:36,height:n.primary?46:36,borderRadius:n.primary?16:12,marginTop:n.primary?-9:0,background:n.primary?\`linear-gradient(135deg,\${C.gold},#B8942F)\`:active?\`linear-gradient(135deg,rgba(212,168,83,0.2),rgba(212,168,83,0.08))\`:"rgba(212,168,83,0.04)",border:n.primary?"1px solid rgba(255,255,255,.35)":active?\`1px solid \${C.gold}40\`:"1px solid rgba(212,168,83,0.12)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all 0.25s",boxShadow:n.primary?"0 8px 24px rgba(212,168,83,.42)":active?"0 0 12px rgba(212,168,83,0.2)":"none"}}>`,
 );
 
-const exploreAdMarker = `          {/* Ad Space instead of HugLife events */}`;
-if (!source.includes('Build My Night</button>\n          <button onClick={()=>navigate("plans")}')) {
-  replaceOnce(
-    exploreAdMarker,
-`          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,margin:"4px 0 22px"}}>
+const exploreAdMarker = `{/* Ad Space instead of HugLife events */}`;
+const ctaStart = `<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,margin:"4px 0 22px"}}>`;
+const ctaBlock = `          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,margin:"4px 0 22px"}}>
             <button onClick={()=>navigate("planforme","planforme")} style={{...V(true),padding:"15px 12px",fontSize:13,fontWeight:800,textAlign:"center"}}>✨ Build My Night</button>
             <button onClick={()=>navigate("plans","plans")} style={{...V(false),padding:"15px 12px",fontSize:13,fontWeight:700,textAlign:"center"}}>📋 My Itinerary</button>
-          </div>
-          ${exploreAdMarker}`,
-    'Explore plan CTA',
-  );
+          </div>\n`;
+
+// Remove every previously generated Explore CTA, including duplicates from older non-idempotent runs.
+let markerIndex = source.indexOf(exploreAdMarker);
+if (markerIndex < 0) throw new Error('Missing Explore ad marker');
+const ctaRanges = [];
+let cursor = 0;
+while (true) {
+  const start = source.indexOf(ctaStart, cursor);
+  if (start < 0 || start >= markerIndex) break;
+  const endTag = source.indexOf('</div>', start);
+  if (endTag < 0) break;
+  const end = endTag + '</div>'.length;
+  const segment = source.slice(start, end);
+  if (segment.includes('✨ Build My Night</button>') && segment.includes('📋 My Itinerary</button>')) {
+    const lineStart = source.lastIndexOf('\n', start) + 1;
+    const nextNewline = source.indexOf('\n', end);
+    ctaRanges.push([lineStart, nextNewline < 0 ? end : nextNewline + 1]);
+  }
+  cursor = end;
 }
+for (let i = ctaRanges.length - 1; i >= 0; i -= 1) {
+  const [start, end] = ctaRanges[i];
+  source = source.slice(0, start) + source.slice(end);
+}
+markerIndex = source.indexOf(exploreAdMarker);
+const markerLineStart = source.lastIndexOf('\n', markerIndex) + 1;
+const markerLineEndRaw = source.indexOf('\n', markerIndex);
+const markerLineEnd = markerLineEndRaw < 0 ? source.length : markerLineEndRaw + 1;
+source = source.slice(0, markerLineStart) + ctaBlock + `          ${exploreAdMarker}\n` + source.slice(markerLineEnd);
 
 source = source.replace(
 `<div style={{fontSize:14,color:C.textSec}}>{exploreCategories.length} categories to explore</div>`,
 `<div style={{fontSize:14,color:C.textSec}}>{exploreCategories.length} categories · {exploreCategories.reduce((n,c)=>n+(c.subs?.length||0),0)} subcategories</div>`,
 );
 
-if (!source.includes('.gt-screen-scroll{scrollbar-width:none}')) {
-  source = source.replace(
-    '::-webkit-scrollbar{display:none;}',
-    `::-webkit-scrollbar{display:none;}
-        html,body,#root{height:100%;min-height:0;overflow:hidden;}
+// Normalize the fixed-shell CSS cluster to exactly one copy.
+const cssCluster = `        html,body,#root{height:100%;min-height:0;overflow:hidden;}
         .gt-screen-scroll{scrollbar-width:none;touch-action:pan-y;}
         .gt-screen-host{isolation:isolate;}
-        @supports(height:100dvh){.gt-app-shell,.gt-collage-wrap,.gt-collage-app{height:100dvh!important;}}`,
-  );
-}
+        @supports(height:100dvh){.gt-app-shell,.gt-collage-wrap,.gt-collage-app{height:100dvh!important;}}\n`;
+source = source.split(cssCluster).join('');
+source = source.replace(
+  '::-webkit-scrollbar{display:none;}',
+  `::-webkit-scrollbar{display:none;}\n${cssCluster.trimEnd()}`,
+);
 
 if (source === original) console.log('Customer shell already repaired.');
 else {
