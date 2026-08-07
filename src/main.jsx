@@ -23,7 +23,31 @@ const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
 const directRoutes = { '/join':'join','/concierge-request':'concierge-request','/trip':'trip','/group':'group' }
 
+function installDataRequestGuard(){
+  if(typeof window==='undefined'||window.__GOOD_TIMES_FETCH_GUARD__)return
+  window.__GOOD_TIMES_FETCH_GUARD__=true
+  const nativeFetch=window.fetch.bind(window)
+  window.fetch=(input,init)=>{
+    try{
+      const raw=typeof input==='string'?input:input?.url
+      if(raw){
+        const url=new URL(raw,window.location.origin)
+        if(url.pathname==='/api/data'){
+          const eventLimit=Number.parseInt(url.searchParams.get('event_limit')||'0',10)
+          const venueLimit=Number.parseInt(url.searchParams.get('venue_limit')||'0',10)
+          if(!Number.isFinite(eventLimit)||eventLimit<=0||eventLimit>120)url.searchParams.set('event_limit','120')
+          if(!Number.isFinite(venueLimit)||venueLimit<=0||venueLimit>180)url.searchParams.set('venue_limit','180')
+          if(typeof input==='string')input=`${url.pathname}${url.search}${url.hash}`
+          else input=new Request(url.toString(),input)
+        }
+      }
+    }catch(error){console.warn('[GOOD TIMES fetch guard]',error)}
+    return nativeFetch(input,init)
+  }
+}
+
 installRecoveryRedirect()
+installDataRequestGuard()
 
 class RuntimeBoundary extends Component {
   constructor(props){super(props);this.state={error:null}}
