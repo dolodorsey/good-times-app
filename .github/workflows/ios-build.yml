@@ -32,15 +32,13 @@ jobs:
       - name: Install CocoaPods
         run: cd ios/App && pod install
       
-      - name: Install signing certificates
+      - name: Install distribution signing certificate
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
           KEYCHAIN_PASSWORD=$(openssl rand -hex 12)
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          echo "${{ secrets.DEVELOPMENT_CERTIFICATE_P12 }}" | base64 --decode > $RUNNER_TEMP/dev_cert.p12
-          security import $RUNNER_TEMP/dev_cert.p12 -P "${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           echo "${{ secrets.DISTRIBUTION_CERTIFICATE_P12 }}" | base64 --decode > $RUNNER_TEMP/dist_cert.p12
           security import $RUNNER_TEMP/dist_cert.p12 -P "${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
@@ -65,6 +63,7 @@ jobs:
           xcodebuild archive \
             -workspace App.xcworkspace \
             -scheme App \
+            -configuration Release \
             -archivePath $RUNNER_TEMP/App.xcarchive \
             -destination 'generic/platform=iOS' \
             -allowProvisioningUpdates \
@@ -72,6 +71,8 @@ jobs:
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
             CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }}
       
       - name: Export IPA
@@ -106,5 +107,5 @@ jobs:
         if: always()
         run: |
           security delete-keychain $RUNNER_TEMP/app-signing.keychain-db 2>/dev/null || true
-          rm -f $RUNNER_TEMP/dev_cert.p12 $RUNNER_TEMP/dist_cert.p12
+          rm -f $RUNNER_TEMP/dist_cert.p12
           rm -rf ~/private_keys
