@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { initNative, isNative, registerPush } from '../../native.js'
+import { initNative, isNative, openLink, registerPush } from '../../native.js'
 
 const HOSTED_ORIGIN='https://thegoodtimesworldwide.com'
 
@@ -42,10 +42,19 @@ export default function GoodTimesNativeBridge(){
       const links=document.querySelector('.gt-links-grid')
       if(links&&!document.getElementById('gt-native-alerts-action'))links.append(buildAlertsAction())
     }
+    const onRouteClick=event=>{
+      const anchor=event.target instanceof Element?event.target.closest('.gt-links-grid a[href^="/"]'):null
+      if(!anchor)return
+      const href=anchor.getAttribute('href')||''
+      if(!href.startsWith('/'))return
+      event.preventDefault();event.stopPropagation()
+      void openLink(`${HOSTED_ORIGIN}${href}`)
+    }
     const observer=new MutationObserver(sync)
     observer.observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['src']})
+    document.addEventListener('click',onRouteClick,true)
     sync()
-    return()=>{active=false;observer.disconnect()}
+    return()=>{active=false;observer.disconnect();document.removeEventListener('click',onRouteClick,true)}
   },[])
   return null
 }
