@@ -3,11 +3,31 @@ import GoodTimesPaymentsLauncher from './GoodTimesPaymentsLauncher.jsx'
 import { readSession } from '../auth/client.js'
 
 const CHECKOUT_PATH='/functions/v1/khg-payment-checkout'
+const CATALOG_URL='https://dzlmtvodpyhetvektfuo.supabase.co/functions/v1/khg-payment-catalog?limit=100'
+let catalogCache={loadedAt:0,events:[]}
 
+function normalize(value){return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
 function openPayments(){
   const button=document.querySelector('button[aria-label="Tickets and paid experiences"]')
   if(button instanceof HTMLElement){button.click();return true}
   return false
+}
+async function loadOwnedEvents(){
+  if(Date.now()-catalogCache.loadedAt<60000)return catalogCache.events
+  try{
+    const response=await fetch(CATALOG_URL,{headers:{Accept:'application/json'}})
+    const payload=await response.json().catch(()=>null)
+    if(response.ok&&Array.isArray(payload?.events))catalogCache={loadedAt:Date.now(),events:payload.events}
+  }catch{}
+  return catalogCache.events
+}
+function matchOwnedEvent(title,events){
+  const needle=normalize(title)
+  if(!needle)return null
+  return events.find(item=>normalize(item.name)===needle)||events.find(item=>{
+    const candidate=normalize(item.name)
+    return candidate.length>5&&(candidate.includes(needle)||needle.includes(candidate))
+  })||null
 }
 
 export default function GoodTimesPaymentsBridge(){
@@ -36,17 +56,25 @@ export default function GoodTimesPaymentsBridge(){
     }
 
     const onOpen=()=>{openPayments()}
-    const onTicketIntent=event=>{
+    const onTicketIntent=async event=>{
       const target=event.target instanceof Element?event.target.closest('a,button'):null
       if(!target)return
       const label=String(target.textContent||'').trim().toLowerCase()
-      const isLiveDetail=Boolean(target.closest('.gtlive-detail-copy'))
+      const detail=target.closest('.gtlive-detail-copy')
       const isTicketIntent=label==='tickets'||label==='get tickets'||label==='buy tickets'||label==='vip tickets'
-      if(!isLiveDetail||!isTicketIntent)return
+      if(!detail||!isTicketIntent)return
+      const href=target instanceof HTMLAnchorElement?target.href:''
+      const title=detail.querySelector('h2')?.textContent||''
       event.preventDefault()
       event.stopPropagation()
+      const owned=matchOwnedEvent(title,await loadOwnedEvents())
+      if(owned){
+        openPayments()
+        try{window.dispatchEvent(new CustomEvent('gt:payment-intent-captured',{detail:{surface:'event_detail',label,event_id:owned.id,event_name:owned.name}}))}catch{}
+        return
+      }
+      if(href){window.open(href,'_blank','noopener,noreferrer');return}
       openPayments()
-      try{window.dispatchEvent(new CustomEvent('gt:payment-intent-captured',{detail:{surface:'event_detail',label}}))}catch{}
     }
 
     window.addEventListener('gt:open-payments',onOpen)
