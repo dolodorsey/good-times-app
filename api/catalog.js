@@ -28,6 +28,13 @@ function safePublicImage(value) {
   if (!text || /maps\.googleapis\.com\/maps\/api\/place\/photo/i.test(text) || /[?&]key=/i.test(text)) return null
   return text.startsWith('http://') ? text.replace(/^http:\/\//i, 'https://') : text
 }
+function hasValue(value) { return value !== null && value !== undefined && String(value).trim() !== '' }
+function customerReadyDirectoryVenue(row) {
+  if (!row?.id || !hasValue(row.name) || row.status !== 'active') return false
+  if (Number(row.quality_score || 0) < 60) return false
+  if (!safePublicImage(row.hero_image)) return false
+  return [row.address,row.website,row.phone,row.booking_link,row.instagram_handle].some(hasValue)
+}
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 async function fetchRows(path, label) {
   let lastError = null
@@ -83,18 +90,26 @@ export default async function handler(request,response) {
 
   try {
     if (mode === 'directory') {
+      const fetchLimit=Math.min(Math.max(limit * 2, limit), MAX_DIRECTORY_ROWS)
       const query=[
         `${CACHE}?select=${DIRECTORY_SELECT}`,
         `city_key=eq.${encodeURIComponent(city)}`,
+        'status=eq.active',
+        'quality_score=gte.60',
+        'hero_image=not.is.null',
         category?`category_key=eq.${encodeURIComponent(category)}`:'',
         subcategory?`subcategory_key=eq.${encodeURIComponent(subcategory)}`:'',
         'order=taxonomy_confidence.desc,quality_score.desc.nullslast,google_rating.desc.nullslast',
-        `limit=${limit}`,
+        `limit=${fetchLimit}`,
       ].filter(Boolean).join('&')
       const rows=await fetchRows(query,'GOOD TIMES directory')
       const seen=new Set()
-      const venues=rows.filter(row=>{if(!row?.id||seen.has(row.id))return false;seen.add(row.id);return true}).map(row=>({...row,hero_image:safePublicImage(row.hero_image)}))
-      const payload={ok:true,city,category,subcategory,count:venues.length,venues}
+      const venues=rows
+        .filter(customerReadyDirectoryVenue)
+        .filter(row=>{if(seen.has(row.id))return false;seen.add(row.id);return true})
+        .slice(0,limit)
+        .map(row=>({...row,hero_image:safePublicImage(row.hero_image)}))
+      const payload={ok:true,city,category,subcategory,count:venues.length,customer_ready:true,venues}
       RESPONSE_CACHE.set(key,{at:Date.now(),payload})
       return send(response,200,payload)
     }
