@@ -108,15 +108,19 @@ jobs:
       - name: Create or download App Store provisioning profile
         run: |
           set -euo pipefail
-          PROFILE_PATH="$RUNNER_TEMP/good-times-appstore.mobileprovision"
+          PROFILE_FILE="good-times-appstore.mobileprovision"
+          PROFILE_PATH="$RUNNER_TEMP/$PROFILE_FILE"
+          pushd "$RUNNER_TEMP" >/dev/null
           fastlane sigh \
             --app_identifier "com.kollective.goodtimes" \
             --team_id "${{ secrets.APPLE_TEAM_ID }}" \
             --api_key_path "$RUNNER_TEMP/appstore_api_key.json" \
-            --filename "$PROFILE_PATH" \
+            --filename "$PROFILE_FILE" \
             --skip_install true \
             --force
+          popd >/dev/null
 
+          test -s "$PROFILE_PATH"
           security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
           PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$RUNNER_TEMP/profile.plist")
           PROFILE_NAME=$(/usr/libexec/PlistBuddy -c 'Print Name' "$RUNNER_TEMP/profile.plist")
