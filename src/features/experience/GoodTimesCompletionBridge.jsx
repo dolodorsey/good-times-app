@@ -116,11 +116,24 @@ export default function GoodTimesCompletionBridge(){
             if(selector instanceof HTMLSelectElement){selector.value=city;selector.dispatchEvent(new Event('change',{bubbles:true}))}
           },80)
         }
+        if(response.ok&&raw&&String(raw).includes('/functions/v1/good-times-live-concierge')){
+          const copy=response.clone()
+          void copy.json().then(payload=>{
+            const itinerary=payload?.itinerary
+            const stops=Array.isArray(itinerary?.stops)?itinerary.stops.slice(0,12):[]
+            if(!itinerary?.id||!stops.length||!session?.access_token)return
+            const personalization=readPersonalization()
+            const vibes=Array.isArray(personalization.vibes)?personalization.vibes.filter(Boolean).slice(0,5):[]
+            const items=stops.map(stop=>({...stop,object_type:stop?.type==='venue'?'venue':'event',object_id:stop?.id}))
+            const candidateCount=Number(payload?.inventory?.events||0)+Number(payload?.inventory?.venues||0)
+            void originalFetch(LEDGER_URL,{method:'POST',headers:{Authorization:`Bearer ${session.access_token}`,'Content-Type':'application/json'},body:JSON.stringify({city:itinerary.city_id||currentCity(),vibes,surface:'build',action:'itinerary',raw_query:itinerary.name||'Build My Night',candidate_count:candidateCount||items.length,itinerary_id:itinerary.id,items})}).catch(()=>{})
+          }).catch(()=>{})
+        }
       }catch{}
       return response
     }
     return()=>{window.fetch=originalFetch}
-  },[])
+  },[session])
 
   useEffect(()=>{
     let lastCultureCity=''
