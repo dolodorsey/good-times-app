@@ -32,6 +32,16 @@ jobs:
       - name: Install CocoaPods
         run: cd ios/App && pod install
       
+      - name: Normalize app release signing
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('ios/App/App.xcodeproj/project.pbxproj')
+          text = path.read_text()
+          text = text.replace('\t\t\t\tCODE_SIGN_IDENTITY = "iPhone Developer";\n', '')
+          path.write_text(text)
+          PY
+      
       - name: Install distribution signing certificate
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
@@ -72,7 +82,6 @@ jobs:
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
             CODE_SIGNING_ALLOWED=YES \
             CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }}
       
       - name: Export IPA
