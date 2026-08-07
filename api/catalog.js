@@ -2,7 +2,7 @@ const CONTENT_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 const MAX_DIRECTORY_ROWS = 800
 const CACHE = 'gt_venue_taxonomy_directory_cache'
-const COUNT_VIEW = 'v_gt_venue_taxonomy_directory_counts'
+const COUNT_CACHE = 'gt_venue_taxonomy_count_cache'
 
 const CATEGORY_SELECT = 'category_key,category_name,description,sort_order'
 const SUBCATEGORY_SELECT = 'category_key,subcategory_key,subcategory_name,description,sort_order,minimum_upcoming_inventory'
@@ -86,11 +86,22 @@ export default async function handler(request,response) {
       return send(response,200,{ok:true,city,category,subcategory,count:venues.length,venues})
     }
 
-    const [categories,subcategories,counts]=await Promise.all([
+    const [categoriesResult,subcategoriesResult,countsResult]=await Promise.allSettled([
       fetchRows(`gt_taxonomy_categories?select=${CATEGORY_SELECT}&is_active=eq.true&order=sort_order.asc,category_name.asc`,'GOOD TIMES categories'),
       fetchRows(`gt_taxonomy_subcategories?select=${SUBCATEGORY_SELECT}&is_active=eq.true&order=category_key.asc,sort_order.asc,subcategory_name.asc`,'GOOD TIMES subcategories'),
-      fetchRows(`${COUNT_VIEW}?select=${COUNT_SELECT}&city_key=eq.${encodeURIComponent(city)}`,'GOOD TIMES taxonomy counts'),
+      fetchRows(`${COUNT_CACHE}?select=${COUNT_SELECT}&city_key=eq.${encodeURIComponent(city)}`,'GOOD TIMES taxonomy counts'),
     ])
+
+    if(categoriesResult.status!=='fulfilled' || subcategoriesResult.status!=='fulfilled') {
+      const reason=categoriesResult.status==='rejected'?categoriesResult.reason:subcategoriesResult.reason
+      throw reason || new Error('GOOD TIMES taxonomy definitions unavailable')
+    }
+
+    const categories=categoriesResult.value
+    const subcategories=subcategoriesResult.value
+    const counts=countsResult.status==='fulfilled'?countsResult.value:[]
+    const countsLive=countsResult.status==='fulfilled'
+    if(!countsLive) console.warn('[GOOD TIMES catalog counts fallback]',{city,message:countsResult.reason?.message||'count cache unavailable'})
 
     const categoryCounts=new Map()
     const subcategoryCounts=new Map()
@@ -116,6 +127,7 @@ export default async function handler(request,response) {
     return send(response,200,{
       ok:true,
       city,
+      counts_live:countsLive,
       counts:{categories:categories.length,subcategories:subcategories.length},
       categories:categories.map(category=>({
         id:category.category_key,

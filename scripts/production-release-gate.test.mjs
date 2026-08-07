@@ -31,11 +31,35 @@ test('Explore retains all product taxonomy even when live counts fail', () => {
   assert.match(live, /setCatalogError\(''\)/)
 })
 
-test('Explore counts come from the complete aggregate directory summary', () => {
+test('Explore counts come from the indexed count cache and cannot take taxonomy down', () => {
   const catalog = read('api/catalog.js')
-  assert.match(catalog, /v_gt_venue_taxonomy_directory_counts/)
+  assert.match(catalog, /gt_venue_taxonomy_count_cache/)
+  assert.match(catalog, /Promise\.allSettled/)
+  assert.match(catalog, /counts_live/)
+  assert.match(catalog, /countsResult\.status==='fulfilled'/)
+  assert.doesNotMatch(catalog, /v_gt_venue_taxonomy_directory_counts/)
   assert.doesNotMatch(catalog, /limit=10000/)
-  assert.doesNotMatch(catalog, /countUnique\(/)
+})
+
+test('customer inventory dedupes canonical venues and duplicate events', () => {
+  const data = read('api/data.js')
+  assert.match(data, /dedupeCustomerVenues/)
+  assert.match(data, /venueCanonicalKey/)
+  assert.match(data, /normalizeAddress/)
+  assert.match(data, /dedupeCustomerEvents/)
+  assert.match(data, /eventCanonicalKey/)
+})
+
+test('customer taxonomy corrects strong contradictions before display', () => {
+  const data = read('api/data.js')
+  assert.match(data, /inferCustomerTaxonomy/)
+  assert.match(data, /wellness_fitness.*runs_races/)
+  assert.match(data, /attractions_experiences.*tours_sightseeing/)
+  assert.match(data, /dining_culinary.*wine_cocktails/)
+  assert.match(data, /rawType === 'concert'/)
+  assert.match(data, /reviewed === 'sports_watch'/)
+  assert.match(data, /venue_name/)
+  assert.match(data, /arena_concerts/)
 })
 
 test('customer server APIs retry transient upstream failures', () => {

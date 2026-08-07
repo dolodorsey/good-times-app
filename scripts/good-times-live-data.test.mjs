@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
-import { buildGatewayQueries, clampLimit, inferCustomerCategory, normalizeCity } from '../api/data.js'
+import { buildGatewayQueries, clampLimit, inferCustomerCategory, inferCustomerTaxonomy, normalizeCity } from '../api/data.js'
 
 const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
@@ -29,6 +29,13 @@ test('legacy cross-city events receive conservative customer categories', () => 
   assert.equal(inferCustomerCategory({ event_name:'Underground Rave', event_type:'special_event' }), 'nightlife')
   assert.equal(inferCustomerCategory({ event_name:'Houston Black College Expo', event_type:'special_event' }), 'business_professional')
   assert.equal(inferCustomerCategory({ event_name:'Unknown listing', event_type:'special_event' }), null)
+})
+
+test('arena concerts do not inherit the intimate-shows fallback', () => {
+  assert.deepEqual(
+    inferCustomerTaxonomy({ event_name:'Ariana Grande', event_type:'concert', venue_name:'State Farm Arena', subcategory_key_v2:'intimate_shows' }),
+    { category:'concerts_live_music', subcategory:'arena_concerts' },
+  )
 })
 
 test('Frontend uses same-origin customer inventory and no expensive public-feed fallback', () => {

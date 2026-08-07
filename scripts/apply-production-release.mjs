@@ -59,6 +59,7 @@ function replaceOnce(source, from, to, label) {
     "setDirectory(payload.venues||[])",
     "setDirectory(payload.venues||[]);setCatalogError('')",
   )
+  source = source.replaceAll(";setCatalogError('');setCatalogError('')", ";setCatalogError('')")
 
   source = source.replace(
     /  const deterministicPlan=useCallback\(\(\)=>\{[\s\S]*?\n  \},\[build,city,events,venues\]\)/,

@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - agent/atlanta-intelligence-release-2026-07-30
+      - agent/good-times-completion
 
 permissions:
   contents: read
@@ -21,7 +22,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -33,8 +34,10 @@ jobs:
       - name: Build application
         run: npm run build
 
-      - name: Verify runtime is in build output
+      - name: Verify stabilized runtime is in build output
         run: |
-          test -f dist/gt-runtime.js
-          grep -q 'v_gt_atlanta_ranked_feed' dist/gt-runtime.js
-          grep -q 'gt-runtime.js' dist/index.html
+          test -f dist/gt-timezone-guard.js
+          test -f dist/gt-stabilizer.js
+          grep -q 'gt-timezone-guard.js' dist/index.html
+          grep -q 'gt-stabilizer.js' dist/index.html
+          grep -q 'stale-fallback' dist/gt-stabilizer.js

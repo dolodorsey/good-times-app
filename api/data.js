@@ -31,7 +31,7 @@ export function clampLimit(value, fallback, maximum) {
 export function buildGatewayQueries({ city='atlanta', today, eventLimit=500, venueLimit=500 }) {
   const normalizedCity = normalizeCity(city)
   const eventFetchLimit = Math.min(Math.max(eventLimit * 4, 180), 1200)
-  const venueFetchLimit = Math.min(Math.max(venueLimit * 2, 200), 1200)
+  const venueFetchLimit = Math.min(Math.max(venueLimit * 3, 240), 1600)
   return {
     normalizedCity,
     eventPath: `gt_shows?select=${SHOW_SELECT}&city_key=eq.${encodeURIComponent(normalizedCity)}&show_date=gte.${today}&status=in.(confirmed,tentative)&image_url=not.is.null&order=good_times_score.desc.nullslast,display_priority.asc.nullslast,show_date.asc&limit=${eventFetchLimit}`,
@@ -52,42 +52,119 @@ function safePublicImage(value) {
   return text.startsWith('http://') ? text.replace(/^http:\/\//i, 'https://') : text
 }
 function cleanKey(value) { return String(value || '').trim().toLowerCase().replace(/[\s-]+/g, '_') }
-function normalizeName(value) { return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, '') }
-export function inferCustomerCategory(item) {
-  const reviewed = cleanKey(item?.category_key_v2)
-  if (reviewed && reviewed !== 'needs_review') return reviewed
-  const text = `${item?.event_type || ''} ${item?.genre || ''} ${item?.event_name || ''}`.toLowerCase()
-  if (/concert|live music|r&b|rnb|hip[- ]?hop|rap|jazz|gospel|karaoke|open mic|piano|symphony/.test(text)) return 'concerts_live_music'
-  if (/festival|block party|parade|convention/.test(text)) return 'festivals_major_activations'
-  if (/comedy|stand[- ]?up|theater|theatre|musical|spoken word|poetry|burlesque/.test(text)) return 'comedy_performing_arts'
-  if (/\b(vs\.?|versus|game|match|boxing|ufc|mma|race|racing|sports?)\b/.test(text)) return 'sports_watch'
-  if (/rave|nightlife|nightclub|club night|dj |party|after[- ]?party/.test(text)) return 'nightlife'
-  if (/brunch|food|restaurant|chef|wine|cocktail|tasting|culinary/.test(text)) return 'dining_culinary'
-  if (/career|business|entrepreneur|startup|technology|conference|summit|networking|expo/.test(text)) return 'business_professional'
-  if (/museum|gallery|art |film|screening|exhibit/.test(text)) return 'arts_museums_culture'
-  if (/wellness|fitness|yoga|pilates|run club|5k|10k/.test(text)) return 'wellness_fitness'
-  if (/family|kids?|children|youth/.test(text)) return 'family_kids'
-  if (/church|faith|worship|spiritual|inspirational/.test(text)) return 'faith_inspirational'
-  if (/college|university|alumni|homecoming|hbcu|greek life/.test(text)) return 'college_alumni'
-  if (/dating|singles?|mixer|speed dating/.test(text)) return 'dating_social'
-  return null
+function normalizeText(value) { return String(value || '').toLowerCase().replace(/&[a-z0-9#]+;/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim() }
+function compact(value) { return normalizeText(value).replace(/\s+/g, '') }
+function normalizeVenueName(value) { return compact(String(value || '').replace(/\b(venue|event)\s*$/i, '')) }
+function normalizeAddress(value) {
+  return compact(String(value || '')
+    .replace(/\b(street|st\.)\b/gi,'st').replace(/\b(road|rd\.)\b/gi,'rd')
+    .replace(/\b(avenue|ave\.)\b/gi,'ave').replace(/\b(boulevard|blvd\.)\b/gi,'blvd')
+    .replace(/\b(northwest|nw\.)\b/gi,'nw').replace(/\b(northeast|ne\.)\b/gi,'ne')
+    .replace(/\b(southwest|sw\.)\b/gi,'sw').replace(/\b(southeast|se\.)\b/gi,'se'))
 }
+function venueCanonicalKey(item) {
+  const name = normalizeVenueName(item?.name)
+  const address = normalizeAddress(item?.address)
+  if (name && address && !/^variousaccesspoints$/i.test(address)) return `${name}|${address}`
+  return `id:${item?.id || Math.random()}`
+}
+function venueRecordScore(item) {
+  return Number(item?.quality_score || 0) * 10
+    + (item?.address ? 25 : 0) + (item?.latitude != null && item?.longitude != null ? 24 : 0)
+    + (item?.website ? 18 : 0) + (item?.phone ? 14 : 0) + (item?.booking_link ? 12 : 0)
+    + Number(item?.source_count || 0) * 2 + (item?.is_culture_pick ? 8 : 0) + (item?.is_featured ? 4 : 0)
+}
+export function dedupeCustomerVenues(rows) {
+  const best = new Map()
+  for (const item of rows || []) {
+    if (!customerReadyVenue(item)) continue
+    const key = venueCanonicalKey(item)
+    const existing = best.get(key)
+    if (!existing || venueRecordScore(item) > venueRecordScore(existing)) best.set(key, item)
+  }
+  return [...best.values()].sort((a,b) => venueRecordScore(b) - venueRecordScore(a))
+}
+function inferMusicSubcategory(text, fallback) {
+  if (/\br&b\b|\brnb\b|\bsoul\b/.test(text)) return 'rnb_soul'
+  if (/hip hop|hip-hop|\brap\b/.test(text)) return 'hip_hop_rap'
+  if (/\bjazz\b|\bblues\b/.test(text)) return 'jazz'
+  if (/edm|techno|house music|electronic|dubstep/.test(text)) return 'edm_dance'
+  if (/\bcountry\b/.test(text)) return 'country'
+  if (/\bgospel\b/.test(text)) return 'gospel'
+  if (/karaoke/.test(text)) return 'karaoke'
+  if (/open mic/.test(text)) return 'open_mic'
+  if (/\barena\b|\bstadium\b|gateway center|state farm|mercedes[- ]benz/.test(text)) return 'arena_concerts'
+  if (/\btheatre\b|\btheater\b|symphony hall|cobb energy/.test(text)) return 'theater_concerts'
+  return fallback && !['combat_sports','watch_parties','racing'].includes(fallback) ? fallback : 'intimate_shows'
+}
+export function inferCustomerTaxonomy(item) {
+  const reviewed = cleanKey(item?.category_key_v2)
+  const fallbackSub = cleanKey(item?.subcategory_key_v2) || null
+  const rawType = cleanKey(item?.event_type)
+  const text = normalizeText(`${item?.event_type || ''} ${item?.genre || ''} ${item?.event_name || ''} ${item?.venue_name || ''}`)
+
+  if (/\b(5k|10k|marathon|run club|fun run|road race)\b/.test(text)) return { category:'wellness_fitness', subcategory:'runs_races' }
+  if (/film tv tour|film tour|studio tour|sightseeing tour|walking tour|city tour/.test(text)) return { category:'attractions_experiences', subcategory:'tours_sightseeing' }
+  if (/happy hour|cocktail night|wine tasting|wine down/.test(text)) return { category:'dining_culinary', subcategory:'wine_cocktails' }
+  if (/career fair|job fair|college expo|business expo|entrepreneur expo|professional expo|startup expo/.test(text)) return { category:'business_professional', subcategory:/career|job/.test(text)?'career_fairs':'conferences_summits' }
+  if (/stand up|stand-up|\bcomedy\b/.test(text)) return { category:'comedy_performing_arts', subcategory:'stand_up' }
+  if (/\bimprov\b/.test(text)) return { category:'comedy_performing_arts', subcategory:'improv' }
+  if (/burlesque|cabaret|variety show/.test(text)) return { category:'comedy_performing_arts', subcategory:'theater' }
+  if (/music festival|food festival|culture festival|cultural festival|block party|\bfestival\b/.test(text)) {
+    const subcategory = /food|tequila|wine|beer/.test(text) ? 'food_festivals' : /music|r&b|rnb|soul|jazz|hip hop|hip-hop/.test(text) ? 'music_festivals' : /block party/.test(text) ? 'block_parties' : 'cultural_festivals'
+    return { category:'festivals_major_activations', subcategory }
+  }
+  if (/\b(vs\.?|versus|boxing|ufc|mma|wrestling|fight night|home game|matchup)\b/.test(text)) return { category:'sports_watch', subcategory:/boxing|ufc|mma|wrestling|fight/.test(text)?'combat_sports':fallbackSub || 'pro_home_games' }
+
+  const concertSignal = rawType === 'concert' || /live music|music show|concert|symphony|dj set|night sets|\br&b\b|\brnb\b|hip hop|hip-hop|\brap\b|\bjazz\b|\bgospel\b|karaoke|open mic/.test(text)
+  if (concertSignal) return { category:'concerts_live_music', subcategory:inferMusicSubcategory(text, fallbackSub) }
+
+  if (reviewed && reviewed !== 'needs_review') {
+    if (reviewed === 'sports_watch' && !/\b(sport|game|match|vs\.?|versus|boxing|ufc|mma|wrestling|race|racing|watch party)\b/.test(text)) return { category:null, subcategory:null }
+    return { category:reviewed, subcategory:fallbackSub }
+  }
+  if (/parade|convention|expo/.test(text)) return { category:'festivals_major_activations', subcategory:/parade/.test(text)?'parades':'conventions_expos' }
+  if (/rave|nightlife|nightclub|club night|after party|after-party/.test(text)) return { category:'nightlife', subcategory:fallbackSub }
+  if (/brunch|food|restaurant|chef|culinary/.test(text)) return { category:'dining_culinary', subcategory:fallbackSub }
+  if (/career|business|entrepreneur|startup|technology|conference|summit|networking/.test(text)) return { category:'business_professional', subcategory:fallbackSub }
+  if (/museum|gallery|art |screening|exhibit/.test(text)) return { category:'arts_museums_culture', subcategory:fallbackSub }
+  if (/wellness|fitness|yoga|pilates/.test(text)) return { category:'wellness_fitness', subcategory:fallbackSub }
+  if (/family|kids?|children|youth/.test(text)) return { category:'family_kids', subcategory:fallbackSub }
+  if (/church|faith|worship|spiritual|inspirational/.test(text)) return { category:'faith_inspirational', subcategory:fallbackSub }
+  if (/college|university|alumni|homecoming|hbcu|greek life/.test(text)) return { category:'college_alumni', subcategory:fallbackSub }
+  if (/dating|singles?|mixer|speed dating/.test(text)) return { category:'dating_social', subcategory:fallbackSub }
+  return { category:null, subcategory:null }
+}
+export function inferCustomerCategory(item) { return inferCustomerTaxonomy(item).category }
 function customerReadyEvent(item, verifiedVenueNames, city) {
   const title = String(item.event_name || '').trim()
   const venue = String(item.venue_name || '').trim()
-  const category = inferCustomerCategory(item)
-  if (!title || !category || !safePublicImage(item.image_url) || !item.ticket_url) return false
+  const taxonomy = inferCustomerTaxonomy(item)
+  if (!title || !taxonomy.category || !safePublicImage(item.image_url) || !item.ticket_url) return false
   if (!venue || /^(atlanta|houston|miami|dallas|charlotte|phoenix|scottsdale|las vegas|los angeles|new york|washington dc|tba|online|virtual|warehouse)$/i.test(venue)) return false
   if (/\b(sold out|mon-fri 2026|make money fast|timeshare|webinar)\b/i.test(title)) return false
   if (city !== 'atlanta') {
-    const venueMatched = verifiedVenueNames.has(normalizeName(venue))
+    const venueMatched = verifiedVenueNames.has(normalizeVenueName(venue))
     const priorityCurated = Boolean(item.is_curated || item.is_featured) && Number(item.display_priority || 99) <= 20
     if (!venueMatched && !priorityCurated) return false
   }
   return true
 }
-function customerReadyVenue(item) {
-  return Boolean(item?.id && item.name && item.is_verified && (item.address || item.website || item.phone || item.booking_link || item.instagram_handle))
+function customerReadyVenue(item) { return Boolean(item?.id && item.name && item.is_verified && (item.address || item.website || item.phone || item.booking_link || item.instagram_handle)) }
+function eventCanonicalKey(item) { return `${compact(item?.event_name)}|${item?.show_date || ''}|${normalizeVenueName(item?.venue_name)}` }
+function eventRecordScore(item) {
+  return Number(item?.good_times_score || 0) * 10 - Number(item?.display_priority || 50)
+    + (item?.is_curated ? 20 : 0) + (item?.is_featured ? 12 : 0) + (item?.show_time ? 6 : 0)
+    + (item?.organizer ? 4 : 0) + (item?.subcategory_key_v2 ? 3 : 0)
+}
+export function dedupeCustomerEvents(rows) {
+  const best = new Map()
+  for (const item of rows || []) {
+    const key = eventCanonicalKey(item)
+    const existing = best.get(key)
+    if (!existing || eventRecordScore(item) > eventRecordScore(existing)) best.set(key, item)
+  }
+  return [...best.values()].sort((a,b) => eventRecordScore(b) - eventRecordScore(a) || String(a.show_date || '').localeCompare(String(b.show_date || '')))
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 async function fetchRows(path, label) {
@@ -116,14 +193,17 @@ async function fetchRows(path, label) {
   throw lastError || new Error(`${label} failed`)
 }
 function mapShows(rows) {
-  return rows.map((item, index) => ({
-    event_key:`show:${item.id}`, source_table:'gt_shows', source_id:item.id, city_key:item.city_key,
-    title:item.event_name, event_date:item.show_date, event_time:item.show_time, venue_name:item.venue_name,
-    raw_type:item.event_type, raw_category:item.genre, ticket_url:item.ticket_url, image_url:safePublicImage(item.image_url),
-    organizer:item.organizer, display_priority:item.display_priority, good_times_score:item.good_times_score,
-    category_key:inferCustomerCategory(item), subcategory_key:item.subcategory_key_v2,
-    is_featured:item.is_featured, is_curated:item.is_curated, rank_order:index + 1,
-  }))
+  return rows.map((item, index) => {
+    const taxonomy = inferCustomerTaxonomy(item)
+    return {
+      event_key:`show:${item.id}`, source_table:'gt_shows', source_id:item.id, city_key:item.city_key,
+      title:item.event_name, event_date:item.show_date, event_time:item.show_time, venue_name:item.venue_name,
+      raw_type:item.event_type, raw_category:item.genre, ticket_url:item.ticket_url, image_url:safePublicImage(item.image_url),
+      organizer:item.organizer, display_priority:item.display_priority, good_times_score:item.good_times_score,
+      category_key:taxonomy.category, subcategory_key:taxonomy.subcategory,
+      is_featured:item.is_featured, is_curated:item.is_curated, rank_order:index + 1,
+    }
+  })
 }
 function sendJson(response, status, payload) {
   response.statusCode = status
@@ -133,9 +213,7 @@ function sendJson(response, status, payload) {
   response.end(JSON.stringify(payload))
 }
 export default async function handler(request, response) {
-  if (!['GET','HEAD'].includes(request.method || 'GET')) {
-    response.setHeader('Allow', 'GET, HEAD'); return sendJson(response, 405, { ok:false, error:'Method not allowed' })
-  }
+  if (!['GET','HEAD'].includes(request.method || 'GET')) { response.setHeader('Allow', 'GET, HEAD'); return sendJson(response, 405, { ok:false, error:'Method not allowed' }) }
   const requestUrl = new URL(request.url || '/api/data', 'https://thegoodtimesworldwide.com')
   const city = normalizeCity(requestUrl.searchParams.get('city'))
   const eventLimit = clampLimit(requestUrl.searchParams.get('event_limit'), 500, 500)
@@ -144,9 +222,10 @@ export default async function handler(request, response) {
   const queries = buildGatewayQueries({ city, today:todayISO(), eventLimit, venueLimit })
   try {
     const [rawEvents, rawVenues] = await Promise.all([fetchRows(queries.eventPath,'GOOD TIMES events'),fetchRows(queries.venuePath,'GOOD TIMES venues')])
-    const venues = rawVenues.filter(customerReadyVenue).map(item => ({...item,hero_image:safePublicImage(item.hero_image)})).slice(0,venueLimit)
-    const verifiedVenueNames = new Set(venues.map(item => normalizeName(item.name)).filter(Boolean))
-    const events = mapShows(rawEvents.filter(item => customerReadyEvent(item,verifiedVenueNames,city))).slice(0,eventLimit)
+    const venues = dedupeCustomerVenues(rawVenues).map(item => ({...item,hero_image:safePublicImage(item.hero_image)})).slice(0,venueLimit)
+    const verifiedVenueNames = new Set(venues.map(item => normalizeVenueName(item.name)).filter(Boolean))
+    const filteredEvents = rawEvents.filter(item => customerReadyEvent(item,verifiedVenueNames,city))
+    const events = mapShows(dedupeCustomerEvents(filteredEvents)).slice(0,eventLimit)
     if (request.method === 'HEAD') {
       response.statusCode=200; response.setHeader('Cache-Control','no-store'); response.setHeader('X-Good-Times-Events',String(events.length)); response.setHeader('X-Good-Times-Venues',String(venues.length)); return response.end()
     }
