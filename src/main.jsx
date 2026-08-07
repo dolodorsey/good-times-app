@@ -15,6 +15,7 @@ const LazyLegacyApp = lazy(() => import('./App.jsx'))
 const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
 const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
 const LazyOnboarding = lazy(() => import('./features/onboarding/GoodTimesOnboarding.jsx'))
+const LazyPaymentsLauncher = lazy(() => import('./features/experience/GoodTimesPaymentsLauncher.jsx'))
 
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
@@ -61,7 +62,17 @@ async function bootstrap(){
   else if(commandRoute){route=<LazyCommandApp/>;loadingLabel='Opening command interface'}
   else route=<LazyLiveApp/>
 
-  ReactDOM.createRoot(rootElement).render(<RuntimeBoundary><Suspense fallback={<RouteLoading label={loadingLabel}/>}><PremiumRoot launch={!requestType&&!recoverySession&&hasSession&&!legacyRoute&&!commandRoute}>{route}</PremiumRoot></Suspense></RuntimeBoundary>)
+  const showPayments=hasSession&&!requestType&&!recoverySession&&!legacyRoute&&!commandRoute
+  ReactDOM.createRoot(rootElement).render(
+    <RuntimeBoundary>
+      <Suspense fallback={<RouteLoading label={loadingLabel}/>}>
+        <PremiumRoot launch={showPayments}>
+          {route}
+          {showPayments?<LazyPaymentsLauncher/>:null}
+        </PremiumRoot>
+      </Suspense>
+    </RuntimeBoundary>
+  )
 }
 
 bootstrap().catch(error=>{
