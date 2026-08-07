@@ -19,6 +19,10 @@ const VENUE_SELECT = [
   'quality_score','hero_image','booking_link','booking_platform','google_rating','google_reviews','culture_tier',
   'is_khg','is_culture_pick','is_black_owned','culture_score','source_count','culture_tags',
 ].join(',')
+const MUSIC_SUBCATEGORIES = new Set([
+  'rnb_soul','hip_hop_rap','jazz','edm_dance','country','gospel','karaoke','open_mic',
+  'arena_concerts','theater_concerts','intimate_shows','live_music','acoustic','concerts',
+])
 
 export function normalizeCity(value) {
   const normalized = String(value || 'atlanta').trim().toLowerCase().replace(/[\s]+/g, '_')
@@ -62,6 +66,13 @@ function normalizeAddress(value) {
     .replace(/\b(northwest|nw\.)\b/gi,'nw').replace(/\b(northeast|ne\.)\b/gi,'ne')
     .replace(/\b(southwest|sw\.)\b/gi,'sw').replace(/\b(southeast|se\.)\b/gi,'se'))
 }
+function decodeHtmlEntities(value) {
+  return String(value || '')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCodePoint(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, code) => String.fromCodePoint(Number.parseInt(code, 16)))
+    .replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'")
+    .replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/&nbsp;/gi, ' ')
+}
 function venueCanonicalKey(item) {
   const name = normalizeVenueName(item?.name)
   const address = normalizeAddress(item?.address)
@@ -84,18 +95,21 @@ export function dedupeCustomerVenues(rows) {
   }
   return [...best.values()].sort((a,b) => venueRecordScore(b) - venueRecordScore(a))
 }
-function inferMusicSubcategory(text, fallback) {
+function inferMusicSubcategory(text, fallback, genre) {
   if (/\br&b\b|\brnb\b|\bsoul\b/.test(text)) return 'rnb_soul'
   if (/hip hop|hip-hop|\brap\b/.test(text)) return 'hip_hop_rap'
   if (/\bjazz\b|\bblues\b/.test(text)) return 'jazz'
   if (/edm|techno|house music|electronic|dubstep/.test(text)) return 'edm_dance'
-  if (/\bcountry\b/.test(text)) return 'country'
+  if (cleanKey(genre) === 'country' || /country music|country singer|country artist|country concert/.test(text)) return 'country'
   if (/\bgospel\b/.test(text)) return 'gospel'
   if (/karaoke/.test(text)) return 'karaoke'
   if (/open mic/.test(text)) return 'open_mic'
   if (/\barena\b|\bstadium\b|gateway center|state farm|mercedes[- ]benz/.test(text)) return 'arena_concerts'
   if (/\btheatre\b|\btheater\b|symphony hall|cobb energy/.test(text)) return 'theater_concerts'
-  return fallback && !['combat_sports','watch_parties','racing'].includes(fallback) ? fallback : 'intimate_shows'
+  return fallback && MUSIC_SUBCATEGORIES.has(fallback) ? fallback : 'intimate_shows'
+}
+function hasSportsSignal(text) {
+  return /\b(sport|sports|game|match|matchup|football|basketball|baseball|soccer|hockey|wnba|nba|nfl|mlb|mls|ufc|mma|boxing|fight|race|racing|formula 1|f1|falcons|hawks|braves|atlanta united|dream)\b/.test(text)
 }
 export function inferCustomerTaxonomy(item) {
   const reviewed = cleanKey(item?.category_key_v2)
@@ -114,13 +128,18 @@ export function inferCustomerTaxonomy(item) {
     const subcategory = /food|tequila|wine|beer/.test(text) ? 'food_festivals' : /music|r&b|rnb|soul|jazz|hip hop|hip-hop/.test(text) ? 'music_festivals' : /block party/.test(text) ? 'block_parties' : 'cultural_festivals'
     return { category:'festivals_major_activations', subcategory }
   }
+  if (/watch party/.test(text)) {
+    return hasSportsSignal(text)
+      ? { category:'sports_watch', subcategory:'watch_parties' }
+      : { category:'nightlife', subcategory:'late_night' }
+  }
   if (/\b(vs\.?|versus|boxing|ufc|mma|wrestling|fight night|home game|matchup)\b/.test(text)) return { category:'sports_watch', subcategory:/boxing|ufc|mma|wrestling|fight/.test(text)?'combat_sports':fallbackSub || 'pro_home_games' }
 
   const concertSignal = rawType === 'concert' || /live music|music show|concert|symphony|dj set|night sets|\br&b\b|\brnb\b|hip hop|hip-hop|\brap\b|\bjazz\b|\bgospel\b|karaoke|open mic/.test(text)
-  if (concertSignal) return { category:'concerts_live_music', subcategory:inferMusicSubcategory(text, fallbackSub) }
+  if (concertSignal) return { category:'concerts_live_music', subcategory:inferMusicSubcategory(text, fallbackSub, item?.genre) }
 
   if (reviewed && reviewed !== 'needs_review') {
-    if (reviewed === 'sports_watch' && !/\b(sport|game|match|vs\.?|versus|boxing|ufc|mma|wrestling|race|racing|watch party)\b/.test(text)) return { category:null, subcategory:null }
+    if (reviewed === 'sports_watch' && !hasSportsSignal(text)) return { category:null, subcategory:null }
     return { category:reviewed, subcategory:fallbackSub }
   }
   if (/parade|convention|expo/.test(text)) return { category:'festivals_major_activations', subcategory:/parade/.test(text)?'parades':'conventions_expos' }
@@ -151,7 +170,28 @@ function customerReadyEvent(item, verifiedVenueNames, city) {
   return true
 }
 function customerReadyVenue(item) { return Boolean(item?.id && item.name && item.is_verified && (item.address || item.website || item.phone || item.booking_link || item.instagram_handle)) }
-function eventCanonicalKey(item) { return `${compact(item?.event_name)}|${item?.show_date || ''}|${normalizeVenueName(item?.venue_name)}` }
+function canonicalTicketKey(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return null
+  try {
+    const url = new URL(raw)
+    const host = url.hostname.toLowerCase().replace(/^www\./, '')
+    const path = url.pathname.replace(/\/+$/, '').toLowerCase() || '/'
+    if (path === '/search') {
+      const q = normalizeText(url.searchParams.get('q') || '')
+      const city = normalizeText(url.searchParams.get('city') || '')
+      return `${host}${path}?q=${q}&city=${city}`
+    }
+    return `${host}${path}`
+  } catch {
+    return normalizeText(raw) || null
+  }
+}
+function eventCanonicalKey(item) {
+  const ticketKey = canonicalTicketKey(item?.ticket_url)
+  if (ticketKey) return `ticket:${ticketKey}`
+  return `${compact(item?.event_name)}|${item?.show_date || ''}|${normalizeVenueName(item?.venue_name)}`
+}
 function eventRecordScore(item) {
   return Number(item?.good_times_score || 0) * 10 - Number(item?.display_priority || 50)
     + (item?.is_curated ? 20 : 0) + (item?.is_featured ? 12 : 0) + (item?.show_time ? 6 : 0)
@@ -197,9 +237,9 @@ function mapShows(rows) {
     const taxonomy = inferCustomerTaxonomy(item)
     return {
       event_key:`show:${item.id}`, source_table:'gt_shows', source_id:item.id, city_key:item.city_key,
-      title:item.event_name, event_date:item.show_date, event_time:item.show_time, venue_name:item.venue_name,
+      title:decodeHtmlEntities(item.event_name), event_date:item.show_date, event_time:item.show_time, venue_name:decodeHtmlEntities(item.venue_name),
       raw_type:item.event_type, raw_category:item.genre, ticket_url:item.ticket_url, image_url:safePublicImage(item.image_url),
-      organizer:item.organizer, display_priority:item.display_priority, good_times_score:item.good_times_score,
+      organizer:decodeHtmlEntities(item.organizer), display_priority:item.display_priority, good_times_score:item.good_times_score,
       category_key:taxonomy.category, subcategory_key:taxonomy.subcategory,
       is_featured:item.is_featured, is_curated:item.is_curated, rank_order:index + 1,
     }
@@ -220,18 +260,34 @@ export default async function handler(request, response) {
   const venueLimit = clampLimit(requestUrl.searchParams.get('venue_limit'), 500, 800)
   const generatedAt = new Date().toISOString()
   const queries = buildGatewayQueries({ city, today:todayISO(), eventLimit, venueLimit })
-  try {
-    const [rawEvents, rawVenues] = await Promise.all([fetchRows(queries.eventPath,'GOOD TIMES events'),fetchRows(queries.venuePath,'GOOD TIMES venues')])
-    const venues = dedupeCustomerVenues(rawVenues).map(item => ({...item,hero_image:safePublicImage(item.hero_image)})).slice(0,venueLimit)
-    const verifiedVenueNames = new Set(venues.map(item => normalizeVenueName(item.name)).filter(Boolean))
-    const filteredEvents = rawEvents.filter(item => customerReadyEvent(item,verifiedVenueNames,city))
-    const events = mapShows(dedupeCustomerEvents(filteredEvents)).slice(0,eventLimit)
-    if (request.method === 'HEAD') {
-      response.statusCode=200; response.setHeader('Cache-Control','no-store'); response.setHeader('X-Good-Times-Events',String(events.length)); response.setHeader('X-Good-Times-Venues',String(venues.length)); return response.end()
-    }
-    return sendJson(response,200,{ok:true,connected:true,city,source:'good-times-customer-ready-inventory',generated_at:generatedAt,counts:{events:events.length,venues:venues.length},events,venues})
-  } catch (error) {
-    console.error('[GOOD TIMES data gateway]',{city,message:error?.message||String(error),generatedAt})
-    return sendJson(response,503,{ok:false,connected:false,city,source:'good-times-customer-ready-inventory',generated_at:generatedAt,error:'GOOD TIMES live data is temporarily unavailable.',detail:error?.message||String(error)})
+  const [eventResult, venueResult] = await Promise.allSettled([
+    fetchRows(queries.eventPath,'GOOD TIMES events'),
+    fetchRows(queries.venuePath,'GOOD TIMES venues'),
+  ])
+  if (eventResult.status === 'rejected' && venueResult.status === 'rejected') {
+    console.error('[GOOD TIMES data gateway]',{
+      city, generatedAt,
+      events:eventResult.reason?.message || String(eventResult.reason),
+      venues:venueResult.reason?.message || String(venueResult.reason),
+    })
+    return sendJson(response,503,{ok:false,connected:false,city,source:'good-times-customer-ready-inventory',generated_at:generatedAt,error:'GOOD TIMES live data is temporarily unavailable.'})
   }
+  const rawEvents = eventResult.status === 'fulfilled' ? eventResult.value : []
+  const rawVenues = venueResult.status === 'fulfilled' ? venueResult.value : []
+  const venues = dedupeCustomerVenues(rawVenues).map(item => ({...item,hero_image:safePublicImage(item.hero_image)})).slice(0,venueLimit)
+  const verifiedVenueNames = new Set(venues.map(item => normalizeVenueName(item.name)).filter(Boolean))
+  const filteredEvents = rawEvents.filter(item => customerReadyEvent(item,verifiedVenueNames,city))
+  const events = mapShows(dedupeCustomerEvents(filteredEvents)).slice(0,eventLimit)
+  const degraded = eventResult.status === 'rejected' || venueResult.status === 'rejected'
+  if (degraded) {
+    console.warn('[GOOD TIMES data gateway degraded]',{
+      city, generatedAt,
+      events:eventResult.status === 'rejected' ? eventResult.reason?.message || String(eventResult.reason) : null,
+      venues:venueResult.status === 'rejected' ? venueResult.reason?.message || String(venueResult.reason) : null,
+    })
+  }
+  if (request.method === 'HEAD') {
+    response.statusCode=200; response.setHeader('Cache-Control','no-store'); response.setHeader('X-Good-Times-Events',String(events.length)); response.setHeader('X-Good-Times-Venues',String(venues.length)); response.setHeader('X-Good-Times-Degraded',String(degraded)); return response.end()
+  }
+  return sendJson(response,200,{ok:true,connected:true,degraded,city,source:'good-times-customer-ready-inventory',generated_at:generatedAt,counts:{events:events.length,venues:venues.length},events,venues})
 }
