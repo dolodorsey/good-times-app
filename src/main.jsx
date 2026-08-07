@@ -20,6 +20,7 @@ const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
 const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
 const LazyOnboarding = lazy(() => import('./features/onboarding/GoodTimesOnboarding.jsx'))
 const LazyCompletionBridge = lazy(() => import('./features/experience/GoodTimesCompletionBridge.jsx'))
+const LazyNavigationBridge = lazy(() => import('./features/experience/GoodTimesNavigationBridge.jsx'))
 const LazyNativeBridge = lazy(() => import('./features/experience/GoodTimesNativeBridge.jsx'))
 const LazyPaymentsLauncher = lazy(() => import('./features/experience/GoodTimesPaymentsBridge.jsx'))
 const LazyConnectHub = lazy(() => import('./features/experience/GoodTimesConnectHub.jsx'))
@@ -117,7 +118,7 @@ async function bootstrap(){
       <Suspense fallback={<RouteLoading label={loadingLabel}/>}>
         <PremiumRoot launch={showMemberTools}>
           {isNative?<LazyNativeBridge/>:null}
-          {showMemberTools?<LazyCompletionBridge/>:null}
+          {showMemberTools?<><LazyCompletionBridge/><LazyNavigationBridge/></>:null}
           {route}
           {showMemberTools?<><LazyConnectHub/><LazyPaymentsLauncher/></>:null}
         </PremiumRoot>
