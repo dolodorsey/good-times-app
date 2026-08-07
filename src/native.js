@@ -1,6 +1,6 @@
 /**
  * GOOD TIMES — Native Bridge
- * Capacitor plugin integration for iOS native features
+ * Capacitor plugin integration for iOS and Android features
  */
 
 import { Capacitor } from '@capacitor/core';
@@ -10,9 +10,12 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { Share } from '@capacitor/share';
 import { Browser } from '@capacitor/browser';
 import { PushNotifications } from '@capacitor/push-notifications';
+import { GT_SUPABASE_ANON_KEY, GT_SUPABASE_URL } from './lib/supabase.js';
+import { readSession } from './features/auth/client.js';
 
 export const isNative = Capacitor.isNativePlatform();
 export const isIOS = Capacitor.getPlatform() === 'ios';
+let pushListenersInstalled = false;
 
 /** Initialize native features on app load */
 export async function initNative() {
@@ -97,44 +100,60 @@ export async function openLink(url) {
   }
 }
 
-/** Register for push notifications */
-export async function registerPush() {
-  if (!isNative) return null;
+async function persistPushToken(deviceToken) {
+  const token=String(deviceToken||'').trim();
+  const session=readSession();
+  if(!token||!session?.access_token||!session?.user?.id)return false;
+  try{
+    const response=await fetch(`${GT_SUPABASE_URL}/rest/v1/gt_push_tokens?on_conflict=user_id,device_token`,{
+      method:'POST',
+      headers:{
+        apikey:GT_SUPABASE_ANON_KEY,
+        Authorization:`Bearer ${session.access_token}`,
+        'Content-Type':'application/json',
+        Prefer:'resolution=merge-duplicates,return=minimal',
+      },
+      body:JSON.stringify({
+        user_id:session.user.id,
+        device_token:token,
+        platform:Capacitor.getPlatform(),
+        updated_at:new Date().toISOString(),
+      }),
+    });
+    return response.ok;
+  }catch{return false;}
+}
+
+function installPushListeners(){
+  if(pushListenersInstalled)return;
+  pushListenersInstalled=true;
+  PushNotifications.addListener('registration', token => { void persistPushToken(token.value); });
+  PushNotifications.addListener('registrationError', err => { console.error('Push registration error:', err.error); });
+  PushNotifications.addListener('pushNotificationReceived', notification => {
+    try{window.dispatchEvent(new CustomEvent('gt:push-received',{detail:{title:notification?.title||'',body:notification?.body||'',data:notification?.data||{}}}));}catch{}
+  });
+  PushNotifications.addListener('pushNotificationActionPerformed', action => {
+    try{window.dispatchEvent(new CustomEvent('gt:push-action',{detail:action?.notification?.data||{}}));}catch{}
+  });
+}
+
+/** Register for push notifications. New permission prompts only occur after a user action. */
+export async function registerPush({requestPermission=true} = {}) {
+  if (!isNative) return 'unsupported';
 
   try {
     let permStatus = await PushNotifications.checkPermissions();
-    if (permStatus.receive === 'prompt') {
+    if (permStatus.receive === 'prompt' && requestPermission) {
       permStatus = await PushNotifications.requestPermissions();
     }
+    if (permStatus.receive === 'prompt') return 'prompt';
+    if (permStatus.receive !== 'granted') return 'denied';
 
-    if (permStatus.receive !== 'granted') {
-      console.log('Push permission not granted');
-      return null;
-    }
-
+    installPushListeners();
     await PushNotifications.register();
-
-    // Listen for registration token
-    PushNotifications.addListener('registration', (token) => {
-      console.log('Push registration token:', token.value);
-      // TODO: Send token to Supabase push_tokens table
-    });
-
-    PushNotifications.addListener('registrationError', (err) => {
-      console.error('Push registration error:', err.error);
-    });
-
-    PushNotifications.addListener('pushNotificationReceived', (notification) => {
-      console.log('Push received:', notification);
-    });
-
-    PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
-      console.log('Push action:', notification);
-    });
-
-    return true;
+    return 'granted';
   } catch (e) {
     console.error('Push setup error:', e);
-    return null;
+    return 'error';
   }
 }
