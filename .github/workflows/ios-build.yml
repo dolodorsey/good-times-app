@@ -172,7 +172,8 @@ jobs:
             exit "$STATUS"
           fi
 
-      - name: Export and upload IPA to App Store Connect
+      - name: Export IPA
+        shell: bash
         run: |
           set -euo pipefail
           cat > "$RUNNER_TEMP/ExportOptions.plist" << EOF
@@ -183,7 +184,7 @@ jobs:
             <key>method</key>
             <string>app-store-connect</string>
             <key>destination</key>
-            <string>upload</string>
+            <string>export</string>
             <key>signingStyle</key>
             <string>manual</string>
             <key>signingCertificate</key>
@@ -199,14 +200,37 @@ jobs:
           </plist>
           EOF
 
+          set +e
+          set -o pipefail
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -exportPath "$RUNNER_TEMP/output" \
             -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
-            -allowProvisioningUpdates \
-            -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
-            -authenticationKeyID "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
-            -authenticationKeyIssuerID "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}"
+            2>&1 | tee "$RUNNER_TEMP/xcode-export.log"
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            grep -E -i 'error:|provision|signing|certificate|profile|entitlement|export|distribution' "$RUNNER_TEMP/xcode-export.log" | tail -120 | while IFS= read -r line; do
+              SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
+              echo "::error title=GOOD TIMES iOS export::$SAFE"
+            done
+            exit "$STATUS"
+          fi
+          IPA_PATH=$(find "$RUNNER_TEMP/output" -maxdepth 2 -name '*.ipa' -type f | head -1)
+          if [ -z "$IPA_PATH" ] || [ ! -s "$IPA_PATH" ]; then
+            echo "::error::Xcode export finished without a usable IPA."
+            exit 1
+          fi
+          echo "IPA_PATH=$IPA_PATH" >> "$GITHUB_ENV"
+          echo "Exported IPA: $IPA_PATH"
+
+      - name: Upload IPA to App Store Connect
+        run: |
+          set -euo pipefail
+          fastlane pilot upload \
+            --ipa "$IPA_PATH" \
+            --app_identifier "com.kollective.goodtimes" \
+            --api_key_path "$RUNNER_TEMP/appstore_api_key.json" \
+            --skip_waiting_for_build_processing true
 
       - name: Cleanup
         if: always()
