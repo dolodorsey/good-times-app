@@ -38,7 +38,7 @@ jobs:
           from pathlib import Path
           path = Path('ios/App/App.xcodeproj/project.pbxproj')
           text = path.read_text()
-          text = text.replace('\t\t\t\tCODE_SIGN_IDENTITY = "iPhone Developer";\n', '')
+          text = text.replace('CODE_SIGN_IDENTITY = "iPhone Developer";', 'CODE_SIGN_IDENTITY = "Apple Distribution";')
           path.write_text(text)
           PY
       
