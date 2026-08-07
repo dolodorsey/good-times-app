@@ -43,7 +43,7 @@ jobs:
           print('Removed legacy iPhone Developer identity overrides from Xcode project')
           PY
 
-      - name: Install Apple Distribution certificate
+      - name: Install distribution certificate
         run: |
           set -euo pipefail
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
@@ -62,12 +62,16 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security list-keychain -d user -s "$KEYCHAIN_PATH"
           security default-keychain -d user -s "$KEYCHAIN_PATH"
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
 
-          if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -q "Apple Distribution"; then
-            echo "::error::Apple Distribution signing identity was not imported."
+          IDENTITIES=$(security find-identity -v -p codesigning "$KEYCHAIN_PATH")
+          echo "$IDENTITIES"
+          SIGNING_IDENTITY=$(printf '%s\n' "$IDENTITIES" | sed -n 's/.*"\([^"]*Distribution[^"]*\)".*/\1/p' | head -1)
+          if [ -z "$SIGNING_IDENTITY" ]; then
+            echo "::error::A valid iOS Distribution / Apple Distribution signing identity was not imported."
             exit 1
           fi
+          echo "SIGNING_IDENTITY=$SIGNING_IDENTITY" >> "$GITHUB_ENV"
+          echo "Using distribution identity: $SIGNING_IDENTITY"
 
       - name: Setup App Store Connect API Key
         run: |
@@ -101,7 +105,7 @@ jobs:
           fi
           fastlane --version
 
-      - name: Download App Store provisioning profile
+      - name: Create or download App Store provisioning profile
         run: |
           set -euo pipefail
           PROFILE_PATH="$RUNNER_TEMP/good-times-appstore.mobileprovision"
@@ -111,7 +115,7 @@ jobs:
             --api_key_path "$RUNNER_TEMP/appstore_api_key.json" \
             --filename "$PROFILE_PATH" \
             --skip_install true \
-            --readonly true
+            --force
 
           security cms -D -i "$PROFILE_PATH" > "$RUNNER_TEMP/profile.plist"
           PROFILE_UUID=$(/usr/libexec/PlistBuddy -c 'Print UUID' "$RUNNER_TEMP/profile.plist")
@@ -149,7 +153,7 @@ jobs:
             -archivePath "$RUNNER_TEMP/App.xcarchive" \
             -destination 'generic/platform=iOS' \
             CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
+            CODE_SIGN_IDENTITY="$SIGNING_IDENTITY" \
             DEVELOPMENT_TEAM="${{ secrets.APPLE_TEAM_ID }}" \
             PROVISIONING_PROFILE_SPECIFIER="$PROFILE_NAME" \
             2>&1 | tee "$RUNNER_TEMP/xcode-archive.log"
@@ -179,7 +183,7 @@ jobs:
             <key>signingStyle</key>
             <string>manual</string>
             <key>signingCertificate</key>
-            <string>Apple Distribution</string>
+            <string>$SIGNING_IDENTITY</string>
             <key>teamID</key>
             <string>${{ secrets.APPLE_TEAM_ID }}</string>
             <key>provisioningProfiles</key>
