@@ -32,6 +32,17 @@ jobs:
       - name: Install CocoaPods
         run: cd ios/App && pod install
 
+      - name: Normalize release signing settings
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path=Path('ios/App/App.xcodeproj/project.pbxproj')
+          text=path.read_text()
+          text=text.replace('\t\t\t\tCODE_SIGN_IDENTITY = "iPhone Developer";\n','')
+          path.write_text(text)
+          print('Removed legacy iPhone Developer identity overrides from Xcode project')
+          PY
+
       - name: Install signing certificates
         run: |
           KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
