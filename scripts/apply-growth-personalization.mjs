@@ -38,9 +38,15 @@ replaceOnce(
 )
 
 replaceOnce(
+  "  const blackOwned=useMemo(()=>venues.filter(item=>item.is_black_owned),[venues])\n  const hotPlaces=useMemo(()=>venues.filter(item=>item.is_featured||item.is_culture_pick||Number(item.google_rating)>=4.5),[venues])",
+  "  const blackOwned=useMemo(()=>personalizedVenues.filter(item=>item.is_black_owned),[personalizedVenues])\n  const hotPlaces=useMemo(()=>personalizedVenues.filter(item=>item.is_featured||item.is_culture_pick||Number(item.google_rating)>=4.5),[personalizedVenues])",
+  'personalized venue rails',
+)
+
+replaceOnce(
   "  const openEvent=item=>{setSelectedEvent(item);recordProductEvent({eventName:'event_opened',surface:screen,objectType:'event',objectId:item.event_key,city},session);recordTasteSignal({entityType:'event',entityId:item.event_key,signalType:'view',city},session)}\n  const openVenue=item=>{setSelectedVenue(item);recordProductEvent({eventName:'venue_opened',surface:screen,objectType:'venue',objectId:item.id,city},session);recordTasteSignal({entityType:'venue',entityId:item.id,signalType:'view',city},session)}",
-  "  const refreshIntelligence=()=>loadIntelligenceProfile(session).then(setIntelligence).catch(()=>null)\n  const openEvent=item=>{setSelectedEvent(item);recordProductEvent({eventName:'event_opened',surface:screen,objectType:'event',objectId:item.event_key,city,properties:{category:item.category_key,subcategory:item.subcategory_key}},session);recordTasteSignal({entityType:'event',entityId:item.event_key,signalType:'view',city,metadata:{category:item.category_key,venue:item.venue_name}},session).then(refreshIntelligence)}\n  const openVenue=item=>{setSelectedVenue(item);recordProductEvent({eventName:'venue_opened',surface:screen,objectType:'venue',objectId:item.id,city,properties:{category:item.category_key,neighborhood:item.neighborhood}},session);recordTasteSignal({entityType:'venue',entityId:item.id,signalType:'view',city,metadata:{category:item.category_key,neighborhood:item.neighborhood,price_range:item.price_range}},session).then(refreshIntelligence)}",
-  'taste learning events',
+  "  const refreshIntelligence=()=>loadIntelligenceProfile(session).then(setIntelligence).catch(()=>null)\n  const trackConversion=(eventName,objectType,objectId,metadata={})=>{\n    const productEventName=eventName==='ticket_click'?'ticket_clicked':eventName==='reservation_click'?'reservation_clicked':eventName\n    recordProductEvent({eventName:productEventName,surface:screen,objectType,objectId,city,properties:metadata},session)\n    fetch('/api/growth-track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event_name:eventName,city_key:city,source:'good-times-app',path:window.location.pathname,metadata:{object_type:objectType,object_id:String(objectId||''),...metadata}}),keepalive:true}).catch(()=>{})\n  }\n  const openEvent=item=>{setSelectedEvent(item);recordProductEvent({eventName:'event_opened',surface:screen,objectType:'event',objectId:item.event_key,city,properties:{category:item.category_key,subcategory:item.subcategory_key}},session);recordTasteSignal({entityType:'event',entityId:item.event_key,signalType:'view',city,metadata:{category:item.category_key,venue:item.venue_name}},session).then(refreshIntelligence)}\n  const openVenue=item=>{setSelectedVenue(item);recordProductEvent({eventName:'venue_opened',surface:screen,objectType:'venue',objectId:item.id,city,properties:{category:item.category_key,neighborhood:item.neighborhood}},session);recordTasteSignal({entityType:'venue',entityId:item.id,signalType:'view',city,metadata:{category:item.category_key,neighborhood:item.neighborhood,price_range:item.price_range}},session).then(refreshIntelligence)}",
+  'taste learning and conversion events',
 )
 
 replaceOnce(
@@ -49,5 +55,23 @@ replaceOnce(
   'personalized home rail',
 )
 
+replaceOnce(
+  "{stop.ticket_url&&<a href={stop.ticket_url} target=\"_blank\" rel=\"noreferrer\">Tickets</a>}",
+  "{stop.ticket_url&&<a href={stop.ticket_url} target=\"_blank\" rel=\"noreferrer\" onClick={()=>trackConversion('ticket_click',stop.type||'event',stop.id,{surface:'built_plan',name:stop.name})}>Tickets</a>}",
+  'built-plan ticket tracking',
+)
+
+replaceOnce(
+  "{selectedEvent.ticket_url&&<a href={selectedEvent.ticket_url} target=\"_blank\" rel=\"noreferrer\">Tickets</a>}",
+  "{selectedEvent.ticket_url&&<a href={selectedEvent.ticket_url} target=\"_blank\" rel=\"noreferrer\" onClick={()=>trackConversion('ticket_click','event',selectedEvent.event_key,{surface:'event_detail',title:selectedEvent.title})}>Tickets</a>}",
+  'event ticket tracking',
+)
+
+replaceOnce(
+  "{selectedVenue.booking_link&&<a href={selectedVenue.booking_link} target=\"_blank\" rel=\"noreferrer\">Book</a>}",
+  "{selectedVenue.booking_link&&<a href={selectedVenue.booking_link} target=\"_blank\" rel=\"noreferrer\" onClick={()=>trackConversion('reservation_click','venue',selectedVenue.id,{surface:'venue_detail',name:selectedVenue.name})}>Book</a>}",
+  'venue reservation tracking',
+)
+
 fs.writeFileSync(target, source)
-console.log('GOOD TIMES personalized feed activated')
+console.log('GOOD TIMES personalized feed, venue ranking, and conversions activated')
