@@ -1,8 +1,9 @@
 const CONTENT_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
-const MAX_DIRECTORY_ROWS = 800
+const MAX_DIRECTORY_ROWS = 240
 const CACHE = 'gt_venue_taxonomy_directory_cache'
 const COUNT_CACHE = 'gt_venue_taxonomy_count_cache'
+const RESPONSE_CACHE = globalThis.__GOOD_TIMES_CATALOG_CACHE__ || (globalThis.__GOOD_TIMES_CATALOG_CACHE__ = new Map())
 
 const CATEGORY_SELECT = 'category_key,category_name,description,sort_order'
 const SUBCATEGORY_SELECT = 'category_key,subcategory_key,subcategory_name,description,sort_order,minimum_upcoming_inventory'
@@ -12,7 +13,7 @@ const DIRECTORY_SELECT = [
   'google_reviews','quality_score','price_range','vibe_tags','category_key','category_name','subcategory',
   'subcategory_key','venue_category_key','venue_subcategory','tab_tags','search_tags','culture_tier','is_khg',
   'is_culture_pick','is_black_owned','culture_tags','instagram_handle','sourced_from','website','phone',
-  'booking_link','status','taxonomy_confidence','latitude','longitude','address','hours_summary','dress_code',
+  'booking_link','status','taxonomy_confidence','address','hours_summary','dress_code',
 ].join(',')
 
 function normalizeCity(value) { return String(value || 'atlanta').trim().toLowerCase().replace(/[\s-]+/g, '_') }
@@ -30,9 +31,9 @@ function safePublicImage(value) {
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 async function fetchRows(path, label) {
   let lastError = null
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt < 2; attempt += 1) {
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 6000)
+    const timeout = setTimeout(() => controller.abort(), 4500)
     try {
       const response = await fetch(`${CONTENT_URL}/rest/v1/${path}`, { headers:headers(), cache:'no-store', signal:controller.signal })
       const text = await response.text()
@@ -47,19 +48,24 @@ async function fetchRows(path, label) {
       }
     } catch (error) {
       lastError = error?.name === 'AbortError' ? new Error(`${label} request timed out`) : error
-      if (attempt === 2) throw lastError
+      if (attempt === 1) throw lastError
     } finally { clearTimeout(timeout) }
-    if (attempt < 2) await wait(160 * (attempt + 1))
+    if (attempt < 1) await wait(120)
   }
   throw lastError || new Error(`${label} failed`)
 }
-function send(response, status, payload) {
+function send(response, status, payload, cacheState='MISS') {
   response.statusCode=status
   response.setHeader('Content-Type','application/json; charset=utf-8')
-  response.setHeader('Cache-Control',status===200?'public, s-maxage=300, stale-while-revalidate=900':'no-store')
+  response.setHeader('Cache-Control',status===200?'public, s-maxage=300, stale-while-revalidate=1800':'no-store')
   response.setHeader('X-Content-Type-Options','nosniff')
+  response.setHeader('X-Good-Times-Catalog-Cache',cacheState)
   response.end(JSON.stringify(payload))
 }
+function cacheKey(city,mode,category,subcategory,limit) {
+  return [city,mode,category||'',subcategory||'',limit||''].join(':')
+}
+function fresh(entry, ttl) { return entry && Date.now() - entry.at < ttl }
 
 export default async function handler(request,response) {
   if ((request.method || 'GET') !== 'GET') {
@@ -68,28 +74,35 @@ export default async function handler(request,response) {
   const url=new URL(request.url || '/api/catalog','https://thegoodtimesworldwide.com')
   const city=normalizeCity(url.searchParams.get('city'))
   const mode=url.searchParams.get('mode') || 'taxonomy'
+  const category=url.searchParams.get('category')
+  const subcategory=url.searchParams.get('subcategory')
+  const limit=mode==='directory'?clamp(url.searchParams.get('limit'),120,MAX_DIRECTORY_ROWS):null
+  const key=cacheKey(city,mode,category,subcategory,limit)
+  const cached=RESPONSE_CACHE.get(key)
+  if (fresh(cached, 5 * 60 * 1000)) return send(response,200,cached.payload,'HIT')
+
   try {
     if (mode === 'directory') {
-      const category=url.searchParams.get('category')
-      const subcategory=url.searchParams.get('subcategory')
       const query=[
         `${CACHE}?select=${DIRECTORY_SELECT}`,
         `city_key=eq.${encodeURIComponent(city)}`,
         category?`category_key=eq.${encodeURIComponent(category)}`:'',
         subcategory?`subcategory_key=eq.${encodeURIComponent(subcategory)}`:'',
         'order=taxonomy_confidence.desc,quality_score.desc.nullslast,google_rating.desc.nullslast',
-        `limit=${clamp(url.searchParams.get('limit'),300,MAX_DIRECTORY_ROWS)}`,
+        `limit=${limit}`,
       ].filter(Boolean).join('&')
       const rows=await fetchRows(query,'GOOD TIMES directory')
       const seen=new Set()
       const venues=rows.filter(row=>{if(!row?.id||seen.has(row.id))return false;seen.add(row.id);return true}).map(row=>({...row,hero_image:safePublicImage(row.hero_image)}))
-      return send(response,200,{ok:true,city,category,subcategory,count:venues.length,venues})
+      const payload={ok:true,city,category,subcategory,count:venues.length,venues}
+      RESPONSE_CACHE.set(key,{at:Date.now(),payload})
+      return send(response,200,payload)
     }
 
     const [categoriesResult,subcategoriesResult,countsResult]=await Promise.allSettled([
       fetchRows(`gt_taxonomy_categories?select=${CATEGORY_SELECT}&is_active=eq.true&order=sort_order.asc,category_name.asc`,'GOOD TIMES categories'),
       fetchRows(`gt_taxonomy_subcategories?select=${SUBCATEGORY_SELECT}&is_active=eq.true&order=category_key.asc,sort_order.asc,subcategory_name.asc`,'GOOD TIMES subcategories'),
-      fetchRows(`${COUNT_CACHE}?select=${COUNT_SELECT}&city_key=eq.${encodeURIComponent(city)}`,'GOOD TIMES taxonomy counts'),
+      fetchRows(`${COUNT_CACHE}?select=${COUNT_SELECT}&city_key=eq.${encodeURIComponent(city)}&limit=500`,'GOOD TIMES taxonomy counts'),
     ])
 
     if(categoriesResult.status!=='fulfilled' || subcategoriesResult.status!=='fulfilled') {
@@ -124,7 +137,7 @@ export default async function handler(request,response) {
       })
     }
 
-    return send(response,200,{
+    const payload={
       ok:true,
       city,
       counts_live:countsLive,
@@ -137,8 +150,16 @@ export default async function handler(request,response) {
         image:null,
         subcategories:grouped.get(category.category_key)||[],
       })),
-    })
+    }
+    RESPONSE_CACHE.set(key,{at:Date.now(),payload})
+    if(RESPONSE_CACHE.size>80){const oldest=[...RESPONSE_CACHE.entries()].sort((a,b)=>a[1].at-b[1].at)[0]?.[0];if(oldest)RESPONSE_CACHE.delete(oldest)}
+    return send(response,200,payload)
   } catch(error){
+    const stale=RESPONSE_CACHE.get(key)
+    if(fresh(stale, 30 * 60 * 1000)) {
+      console.warn('[GOOD TIMES catalog stale fallback]',{city,mode,message:error?.message||String(error)})
+      return send(response,200,{...stale.payload,degraded:true},'STALE')
+    }
     console.error('[GOOD TIMES catalog]',{city,mode,message:error?.message||String(error)})
     return send(response,503,{ok:false,city,mode,error:'GOOD TIMES catalog is temporarily unavailable.',detail:error?.message||String(error)})
   }
