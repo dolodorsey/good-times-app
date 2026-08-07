@@ -20,6 +20,7 @@ const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
 const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
 const LazyOnboarding = lazy(() => import('./features/onboarding/GoodTimesOnboarding.jsx'))
 const LazyCompletionBridge = lazy(() => import('./features/experience/GoodTimesCompletionBridge.jsx'))
+const LazyNativeBridge = lazy(() => import('./features/experience/GoodTimesNativeBridge.jsx'))
 const LazyPaymentsLauncher = lazy(() => import('./features/experience/GoodTimesPaymentsBridge.jsx'))
 const LazyConnectHub = lazy(() => import('./features/experience/GoodTimesConnectHub.jsx'))
 
@@ -50,7 +51,6 @@ function installDataRequestGuard(){
               if(vibes.length){url.searchParams.set('vibes',vibes.join(','));changed=true}
             }catch{}
           }
-          // Member requests go directly to the fast endpoint so vibe ranking survives end-to-end.
           if(url.searchParams.has('vibes')){url.pathname='/api/data-fast';changed=true}
         }
         if(isNative&&url.pathname.startsWith('/api/')){
@@ -116,6 +116,7 @@ async function bootstrap(){
     <RuntimeBoundary>
       <Suspense fallback={<RouteLoading label={loadingLabel}/>}>
         <PremiumRoot launch={showMemberTools}>
+          {isNative?<LazyNativeBridge/>:null}
           {showMemberTools?<LazyCompletionBridge/>:null}
           {route}
           {showMemberTools?<><LazyConnectHub/><LazyPaymentsLauncher/></>:null}
