@@ -11,6 +11,7 @@ import './features/experience/good-times-profile.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
+import { isNative } from './native.js'
 
 const LazyLiveApp = lazy(() => import('./features/experience/GoodTimesLiveApp.jsx'))
 const LazyCommandApp = lazy(() => import('./features/experience/GoodTimesCommandApp.jsx'))
@@ -25,6 +26,7 @@ const LazyConnectHub = lazy(() => import('./features/experience/GoodTimesConnect
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
 const directRoutes = { '/join':'join','/concierge-request':'concierge-request','/trip':'trip','/group':'group' }
+const HOSTED_API_ORIGIN='https://thegoodtimesworldwide.com'
 
 function installDataRequestGuard(){
   if(typeof window==='undefined'||window.__GOOD_TIMES_FETCH_GUARD__)return
@@ -34,23 +36,29 @@ function installDataRequestGuard(){
     try{
       const raw=typeof input==='string'?input:input?.url
       if(raw){
-        const url=new URL(raw,window.location.origin)
+        let url=new URL(raw,window.location.origin)
+        let changed=false
         if(url.pathname==='/api/data'){
           const eventLimit=Number.parseInt(url.searchParams.get('event_limit')||'0',10)
           const venueLimit=Number.parseInt(url.searchParams.get('venue_limit')||'0',10)
-          if(!Number.isFinite(eventLimit)||eventLimit<=0||eventLimit>120)url.searchParams.set('event_limit','120')
-          if(!Number.isFinite(venueLimit)||venueLimit<=0||venueLimit>180)url.searchParams.set('venue_limit','180')
+          if(!Number.isFinite(eventLimit)||eventLimit<=0||eventLimit>120){url.searchParams.set('event_limit','120');changed=true}
+          if(!Number.isFinite(venueLimit)||venueLimit<=0||venueLimit>180){url.searchParams.set('venue_limit','180');changed=true}
           if(!url.searchParams.has('vibes')){
             try{
               const personalization=JSON.parse(localStorage.getItem('gt_personalization')||'{}')
               const vibes=Array.isArray(personalization?.vibes)?personalization.vibes.filter(Boolean).slice(0,5):[]
-              if(vibes.length)url.searchParams.set('vibes',vibes.join(','))
+              if(vibes.length){url.searchParams.set('vibes',vibes.join(','));changed=true}
             }catch{}
           }
-          // Vercel's /api/data rewrite can discard the personalization query before the function sees it.
           // Member requests go directly to the fast endpoint so vibe ranking survives end-to-end.
-          if(url.searchParams.has('vibes'))url.pathname='/api/data-fast'
-          if(typeof input==='string')input=`${url.pathname}${url.search}${url.hash}`
+          if(url.searchParams.has('vibes')){url.pathname='/api/data-fast';changed=true}
+        }
+        if(isNative&&url.pathname.startsWith('/api/')){
+          url=new URL(`${url.pathname}${url.search}${url.hash}`,HOSTED_API_ORIGIN)
+          changed=true
+        }
+        if(changed){
+          if(typeof input==='string')input=isNative?url.toString():`${url.pathname}${url.search}${url.hash}`
           else input=new Request(url.toString(),input)
         }
       }
