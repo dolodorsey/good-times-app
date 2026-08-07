@@ -38,7 +38,7 @@ jobs:
           from pathlib import Path
           path = Path('ios/App/App.xcodeproj/project.pbxproj')
           text = path.read_text()
-          text = text.replace('CODE_SIGN_IDENTITY = "iPhone Developer";', 'CODE_SIGN_IDENTITY = "Apple Distribution";')
+          text = text.replace('\t\t\t\tCODE_SIGN_IDENTITY = "iPhone Developer";\n', '')
           path.write_text(text)
           PY
       
@@ -80,7 +80,6 @@ jobs:
             -authenticationKeyPath ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8 \
             -authenticationKeyID ${{ secrets.APP_STORE_CONNECT_KEY_ID }} \
             -authenticationKeyIssuerID ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }} \
-            CODE_SIGNING_ALLOWED=YES \
             CODE_SIGN_STYLE=Automatic \
             DEVELOPMENT_TEAM=${{ secrets.APPLE_TEAM_ID }}
       
