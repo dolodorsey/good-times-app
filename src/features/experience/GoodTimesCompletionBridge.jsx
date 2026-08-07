@@ -9,12 +9,21 @@ const MAP_BBOX={
   new_york:'-74.26,40.49,-73.68,40.92',las_vegas:'-115.42,35.93,-114.90,36.38',washington_dc:'-77.22,38.79,-76.84,39.02',
   phoenix:'-112.32,33.25,-111.80,33.78',scottsdale:'-112.02,33.42,-111.75,33.76',
 }
+const EXTRA_CONNECT_CITIES=[['washington_dc','Washington, DC'],['phoenix','Phoenix'],['scottsdale','Scottsdale']]
 const cityName=value=>String(value||'atlanta').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase()).replace('Washington Dc','Washington, DC')
 const currentCity=()=>document.querySelector('.gtlive-topbar select')?.value||'atlanta'
 const readPersonalization=()=>{try{return JSON.parse(localStorage.getItem('gt_personalization')||'{}')}catch{return{}}}
 const writePersonalization=next=>{try{localStorage.setItem('gt_personalization',JSON.stringify({...readPersonalization(),...next,updated_at:new Date().toISOString()}))}catch{}}
 
 function openExternal(url){if(!url)return;try{window.open(url,'_blank','noopener,noreferrer')}catch{window.location.href=url}}
+function ensureOption(select,id,label){if(!(select instanceof HTMLSelectElement)||[...select.options].some(option=>option.value===id))return;const option=document.createElement('option');option.value=id;option.textContent=label;select.append(option)}
+function makeContextButton(id,label,onClick){
+  let button=document.getElementById(id)
+  if(button)return button
+  button=document.createElement('button');button.id=id;button.type='button';button.textContent=label
+  Object.assign(button.style,{border:'1px solid rgba(212,168,83,.30)',background:'rgba(212,168,83,.08)',color:'#F2D58F',borderRadius:'999px',padding:'8px 12px',fontSize:'10px',fontWeight:'900',letterSpacing:'.08em',textTransform:'uppercase',cursor:'pointer',marginTop:'10px'})
+  button.addEventListener('click',onClick);return button
+}
 
 export default function GoodTimesCompletionBridge(){
   const session=useMemo(()=>readSession(),[])
@@ -106,6 +115,20 @@ export default function GoodTimesCompletionBridge(){
       document.querySelectorAll('.gtlive-quick-row button').forEach(button=>{
         if(String(button.textContent||'').trim().startsWith('Black-Owned'))button.style.display=city==='atlanta'?'':'none'
       })
+      document.querySelectorAll('.gt-connect-city select,.gt-profile-editor select').forEach(select=>EXTRA_CONNECT_CITIES.forEach(([id,label])=>ensureOption(select,id,label)))
+
+      const page=document.querySelector('.gtlive-page')
+      const pageLabel=String(page?.querySelector('.gtlive-page-head span')?.textContent||'').trim().toUpperCase()
+      const staleVault=document.getElementById('gt-vault-wallet-action')
+      const stalePlans=document.getElementById('gt-plans-build-action')
+      if(pageLabel==='VAULT'&&page){
+        const head=page.querySelector('.gtlive-page-head')
+        if(head&&!staleVault)head.append(makeContextButton('gt-vault-wallet-action','My Tickets + VIP',()=>window.dispatchEvent(new CustomEvent('gt:open-payments'))))
+      }else staleVault?.remove()
+      if(pageLabel==='PLANS'&&page){
+        const head=page.querySelector('.gtlive-page-head')
+        if(head&&!stalePlans)head.append(makeContextButton('gt-plans-build-action','Build another night',()=>{const button=[...document.querySelectorAll('.gtlive-nav button')].find(item=>String(item.textContent||'').includes('Build'));if(button instanceof HTMLElement)button.click()}))
+      }else stalePlans?.remove()
     }
     const observer=new MutationObserver(syncMapAndQuickActions)
     observer.observe(document.body,{childList:true,subtree:true})
