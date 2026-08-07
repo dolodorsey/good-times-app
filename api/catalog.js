@@ -31,7 +31,7 @@ function safePublicImage(value) {
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 async function fetchRows(path, label) {
   let lastError = null
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), 4500)
     try {
@@ -48,9 +48,9 @@ async function fetchRows(path, label) {
       }
     } catch (error) {
       lastError = error?.name === 'AbortError' ? new Error(`${label} request timed out`) : error
-      if (attempt === 1) throw lastError
+      if (attempt === 2) throw lastError
     } finally { clearTimeout(timeout) }
-    if (attempt < 1) await wait(120)
+    if (attempt < 2) await wait(120 * (attempt + 1))
   }
   throw lastError || new Error(`${label} failed`)
 }
