@@ -16,6 +16,24 @@ function headers() {
 function safeTerm(value) {
   return String(value || '').trim().replace(/[(),]/g, ' ').replace(/\s+/g, ' ').slice(0, 80)
 }
+function identityPart(value) {
+  return String(value || '').trim().toLowerCase().replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '').replace(/[^a-z0-9]+/g, ' ').trim()
+}
+function dedupeVenues(rows, limit) {
+  const seen = new Set()
+  const output = []
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const address = identityPart(row.address)
+    const website = identityPart(row.website)
+    const name = identityPart(row.name)
+    const keys = [address && `address:${address}`, website && `website:${website}`, name && `name:${name}`].filter(Boolean)
+    if (keys.some(key => seen.has(key))) continue
+    keys.forEach(key => seen.add(key))
+    output.push(row)
+    if (output.length >= limit) break
+  }
+  return output
+}
 function send(res, status, payload) {
   res.statusCode = status
   res.setHeader('Content-Type', 'application/json; charset=utf-8')
@@ -44,7 +62,7 @@ export default async function handler(req, res) {
   params.set('status', 'eq.active')
   params.set('or', `(name.ilike.${wildcard},address.ilike.${wildcard},neighborhood.ilike.${wildcard})`)
   params.set('order', 'is_verified.desc,quality_score.desc.nullslast,name.asc')
-  params.set('limit', String(limit))
+  params.set('limit', String(Math.min(limit * 3, 75)))
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 3500)
@@ -55,7 +73,8 @@ export default async function handler(req, res) {
     const text = await response.text()
     if (!response.ok) throw new Error(`venue search HTTP ${response.status}: ${text.slice(0, 180)}`)
     const rows = text ? JSON.parse(text) : []
-    return send(res, 200, { ok:true, city, query:q, count:Array.isArray(rows) ? rows.length : 0, venues:Array.isArray(rows) ? rows : [] })
+    const venues = dedupeVenues(rows, limit)
+    return send(res, 200, { ok:true, city, query:q, count:venues.length, venues })
   } catch (error) {
     console.error('[GOOD TIMES claim search]', { city, query:q, message:error?.message || String(error) })
     return send(res, 503, { ok:false, city, query:q, error:'Venue search is temporarily unavailable.' })
