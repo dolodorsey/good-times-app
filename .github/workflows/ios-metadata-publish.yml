@@ -1,0 +1,120 @@
+name: GOOD TIMES App Store Metadata
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/ios-metadata-publish.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  publish-metadata:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate App Store Connect credentials
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$ASC_KEY_ID" ] || missing+=(APP_STORE_CONNECT_KEY_ID)
+          [ -n "$ASC_ISSUER_ID" ] || missing+=(APP_STORE_CONNECT_ISSUER_ID)
+          [ -n "$ASC_PRIVATE_KEY" ] || missing+=(APP_STORE_CONNECT_PRIVATE_KEY)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error title=GOOD TIMES metadata blocked::Missing App Store Connect secrets: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Configure App Store Connect API key
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          payload={
+            'key_id':os.environ['ASC_KEY_ID'],
+            'issuer_id':os.environ['ASC_ISSUER_ID'],
+            'key':os.environ['ASC_PRIVATE_KEY'],
+            'in_house':False,
+          }
+          path=Path(os.environ['RUNNER_TEMP'])/'appstore_api_key.json'
+          path.write_text(json.dumps(payload))
+          path.chmod(0o600)
+          PY
+
+      - name: Install Fastlane
+        run: |
+          set -euo pipefail
+          GEM_HOME="$RUNNER_TEMP/gems"
+          GEM_BIN="$GEM_HOME/bin"
+          echo "GEM_HOME=$GEM_HOME" >> "$GITHUB_ENV"
+          echo "$GEM_BIN" >> "$GITHUB_PATH"
+          gem install fastlane --no-document --install-dir "$GEM_HOME" --bindir "$GEM_BIN"
+          "$GEM_BIN/fastlane" --version
+
+      - name: Publish metadata for iOS 1.1.0
+        shell: bash
+        run: |
+          set +e
+          set -o pipefail
+          fastlane deliver \
+            --app_identifier com.kollective.goodtimes \
+            --app_version 1.1.0 \
+            --api_key_path "$RUNNER_TEMP/appstore_api_key.json" \
+            --metadata_path fastlane/metadata \
+            --skip_binary_upload true \
+            --skip_screenshots true \
+            --force true \
+            2>&1 | tee "$RUNNER_TEMP/appstore-metadata.log"
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            tail -160 "$RUNNER_TEMP/appstore-metadata.log" | while IFS= read -r line; do
+              SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
+              echo "::error title=GOOD TIMES App Store metadata::$SAFE"
+            done
+            exit "$STATUS"
+          fi
+
+      - name: Run App Store metadata precheck
+        shell: bash
+        run: |
+          set +e
+          set -o pipefail
+          fastlane run check_app_store_metadata \
+            app_identifier:"com.kollective.goodtimes" \
+            api_key_path:"$RUNNER_TEMP/appstore_api_key.json" \
+            2>&1 | tee "$RUNNER_TEMP/appstore-precheck.log"
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            tail -160 "$RUNNER_TEMP/appstore-precheck.log" | while IFS= read -r line; do
+              SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
+              echo "::error title=GOOD TIMES App Store precheck::$SAFE"
+            done
+            exit "$STATUS"
+          fi
+
+      - name: Preserve metadata evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-app-store-metadata-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/appstore-metadata.log
+            ${{ runner.temp }}/appstore-precheck.log
+          if-no-files-found: ignore
+
+      - name: Cleanup
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/appstore_api_key.json" "$RUNNER_TEMP/gems"
