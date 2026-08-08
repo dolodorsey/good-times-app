@@ -110,6 +110,6 @@ test('account deletion calls the authenticated server-side deletion function and
 })
 
 test('store review privacy and support endpoints document deletion and privacy choices', () => {
-  mustContain(privacy, ['Privacy Policy', 'Delete your account', '/support.html', 'hello@thegoodtimesworldwide.com'])
+  mustContain(privacy, ['Privacy Policy', 'delete your GOOD TIMES account', '/support.html', 'hello@thegoodtimesworldwide.com'])
   mustContain(support, ['Support & Privacy Choices', 'Delete your GOOD TIMES account', 'Delete account permanently', '/privacy.html'])
 })
