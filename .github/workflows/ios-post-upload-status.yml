@@ -61,14 +61,14 @@ jobs:
           gem install fastlane --no-document --install-dir "$GEM_HOME" --bindir "$GEM_BIN"
           "$GEM_BIN/fastlane" --version
 
-      - name: List TestFlight builds
+      - name: Verify latest uploaded TestFlight build
         shell: bash
         run: |
           set +e
           set -o pipefail
-          fastlane pilot list \
-            --app_identifier com.kollective.goodtimes \
-            --api_key_path "$RUNNER_TEMP/appstore_api_key.json" \
+          fastlane run latest_testflight_build_number \
+            app_identifier:"com.kollective.goodtimes" \
+            api_key_path:"$RUNNER_TEMP/appstore_api_key.json" \
             2>&1 | tee "$RUNNER_TEMP/testflight-status.log"
           STATUS=${PIPESTATUS[0]}
           if [ "$STATUS" -ne 0 ]; then
@@ -78,6 +78,22 @@ jobs:
             done
             exit "$STATUS"
           fi
+          BUILD_NUMBER=$(grep -Eo 'Result: [0-9]+' "$RUNNER_TEMP/testflight-status.log" | tail -1 | awk '{print $2}')
+          if [ -z "$BUILD_NUMBER" ]; then
+            echo "::error title=GOOD TIMES TestFlight status::App Store Connect responded, but no TestFlight build number could be extracted."
+            exit 1
+          fi
+          echo "LATEST_TESTFLIGHT_BUILD=$BUILD_NUMBER" >> "$GITHUB_ENV"
+          echo "GOOD TIMES latest TestFlight build: $BUILD_NUMBER"
+
+      - name: Confirm uploaded review binary is current
+        run: |
+          set -euo pipefail
+          if [ "$LATEST_TESTFLIGHT_BUILD" -lt 250 ]; then
+            echo "::error title=GOOD TIMES stale TestFlight binary::Expected account-deletion review binary build 250 or newer; App Store Connect reports $LATEST_TESTFLIGHT_BUILD."
+            exit 1
+          fi
+          echo "GOOD TIMES review binary is present in App Store Connect (build $LATEST_TESTFLIGHT_BUILD)."
 
       - name: Preserve status evidence
         if: always()
