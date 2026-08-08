@@ -5,10 +5,14 @@ import fs from 'node:fs'
 const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 const main = read('src/main.jsx')
 const live = read('src/features/experience/GoodTimesLiveApp.jsx')
+const auth = read('src/features/auth/client.js')
+const account = read('src/features/experience/GoodTimesAccountCenter.jsx')
 const intelligence = read('src/features/intelligence/client.js')
 const personalization = read('scripts/apply-growth-personalization.mjs')
 const liveUx = read('scripts/apply-live-ux-polish.mjs')
 const recommendationMigration = read('supabase/auth-migrations/20260808_capture_ai_itinerary_recommendation_sessions.sql')
+const privacy = read('public/privacy.html')
+const support = read('public/support.html')
 
 const mustContain = (text, markers) => markers.forEach(marker => assert.ok(text.includes(marker), `missing contract marker: ${marker}`))
 
@@ -82,4 +86,30 @@ test('persisted AI itineraries create auditable recommendation sessions', () => 
     'gt_recommendation_sessions',
     'after insert on public.itineraries',
   ])
+})
+
+test('members have a visible account center with permanent deletion', () => {
+  mustContain(main, ['LazyAccountCenter', '<LazyAccountCenter/>'])
+  mustContain(account, [
+    'GOOD TIMES ACCOUNT',
+    'Delete account permanently',
+    'deleteAccount(session)',
+    '/privacy.html',
+    '/support.html',
+  ])
+})
+
+test('account deletion calls the authenticated server-side deletion function and clears local state', () => {
+  mustContain(auth, [
+    'export async function deleteAccount',
+    '/functions/v1/delete-account',
+    'Authorization: `Bearer ${bearer}`',
+    "'gt_personalization'",
+    "'gt_live_plans'",
+  ])
+})
+
+test('store review privacy and support endpoints document deletion and privacy choices', () => {
+  mustContain(privacy, ['Privacy Policy', 'Delete your account', '/support.html', 'hello@thegoodtimesworldwide.com'])
+  mustContain(support, ['Support & Privacy Choices', 'Delete your GOOD TIMES account', 'Delete account permanently', '/privacy.html'])
 })
