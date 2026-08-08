@@ -2,9 +2,6 @@ name: GOOD TIMES App Store Metadata
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/ios-metadata-publish.yml'
 
 permissions:
   contents: read
