@@ -126,7 +126,7 @@ The suite now locks:
 - public privacy/support review endpoints;
 - content freshness, taxonomy, deduplication, auth/session behavior, data-boundary isolation, and production fallback behavior.
 
-The full Vite production build passes after the regression suite. Latest production Vercel deployment for main commit `32d4e21c2f7a342d13a80e1b411e9246ae675a7b` is `READY`.
+The full Vite production build passes after the regression suite. The latest verified production GOOD TIMES Vercel deployment is `READY`.
 
 ## iOS release status
 
@@ -139,11 +139,11 @@ The full Vite production build passes after the regression suite. Latest product
 - That binary is after the Account/Delete Account and privacy/support implementation, so it includes the current review-required account UI.
 - App Store Connect/TestFlight independently reports **version 1.1.0, build 250** as the latest uploaded iOS build.
 - Automated post-upload CI rejects a TestFlight build older than 250, preventing review from accidentally using a pre-account-deletion binary.
-- Signed store release is now an explicit `workflow_dispatch` action rather than running on every main-branch commit.
+- Signed store release is an explicit `workflow_dispatch` action rather than running on every main-branch commit.
 
-## App Store listing status
+## App Store listing + metadata status
 
-Repository store copy has been refreshed for the actual product:
+Repository store copy has been refreshed for the actual GOOD TIMES product:
 
 - 1,600+ curated places.
 - 11 launch cities.
@@ -151,7 +151,22 @@ Repository store copy has been refreshed for the actual product:
 - GOOD TIMES-only positioning; legacy cross-brand promotional copy removed.
 - Production privacy and support URLs included.
 
-The listing package is prepared in the repository. Store metadata/screenshots and final App Store review submission still require completion in App Store Connect; do not confuse a prepared listing document with an already-submitted store listing.
+The repository now contains a real `fastlane/metadata` package with the current name, subtitle, description, keywords, promotional text, release notes, marketing URL, privacy URL, support URL, copyright, and reviewer notes.
+
+The repository also contains a direct App Store Connect API metadata publisher with safeguards that:
+
+- targets the documented GOOD TIMES App Store application directly;
+- verifies the app bundle identifier before any write;
+- refuses writes outside editable pre-review states;
+- retries Apple 429/5xx responses with bounded exponential backoff;
+- writes version-level and App Info localization metadata through Apple's official API resources;
+- reads every field back from Apple and fails if the stored values do not exactly match the repository package.
+
+On 2026-08-08 the App Store Connect metadata API returned Apple `500 UNEXPECTED_ERROR` responses before any metadata write. The failure reproduced on both the list-app route and the direct app-by-ID route, including six bounded retries. This is isolated from the healthy binary/TestFlight pipeline: build 250 is uploaded and visible, while metadata API reads are failing server-side. No GOOD TIMES metadata PATCH was executed during the failed runs.
+
+To prevent repeated store traffic while the Apple endpoint is unhealthy, metadata publishing is now `workflow_dispatch` only. The prepared publisher remains ready for an explicit retry once App Store Connect API reads are healthy.
+
+The App Store screenshot production specification is also committed at `APP_STORE_SCREENSHOT_SPEC.md` with an eight-screen 1290×2796 portrait sequence covering Now, Dates, Build, Explore, Map, Vault, Plans, and Account/Privacy. Actual rendered screenshots still require a current authenticated device/simulator capture surface and have not been falsely fabricated.
 
 ## Android release status
 
@@ -160,7 +175,7 @@ Android application engineering is release-ready, but store identity credentials
 - Debug compile succeeds.
 - Release workflow builds a signed Android App Bundle (`.aab`), verifies the signature, authenticates a Google Play service account, and uploads to the internal track as a draft.
 - Android `compileSdkVersion` and `targetSdkVersion` are 36.
-- Store release is now an explicit `workflow_dispatch` action rather than running on every main-branch commit.
+- Store release is an explicit `workflow_dispatch` action rather than running on every main-branch commit.
 - The repository includes `scripts/bootstrap-android-release-secrets.sh` to create or reuse a permanent upload key, preserve recovery material outside the repository, install the five GitHub Actions secrets, and then allow the Play release workflow to run.
 
 Android remains hard-blocked on these externally controlled credentials:
@@ -171,7 +186,17 @@ Android remains hard-blocked on these externally controlled credentials:
 - `ANDROID_KEY_PASSWORD`
 - `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON`
 
-The Google Play service-account JSON is not present in connected GOOD TIMES files, and the permanent Play signing identity must not be fabricated as a disposable CI key.
+A targeted credential search was completed across the connected private account records before declaring this blocked. The GOOD TIMES account sheet, credential-vault index, owner-private credentials sheet, raw key vault, general Drive search, and connected file library were checked for `Google Play`, `Play Console`, `Android`, `service account`, and `keystore` records. No existing GOOD TIMES Play service-account credential or permanent Android signing key was found. The permanent Play signing identity must not be fabricated as a disposable CI key.
+
+## Store-account gates that require external account surfaces
+
+The remaining store-account gates are not app-engineering defects:
+
+- App Store Connect metadata API must return healthy reads before the prepared metadata publisher can safely write and verify listing fields.
+- App Store privacy questionnaire/labels require the appropriate App Store Connect account role and should be completed in Apple's account surface rather than guessed from source code.
+- Because GOOD TIMES is account-gated, App Review needs a stable reviewer login entered securely in App Store Connect; no reviewer password is stored in this public repository.
+- App Store screenshots require rendered authenticated capture from the current app UI.
+- Android requires a Google Play service-account JSON and permanent release signing identity before the signed AAB/internal-track workflow can execute.
 
 ## Production hardening
 
@@ -187,9 +212,10 @@ The Google Play service-account JSON is not present in connected GOOD TIMES file
 
 ## Remaining release gates
 
-1. Add the permanent Android signing secrets and Google Play service-account credential, then execute the signed AAB/internal-track workflow.
-2. Complete App Store Connect metadata, screenshots, privacy labels/age-rating confirmations, select TestFlight build 250, and submit the iOS version for review.
-3. Expand rendered-device/browser QA when an actual browser/device automation runtime is available; current coverage is authenticated production-contract/RLS/runtime coverage, not a claim of literal screen tapping on every device.
-4. Continue real-customer behavior acquisition so recommendation quality can be evaluated beyond technical proof.
-5. Have Supabase Support relocate PostGIS using the guarded support migration, then rerun security advisors.
-6. Enable Supabase Auth leaked-password protection through the project Auth configuration surface.
+1. When Apple's metadata API is healthy, manually dispatch the prepared App Store metadata publisher and require its Apple read-back verification to pass.
+2. In App Store Connect, complete the privacy/age-rating questionnaire, provide a secure reviewer login, select build 250 for version 1.1.0, upload the authenticated screenshot set, and submit the version for review.
+3. Provision or recover the permanent GOOD TIMES Google Play signing/service-account credentials, install them through the secure bootstrap, and manually dispatch the signed Android internal-track release.
+4. Expand rendered-device/browser QA when an actual browser/device automation runtime is available; current coverage is authenticated production-contract/RLS/runtime coverage, not a claim of literal screen tapping on every device.
+5. Continue real-customer behavior acquisition so recommendation quality can be evaluated beyond technical proof.
+6. Have Supabase Support relocate PostGIS using the guarded support migration, then rerun security advisors.
+7. Enable Supabase Auth leaked-password protection through the project Auth configuration surface.
