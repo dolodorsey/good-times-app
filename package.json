@@ -5,14 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/apply-production-release.mjs && node scripts/apply-multicity-map.mjs && node scripts/apply-live-ux-polish.mjs && node scripts/apply-multicity-home-polish.mjs && node scripts/apply-growth-personalization.mjs && node scripts/generate-growth-pages.mjs && node scripts/harden-production-fallback.mjs && node scripts/apply-atlanta-now-polish.mjs && npm run test && vite build",
+    "build": "node scripts/apply-production-release.mjs && node scripts/apply-multicity-map.mjs && node scripts/apply-live-ux-polish.mjs && node scripts/apply-multicity-home-polish.mjs && node scripts/apply-growth-personalization.mjs && node scripts/generate-growth-pages.mjs && node scripts/harden-production-fallback.mjs && node scripts/apply-atlanta-now-polish.mjs && node scripts/apply-atlanta-api-ranking.mjs && npm run test && vite build",
     "test": "node --test scripts/*.test.mjs",
     "verify": "npm run build && npm audit --omit=dev --audit-level=critical",
     "preview": "vite preview",
-    "ios:build": "node scripts/apply-production-release.mjs && node scripts/apply-multicity-map.mjs && node scripts/apply-live-ux-polish.mjs && node scripts/apply-multicity-home-polish.mjs && node scripts/apply-growth-personalization.mjs && node scripts/harden-production-fallback.mjs && node scripts/apply-atlanta-now-polish.mjs && npm run test && vite build && npx cap sync ios",
+    "ios:build": "node scripts/apply-production-release.mjs && node scripts/apply-multicity-map.mjs && node scripts/apply-live-ux-polish.mjs && node scripts/apply-multicity-home-polish.mjs && node scripts/apply-growth-personalization.mjs && node scripts/harden-production-fallback.mjs && node scripts/apply-atlanta-now-polish.mjs && node scripts/apply-atlanta-api-ranking.mjs && npm run test && vite build && npx cap sync ios",
     "ios:open": "npx cap open ios",
     "ios:run": "npx cap run ios",
-    "android:build": "node scripts/apply-production-release.mjs && node scripts/apply-multicity-map.mjs && node scripts/apply-live-ux-polish.mjs && node scripts/apply-multicity-home-polish.mjs && node scripts/apply-growth-personalization.mjs && node scripts/harden-production-fallback.mjs && node scripts/apply-atlanta-now-polish.mjs && npm run test && vite build && npx cap sync android",
+    "android:build": "node scripts/apply-production-release.mjs && node scripts/apply-multicity-map.mjs && node scripts/apply-live-ux-polish.mjs && node scripts/apply-multicity-home-polish.mjs && node scripts/apply-growth-personalization.mjs && node scripts/harden-production-fallback.mjs && node scripts/apply-atlanta-now-polish.mjs && node scripts/apply-atlanta-api-ranking.mjs && npm run test && vite build && npx cap sync android",
     "android:open": "npx cap open android",
     "android:run": "npx cap run android"
   },
