@@ -1,0 +1,167 @@
+name: GOOD TIMES App Store Metadata v2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios-metadata-publish-v2.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  publish-metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate App Store Connect credentials
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$ASC_KEY_ID" ] || missing+=(APP_STORE_CONNECT_KEY_ID)
+          [ -n "$ASC_ISSUER_ID" ] || missing+=(APP_STORE_CONNECT_ISSUER_ID)
+          [ -n "$ASC_PRIVATE_KEY" ] || missing+=(APP_STORE_CONNECT_PRIVATE_KEY)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error title=GOOD TIMES metadata blocked::Missing App Store Connect secrets: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Install Apple API dependencies
+        run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+
+      - name: Publish and verify GOOD TIMES metadata
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, random, time
+          from pathlib import Path
+          import jwt, requests
+
+          BASE='https://api.appstoreconnect.apple.com/v1'
+          BUNDLE='com.kollective.goodtimes'
+          VERSION='1.1.0'
+          LOCALE='en-US'
+          ROOT=Path.cwd()
+          RETRYABLE={429,500,502,503,504}
+
+          def read(path):
+              return (ROOT/path).read_text(encoding='utf-8').strip()
+
+          token=jwt.encode(
+              {'iss':os.environ['ASC_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},
+              os.environ['ASC_PRIVATE_KEY'], algorithm='ES256',
+              headers={'kid':os.environ['ASC_KEY_ID'],'typ':'JWT'})
+          headers={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
+
+          def api(method,path,*,params=None,payload=None,attempts=6):
+              last=None
+              for attempt in range(1,attempts+1):
+                  r=requests.request(method,BASE+path,headers=headers,params=params,json=payload,timeout=45)
+                  if r.ok:
+                      return {} if r.status_code==204 or not r.content else r.json()
+                  last=r
+                  if r.status_code not in RETRYABLE or attempt==attempts:
+                      break
+                  delay=min(30,2**(attempt-1)+random.random())
+                  print(f'Apple API {method} {path} HTTP {r.status_code}; retry {attempt}/{attempts} in {delay:.1f}s')
+                  time.sleep(delay)
+              raise SystemExit(f'{method} {path} failed HTTP {last.status_code if last else "?"}: {(last.text if last else "no response")[:4000]}')
+
+          # Resolve the app from the canonical bundle ID. Never hard-code an App Store ID.
+          apps=api('GET','/apps',params={'filter[bundleId]':BUNDLE,'limit':'10'})['data']
+          exact=[a for a in apps if a.get('attributes',{}).get('bundleId')==BUNDLE]
+          if len(exact)!=1:
+              found=[(a.get('id'),a.get('attributes',{}).get('bundleId'),a.get('attributes',{}).get('name')) for a in apps]
+              raise SystemExit(f'Expected exactly one App Store app for {BUNDLE}, found {len(exact)}. Candidates={found}')
+          app=exact[0]
+          app_id=app['id']
+          print(f'Resolved GOOD TIMES App Store ID {app_id} from bundle {BUNDLE}.')
+
+          versions=api('GET',f'/apps/{app_id}/appStoreVersions',params={'limit':'200'})['data']
+          matches=[v for v in versions if v.get('attributes',{}).get('versionString')==VERSION and v.get('attributes',{}).get('platform')=='IOS']
+          if len(matches)!=1:
+              raise SystemExit(f'Expected one iOS {VERSION} version, found {len(matches)}.')
+          version=matches[0]
+          version_id=version['id']
+          version_state=version.get('attributes',{}).get('appVersionState') or version.get('attributes',{}).get('appStoreState')
+          editable={'PREPARE_FOR_SUBMISSION','DEVELOPER_REJECTED','METADATA_REJECTED','READY_FOR_REVIEW'}
+          if version_state not in editable:
+              raise SystemExit(f'Refusing metadata write because iOS {VERSION} state is {version_state}.')
+
+          locs=api('GET',f'/appStoreVersions/{version_id}/appStoreVersionLocalizations',params={'filter[locale]':LOCALE,'limit':'50'})['data']
+          if len(locs)!=1:
+              raise SystemExit(f'Expected one {LOCALE} version localization, found {len(locs)}.')
+          version_loc_id=locs[0]['id']
+          version_attrs={
+              'description':read('fastlane/metadata/en-US/description.txt'),
+              'keywords':read('fastlane/metadata/en-US/keywords.txt'),
+              'marketingUrl':read('fastlane/metadata/en-US/marketing_url.txt'),
+              'promotionalText':read('fastlane/metadata/en-US/promotional_text.txt'),
+              'supportUrl':read('fastlane/metadata/en-US/support_url.txt'),
+              'whatsNew':read('fastlane/metadata/en-US/release_notes.txt'),
+          }
+          api('PATCH',f'/appStoreVersionLocalizations/{version_loc_id}',payload={'data':{'type':'appStoreVersionLocalizations','id':version_loc_id,'attributes':version_attrs}})
+
+          copyright_text=read('fastlane/metadata/copyright.txt')
+          api('PATCH',f'/appStoreVersions/{version_id}',payload={'data':{'type':'appStoreVersions','id':version_id,'attributes':{'copyright':copyright_text}}})
+
+          infos=api('GET',f'/apps/{app_id}/appInfos',params={'limit':'200'})['data']
+          editable_infos=[i for i in infos if (i.get('attributes',{}).get('state') or i.get('attributes',{}).get('appStoreState')) in editable]
+          if not editable_infos:
+              raise SystemExit('No editable App Info resource found.')
+          app_info=editable_infos[0]
+          app_info_id=app_info['id']
+          app_info_state=app_info.get('attributes',{}).get('state') or app_info.get('attributes',{}).get('appStoreState')
+
+          info_locs=api('GET',f'/appInfos/{app_info_id}/appInfoLocalizations',params={'filter[locale]':LOCALE,'limit':'50'})['data']
+          if len(info_locs)!=1:
+              raise SystemExit(f'Expected one {LOCALE} App Info localization, found {len(info_locs)}.')
+          info_loc_id=info_locs[0]['id']
+          info_attrs={
+              'name':read('fastlane/metadata/en-US/name.txt'),
+              'subtitle':read('fastlane/metadata/en-US/subtitle.txt'),
+              'privacyPolicyUrl':read('fastlane/metadata/en-US/privacy_url.txt'),
+              'privacyChoicesUrl':read('fastlane/metadata/en-US/support_url.txt'),
+          }
+          api('PATCH',f'/appInfoLocalizations/{info_loc_id}',payload={'data':{'type':'appInfoLocalizations','id':info_loc_id,'attributes':info_attrs}})
+
+          version_verify=api('GET',f'/appStoreVersionLocalizations/{version_loc_id}')['data']['attributes']
+          info_verify=api('GET',f'/appInfoLocalizations/{info_loc_id}')['data']['attributes']
+          version_record=api('GET',f'/appStoreVersions/{version_id}')['data']['attributes']
+          mismatches=[f'version.{k}' for k,v in version_attrs.items() if version_verify.get(k)!=v]
+          mismatches += [f'appInfo.{k}' for k,v in info_attrs.items() if info_verify.get(k)!=v]
+          if version_record.get('copyright')!=copyright_text:
+              mismatches.append('version.copyright')
+          if mismatches:
+              raise SystemExit(f'Apple metadata read-back mismatch: {mismatches}')
+
+          evidence={
+              'bundleId':BUNDLE,'appId':app_id,'version':VERSION,'versionId':version_id,
+              'versionState':version_state,'appInfoId':app_info_id,'appInfoState':app_info_state,
+              'locale':LOCALE,'verified':True,
+              'fields':sorted(list(version_attrs)+list(info_attrs)+['copyright'])}
+          out=Path(os.environ['RUNNER_TEMP'])/'appstore-direct-metadata.json'
+          out.write_text(json.dumps(evidence,indent=2),encoding='utf-8')
+          print(json.dumps(evidence,indent=2))
+          print('GOOD TIMES App Store metadata published and read-back verified.')
+          PY
+
+      - name: Preserve metadata evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-app-store-metadata-v2-${{ github.run_number }}
+          path: ${{ runner.temp }}/appstore-direct-metadata.json
+          if-no-files-found: ignore
