@@ -40,17 +40,25 @@ if (!source.includes('GENERIC_VENUE_IMAGE_MARKERS')) {
   source = source.replace(imageBefore, imageAfter)
 }
 
-const heroBefore = `const hero=useMemo(()=>events.find(item=>item.is_featured&&item.image_url)||events.find(item=>item.image_url)||null,[events])`
-const heroAfter = `const hero=useMemo(()=>{
+const rawHeroBefore = `const hero=useMemo(()=>events.find(item=>item.is_featured&&item.image_url)||events.find(item=>item.image_url)||null,[events])`
+const rawHeroAfter = `const hero=useMemo(()=>{
     const today=todayISO()
     const todayPool=events.filter(item=>item.event_date===today&&item.image_url)
     const weekPool=events.filter(item=>{const away=daysAway(item.event_date);return away>=0&&away<=7&&item.image_url})
     return todayPool.find(item=>item.is_featured)||todayPool[0]||weekPool.find(item=>item.is_featured)||weekPool[0]||events.find(item=>item.is_featured&&item.image_url)||events.find(item=>item.image_url)||null
   },[events])`
+const personalizedHeroBefore = `const hero=useMemo(()=>personalizedEvents.find(item=>item.is_featured&&item.image_url)||personalizedEvents.find(item=>item.image_url)||null,[personalizedEvents])`
+const personalizedHeroAfter = `const hero=useMemo(()=>{
+    const today=todayISO()
+    const todayPool=personalizedEvents.filter(item=>item.event_date===today&&item.image_url)
+    const weekPool=personalizedEvents.filter(item=>{const away=daysAway(item.event_date);return away>=0&&away<=7&&item.image_url})
+    return todayPool.find(item=>item.is_featured)||todayPool[0]||weekPool.find(item=>item.is_featured)||weekPool[0]||personalizedEvents.find(item=>item.is_featured&&item.image_url)||personalizedEvents.find(item=>item.image_url)||null
+  },[personalizedEvents])`
 
-if (!source.includes('const todayPool=events.filter')) {
-  if (!source.includes(heroBefore)) throw new Error('GOOD TIMES hero-priority patch anchor moved')
-  source = source.replace(heroBefore, heroAfter)
+if (!source.includes('const todayPool=personalizedEvents.filter') && !source.includes('const todayPool=events.filter')) {
+  if (source.includes(personalizedHeroBefore)) source = source.replace(personalizedHeroBefore, personalizedHeroAfter)
+  else if (source.includes(rawHeroBefore)) source = source.replace(rawHeroBefore, rawHeroAfter)
+  else throw new Error('GOOD TIMES hero-priority patch anchor moved')
 }
 
 fs.writeFileSync(target, source)
