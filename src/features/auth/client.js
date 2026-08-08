@@ -49,6 +49,28 @@ export function clearSession(storage = globalThis.localStorage) {
   storage?.removeItem?.(GT_SESSION_KEY)
 }
 
+export async function deleteAccount(session = readSession(), storage = globalThis.localStorage) {
+  const accessToken = session?.access_token
+  if (!accessToken) throw new Error('Please sign in again before deleting your account.')
+
+  const response = await fetch(`${GT_SUPABASE_URL}/functions/v1/delete-account`, {
+    method: 'POST',
+    headers: headers(accessToken),
+    body: '{}',
+  })
+  const payload = await response.json().catch(() => ({}))
+  if (!response.ok || !payload?.ok) {
+    throw new Error(payload?.error || 'GOOD TIMES could not delete your account. Please retry or contact support.')
+  }
+
+  clearSession(storage)
+  for (const key of ['gt_personalization', 'gt_live_plans', 'gt_splash_shown', 'gt_premium_launch']) {
+    try { storage?.removeItem?.(key) } catch {}
+  }
+  try { globalThis.sessionStorage?.clear?.() } catch {}
+  return payload
+}
+
 export async function getProfile(authId, accessToken) {
   if (!authId || !accessToken) return null
   const response = await fetch(
