@@ -12,7 +12,7 @@ permissions:
 jobs:
   publish-metadata:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 12
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,7 +33,10 @@ jobs:
             exit 1
           fi
 
-      - name: Configure App Store Connect API key
+      - name: Install Apple API client dependencies
+        run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+
+      - name: Publish and verify iOS 1.1.0 metadata via App Store Connect API
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -41,80 +44,143 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json, os
+          import json, os, time
           from pathlib import Path
-          payload={
-            'key_id':os.environ['ASC_KEY_ID'],
-            'issuer_id':os.environ['ASC_ISSUER_ID'],
-            'key':os.environ['ASC_PRIVATE_KEY'],
-            'in_house':False,
+          import jwt, requests
+
+          BASE='https://api.appstoreconnect.apple.com/v1'
+          BUNDLE='com.kollective.goodtimes'
+          VERSION='1.1.0'
+          LOCALE='en-US'
+          ROOT=Path.cwd()
+
+          def read(path):
+              return (ROOT/path).read_text(encoding='utf-8').strip()
+
+          token=jwt.encode(
+              {
+                  'iss':os.environ['ASC_ISSUER_ID'],
+                  'iat':int(time.time()),
+                  'exp':int(time.time())+600,
+                  'aud':'appstoreconnect-v1',
+              },
+              os.environ['ASC_PRIVATE_KEY'],
+              algorithm='ES256',
+              headers={'kid':os.environ['ASC_KEY_ID'],'typ':'JWT'},
+          )
+          headers={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
+
+          def api(method,path,*,params=None,payload=None):
+              response=requests.request(method,BASE+path,headers=headers,params=params,json=payload,timeout=45)
+              if not response.ok:
+                  detail=response.text[:4000]
+                  raise SystemExit(f'{method} {path} failed HTTP {response.status_code}: {detail}')
+              if response.status_code==204 or not response.content:
+                  return {}
+              return response.json()
+
+          apps=api('GET','/apps',params={'filter[bundleId]':BUNDLE,'limit':'10'})['data']
+          if len(apps)!=1:
+              raise SystemExit(f'Expected one App Store app for {BUNDLE}, found {len(apps)}')
+          app=apps[0]
+          app_id=app['id']
+
+          versions=api('GET',f'/apps/{app_id}/appStoreVersions',params={'limit':'200'})['data']
+          matches=[v for v in versions if v.get('attributes',{}).get('versionString')==VERSION and v.get('attributes',{}).get('platform')=='IOS']
+          if len(matches)!=1:
+              states=[(v.get('attributes',{}).get('versionString'),v.get('attributes',{}).get('platform'),v.get('attributes',{}).get('appVersionState') or v.get('attributes',{}).get('appStoreState')) for v in versions]
+              raise SystemExit(f'Expected one iOS {VERSION} version, found {len(matches)}. Available={states}')
+          version=matches[0]
+          version_id=version['id']
+          version_state=version.get('attributes',{}).get('appVersionState') or version.get('attributes',{}).get('appStoreState')
+          editable={'PREPARE_FOR_SUBMISSION','DEVELOPER_REJECTED','METADATA_REJECTED','READY_FOR_REVIEW'}
+          if version_state not in editable:
+              raise SystemExit(f'Refusing metadata write because iOS {VERSION} state is {version_state}, not an editable pre-review state.')
+
+          locs=api('GET',f'/appStoreVersions/{version_id}/appStoreVersionLocalizations',params={'filter[locale]':LOCALE,'limit':'50'})['data']
+          if len(locs)!=1:
+              raise SystemExit(f'Expected one {LOCALE} appStoreVersionLocalization, found {len(locs)}')
+          version_loc_id=locs[0]['id']
+          version_attrs={
+              'description':read('fastlane/metadata/en-US/description.txt'),
+              'keywords':read('fastlane/metadata/en-US/keywords.txt'),
+              'marketingUrl':read('fastlane/metadata/en-US/marketing_url.txt'),
+              'promotionalText':read('fastlane/metadata/en-US/promotional_text.txt'),
+              'supportUrl':read('fastlane/metadata/en-US/support_url.txt'),
+              'whatsNew':read('fastlane/metadata/en-US/release_notes.txt'),
           }
-          path=Path(os.environ['RUNNER_TEMP'])/'appstore_api_key.json'
-          path.write_text(json.dumps(payload))
-          path.chmod(0o600)
+          api('PATCH',f'/appStoreVersionLocalizations/{version_loc_id}',payload={
+              'data':{'type':'appStoreVersionLocalizations','id':version_loc_id,'attributes':version_attrs}
+          })
+
+          copyright_text=read('fastlane/metadata/copyright.txt')
+          api('PATCH',f'/appStoreVersions/{version_id}',payload={
+              'data':{'type':'appStoreVersions','id':version_id,'attributes':{'copyright':copyright_text}}
+          })
+
+          infos=api('GET',f'/apps/{app_id}/appInfos',params={'limit':'200'})['data']
+          editable_infos=[i for i in infos if (i.get('attributes',{}).get('state') or i.get('attributes',{}).get('appStoreState')) in editable]
+          if not editable_infos:
+              states=[i.get('attributes',{}).get('state') or i.get('attributes',{}).get('appStoreState') for i in infos]
+              raise SystemExit(f'No editable appInfo resource found. States={states}')
+          app_info=editable_infos[0]
+          app_info_id=app_info['id']
+          app_info_state=app_info.get('attributes',{}).get('state') or app_info.get('attributes',{}).get('appStoreState')
+
+          info_locs=api('GET',f'/appInfos/{app_info_id}/appInfoLocalizations',params={'filter[locale]':LOCALE,'limit':'50'})['data']
+          if len(info_locs)!=1:
+              raise SystemExit(f'Expected one {LOCALE} appInfoLocalization, found {len(info_locs)}')
+          info_loc_id=info_locs[0]['id']
+          info_attrs={
+              'name':read('fastlane/metadata/en-US/name.txt'),
+              'subtitle':read('fastlane/metadata/en-US/subtitle.txt'),
+              'privacyPolicyUrl':read('fastlane/metadata/en-US/privacy_url.txt'),
+              'privacyChoicesUrl':read('fastlane/metadata/en-US/support_url.txt'),
+          }
+          api('PATCH',f'/appInfoLocalizations/{info_loc_id}',payload={
+              'data':{'type':'appInfoLocalizations','id':info_loc_id,'attributes':info_attrs}
+          })
+
+          # Read back from Apple and require exact values before declaring success.
+          version_verify=api('GET',f'/appStoreVersionLocalizations/{version_loc_id}')['data']['attributes']
+          info_verify=api('GET',f'/appInfoLocalizations/{info_loc_id}')['data']['attributes']
+          version_record=api('GET',f'/appStoreVersions/{version_id}')['data']['attributes']
+          mismatches=[]
+          for key,value in version_attrs.items():
+              if version_verify.get(key)!=value:
+                  mismatches.append(f'version.{key}')
+          for key,value in info_attrs.items():
+              if info_verify.get(key)!=value:
+                  mismatches.append(f'appInfo.{key}')
+          if version_record.get('copyright')!=copyright_text:
+              mismatches.append('version.copyright')
+          if mismatches:
+              raise SystemExit(f'Apple metadata read-back mismatch: {mismatches}')
+
+          evidence={
+              'bundleId':BUNDLE,
+              'appId':app_id,
+              'version':VERSION,
+              'versionId':version_id,
+              'versionState':version_state,
+              'appInfoId':app_info_id,
+              'appInfoState':app_info_state,
+              'locale':LOCALE,
+              'versionLocalizationId':version_loc_id,
+              'appInfoLocalizationId':info_loc_id,
+              'verified':True,
+              'fields':sorted(list(version_attrs)+list(info_attrs)+['copyright']),
+          }
+          evidence_path=Path(os.environ['RUNNER_TEMP'])/'appstore-direct-metadata.json'
+          evidence_path.write_text(json.dumps(evidence,indent=2),encoding='utf-8')
+          print(json.dumps(evidence,indent=2))
+          print('GOOD TIMES App Store metadata published and read-back verified through Apple App Store Connect API.')
           PY
-
-      - name: Install Fastlane
-        run: |
-          set -euo pipefail
-          GEM_HOME="$RUNNER_TEMP/gems"
-          GEM_BIN="$GEM_HOME/bin"
-          echo "GEM_HOME=$GEM_HOME" >> "$GITHUB_ENV"
-          echo "$GEM_BIN" >> "$GITHUB_PATH"
-          gem install fastlane --no-document --install-dir "$GEM_HOME" --bindir "$GEM_BIN"
-          "$GEM_BIN/fastlane" --version
-
-      - name: Publish metadata for iOS 1.1.0
-        shell: bash
-        run: |
-          set +e
-          set -o pipefail
-          fastlane deliver \
-            --app_identifier com.kollective.goodtimes \
-            --app_version 1.1.0 \
-            --api_key_path "$RUNNER_TEMP/appstore_api_key.json" \
-            --metadata_path fastlane/metadata \
-            --skip_binary_upload true \
-            --skip_screenshots true \
-            --force true \
-            2>&1 | tee "$RUNNER_TEMP/appstore-metadata.log"
-          STATUS=${PIPESTATUS[0]}
-          if [ "$STATUS" -ne 0 ]; then
-            tail -160 "$RUNNER_TEMP/appstore-metadata.log" | while IFS= read -r line; do
-              SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
-              echo "::error title=GOOD TIMES App Store metadata::$SAFE"
-            done
-            exit "$STATUS"
-          fi
-
-      - name: Run App Store metadata precheck
-        shell: bash
-        run: |
-          set +e
-          set -o pipefail
-          fastlane run check_app_store_metadata \
-            app_identifier:"com.kollective.goodtimes" \
-            api_key_path:"$RUNNER_TEMP/appstore_api_key.json" \
-            2>&1 | tee "$RUNNER_TEMP/appstore-precheck.log"
-          STATUS=${PIPESTATUS[0]}
-          if [ "$STATUS" -ne 0 ]; then
-            tail -160 "$RUNNER_TEMP/appstore-precheck.log" | while IFS= read -r line; do
-              SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
-              echo "::error title=GOOD TIMES App Store precheck::$SAFE"
-            done
-            exit "$STATUS"
-          fi
 
       - name: Preserve metadata evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: GOOD-TIMES-app-store-metadata-${{ github.run_number }}
-          path: |
-            ${{ runner.temp }}/appstore-metadata.log
-            ${{ runner.temp }}/appstore-precheck.log
+          path: ${{ runner.temp }}/appstore-direct-metadata.json
           if-no-files-found: ignore
-
-      - name: Cleanup
-        if: always()
-        run: rm -rf "$RUNNER_TEMP/appstore_api_key.json" "$RUNNER_TEMP/gems"
