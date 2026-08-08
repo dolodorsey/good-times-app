@@ -5,10 +5,13 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   build-ios:
     runs-on: macos-15
-    timeout-minutes: 35
+    timeout-minutes: 40
 
     steps:
       - name: Checkout
@@ -43,6 +46,28 @@ jobs:
           print('Removed legacy iPhone Developer identity overrides from Xcode project')
           PY
 
+      - name: Validate iOS release secrets
+        env:
+          CERT: ${{ secrets.DISTRIBUTION_CERTIFICATE_P12 }}
+          CERT_PASSWORD: ${{ secrets.DISTRIBUTION_CERTIFICATE_PASSWORD }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$CERT" ] || missing+=(DISTRIBUTION_CERTIFICATE_P12)
+          [ -n "$CERT_PASSWORD" ] || missing+=(DISTRIBUTION_CERTIFICATE_PASSWORD)
+          [ -n "$TEAM_ID" ] || missing+=(APPLE_TEAM_ID)
+          [ -n "$ASC_KEY_ID" ] || missing+=(APP_STORE_CONNECT_KEY_ID)
+          [ -n "$ASC_ISSUER_ID" ] || missing+=(APP_STORE_CONNECT_ISSUER_ID)
+          [ -n "$ASC_PRIVATE_KEY" ] || missing+=(APP_STORE_CONNECT_PRIVATE_KEY)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error title=GOOD TIMES iOS release blocked::Missing required GitHub secrets: ${missing[*]}"
+            exit 1
+          fi
+
       - name: Install distribution certificate
         run: |
           set -euo pipefail
@@ -74,16 +99,21 @@ jobs:
           echo "Using distribution identity: $SIGNING_IDENTITY"
 
       - name: Setup App Store Connect API Key
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
         run: |
           set -euo pipefail
-          mkdir -p ~/private_keys
-          echo "${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}" > ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
-          chmod 600 ~/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8
+          mkdir -p "$HOME/.appstoreconnect/private_keys" "$HOME/private_keys"
+          printf '%s' "$ASC_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          cp "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8" "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8" "$HOME/private_keys/AuthKey_${ASC_KEY_ID}.p8"
 
           python3 - <<'PY'
           import json, os
           from pathlib import Path
-          key_path = Path.home()/"private_keys"/f"AuthKey_{os.environ['ASC_KEY_ID']}.p8"
+          key_path = Path.home()/".appstoreconnect"/"private_keys"/f"AuthKey_{os.environ['ASC_KEY_ID']}.p8"
           payload = {
               "key_id": os.environ["ASC_KEY_ID"],
               "issuer_id": os.environ["ASC_ISSUER_ID"],
@@ -94,9 +124,6 @@ jobs:
           out.write_text(json.dumps(payload))
           print(f"Wrote App Store Connect API config to {out}")
           PY
-        env:
-          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
 
       - name: Install Fastlane provisioning helper
         run: |
@@ -223,18 +250,74 @@ jobs:
           echo "IPA_PATH=$IPA_PATH" >> "$GITHUB_ENV"
           echo "Exported IPA: $IPA_PATH"
 
-      - name: Upload IPA to App Store Connect
+      - name: Preserve signed IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-ios-signed-${{ github.run_number }}
+          path: ${{ env.IPA_PATH }}
+          if-no-files-found: error
+
+      - name: Validate IPA with App Store Connect
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
         run: |
-          set -euo pipefail
-          fastlane pilot upload \
-            --ipa "$IPA_PATH" \
-            --app_identifier "com.kollective.goodtimes" \
-            --api_key_path "$RUNNER_TEMP/appstore_api_key.json" \
-            --skip_waiting_for_build_processing true
+          set +e
+          set -o pipefail
+          xcrun altool --validate-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID" \
+            2>&1 | tee "$RUNNER_TEMP/appstore-validation.log"
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            tail -120 "$RUNNER_TEMP/appstore-validation.log" | while IFS= read -r line; do
+              SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
+              echo "::error title=GOOD TIMES App Store validation::$SAFE"
+            done
+            exit "$STATUS"
+          fi
+
+      - name: Upload IPA to App Store Connect
+        shell: bash
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set +e
+          set -o pipefail
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "$ASC_KEY_ID" \
+            --apiIssuer "$ASC_ISSUER_ID" \
+            2>&1 | tee "$RUNNER_TEMP/appstore-upload.log"
+          STATUS=${PIPESTATUS[0]}
+          if [ "$STATUS" -ne 0 ]; then
+            tail -160 "$RUNNER_TEMP/appstore-upload.log" | while IFS= read -r line; do
+              SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
+              echo "::error title=GOOD TIMES App Store upload::$SAFE"
+            done
+            exit "$STATUS"
+          fi
+
+      - name: Preserve iOS release diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-ios-release-diagnostics-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/xcode-archive.log
+            ${{ runner.temp }}/xcode-export.log
+            ${{ runner.temp }}/appstore-validation.log
+            ${{ runner.temp }}/appstore-upload.log
+          if-no-files-found: ignore
 
       - name: Cleanup
         if: always()
         run: |
           security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
           rm -f "$RUNNER_TEMP/dist_cert.p12" "$RUNNER_TEMP/appstore_api_key.json" "$RUNNER_TEMP/good-times-appstore.mobileprovision" "$RUNNER_TEMP/profile.plist"
-          rm -rf ~/private_keys
+          rm -rf "$HOME/private_keys" "$HOME/.appstoreconnect/private_keys"
