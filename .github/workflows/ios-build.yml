@@ -10,12 +10,26 @@ permissions:
 
 jobs:
   build-ios:
-    runs-on: macos-15
+    runs-on: macos-26
     timeout-minutes: 40
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verify Xcode 26 toolchain
+        run: |
+          set -euo pipefail
+          sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+          xcodebuild -version
+          IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-version)
+          echo "iOS SDK: $IOS_SDK"
+          python3 - "$IOS_SDK" <<'PY'
+          import sys
+          major=int(sys.argv[1].split('.')[0])
+          if major < 26:
+              raise SystemExit(f"App Store release requires iOS SDK 26+, found {sys.argv[1]}")
+          PY
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
