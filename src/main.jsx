@@ -24,6 +24,7 @@ const LazyNavigationBridge = lazy(() => import('./features/experience/GoodTimesN
 const LazyNativeBridge = lazy(() => import('./features/experience/GoodTimesNativeBridge.jsx'))
 const LazyPaymentsLauncher = lazy(() => import('./features/experience/GoodTimesPaymentsBridge.jsx'))
 const LazyConnectHub = lazy(() => import('./features/experience/GoodTimesConnectHub.jsx'))
+const LazyAccountCenter = lazy(() => import('./features/experience/GoodTimesAccountCenter.jsx'))
 
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
@@ -118,7 +119,7 @@ async function bootstrap(){
       <Suspense fallback={<RouteLoading label={loadingLabel}/>}>
         <PremiumRoot launch={showMemberTools}>
           {isNative?<LazyNativeBridge/>:null}
-          {showMemberTools?<><LazyCompletionBridge/><LazyNavigationBridge/></>:null}
+          {showMemberTools?<><LazyCompletionBridge/><LazyNavigationBridge/><LazyAccountCenter/></>:null}
           {route}
           {showMemberTools?<><LazyConnectHub/><LazyPaymentsLauncher/></>:null}
         </PremiumRoot>
