@@ -1,4 +1,4 @@
-# Good Times — App Store Listing (Copy-Paste Ready)
+# GOOD TIMES — App Store Listing
 
 ## App Name
 Good Times
@@ -10,24 +10,30 @@ City Nightlife & Events Guide
 Primary: Lifestyle
 Secondary: Entertainment
 
+## Promotional Text
+Your city, curated. Find tonight's moves, discover places worth going, and let GOOD TIMES build the night around your vibe.
+
 ## Description
-Good Times™ is your city concierge for nightlife, events, dining, and culture. Discover 800+ curated venues across 10 cities, browse trending events, save your favorites, and plan your perfect night out.
+GOOD TIMES™ is your live city concierge for nightlife, dining, events, culture, and experiences.
 
-From rooftop bars to underground concerts, Good Times connects you to what's happening tonight. Smart filtering shows you events happening right now, tonight, or this week — so you never miss the move.
+Discover 1,600+ curated places across 11 launch cities, see what is happening now and this week, save the moves you want to remember, and build a complete night around your city, group, budget, area, and vibe.
 
-FEATURES:
-• 800+ hand-picked venues across 10 cities
-• Real-time event listings from 15+ premium brands
-• Smart "Tonight vs. This Week" filtering
-• Save events and build multi-stop plans
-• Push notifications for new events in your city
-• Explore by vibe: nightlife, dining, sports, culture, and more
-• City switching: Atlanta, Houston, LA, DC, Charlotte, Miami, Vegas
+WHAT YOU CAN DO
+• NOW — see timely events and places worth leaving home for
+• DATES — browse the event calendar by day, week, category, artist, venue, or vibe
+• BUILD MY NIGHT — turn your occasion, timing, group size, budget, area, and vibe into a complete itinerary
+• PLANS — keep your GOOD TIMES itineraries together
+• EXPLORE — discover the city across 25 lifestyle lanes and detailed subcategories
+• MAP — browse map-ready places and jump into directions
+• VAULT — save events and venues for later
+• CONCIERGE — use GOOD TIMES to help shape the next move
 
-EXCLUSIVE ACCESS:
-Good Times features events from NOIR, Secret Society, HugLife, Forever Futbol, Taste of Art, and more — brands you won't find on any other platform.
+LAUNCH CITIES
+Atlanta, Charlotte, Dallas, Houston, Las Vegas, Los Angeles, Miami, New York, Phoenix, Scottsdale, and Washington, DC.
 
-Download free. Find your city's best kept secrets.
+GOOD TIMES uses current event and venue inventory to help you discover and plan. Ticketing, reservations, directions, and other external actions may open the relevant third-party provider.
+
+Download GOOD TIMES and make the city easier to move through.
 
 ## Keywords
 nightlife,events,city guide,bars,restaurants,concerts,things to do,going out,venues,Atlanta
@@ -36,6 +42,9 @@ nightlife,events,city guide,bars,restaurants,concerts,things to do,going out,ven
 https://thegoodtimesworldwide.com/privacy.html
 
 ## Support URL
+https://thegoodtimesworldwide.com/support.html
+
+## User Privacy Choices URL
 https://thegoodtimesworldwide.com/support.html
 
 ## Age Rating
