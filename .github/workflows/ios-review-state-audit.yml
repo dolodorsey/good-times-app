@@ -1,0 +1,63 @@
+name: GOOD TIMES App Review State Audit
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios-review-state-audit.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+      - name: Read App Review state
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time
+          from pathlib import Path
+          import jwt, requests
+          BASE='https://api.appstoreconnect.apple.com/v1'; BUNDLE='com.kollective.goodtimes'; VERSION='1.1.0'
+          token=jwt.encode({'iss':os.environ['ASC_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},os.environ['ASC_PRIVATE_KEY'],algorithm='ES256',headers={'kid':os.environ['ASC_KEY_ID'],'typ':'JWT'})
+          H={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
+          def get(path,params=None,allow_404=False):
+              r=requests.get(BASE+path,headers=H,params=params,timeout=45)
+              if allow_404 and r.status_code==404: return None
+              if not r.ok: raise SystemExit(f'GET {path} HTTP {r.status_code}: {r.text[:4000]}')
+              return r.json()
+          apps=get('/apps',{'filter[bundleId]':BUNDLE,'limit':'10'})['data']; exact=[a for a in apps if a.get('attributes',{}).get('bundleId')==BUNDLE]
+          if len(exact)!=1: raise SystemExit(f'Expected one app for {BUNDLE}, found {len(exact)}')
+          app=exact[0]; app_id=app['id']
+          versions=get(f'/apps/{app_id}/appStoreVersions',{'limit':'200'})['data']; vm=[v for v in versions if v.get('attributes',{}).get('platform')=='IOS' and v.get('attributes',{}).get('versionString')==VERSION]
+          if len(vm)!=1: raise SystemExit(f'Expected one iOS {VERSION}, found {len(vm)}')
+          version=vm[0]; vid=version['id']
+          review_detail=get(f'/appStoreVersions/{vid}/appStoreReviewDetail',allow_404=True)
+          submissions=get(f'/apps/{app_id}/reviewSubmissions',{'limit':'200'})['data']
+          out_sub=[]
+          for s in submissions:
+              sid=s['id']; items=get(f'/reviewSubmissions/{sid}/items',{'limit':'200'})['data']
+              out_sub.append({'id':sid,'attributes':s.get('attributes',{}),'items':[{'id':i['id'],'attributes':i.get('attributes',{}),'relationships':i.get('relationships',{})} for i in items]})
+          legacy_submission=get(f'/appStoreVersions/{vid}/appStoreVersionSubmission',allow_404=True)
+          evidence={'app':{'id':app_id,'attributes':app.get('attributes',{})},'version':{'id':vid,'attributes':version.get('attributes',{})},'reviewDetail':review_detail['data'] if review_detail else None,'reviewSubmissions':out_sub,'legacyVersionSubmission':legacy_submission['data'] if legacy_submission else None}
+          # Do not print demo password if Apple returns it; redact before logs/artifact.
+          if evidence['reviewDetail'] and isinstance(evidence['reviewDetail'].get('attributes'),dict):
+              attrs=evidence['reviewDetail']['attributes']
+              if attrs.get('demoAccountPassword'): attrs['demoAccountPassword']='[REDACTED]'
+          out=Path(os.environ['RUNNER_TEMP'])/'good-times-review-state.json'; out.write_text(json.dumps(evidence,indent=2),encoding='utf-8'); print(json.dumps(evidence,indent=2))
+          PY
+      - name: Preserve review-state evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-review-state-${{ github.run_number }}
+          path: ${{ runner.temp }}/good-times-review-state.json
+          if-no-files-found: error
