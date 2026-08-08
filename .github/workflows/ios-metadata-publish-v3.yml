@@ -1,0 +1,70 @@
+name: GOOD TIMES App Store Metadata v3
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios-metadata-publish-v3.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  publish-metadata:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+      - name: Publish and verify GOOD TIMES 1.1.0 metadata
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time
+          from pathlib import Path
+          import jwt, requests
+          BASE='https://api.appstoreconnect.apple.com/v1'; BUNDLE='com.kollective.goodtimes'; VERSION='1.1.0'; LOCALE='en-US'; ROOT=Path.cwd()
+          token=jwt.encode({'iss':os.environ['ASC_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},os.environ['ASC_PRIVATE_KEY'],algorithm='ES256',headers={'kid':os.environ['ASC_KEY_ID'],'typ':'JWT'})
+          H={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
+          def req(method,path,params=None,payload=None):
+              r=requests.request(method,BASE+path,headers=H,params=params,json=payload,timeout=45)
+              if not r.ok: raise SystemExit(f'{method} {path} HTTP {r.status_code}: {r.text[:4000]}')
+              return {} if r.status_code==204 or not r.content else r.json()
+          def read(path): return (ROOT/path).read_text(encoding='utf-8').strip()
+          apps=req('GET','/apps',{'filter[bundleId]':BUNDLE,'limit':'10'})['data']; exact=[a for a in apps if a.get('attributes',{}).get('bundleId')==BUNDLE]
+          if len(exact)!=1: raise SystemExit(f'Expected one GOOD TIMES app, found {len(exact)}')
+          app_id=exact[0]['id']; versions=req('GET',f'/apps/{app_id}/appStoreVersions',{'limit':'200'})['data']; matches=[v for v in versions if v.get('attributes',{}).get('versionString')==VERSION and v.get('attributes',{}).get('platform')=='IOS']
+          if len(matches)!=1: raise SystemExit(f'Expected one iOS {VERSION}, found {len(matches)}')
+          version=matches[0]; vid=version['id']; state=version.get('attributes',{}).get('appVersionState') or version.get('attributes',{}).get('appStoreState')
+          if state not in {'REJECTED','DEVELOPER_REJECTED','METADATA_REJECTED','PREPARE_FOR_SUBMISSION','READY_FOR_REVIEW'}: raise SystemExit(f'Refusing metadata write in state {state}')
+          locs=req('GET',f'/appStoreVersions/{vid}/appStoreVersionLocalizations',{'filter[locale]':LOCALE,'limit':'50'})['data']
+          if len(locs)>1: raise SystemExit('Multiple en-US version localizations found')
+          if locs: vloc=locs[0]
+          else: vloc=req('POST','/appStoreVersionLocalizations',payload={'data':{'type':'appStoreVersionLocalizations','attributes':{'locale':LOCALE},'relationships':{'appStoreVersion':{'data':{'type':'appStoreVersions','id':vid}}}}})['data']
+          vattrs={'description':read('fastlane/metadata/en-US/description.txt'),'keywords':read('fastlane/metadata/en-US/keywords.txt'),'marketingUrl':read('fastlane/metadata/en-US/marketing_url.txt'),'promotionalText':read('fastlane/metadata/en-US/promotional_text.txt'),'supportUrl':read('fastlane/metadata/en-US/support_url.txt'),'whatsNew':read('fastlane/metadata/en-US/release_notes.txt')}
+          req('PATCH',f'/appStoreVersionLocalizations/{vloc["id"]}',payload={'data':{'type':'appStoreVersionLocalizations','id':vloc['id'],'attributes':vattrs}})
+          copyright_text=read('fastlane/metadata/copyright.txt'); req('PATCH',f'/appStoreVersions/{vid}',payload={'data':{'type':'appStoreVersions','id':vid,'attributes':{'copyright':copyright_text}}})
+          infos=req('GET',f'/apps/{app_id}/appInfos',{'limit':'200'})['data']; candidates=[i for i in infos if (i.get('attributes',{}).get('state') or i.get('attributes',{}).get('appStoreState')) in {'REJECTED','DEVELOPER_REJECTED','METADATA_REJECTED','PREPARE_FOR_SUBMISSION','READY_FOR_REVIEW'}]
+          if len(candidates)!=1: raise SystemExit(f'Expected one editable/rejected App Info record, found {len(candidates)}')
+          info=candidates[0]; ilocs=req('GET',f'/appInfos/{info["id"]}/appInfoLocalizations',{'filter[locale]':LOCALE,'limit':'50'})['data']
+          if len(ilocs)!=1: raise SystemExit(f'Expected one en-US App Info localization, found {len(ilocs)}')
+          iloc=ilocs[0]; iattrs={'name':read('fastlane/metadata/en-US/name.txt'),'subtitle':read('fastlane/metadata/en-US/subtitle.txt'),'privacyPolicyUrl':read('fastlane/metadata/en-US/privacy_url.txt'),'privacyChoicesUrl':read('fastlane/metadata/en-US/support_url.txt')}
+          req('PATCH',f'/appInfoLocalizations/{iloc["id"]}',payload={'data':{'type':'appInfoLocalizations','id':iloc['id'],'attributes':iattrs}})
+          vv=req('GET',f'/appStoreVersionLocalizations/{vloc["id"]}')['data']['attributes']; iv=req('GET',f'/appInfoLocalizations/{iloc["id"]}')['data']['attributes']; vr=req('GET',f'/appStoreVersions/{vid}')['data']['attributes']
+          mismatches=[f'version.{k}' for k,v in vattrs.items() if vv.get(k)!=v]+[f'appInfo.{k}' for k,v in iattrs.items() if iv.get(k)!=v]
+          if vr.get('copyright')!=copyright_text: mismatches.append('version.copyright')
+          if mismatches: raise SystemExit(f'Metadata read-back mismatch: {mismatches}')
+          evidence={'bundleId':BUNDLE,'appId':app_id,'version':VERSION,'versionId':vid,'state':state,'versionLocalizationId':vloc['id'],'appInfoId':info['id'],'appInfoLocalizationId':iloc['id'],'verified':True,'fields':sorted(list(vattrs)+list(iattrs)+['copyright'])}
+          out=Path(os.environ['RUNNER_TEMP'])/'good-times-metadata-v3.json'; out.write_text(json.dumps(evidence,indent=2),encoding='utf-8'); print(json.dumps(evidence,indent=2))
+          PY
+      - name: Preserve metadata evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-metadata-v3-${{ github.run_number }}
+          path: ${{ runner.temp }}/good-times-metadata-v3.json
+          if-no-files-found: ignore
