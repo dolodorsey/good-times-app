@@ -12,7 +12,7 @@ permissions:
 jobs:
   publish-metadata:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,15 +44,17 @@ jobs:
         run: |
           set -euo pipefail
           python3 - <<'PY'
-          import json, os, time
+          import json, os, random, time
           from pathlib import Path
           import jwt, requests
 
           BASE='https://api.appstoreconnect.apple.com/v1'
+          APP_ID='6752312555'
           BUNDLE='com.kollective.goodtimes'
           VERSION='1.1.0'
           LOCALE='en-US'
           ROOT=Path.cwd()
+          RETRYABLE={429,500,502,503,504}
 
           def read(path):
               return (ROOT/path).read_text(encoding='utf-8').strip()
@@ -61,7 +63,7 @@ jobs:
               {
                   'iss':os.environ['ASC_ISSUER_ID'],
                   'iat':int(time.time()),
-                  'exp':int(time.time())+600,
+                  'exp':int(time.time())+900,
                   'aud':'appstoreconnect-v1',
               },
               os.environ['ASC_PRIVATE_KEY'],
@@ -70,19 +72,30 @@ jobs:
           )
           headers={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
 
-          def api(method,path,*,params=None,payload=None):
-              response=requests.request(method,BASE+path,headers=headers,params=params,json=payload,timeout=45)
-              if not response.ok:
-                  detail=response.text[:4000]
-                  raise SystemExit(f'{method} {path} failed HTTP {response.status_code}: {detail}')
-              if response.status_code==204 or not response.content:
-                  return {}
-              return response.json()
+          def api(method,path,*,params=None,payload=None,attempts=6):
+              last=None
+              for attempt in range(1,attempts+1):
+                  response=requests.request(method,BASE+path,headers=headers,params=params,json=payload,timeout=45)
+                  if response.ok:
+                      if response.status_code==204 or not response.content:
+                          return {}
+                      return response.json()
+                  last=response
+                  if response.status_code not in RETRYABLE or attempt==attempts:
+                      break
+                  retry_after=response.headers.get('Retry-After')
+                  delay=float(retry_after) if retry_after and retry_after.isdigit() else min(30,2**(attempt-1)+random.random())
+                  print(f'Apple API {method} {path} returned HTTP {response.status_code}; retry {attempt}/{attempts} in {delay:.1f}s')
+                  time.sleep(delay)
+              detail=(last.text if last is not None else 'no response')[:4000]
+              raise SystemExit(f'{method} {path} failed HTTP {last.status_code if last is not None else "?"}: {detail}')
 
-          apps=api('GET','/apps',params={'filter[bundleId]':BUNDLE,'limit':'10'})['data']
-          if len(apps)!=1:
-              raise SystemExit(f'Expected one App Store app for {BUNDLE}, found {len(apps)}')
-          app=apps[0]
+          # Use the documented GOOD TIMES App Store Connect numeric ID directly so
+          # a transient list-apps endpoint failure cannot block release automation.
+          app=api('GET',f'/apps/{APP_ID}')['data']
+          actual_bundle=app.get('attributes',{}).get('bundleId')
+          if actual_bundle!=BUNDLE:
+              raise SystemExit(f'App Store app ID {APP_ID} belongs to {actual_bundle}, expected {BUNDLE}; refusing to write.')
           app_id=app['id']
 
           versions=api('GET',f'/apps/{app_id}/appStoreVersions',params={'limit':'200'})['data']
