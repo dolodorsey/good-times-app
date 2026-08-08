@@ -14,16 +14,16 @@
 - The canonical venue plane contains 1,665 active venues.
 - Public event and venue queries read only from the canonical `gt_*` content tables; customer identity remains isolated in the GOOD TIMES customer project.
 - Authentication, profiles, saved items, direct membership, concierge, trip, and group request routes retain validated server submissions.
-- Vercel production is serving the canonical GOOD TIMES customer-ready inventory endpoint without a degraded flag for the repaired launch cities.
+- Vercel production serves the canonical GOOD TIMES customer-ready inventory endpoint without a degraded flag for the repaired launch cities.
 
 ## 2026-08-08 multi-city repair
 
-Atlanta was already healthy and remains the benchmark city. The repair was scoped to Houston, Los Angeles, Miami, Charlotte, Washington DC, Dallas, New York, Phoenix, Scottsdale, and Las Vegas.
+The stale-city repair covers Houston, Los Angeles, Miami, Charlotte, Washington DC, Dallas, New York, Phoenix, Scottsdale, and Las Vegas.
 
 - Replaced the legacy non-Atlanta sourcer path that only queued work into an obsolete queue with direct Eventbrite refresh jobs.
 - Deployed `gt-multicity-eventbrite-refresh` v2 with an explicit ten-city allowlist and an explicit Atlanta rejection guard.
 - The v2 collector validates physical metro location, rejects virtual/out-of-region/cancelled events, upserts canonical sourced events, promotes them into shows, and never calls the Atlanta ranking worker.
-- A hidden Atlanta-only ranking dependency was discovered during the repair and removed from the multi-city collector so future runs are isolated.
+- A hidden Atlanta-only ranking dependency was discovered during the repair and removed from the multi-city collector so future multi-city runs are isolated.
 - Populated the previously empty `gt_sourcing_schedule` for the ten non-Atlanta launch cities.
 - Re-enabled Dallas and Las Vegas city agents and created missing New York, Phoenix, and Scottsdale city-agent records.
 - Added staggered four-hour direct event refresh schedules and six-hour direct venue website rechecks.
@@ -50,6 +50,19 @@ All 11 launch-city readiness rows are `healthy`.
 | Scottsdale | 49 | 58 | 0.0h | 0.0d |
 | Washington DC | 90 | 98 | 0.0h | 0.0d |
 
+## Atlanta refinement pass
+
+Atlanta was healthy, but a separate customer-surface pass identified two quality issues: future headliners could outrank strong same-day inventory, and hundreds of venues reused a small set of generic stock photos.
+
+- Atlanta currently has 238 valid events on the current date, 229 of them customer-ready, and 842 events within the next seven days.
+- Added an Atlanta urgency ranking layer to the public inventory API: current-day events rank first, then the next seven days, then later events; existing GOOD TIMES quality scoring remains the tiebreaker inside each time window.
+- Updated the signed-in home hero to use the same current-day/next-seven-days preference after personalization ranking.
+- Added deterministic GOOD TIMES scene fallbacks for the repeated generic venue-stock-image set instead of showing the same stock photograph across hundreds of venue cards.
+- The Atlanta polish is included in web, iOS, and Android build commands.
+- Production build passed 46/46 automated tests and the Vite production build.
+- Live Atlanta API verification after deployment returned `connected:true`, `degraded:false`, and current-day Atlanta events in the top positions.
+- The final production deployment for this pass is `87b7563ce101ceaaa0c882a6850cabd1616e56f9` / Vercel deployment `dpl_75z1UD28DVyjpKoqhtj1Pjzr7Ps5` and is READY.
+
 ## Production hardening
 
 - React is on 19.2.8, Vite on 8.2.0, and Capacitor on 8.x.
@@ -57,14 +70,25 @@ All 11 launch-city readiness rows are `healthy`.
 - Supabase configuration and public read helpers live outside the legacy monolithic screen in `src/lib/supabase.js`.
 - Customer-database public execution of the unused `gt_public_product_scorecard(integer)` SECURITY DEFINER RPC was removed.
 - Anonymous/authenticated table privileges on `public.spatial_ref_sys` were removed rather than blindly enabling RLS and risking PostGIS breakage.
-- Public execution of `st_estimatedextent` SECURITY DEFINER helpers was removed.
 - Advisor-confirmed duplicate indexes were removed and covering indexes were added on active concierge, agent-run, and recommendation-session paths.
-- The app-specific scorecard SECURITY DEFINER warning is cleared. PostGIS placement and leaked-password protection remain platform-level hardening items.
+- The app-specific scorecard SECURITY DEFINER warning is cleared.
+- PostGIS is still extension-owned in `public`; its `spatial_ref_sys` RLS advisory and extension-owned `st_estimatedextent` execution advisories cannot be fully remediated by the normal `postgres` migration role. The repository contains `supabase/support-migrations/20260803_relocate_postgis_from_public.sql`, explicitly guarded for Supabase Support / `supabase_admin` execution after backup and maintenance-window approval.
+- Supabase Auth leaked-password protection remains disabled and must be enabled through the Auth project configuration surface; the current connector does not expose that write operation.
+
+## Current personalization evidence
+
+- GOOD TIMES customer profiles: 13
+- Taste signals: 29
+- Saved items: 0
+- Recommendation sessions: 0
+
+The personalization infrastructure is active, but real behavior volume is still too small to call the recommendation loop proven.
 
 ## Remaining release gates
 
 - Expand authenticated rendered-screen/browser-flow coverage across all customer tabs and critical paths, including onboarding, city switching, Explore, Map, Calendar, Plan For Me, Concierge, save/share, booking actions, and account flows.
-- Continue improving recommendation-session and save usage so personalization is proven by real customer behavior, not only infrastructure.
+- Increase real save/recommendation usage so personalization is validated by customer behavior, not only infrastructure.
 - Continue venue enrichment without overwriting owner-curated culture fields.
+- Have Supabase Support relocate PostGIS using the existing guarded support migration, then rerun security advisors.
 - Enable Supabase Auth leaked-password protection through the project Auth configuration surface.
 - Complete signed iOS and Android production archives and store-review checks.
