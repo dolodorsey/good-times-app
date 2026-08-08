@@ -1,0 +1,148 @@
+name: GOOD TIMES Create App Store Version
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios-create-store-version.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  create-version:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate App Store Connect credentials
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$ASC_KEY_ID" ] || missing+=(APP_STORE_CONNECT_KEY_ID)
+          [ -n "$ASC_ISSUER_ID" ] || missing+=(APP_STORE_CONNECT_ISSUER_ID)
+          [ -n "$ASC_PRIVATE_KEY" ] || missing+=(APP_STORE_CONNECT_PRIVATE_KEY)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error title=GOOD TIMES App Store version blocked::Missing secrets: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Install Apple API dependencies
+        run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+
+      - name: Create or verify App Store version 1.1.0
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, random, time
+          from pathlib import Path
+          import jwt, requests
+
+          BASE='https://api.appstoreconnect.apple.com/v1'
+          BUNDLE='com.kollective.goodtimes'
+          VERSION='1.1.0'
+          LOCALE='en-US'
+          RETRYABLE={429,500,502,503,504}
+
+          token=jwt.encode(
+              {'iss':os.environ['ASC_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},
+              os.environ['ASC_PRIVATE_KEY'], algorithm='ES256',
+              headers={'kid':os.environ['ASC_KEY_ID'],'typ':'JWT'})
+          headers={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
+
+          def api(method,path,*,params=None,payload=None,attempts=6):
+              last=None
+              for attempt in range(1,attempts+1):
+                  r=requests.request(method,BASE+path,headers=headers,params=params,json=payload,timeout=45)
+                  if r.ok:
+                      return {} if r.status_code==204 or not r.content else r.json()
+                  last=r
+                  if r.status_code not in RETRYABLE or attempt==attempts:
+                      break
+                  delay=min(30,2**(attempt-1)+random.random())
+                  print(f'Apple API {method} {path} HTTP {r.status_code}; retry {attempt}/{attempts} in {delay:.1f}s')
+                  time.sleep(delay)
+              raise SystemExit(f'{method} {path} failed HTTP {last.status_code if last else "?"}: {(last.text if last else "no response")[:4000]}')
+
+          apps=api('GET','/apps',params={'filter[bundleId]':BUNDLE,'limit':'10'})['data']
+          exact=[a for a in apps if a.get('attributes',{}).get('bundleId')==BUNDLE]
+          if len(exact)!=1:
+              raise SystemExit(f'Expected exactly one App Store app for {BUNDLE}, found {len(exact)}.')
+          app=exact[0]
+          app_id=app['id']
+          print(f'Validated GOOD TIMES App Store app {app_id} / {BUNDLE}.')
+
+          versions=api('GET',f'/apps/{app_id}/appStoreVersions',params={'limit':'200'})['data']
+          matches=[v for v in versions if v.get('attributes',{}).get('versionString')==VERSION and v.get('attributes',{}).get('platform')=='IOS']
+          if len(matches)>1:
+              raise SystemExit(f'Multiple iOS {VERSION} versions found; refusing mutation.')
+
+          created=False
+          if matches:
+              version=matches[0]
+              print(f'iOS App Store version {VERSION} already exists: {version["id"]}.')
+          else:
+              payload={
+                  'data':{
+                      'type':'appStoreVersions',
+                      'attributes':{'platform':'IOS','versionString':VERSION},
+                      'relationships':{'app':{'data':{'type':'apps','id':app_id}}}
+                  }
+              }
+              version=api('POST','/appStoreVersions',payload=payload)['data']
+              created=True
+              print(f'Created iOS App Store version {VERSION}: {version["id"]}.')
+
+          version_id=version['id']
+          verify=api('GET',f'/appStoreVersions/{version_id}')['data']
+          attrs=verify.get('attributes',{})
+          if attrs.get('versionString')!=VERSION or attrs.get('platform')!='IOS':
+              raise SystemExit('Created/read App Store version did not verify as iOS 1.1.0.')
+
+          # Ensure en-US version localization exists; the metadata publisher will fill its fields.
+          locs=api('GET',f'/appStoreVersions/{version_id}/appStoreVersionLocalizations',params={'filter[locale]':LOCALE,'limit':'50'})['data']
+          if len(locs)>1:
+              raise SystemExit(f'Multiple {LOCALE} localizations found; refusing mutation.')
+          localization_created=False
+          if not locs:
+              loc_payload={
+                  'data':{
+                      'type':'appStoreVersionLocalizations',
+                      'attributes':{'locale':LOCALE},
+                      'relationships':{'appStoreVersion':{'data':{'type':'appStoreVersions','id':version_id}}}
+                  }
+              }
+              loc=api('POST','/appStoreVersionLocalizations',payload=loc_payload)['data']
+              localization_created=True
+              print(f'Created {LOCALE} localization: {loc["id"]}.')
+          else:
+              loc=locs[0]
+              print(f'{LOCALE} localization already exists: {loc["id"]}.')
+
+          evidence={
+              'bundleId':BUNDLE,'appId':app_id,'version':VERSION,'versionId':version_id,
+              'versionCreated':created,'locale':LOCALE,'localizationId':loc['id'],
+              'localizationCreated':localization_created,'verified':True}
+          out=Path(os.environ['RUNNER_TEMP'])/'good-times-app-store-version.json'
+          out.write_text(json.dumps(evidence,indent=2),encoding='utf-8')
+          print(json.dumps(evidence,indent=2))
+          PY
+
+      - name: Preserve version evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-app-store-version-${{ github.run_number }}
+          path: ${{ runner.temp }}/good-times-app-store-version.json
+          if-no-files-found: ignore
