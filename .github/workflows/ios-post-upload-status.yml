@@ -1,0 +1,88 @@
+name: GOOD TIMES iOS Post-Upload Status
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/ios-post-upload-status.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  app-store-status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Validate App Store Connect credentials
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$ASC_KEY_ID" ] || missing+=(APP_STORE_CONNECT_KEY_ID)
+          [ -n "$ASC_ISSUER_ID" ] || missing+=(APP_STORE_CONNECT_ISSUER_ID)
+          [ -n "$ASC_PRIVATE_KEY" ] || missing+=(APP_STORE_CONNECT_PRIVATE_KEY)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error title=GOOD TIMES App Store status blocked::Missing required GitHub secrets: ${missing[*]}"
+            exit 1
+          fi
+
+      - name: Configure App Store Connect API key
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          payload={
+            'key_id':os.environ['ASC_KEY_ID'],
+            'issuer_id':os.environ['ASC_ISSUER_ID'],
+            'key':os.environ['ASC_PRIVATE_KEY'],
+            'in_house':False,
+          }
+          path=Path(os.environ['RUNNER_TEMP'])/'appstore_api_key.json'
+          path.write_text(json.dumps(payload))
+          path.chmod(0o600)
+          PY
+
+      - name: Install Fastlane
+        run: |
+          gem install fastlane --no-document
+          fastlane --version
+
+      - name: List TestFlight builds
+        shell: bash
+        run: |
+          set +e
+          set -o pipefail
+          fastlane pilot list \
+            --app_identifier com.kollective.goodtimes \
+            --api_key_path "$RUNNER_TEMP/appstore_api_key.json" \
+            2>&1 | tee "$RUNNER_TEMP/testflight-status.log"
+          STATUS=${PIPESTATUS[0]}
+          cat "$RUNNER_TEMP/testflight-status.log"
+          if [ "$STATUS" -ne 0 ]; then
+            tail -120 "$RUNNER_TEMP/testflight-status.log" | while IFS= read -r line; do
+              SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
+              echo "::error title=GOOD TIMES TestFlight status::$SAFE"
+            done
+            exit "$STATUS"
+          fi
+
+      - name: Preserve status evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-testflight-status-${{ github.run_number }}
+          path: ${{ runner.temp }}/testflight-status.log
+          if-no-files-found: ignore
+
+      - name: Cleanup
+        if: always()
+        run: rm -f "$RUNNER_TEMP/appstore_api_key.json"
