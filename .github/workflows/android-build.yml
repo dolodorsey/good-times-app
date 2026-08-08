@@ -5,10 +5,13 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   build-android:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
@@ -41,3 +44,104 @@ jobs:
           cd android
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon --stacktrace
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-android-debug-${{ github.run_number }}
+          path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Validate Android release credentials
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          PLAY_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$KEYSTORE_B64" ] || missing+=(ANDROID_KEYSTORE_BASE64)
+          [ -n "$STORE_PASSWORD" ] || missing+=(ANDROID_KEYSTORE_PASSWORD)
+          [ -n "$KEY_ALIAS" ] || missing+=(ANDROID_KEY_ALIAS)
+          [ -n "$KEY_PASSWORD" ] || missing+=(ANDROID_KEY_PASSWORD)
+          [ -n "$PLAY_JSON" ] || missing+=(GOOGLE_PLAY_SERVICE_ACCOUNT_JSON)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error title=GOOD TIMES Android release blocked::Missing required GitHub secrets: ${missing[*]}"
+            exit 1
+          fi
+
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/good-times-upload.keystore"
+          keytool -list -keystore "$RUNNER_TEMP/good-times-upload.keystore" -storepass "$STORE_PASSWORD" -alias "$KEY_ALIAS" >/dev/null
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/good-times-upload.keystore" >> "$GITHUB_ENV"
+          echo "ANDROID_KEYSTORE_PASSWORD=$STORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "ANDROID_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "ANDROID_VERSION_CODE=${{ github.run_number }}" >> "$GITHUB_ENV"
+          echo "ANDROID_VERSION_NAME=2.0" >> "$GITHUB_ENV"
+
+      - name: Build signed Android release bundle
+        run: |
+          cd android
+          ./gradlew clean bundleRelease --no-daemon --stacktrace
+          test -s app/build/outputs/bundle/release/app-release.aab
+          jarsigner -verify -verbose -certs app/build/outputs/bundle/release/app-release.aab >/dev/null
+
+      - name: Upload signed Android App Bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-android-release-${{ github.run_number }}
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+
+      - name: Authenticate Google Play service account
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+
+      - name: Setup Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Upload signed bundle to Google Play internal draft
+        env:
+          PACKAGE_NAME: com.kollective.goodtimes
+        run: |
+          set -euo pipefail
+          ACCESS_TOKEN=$(gcloud auth print-access-token)
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+
+          EDIT_JSON=$(curl --fail-with-body -sS -X POST \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{}' \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE_NAME/edits")
+          EDIT_ID=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])' <<<"$EDIT_JSON")
+
+          BUNDLE_JSON=$(curl --fail-with-body -sS -X POST \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@$AAB" \
+            "https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID/bundles?uploadType=media")
+          VERSION_CODE=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["versionCode"])' <<<"$BUNDLE_JSON")
+
+          python3 - "$VERSION_CODE" > "$RUNNER_TEMP/track.json" <<'PY'
+          import json,sys
+          print(json.dumps({"track":"internal","releases":[{"name":"GOOD TIMES CI","versionCodes":[sys.argv[1]],"status":"draft"}]}))
+          PY
+
+          curl --fail-with-body -sS -X PUT \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data-binary "@$RUNNER_TEMP/track.json" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID/tracks/internal" >/dev/null
+
+          curl --fail-with-body -sS -X POST \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://androidpublisher.googleapis.com/androidpublisher/v3/applications/$PACKAGE_NAME/edits/$EDIT_ID:commit" >/dev/null
+          echo "Uploaded Android versionCode $VERSION_CODE to Google Play internal track as draft."
+
+      - name: Cleanup Android release credentials
+        if: always()
+        run: rm -f "$RUNNER_TEMP/good-times-upload.keystore" "$RUNNER_TEMP/track.json"
