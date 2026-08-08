@@ -53,8 +53,13 @@ jobs:
 
       - name: Install Fastlane
         run: |
-          gem install fastlane --no-document
-          fastlane --version
+          set -euo pipefail
+          GEM_HOME="$RUNNER_TEMP/gems"
+          GEM_BIN="$GEM_HOME/bin"
+          echo "GEM_HOME=$GEM_HOME" >> "$GITHUB_ENV"
+          echo "$GEM_BIN" >> "$GITHUB_PATH"
+          gem install fastlane --no-document --install-dir "$GEM_HOME" --bindir "$GEM_BIN"
+          "$GEM_BIN/fastlane" --version
 
       - name: List TestFlight builds
         shell: bash
@@ -66,7 +71,6 @@ jobs:
             --api_key_path "$RUNNER_TEMP/appstore_api_key.json" \
             2>&1 | tee "$RUNNER_TEMP/testflight-status.log"
           STATUS=${PIPESTATUS[0]}
-          cat "$RUNNER_TEMP/testflight-status.log"
           if [ "$STATUS" -ne 0 ]; then
             tail -120 "$RUNNER_TEMP/testflight-status.log" | while IFS= read -r line; do
               SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
@@ -85,4 +89,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: rm -f "$RUNNER_TEMP/appstore_api_key.json"
+        run: rm -rf "$RUNNER_TEMP/appstore_api_key.json" "$RUNNER_TEMP/gems"
