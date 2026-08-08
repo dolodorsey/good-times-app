@@ -1,0 +1,52 @@
+name: GOOD TIMES App Store State Audit v2
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios-app-store-state-audit-v2.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+      - name: Read GOOD TIMES App Store state
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time
+          from pathlib import Path
+          import jwt, requests
+          BASE='https://api.appstoreconnect.apple.com/v1'; BUNDLE='com.kollective.goodtimes'
+          token=jwt.encode({'iss':os.environ['ASC_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},os.environ['ASC_PRIVATE_KEY'],algorithm='ES256',headers={'kid':os.environ['ASC_KEY_ID'],'typ':'JWT'})
+          H={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
+          def get(path,params=None):
+              r=requests.get(BASE+path,headers=H,params=params,timeout=45)
+              if not r.ok: raise SystemExit(f'GET {path} HTTP {r.status_code}: {r.text[:4000]}')
+              return r.json()
+          apps=get('/apps',{'filter[bundleId]':BUNDLE,'limit':'10'})['data']; exact=[a for a in apps if a.get('attributes',{}).get('bundleId')==BUNDLE]
+          if len(exact)!=1: raise SystemExit(f'Expected one app for {BUNDLE}, found {len(exact)}')
+          app=exact[0]; app_id=app['id']
+          versions=get(f'/apps/{app_id}/appStoreVersions',{'limit':'200'})['data']
+          prerelease=get(f'/apps/{app_id}/preReleaseVersions',{'limit':'200'})['data']
+          infos=get(f'/apps/{app_id}/appInfos',{'limit':'200'})['data']
+          builds=get(f'/apps/{app_id}/builds',{'limit':'20'})['data']
+          evidence={'app':{'id':app_id,'attributes':app.get('attributes',{})},'appStoreVersions':[{'id':v['id'],'attributes':v.get('attributes',{})} for v in versions],'preReleaseVersions':[{'id':v['id'],'attributes':v.get('attributes',{})} for v in prerelease],'appInfos':[{'id':i['id'],'attributes':i.get('attributes',{})} for i in infos],'recentBuilds':[{'id':b['id'],'attributes':b.get('attributes',{})} for b in builds[:10]]}
+          out=Path(os.environ['RUNNER_TEMP'])/'good-times-app-store-state.json'; out.write_text(json.dumps(evidence,indent=2),encoding='utf-8'); print(json.dumps(evidence,indent=2))
+          PY
+      - name: Preserve state evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-app-store-state-v2-${{ github.run_number }}
+          path: ${{ runner.temp }}/good-times-app-store-state.json
+          if-no-files-found: error
