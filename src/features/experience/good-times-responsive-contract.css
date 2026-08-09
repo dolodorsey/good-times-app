@@ -3,6 +3,18 @@
    testable and cannot be accidentally changed by visual-art updates. */
 
 @media (max-width:899px){
+  .gt2-nav{
+    position:fixed!important;
+    left:50%!important;
+    right:auto!important;
+    bottom:0!important;
+    top:auto!important;
+    transform:translateX(-50%)!important;
+    width:100%!important;
+    max-width:480px!important;
+    min-height:79px!important;
+    z-index:9300!important;
+  }
   .gt-premium-experience>.gt-connect-fab,
   .gt-premium-experience>button[aria-label="Tickets and paid experiences"],
   .gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{
@@ -13,8 +25,11 @@
 
 @media (min-width:900px){
   body{padding:0!important}
+  .gt-premium-experience{
+    padding-top:20px!important;
+  }
   .gt-premium-experience>.gt2-app{
-    margin:20px auto!important;
+    margin:0 auto!important;
   }
   .gt-premium-experience>.gt-rich-visuals{
     inset:0!important;
