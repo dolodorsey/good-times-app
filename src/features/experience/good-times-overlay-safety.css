@@ -1,0 +1,43 @@
+/* GOOD TIMES overlay safety
+   Floating member controls are siblings of the Live app. They must never inherit
+   the legacy `.gt-premium-experience > *` app-shell dimensions. */
+
+.gt-premium-experience > .gt-connect-fab,
+.gt-premium-experience > button[aria-label="Tickets and paid experiences"],
+.gt-premium-experience > button[aria-label="Open GOOD TIMES account"] {
+  width: auto !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+}
+
+.gt-premium-experience > .gt-connect-backdrop,
+.gt-premium-experience > [role="dialog"][aria-label="GOOD TIMES tickets"],
+.gt-premium-experience > [role="dialog"][aria-label^="Black-owned"],
+.gt-premium-experience > section[aria-label^="GOOD TIMES map"] {
+  width: auto !important;
+  max-width: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+/* PlannerSwitcher is a fixed direct-child bridge rendered only while Planner is open. */
+.gt-premium-experience > div[style*="position: fixed"][style*="translateX(-50%)"] {
+  width: max-content !important;
+  max-width: calc(100vw - 24px) !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  box-shadow: 0 12px 36px rgba(0,0,0,.28) !important;
+}
+
+/* Any full-screen direct-child dialog/backdrop keeps its inset geometry instead of
+   being collapsed back to the legacy 460px premium shell. */
+.gt-premium-experience > [role="dialog"][style*="position: fixed"],
+.gt-premium-experience > [role="presentation"][style*="position: fixed"] {
+  max-width: none !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+}
