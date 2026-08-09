@@ -9,6 +9,8 @@ import './features/experience/good-times-scenes.css'
 import './features/experience/good-times-connect.css'
 import './features/experience/good-times-profile.css'
 import './current-media.css'
+// Phase 1/2 shell consolidation — load last so the canonical shell wins cascade ties.
+import './features/experience/good-times-shell.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'

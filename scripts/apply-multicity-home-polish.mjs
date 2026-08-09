@@ -3,8 +3,18 @@ import fs from 'node:fs'
 const appUrl=new URL('../src/features/experience/GoodTimesLiveApp.jsx',import.meta.url)
 let source=fs.readFileSync(appUrl,'utf8')
 
+// Ask the only question that matters: did this patch's NEW lines land already?
+// Comparing whole blocks fails because a later codemod edits the anchor line
+// (apply-growth-personalization rewrites `venues` -> `personalizedVenues`
+// inside the exact line this patch anchors on).
+function alreadyApplied(text,before,after){
+  if(text.includes(after))return true
+  const anchor=new Set(before.split('\n').map(l=>l.trim()))
+  const added=after.split('\n').map(l=>l.trim()).filter(l=>l.length>24&&!anchor.has(l))
+  return added.length>0&&added.some(l=>text.includes(l))
+}
 function replaceOnce(before,after,label){
-  if(source.includes(after))return
+  if(alreadyApplied(source,before,after))return
   if(!source.includes(before))throw new Error(`GOOD TIMES multi-city polish could not locate ${label}`)
   source=source.replace(before,after)
 }

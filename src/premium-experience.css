@@ -70,7 +70,27 @@ body {
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.76' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-.gt-premium-experience > * {
+/* App-shell geometry belongs to application surfaces only.
+   This used to be a bare `> *`, so every direct child inherited a 460px,
+   100dvh, overflow:hidden shell — including the floating Connect / Tickets /
+   Account controls, the nav bridge, dialogs and backdrops. An entire
+   stylesheet (good-times-overlay-safety.css, deleted 2026-08-09) existed
+   purely to undo it afterwards. The exclusions are now stated here, at the
+   source, per Phase 1 of GOOD_TIMES_UI_9_OF_10_EXECUTION_PLAN.md.
+
+   :where() keeps the exclusion list at zero specificity, so this selector
+   still weighs exactly the same as the original `> *` and no downstream
+   cascade order changes. */
+.gt-premium-experience > *:not(:where(
+  button,
+  [role="dialog"],
+  [role="presentation"],
+  .gt-connect-fab,
+  .gt-five-nav,
+  .gt-connect-backdrop,
+  section[aria-label^="GOOD TIMES map"],
+  [style*="position: fixed"]
+)) {
   width: 100%;
   max-width: 460px;
   min-height: 100dvh;
@@ -326,14 +346,32 @@ body {
     padding: 24px;
   }
 
-  .gt-premium-experience > * {
+  .gt-premium-experience > *:not(:where(
+    button,
+    [role="dialog"],
+    [role="presentation"],
+    .gt-connect-fab,
+    .gt-five-nav,
+    .gt-connect-backdrop,
+    section[aria-label^="GOOD TIMES map"],
+    [style*="position: fixed"]
+  )) {
     min-height: calc(100dvh - 48px);
     border-radius: 32px;
   }
 }
 
 @media (max-width: 520px) {
-  .gt-premium-experience > * {
+  .gt-premium-experience > *:not(:where(
+    button,
+    [role="dialog"],
+    [role="presentation"],
+    .gt-connect-fab,
+    .gt-five-nav,
+    .gt-connect-backdrop,
+    section[aria-label^="GOOD TIMES map"],
+    [style*="position: fixed"]
+  )) {
     max-width: none;
     box-shadow: none;
   }
