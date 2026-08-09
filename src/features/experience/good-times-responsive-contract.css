@@ -1,0 +1,65 @@
+/* GOOD TIMES final responsive geometry contract.
+   Kept separate from the cinematic rich layer so viewport placement remains
+   testable and cannot be accidentally changed by visual-art updates. */
+
+/* Task changes should feel immediate, not flash near-black while the old
+   zero-opacity screen animation runs. */
+.gt2-screen,.gt2-concierge-screen,.gt2-explore-browser{
+  animation:gt2TaskEnter .16s ease both!important;
+}
+@keyframes gt2TaskEnter{
+  from{opacity:.82;transform:translateY(3px)}
+  to{opacity:1;transform:none}
+}
+
+/* Party Board is a discovery HUD, not a permanent obstruction. Keep it on Home,
+   Dates and Explore; hide it while the user is actively building/managing. */
+.gt-premium-experience:has(.gt2-nav button:nth-child(3).active)>.gt-party-pulse,
+.gt-premium-experience:has(.gt2-nav button:nth-child(4).active)>.gt-party-pulse,
+.gt-premium-experience:has(.gt2-nav button:nth-child(6).active)>.gt-party-pulse{
+  display:none!important;
+}
+
+@media (max-width:899px){
+  .gt2-nav{
+    position:fixed!important;
+    left:50%!important;
+    right:auto!important;
+    bottom:0!important;
+    top:auto!important;
+    transform:translateX(-50%)!important;
+    width:100%!important;
+    max-width:480px!important;
+    min-height:79px!important;
+    z-index:9300!important;
+  }
+  .gt-premium-experience>.gt-connect-fab,
+  .gt-premium-experience>button[aria-label="Tickets and paid experiences"],
+  .gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{
+    bottom:calc(94px + env(safe-area-inset-bottom,0px))!important;
+  }
+  /* Build is a focused task. Keep the persistent discovery/account utilities
+     off the form while the six-tab nav remains available. */
+  .gt-premium-experience:has(.gt2-nav button:nth-child(3).active)>.gt-connect-fab,
+  .gt-premium-experience:has(.gt2-nav button:nth-child(3).active)>button[aria-label="Tickets and paid experiences"],
+  .gt-premium-experience:has(.gt2-nav button:nth-child(3).active)>button[aria-label="Open GOOD TIMES account"]{
+    display:none!important;
+  }
+  .gt2-content{padding-bottom:145px!important}
+  .gt-premium-experience:has(.gt2-nav button:nth-child(3).active) .gt2-content{padding-bottom:92px!important}
+}
+
+@media (min-width:900px){
+  body{padding:0!important}
+  .gt-premium-experience{
+    padding-top:20px!important;
+  }
+  .gt-premium-experience>.gt2-app{
+    margin:0 auto!important;
+  }
+  .gt-premium-experience>.gt-rich-visuals{
+    inset:0!important;
+    left:0!important;right:0!important;top:0!important;bottom:0!important;
+    width:100vw!important;height:100dvh!important;
+  }
+}
