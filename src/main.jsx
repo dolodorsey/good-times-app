@@ -14,6 +14,8 @@ import './features/experience/good-times-shell.css'
 // Owner-approved rich experience loads after shell geometry so presentation can
 // be cinematic without reintroducing the old layout collisions.
 import './features/experience/good-times-rich.css'
+// Final viewport contract owns fixed-control placement and safe-area spacing.
+import './features/experience/good-times-responsive-contract.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
