@@ -70,7 +70,10 @@ jobs:
           GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           GT_UI_SESSION: /tmp/gt-qa-session.json
           GT_UI_ARTIFACTS: ui-artifacts
-        run: node --test scripts/ui-geometry.test.mjs scripts/ui-interaction.test.mjs
+        # Serial: these drive real browsers at five viewports against a proxied
+        # upstream API. Run in parallel they contend for CPU and the upstream
+        # returns QUIC/502 errors, producing failures that are not defects.
+        run: node --test --test-concurrency=1 scripts/ui-geometry.test.mjs scripts/ui-interaction.test.mjs
 
       - name: Upload rendered screenshots
         if: always()

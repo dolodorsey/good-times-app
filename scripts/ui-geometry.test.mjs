@@ -70,7 +70,20 @@ async function open(vp, signedIn) {
   const errors = []
   page.on('pageerror', (e) => errors.push(String(e)))
   await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60000 })
-  await page.waitForTimeout(signedIn ? 6000 : 2500)
+  if (signedIn) {
+    // Wait for the app to actually render rather than sleeping a fixed 6s.
+    // The fixed wait was flaky when this file runs in parallel with
+    // ui-interaction.test.mjs: under load the hero had not mounted by 6000ms
+    // and the suite reported "hero collapsed: null" on a perfectly good build.
+    await page.waitForSelector('.gtlive-hero', { timeout: 45000 }).catch(() => {})
+    await page.waitForFunction(() => {
+      const card = document.querySelector('.gtlive-rail .gtlive-event, .gtlive-rail .gtlive-venue')
+      return !!card && card.getBoundingClientRect().height > 0
+    }, { timeout: 45000 }).catch(() => {})
+    await page.waitForTimeout(900)
+  } else {
+    await page.waitForTimeout(2500)
+  }
   return { ctx, page, errors }
 }
 

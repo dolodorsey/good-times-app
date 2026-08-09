@@ -16,7 +16,7 @@
     "android:open": "npx cap open android",
     "android:run": "npx cap run android",
     "serve:dist": "node scripts/serve-dist.mjs",
-    "test:ui": "node --test scripts/ui-geometry.test.mjs"
+    "test:ui": "node --test --test-concurrency=1 scripts/ui-geometry.test.mjs scripts/ui-interaction.test.mjs"
   },
   "dependencies": {
     "@capacitor/browser": "^8.0.4",
