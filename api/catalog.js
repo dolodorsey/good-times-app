@@ -13,7 +13,7 @@ const DIRECTORY_SELECT = [
   'google_reviews','quality_score','price_range','vibe_tags','category_key','category_name','subcategory',
   'subcategory_key','venue_category_key','venue_subcategory','tab_tags','search_tags','culture_tier','is_khg',
   'is_culture_pick','is_black_owned','culture_tags','instagram_handle','sourced_from','website','phone',
-  'booking_link','status','taxonomy_confidence','address','hours_summary','dress_code',
+  'booking_link','status','taxonomy_confidence','address','latitude','longitude','hours_summary','dress_code',
 ].join(',')
 
 function normalizeCity(value) { return String(value || 'atlanta').trim().toLowerCase().replace(/[\s-]+/g, '_') }

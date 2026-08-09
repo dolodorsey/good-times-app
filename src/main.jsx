@@ -8,8 +8,8 @@ import './features/experience/good-times-live.css'
 import './features/experience/good-times-scenes.css'
 import './features/experience/good-times-connect.css'
 import './features/experience/good-times-profile.css'
-// Phase 1/2 shell consolidation — MUST stay last so it wins order-based
-// cascade ties against the emergency override sheets it supersedes.
+import './current-media.css'
+// Phase 1/2 shell consolidation — load last so the canonical shell wins cascade ties.
 import './features/experience/good-times-shell.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
@@ -33,6 +33,10 @@ const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
 const directRoutes = { '/join':'join','/concierge-request':'concierge-request','/trip':'trip','/group':'group' }
 const HOSTED_API_ORIGIN='https://thegoodtimesworldwide.com'
+const GT_CURRENT_MEDIA_BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics'
+const GT_CURRENT_LOGO=`${GT_CURRENT_MEDIA_BASE}/GOOD_TIMES_logo.png`
+const GT_CURRENT_HOME=`${GT_CURRENT_MEDIA_BASE}/GOODTIMES_HOMESCREEN.png`
+const GT_CURRENT_ANIMATION=`${GT_CURRENT_MEDIA_BASE}/GOOD_TIMES_ANIMATION.mp4`
 
 function installDataRequestGuard(){
   if(typeof window==='undefined'||window.__GOOD_TIMES_FETCH_GUARD__)return
@@ -86,12 +90,12 @@ class RuntimeBoundary extends Component {
   }
 }
 function RouteLoading({label='Opening GOOD TIMES'}){
-  return <div className="gt-route-loading" role="status" aria-live="polite"><img src="/good-times-logo.png" alt=""/><div className="gt-route-loading__line"/><span>{label}</span></div>
+  return <div className="gt-route-loading" role="status" aria-live="polite"><img src={GT_CURRENT_LOGO} alt=""/><div className="gt-route-loading__line"/><span>{label}</span></div>
 }
 function PremiumRoot({children,launch=false}){
   const[showLaunch,setShowLaunch]=useState(()=>launch&&sessionStorage.getItem('gt_premium_launch')!=='1')
   useEffect(()=>{if(!showLaunch)return undefined;sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1');const timer=setTimeout(()=>setShowLaunch(false),1250);return()=>clearTimeout(timer)},[showLaunch])
-  if(showLaunch)return <div className="gt-launch" role="status" aria-label="Opening GOOD TIMES"><div className="gt-launch__scene"/><div className="gt-launch__content"><img className="gt-launch__logo" src="/good-times-logo.png" alt="GOOD TIMES"/><div className="gt-launch__eyebrow">Worldwide experience concierge</div><div className="gt-launch__title">Your next move starts here.</div><div className="gt-launch__line"/></div></div>
+  if(showLaunch)return <div className="gt-launch" role="status" aria-label="Opening GOOD TIMES"><video className="gt-current-launch-video" autoPlay muted loop playsInline preload="metadata" poster={GT_CURRENT_HOME} src={GT_CURRENT_ANIMATION}/><div className="gt-launch__scene"/><div className="gt-launch__content"><img className="gt-launch__logo" src={GT_CURRENT_LOGO} alt="GOOD TIMES"/><div className="gt-launch__eyebrow">Worldwide experience concierge</div><div className="gt-launch__title">Your next move starts here.</div><div className="gt-launch__line"/></div></div>
   return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}</div>
 }
 
