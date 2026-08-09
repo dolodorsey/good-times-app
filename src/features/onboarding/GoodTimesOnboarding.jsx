@@ -9,7 +9,10 @@ import {
 } from '../auth/client.js'
 import { AGE_OPTIONS, CITY_OPTIONS, VIBE_OPTIONS } from './options.js'
 
-const BG_BASE = 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds'
+const BG_BASE = 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics'
+const CURRENT_LOGO = `${BG_BASE}/GOOD_TIMES_logo.png`
+const CURRENT_HOME = `${BG_BASE}/GOODTIMES_HOMESCREEN.png`
+const CURRENT_ANIMATION = `${BG_BASE}/GOOD_TIMES_ANIMATION.mp4`
 const GOLD = '#D4A853'
 const FONT = "'DM Sans', sans-serif"
 const SERIF = "'Cormorant Garamond', 'Playfair Display', Georgia, serif"
@@ -36,9 +39,9 @@ const primary = (enabled = true) => ({
 
 function Background({ video = false }) {
   return <>
-    {video ? <video autoPlay muted loop playsInline src={`${BG_BASE}/gt-homescreen-video.mp4`}
+    {video ? <video autoPlay muted loop playsInline poster={CURRENT_HOME} src={CURRENT_ANIMATION}
       style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
-      : <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${BG_BASE}/gt-bg-nightlife-district.webp)`, backgroundSize: 'cover', backgroundPosition: 'center' }} />}
+      : <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${CURRENT_HOME})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />}
     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(6,6,12,.25),rgba(6,6,12,.82) 55%,#06060C 100%)' }} />
   </>
 }
@@ -110,7 +113,7 @@ export default function GoodTimesOnboarding({ onComplete }) {
   if (screen === 'welcome') return <div style={{ ...shell, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexDirection: 'column', padding: '40px 24px 64px', textAlign: 'center' }}>
     <Background video />
     <div style={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: 360 }}>
-      <img src="/good-times-logo.png" alt="Good Times" style={{ height: 58, objectFit: 'contain', marginBottom: 18 }} />
+      <img src={CURRENT_LOGO} alt="Good Times" style={{ height: 58, objectFit: 'contain', marginBottom: 18 }} />
       <h1 style={{ fontFamily: SERIF, fontSize: 46, fontWeight: 300, letterSpacing: '.14em', textTransform: 'uppercase', margin: '0 0 10px' }}>Good Times</h1>
       <p style={{ color: 'rgba(255,255,255,.58)', lineHeight: 1.6, margin: '0 0 34px' }}>Your city. Your vibe. Your night.<br />Curated for you.</p>
       <button style={primary()} onClick={() => { setMode('signup'); setScreen('auth') }}>Get Started</button>
