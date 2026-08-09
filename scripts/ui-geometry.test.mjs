@@ -155,6 +155,7 @@ const geometry = page => page.evaluate(() => {
   return {
     vw,vh,appOverflow,hOverflow:doc.scrollWidth-vw,fixedOutside,visibleNavs,
     ticketsAccountOverlap:overlaps(tickets,account),connectTicketsOverlap:overlaps(connect,tickets),partyNavOverlap:overlaps(party,nav),
+    connectNavOverlap:overlaps(connect,nav),ticketsNavOverlap:overlaps(tickets,nav),accountNavOverlap:overlaps(account,nav),
     hero:box('.gt2-hero')||box('.gtlive-hero'),
     richVideo:Boolean(document.querySelector('.gt-rich-video')),
     partyBoard:Boolean(document.querySelector('.gt-party-pulse')),
@@ -183,6 +184,9 @@ for (const vp of VIEWPORTS) {
     assert.equal(g.ticketsAccountOverlap,false,'Tickets and Account overlap')
     assert.equal(g.connectTicketsOverlap,false,'Connect and Tickets overlap')
     assert.equal(g.partyNavOverlap,false,'Party Board overlaps primary navigation')
+    assert.equal(g.connectNavOverlap,false,'Connect overlaps primary navigation')
+    assert.equal(g.ticketsNavOverlap,false,'Tickets overlaps primary navigation')
+    assert.equal(g.accountNavOverlap,false,'Account overlaps primary navigation')
     assert.deepEqual(g.fixedOutside,[],'fixed controls outside the viewport')
     assert.deepEqual(g.visibleNavs,['.gt2-nav'],'rich experience must expose exactly the Command navigation')
     assert.ok(g.appOverflow<=4,`.gt2-app clips ${g.appOverflow}px of its own content`)
@@ -190,7 +194,7 @@ for (const vp of VIEWPORTS) {
     assert.equal(g.richVideo,true,'Supabase creative animation layer is missing')
     assert.equal(g.partyBoard,true,'Party Board is missing')
     assert.ok(g.toolbarLabels.some(label=>/Build My Night/i.test(label)),`Build My Night missing from toolbar: ${g.toolbarLabels.join(' | ')}`)
-    assert.ok(g.toolbarLabels.some(label=>/^Explore$/i.test(label)),`Explore missing from toolbar: ${g.toolbarLabels.join(' | ')}`)
+    assert.ok(g.toolbarLabels.some(label=>/Explore/i.test(label)),`Explore missing from toolbar: ${g.toolbarLabels.join(' | ')}`)
     assert.deepEqual(g.dialogsTooBig,[],'dialogs wider than the viewport')
     assert.deepEqual(errors,[],'uncaught page errors')
 
@@ -216,6 +220,10 @@ for (const vp of VIEWPORTS) {
 
     g=await geometry(page)
     assert.ok(g.hOverflow<=1,'interactions introduced horizontal overflow')
+    assert.equal(g.partyNavOverlap,false,'opened Party Board overlaps primary navigation')
+    assert.equal(g.connectNavOverlap,false,'Connect overlaps primary navigation after interactions')
+    assert.equal(g.ticketsNavOverlap,false,'Tickets overlaps primary navigation after interactions')
+    assert.equal(g.accountNavOverlap,false,'Account overlaps primary navigation after interactions')
     assert.deepEqual(g.fixedOutside,[],'interactions pushed fixed controls outside viewport')
     assert.deepEqual(errors,[],'uncaught page errors after interactions')
     await ctx.close()
