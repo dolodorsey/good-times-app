@@ -1,0 +1,74 @@
+name: UI regression
+
+# Phase 7 of GOOD_TIMES_UI_9_OF_10_EXECUTION_PLAN.md.
+# Renders the real production build in Chromium at all five required viewports
+# and fails on shell/geometry regressions. Screenshots are kept as artifacts so
+# a human can review every UI PR — green CI is explicitly NOT proof of UI
+# quality, the artifacts are there to be looked at.
+
+on:
+  pull_request:
+  push:
+    branches: [main, 'claude/**', 'hotfix/**']
+  workflow_dispatch:
+
+concurrency:
+  group: ui-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # NODE_ENV is deliberately left unset: with NODE_ENV=production npm omits
+      # devDependencies and vite disappears.
+      - name: Install (locked)
+        run: npm ci --include=dev
+
+      - name: Build production bundle
+        run: npm run build
+
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+        with:
+          chrome-version: stable
+
+      - name: Serve the build
+        run: |
+          node scripts/serve-dist.mjs &
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:4180/; then echo "server up"; exit 0; fi
+            sleep 1
+          done
+          echo "server failed to start"; exit 1
+
+      # Signed-in coverage needs a QA session blob. Without the secret the
+      # signed-in tests skip rather than fail, so forks still get signed-out
+      # coverage.
+      - name: Write QA session
+        if: ${{ secrets.GT_UI_QA_SESSION != '' }}
+        run: echo '${{ secrets.GT_UI_QA_SESSION }}' > /tmp/gt-qa-session.json
+
+      - name: Rendered geometry contract
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_SESSION: /tmp/gt-qa-session.json
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: node --test scripts/ui-geometry.test.mjs
+
+      - name: Upload rendered screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots-${{ github.sha }}
+          path: ui-artifacts
+          retention-days: 14
