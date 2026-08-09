@@ -1,0 +1,173 @@
+/* ============================================================================
+   GOOD TIMES — app shell (Phase 1 + Phase 2 of GOOD_TIMES_UI_9_OF_10_EXECUTION_PLAN)
+
+   This file replaces the emergency override stack. It is deliberately the LAST
+   stylesheet imported, but it is not "another patch sheet": every rule below
+   removes a measured defect at its source and is annotated with the evidence.
+
+   Measured on 2026-08-09 at 1440x900, signed in, against the production build
+   (audit-evidence/phase0-baseline/). Numbers quoted are real getBoundingClientRect
+   values, not estimates.
+   ========================================================================== */
+
+.gt-premium-experience {
+  --gt-gutter: 24px;
+  --gt-util-h: 44px;
+  --gt-util-bottom: 28px;
+  --gt-nav-h: 72px;
+  /* clearance the scroll region must leave for the floating nav + utility row */
+  --gt-bottom-safe: calc(var(--gt-nav-h) + var(--gt-util-h) + 44px);
+}
+
+/* ---------------------------------------------------------------------------
+   D1. TWO NAVIGATION SYSTEMS — only one was reachable.
+
+   .gt-five-nav   fixed, z-index 9100, 720x72 @ y=786   -> Home Map Planner Calendar Vault
+   .gtlive-nav    in-flow, z-index 90,  1390x79 @ y=939 -> Now Dates Build Plans Explore Vault
+
+   .gtlive-app is height:900px/overflow:hidden, so its own content box ends at
+   y=924. The in-flow nav started at 939 — 95px BELOW the bottom of the shell —
+   and was clipped away entirely. Two different label sets, one of them dead.
+   Automated nav clicks proved it: nav-explore.png was byte-identical to
+   nav-home.png because every click landed on a clipped, invisible button.
+
+   The bridge nav is the shipped one (it is what renders and what users tap), so
+   the duplicate is removed rather than resurrected. This also returns the 95px
+   of overflow to the shell.
+   -------------------------------------------------------------------------- */
+.gt-premium-experience .gtlive-nav {
+  display: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+   D2. CONTENT CLIPPED BEHIND THE FLOATING NAV.
+
+   .gtlive-scroll is the only scrolling surface (flex:1, overflow-y:auto,
+   747px tall). .gt-five-nav is position:fixed above it and .gt-connect-fab /
+   Tickets / Account float above that, so the final ~116px of every rail sat
+   underneath opaque chrome. In the baseline the "Your starter picks" cards are
+   sliced through the middle of their artwork with no title ever reachable.
+   -------------------------------------------------------------------------- */
+.gt-premium-experience .gtlive-scroll {
+  padding-bottom: var(--gt-bottom-safe);
+  scroll-padding-bottom: var(--gt-bottom-safe);
+}
+
+/* ---------------------------------------------------------------------------
+   D3. FLOATING CONTROLS COLLIDED.
+
+   Measured: Tickets  x 1256 -> 1370 (z 8500)
+             Account  x 1298 -> 1388 (z 9250)
+   72px of overlap; Account won on z-index and covered the word "TICKETS".
+   Cause: three independently positioned fixed elements, each with its own
+   hardcoded inset, set from three different stylesheets. There was no shared
+   layout, so any width change re-broke them.
+
+   Fixed by giving all three one baseline and one deterministic width, and
+   anchoring them to the same gutter token. They can no longer overlap because
+   their positions are derived from each other.
+   -------------------------------------------------------------------------- */
+.gt-premium-experience > .gt-connect-fab,
+.gt-premium-experience > button[aria-label="Tickets and paid experiences"],
+.gt-premium-experience > button[aria-label="Open GOOD TIMES account"] {
+  position: fixed !important;
+  bottom: calc(var(--gt-util-bottom) + env(safe-area-inset-bottom, 0px)) !important;
+  height: var(--gt-util-h) !important;
+  min-width: 118px !important;
+  padding: 0 16px !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  white-space: nowrap !important;
+  z-index: 9200 !important;
+}
+.gt-premium-experience > .gt-connect-fab {
+  left: var(--gt-gutter) !important;
+  right: auto !important;
+}
+.gt-premium-experience > button[aria-label="Open GOOD TIMES account"] {
+  right: var(--gt-gutter) !important;
+  left: auto !important;
+}
+.gt-premium-experience > button[aria-label="Tickets and paid experiences"] {
+  /* sits immediately left of Account: gutter + Account width + 12px gap */
+  right: calc(var(--gt-gutter) + 118px + 12px) !important;
+  left: auto !important;
+}
+
+/* ---------------------------------------------------------------------------
+   D4. DESKTOP NAV WAS A MOBILE DOCK, ENLARGED.
+
+   Plan, Phase 2: "Navigation must feel like a desktop navigation system, not a
+   mobile dock enlarged on screen." At >=1024 the dock becomes a restrained
+   horizontal bar aligned to the same gutter grid as the content and the utility
+   row, instead of a floating pill island in the middle of the canvas.
+   -------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  /* A defined chrome band so content scrolls UNDER navigation deliberately
+     instead of colliding with a translucent island floating mid-canvas. */
+  .gt-premium-experience::after {
+    content: '';
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(var(--gt-util-h) + var(--gt-util-bottom) * 2);
+    z-index: 9150;
+    pointer-events: none;
+    background: linear-gradient(180deg, rgba(6, 6, 12, 0) 0%, rgba(6, 6, 12, 0.82) 42%, rgba(6, 6, 12, 0.97) 100%);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+  .gt-premium-experience > .gt-five-nav {
+    background: rgba(10, 10, 17, 0.96) !important;
+    border: 1px solid rgba(245, 204, 117, 0.16) !important;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45) !important;
+    left: var(--gt-gutter) !important;
+    right: auto !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    height: var(--gt-util-h) !important;
+    min-height: var(--gt-util-h) !important;
+    bottom: calc(var(--gt-util-bottom) + env(safe-area-inset-bottom, 0px)) !important;
+    /* clear the Connect pill on the left */
+    margin-left: calc(118px + 12px) !important;
+    display: inline-grid !important;
+    grid-auto-flow: column !important;
+    grid-template-columns: none !important;
+    gap: 2px !important;
+    padding: 0 6px !important;
+    border-radius: 999px !important;
+    z-index: 9200 !important;
+  }
+  .gt-premium-experience > .gt-five-nav button {
+    min-width: 92px !important;
+    height: calc(var(--gt-util-h) - 8px) !important;
+  }
+}
+
+/* Below 1024 the dock stays a thumb-friendly bottom bar, and the utility pills
+   stack above it rather than fighting it for the same band. */
+@media (max-width: 1023px) {
+  .gt-premium-experience {
+    --gt-gutter: 14px;
+    --gt-util-bottom: calc(var(--gt-nav-h) + 14px);
+  }
+  /* The 118px desktop pill width does not fit three-up on a 390px screen
+     (3x118 + gaps + gutters = 426 > 390) — they overlapped. Let them shrink. */
+  .gt-premium-experience > .gt-connect-fab,
+  .gt-premium-experience > button[aria-label="Tickets and paid experiences"],
+  .gt-premium-experience > button[aria-label="Open GOOD TIMES account"] {
+    min-width: 0 !important;
+    padding: 0 12px !important;
+    height: 40px !important;
+    font-size: 10px !important;
+    gap: 6px !important;
+  }
+  .gt-premium-experience > button[aria-label="Tickets and paid experiences"] {
+    right: calc(var(--gt-gutter) + 104px + 8px) !important;
+  }
+}

@@ -8,6 +8,9 @@ import './features/experience/good-times-live.css'
 import './features/experience/good-times-scenes.css'
 import './features/experience/good-times-connect.css'
 import './features/experience/good-times-profile.css'
+// Phase 1/2 shell consolidation — MUST stay last so it wins order-based
+// cascade ties against the emergency override sheets it supersedes.
+import './features/experience/good-times-shell.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
