@@ -2,9 +2,11 @@
    Kept separate from the cinematic rich layer so viewport placement remains
    testable and cannot be accidentally changed by visual-art updates. */
 
-/* Party Board is a discovery HUD, not a permanent obstruction. Keep it on Home
-   where tonight/week nightlife belongs; task surfaces get the full canvas. */
-.gt-premium-experience:has(.gt2-nav button:not(:first-child).active)>.gt-party-pulse{
+/* Party Board is a discovery HUD, not a permanent obstruction. Keep it on Home,
+   Dates and Explore; hide it while the user is actively building/managing. */
+.gt-premium-experience:has(.gt2-nav button:nth-child(3).active)>.gt-party-pulse,
+.gt-premium-experience:has(.gt2-nav button:nth-child(4).active)>.gt-party-pulse,
+.gt-premium-experience:has(.gt2-nav button:nth-child(6).active)>.gt-party-pulse{
   display:none!important;
 }
 
