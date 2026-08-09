@@ -1,19 +1,76 @@
 name: Build & Deploy iOS
 
 on:
+  workflow_run:
+    workflows: ["GOOD TIMES Quality Gate"]
+    types: [completed]
+    branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: good-times-ios-production
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
+  release-gate:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-24.04
+    outputs:
+      should-build: ${{ steps.changes.outputs.should-build }}
+      release-sha: ${{ steps.release.outputs.sha }}
+    steps:
+      - name: Resolve tested release commit
+        id: release
+        env:
+          TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+          FALLBACK_SHA: ${{ github.sha }}
+        run: |
+          SHA="${TESTED_SHA:-$FALLBACK_SHA}"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Releasing tested commit $SHA"
+
+      - name: Checkout tested release commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.release.outputs.sha }}
+          fetch-depth: 2
+
+      - name: Detect iOS application changes
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "should-build=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD)
+          printf '%s\n' "$CHANGED"
+          if printf '%s\n' "$CHANGED" | grep -Eq '^(src/|public/|api/|scripts/|ios/|package\.json$|package-lock\.json$|capacitor\.config\.|vite\.config\.|index\.html$|\.github/workflows/ios-build\.yml$)'; then
+            echo "should-build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should-build=false" >> "$GITHUB_OUTPUT"
+            echo "No iOS application files changed; automatic release skipped."
+          fi
+
   build-ios:
+    needs: release-gate
+    if: needs.release-gate.outputs.should-build == 'true'
     runs-on: macos-26
     timeout-minutes: 40
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.release-gate.outputs.release-sha }}
 
       - name: Verify Xcode 26 toolchain
         run: |
