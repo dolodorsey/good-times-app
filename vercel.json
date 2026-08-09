@@ -4,6 +4,8 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "rewrites": [
+    { "source": "/admin", "destination": "/api/not-found" },
+    { "source": "/admin.html", "destination": "/api/not-found" },
     { "source": "/api/data", "destination": "/api/data-fast" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
