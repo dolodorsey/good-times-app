@@ -12,7 +12,7 @@ function ensure(source, marker, insertAfter, addition, label) {
 
 // Restore the richer customer product as the signed-in default. The stabilization
 // bridge remains in the repository for rollback/reference, but must not replace
-// the Command experience's own six-tab customer navigation.
+// or even ship as part of the active Command experience's customer navigation.
 {
   const path = 'src/main.jsx'
   let source = read(path)
@@ -40,9 +40,13 @@ function ensure(source, marker, insertAfter, addition, label) {
     "{showMemberTools?<><LazyCompletionBridge/><LazyNavigationBridge/><LazyAccountCenter/></>:null}",
     "{showMemberTools?<><LazyCompletionBridge/><LazyAccountCenter/></>:null}",
   )
+  source = source.replace(
+    "const LazyNavigationBridge = lazy(() => import('./features/experience/GoodTimesNavigationBridge.jsx'))\n",
+    '',
+  )
 
   if (!source.includes("else route=<><LazyCreativeLayer/><LazyCommandApp/><LazyPartyPulse/></>")) throw new Error('Rich Command experience is not the signed-in default')
-  if (source.includes("showMemberTools?<><LazyCompletionBridge/><LazyNavigationBridge/")) throw new Error('NavigationBridge is still overriding customer navigation')
+  if (source.includes('LazyNavigationBridge')) throw new Error('NavigationBridge is still present in the active customer bootstrap')
   write(path, source)
 }
 
