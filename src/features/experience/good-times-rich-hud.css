@@ -1,0 +1,22 @@
+/* Party Board HUD lane — keeps live party intelligence visible without covering utility controls. */
+@media (max-width:899px){
+  .gt2-content{padding-top:84px!important}
+  .gt-party-pulse{
+    top:78px!important;
+    bottom:auto!important;
+    left:12px!important;
+    right:12px!important;
+    width:auto!important;
+    max-width:430px!important;
+  }
+  .gt-party-pulse.open{max-height:calc(100dvh - 166px)}
+  .gt-party-drawer{max-height:calc(100dvh - 250px)!important}
+}
+@media (min-width:900px){
+  .gt2-content{padding-top:0!important}
+  .gt-party-pulse{
+    top:164px!important;
+    bottom:auto!important;
+    right:24px!important;
+  }
+}
