@@ -10,7 +10,7 @@ test('signed-in GOOD TIMES defaults to the rich interactive command experience',
   assert.match(source, /else route=<><LazyCreativeLayer\/><LazyCommandApp\/><LazyPartyPulse\/><\/>/)
   assert.match(source, /LazyCreativeLayer = lazy/)
   assert.match(source, /LazyPartyPulse = lazy/)
-  assert.doesNotMatch(source, /showMemberTools\?<><LazyCompletionBridge\/><LazyNavigationBridge\//)
+  assert.doesNotMatch(source, /LazyNavigationBridge/)
 })
 
 test('rich visual overrides load after the canonical stabilization shell', () => {
