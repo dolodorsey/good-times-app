@@ -1,1 +1,124 @@
 .gt-profile-editor{display:grid;gap:10px;margin:-2px 0 10px;padding:12px;border:1px solid rgba(255,255,255,.09);border-radius:15px;background:rgba(255,255,255,.025)}.gt-profile-editor label{display:grid;gap:5px}.gt-profile-editor label>span,.gt-profile-vibes>span{font:900 8px/1 'DM Sans',sans-serif;text-transform:uppercase;letter-spacing:.12em;color:rgba(245,240,232,.45)}.gt-profile-editor input,.gt-profile-editor select{width:100%;height:40px;border-radius:11px;border:1px solid rgba(255,255,255,.1);background:#14141c;color:#f5f0e8;padding:0 11px;outline:none;font:700 11px 'DM Sans',sans-serif}.gt-profile-editor input:focus,.gt-profile-editor select:focus{border-color:rgba(212,168,83,.5)}.gt-profile-vibes{display:grid;gap:7px}.gt-profile-vibes>div{display:flex;flex-wrap:wrap;gap:5px}.gt-profile-vibes button{min-height:30px;border-radius:999px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.03);color:rgba(245,240,232,.55);padding:0 9px;font:800 8px 'DM Sans',sans-serif;cursor:pointer}.gt-profile-vibes button.active{border-color:rgba(212,168,83,.45);background:rgba(212,168,83,.12);color:#f2d58f}.gt-profile-save{min-height:40px;border:0;border-radius:11px;background:linear-gradient(135deg,#d4a853,#b88d36);color:#151008;font:900 10px 'DM Sans',sans-serif;cursor:pointer}.gt-profile-save:disabled{opacity:.55;cursor:wait}.gt-profile-notice{margin:0 0 10px;padding:9px 11px;border-radius:11px;border:1px solid rgba(212,168,83,.2);background:rgba(212,168,83,.07);color:#e9d5a4;font:700 9px/1.35 'DM Sans',sans-serif}
+
+/* 2026-08-08 production surface repair.
+   premium-experience.css historically applies full-page sizing to every direct child.
+   Member bridges (five-nav/account/connect/payment) are direct children too, so that rule
+   can turn small fixed controls into viewport-sized blank layers over the real Live app.
+   This file is imported last and restores the intended component geometry. */
+.gt-premium-experience>.gt-five-nav{
+  min-height:0!important;
+  margin:0!important;
+  overflow:visible!important;
+  max-width:none!important;
+}
+.gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{
+  width:auto!important;
+  max-width:none!important;
+  min-height:38px!important;
+  margin:0!important;
+  overflow:visible!important;
+  box-shadow:0 10px 28px rgba(0,0,0,.32)!important;
+}
+.gt-premium-experience>.gtlive-app{
+  width:100%!important;
+  min-height:0!important;
+  margin:0 auto!important;
+  overflow:hidden!important;
+}
+
+@media (min-width:900px){
+  .gt-premium-experience>.gtlive-app{
+    max-width:none!important;
+    height:100dvh!important;
+    box-shadow:none!important;
+  }
+  .gtlive-topbar{
+    padding-left:clamp(30px,5vw,84px)!important;
+    padding-right:clamp(30px,5vw,84px)!important;
+  }
+  .gtlive-brand span{display:block!important}
+  .gtlive-scroll{padding-bottom:112px!important}
+  .gtlive-hero{
+    height:min(72vh,720px)!important;
+    min-height:560px;
+  }
+  .gtlive-hero-copy{
+    left:clamp(36px,6vw,96px)!important;
+    right:clamp(340px,36vw,680px)!important;
+    bottom:72px!important;
+  }
+  .gtlive-hero-copy h1{
+    max-width:900px!important;
+    font-size:clamp(58px,6.2vw,96px)!important;
+  }
+  .gtlive-hero-copy p{max-width:620px!important;font-size:14px!important}
+  .gtlive-quick-row{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    padding:24px clamp(32px,5vw,80px) 8px!important;
+    gap:12px!important;
+  }
+  .gtlive-section-head{
+    padding-left:clamp(32px,5vw,80px)!important;
+    padding-right:clamp(32px,5vw,80px)!important;
+  }
+  .gtlive-rail{
+    padding-left:clamp(32px,5vw,80px)!important;
+    padding-right:clamp(32px,5vw,80px)!important;
+    gap:14px!important;
+  }
+  .gtlive-event,.gtlive-venue{
+    width:300px!important;
+    min-width:300px!important;
+    height:390px!important;
+  }
+  .gtlive-category-block{
+    padding-left:clamp(32px,5vw,80px)!important;
+    padding-right:clamp(32px,5vw,80px)!important;
+  }
+  .gtlive-category-mosaic,.gtlive-explore-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  }
+  .gtlive-page-head{
+    padding-left:clamp(32px,5vw,80px)!important;
+    padding-right:clamp(32px,5vw,80px)!important;
+  }
+  .gtlive-search,.gtlive-segment{
+    margin-left:clamp(32px,5vw,80px)!important;
+    margin-right:clamp(32px,5vw,80px)!important;
+  }
+  .gtlive-chips,.gtlive-grid{
+    padding-left:clamp(32px,5vw,80px)!important;
+    padding-right:clamp(32px,5vw,80px)!important;
+  }
+  .gtlive-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important}
+  .gtlive-grid .gtlive-event,.gtlive-grid .gtlive-venue{height:360px!important}
+  .gt-premium-experience>.gt-five-nav{
+    width:min(720px,calc(100% - 48px))!important;
+    max-width:720px!important;
+    min-height:0!important;
+    height:72px!important;
+    bottom:18px!important;
+    padding:7px 10px!important;
+    border:1px solid rgba(245,204,117,.18)!important;
+    border-radius:22px!important;
+    box-shadow:0 20px 60px rgba(0,0,0,.48)!important;
+  }
+  .gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{
+    right:28px!important;
+    bottom:28px!important;
+    width:auto!important;
+    max-width:none!important;
+    min-height:40px!important;
+  }
+}
+
+@media (max-width:899px){
+  .gt-premium-experience>.gt-five-nav{
+    min-height:0!important;
+    max-width:430px!important;
+  }
+  .gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{
+    width:auto!important;
+    max-width:none!important;
+  }
+}
