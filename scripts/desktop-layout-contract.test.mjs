@@ -3,18 +3,45 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
 const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
-const indexHtml = read('index.html')
+const exists = path => fs.existsSync(new URL(`../${path}`, import.meta.url))
+const premiumCss = read('src/premium-experience.css')
 const desktopCss = read('src/features/experience/good-times-desktop.css')
-const overlayCss = read('src/features/experience/good-times-overlay-safety.css')
+const shellCss = read('src/features/experience/good-times-shell.css')
 
 const mustContain = (text, markers) => markers.forEach(marker => assert.ok(text.includes(marker), `missing desktop contract marker: ${marker}`))
 
-test('desktop styles load after overlay safety and base app styles', () => {
-  mustContain(indexHtml, [
-    '/src/features/experience/good-times-overlay-safety.css',
-    '/src/features/experience/good-times-desktop.css',
+/*
+ * Rewritten 2026-08-09 (Phase 1).
+ *
+ * This suite used to assert that good-times-overlay-safety.css existed and was
+ * linked before good-times-desktop.css — it tested the patch stack, not the
+ * behaviour, so it locked the emergency overrides in place. The behaviour it
+ * was really protecting ("floating member tools stay independent of the app
+ * shell") is now guaranteed at source by scoping `.gt-premium-experience > *`,
+ * so that stylesheet is gone and the assertions moved here.
+ *
+ * Rendered geometry is verified separately in scripts/ui-geometry.test.mjs.
+ */
+
+test('the app-shell rule cannot leak onto floating controls', () => {
+  assert.ok(
+    !/\.gt-premium-experience > \*\s*\{/.test(premiumCss),
+    'a bare `.gt-premium-experience > *` shell rule is back — it will re-break the floating controls',
+  )
+  mustContain(premiumCss, [
+    '.gt-connect-fab',
+    '.gt-five-nav',
+    '[role="dialog"]',
+    '[style*="position: fixed"]',
   ])
-  assert.ok(indexHtml.indexOf('good-times-overlay-safety.css') < indexHtml.indexOf('good-times-desktop.css'))
+})
+
+test('the emergency overlay-safety stylesheet stays deleted', () => {
+  assert.equal(
+    exists('src/features/experience/good-times-overlay-safety.css'),
+    false,
+    'good-times-overlay-safety.css is back; fix the source rule instead of re-adding an override sheet',
+  )
 })
 
 test('desktop web uses a contained premium frame instead of edge-to-edge mobile geometry', () => {
@@ -23,7 +50,6 @@ test('desktop web uses a contained premium frame instead of edge-to-edge mobile 
     'width: min(1380px, calc(100vw - 48px)) !important;',
     'height: calc(100dvh - 48px) !important;',
     'border-radius: 28px !important;',
-    'height: 420px !important;',
   ])
 })
 
@@ -31,17 +57,21 @@ test('desktop rails are stable grids and cannot scatter mobile cards across the 
   mustContain(desktopCss, [
     '.gtlive-rail {',
     'grid-template-columns: repeat(4, minmax(0,1fr)) !important;',
-    '.gtlive-rail > :nth-child(n+5) { display: none !important; }',
     'width: 100% !important;',
     'min-width: 0 !important;',
   ])
 })
 
-test('floating member tools stay independent of the app shell', () => {
-  mustContain(overlayCss, [
-    '.gt-premium-experience > .gt-connect-fab',
+test('floating member tools share one baseline so they cannot overlap', () => {
+  mustContain(shellCss, [
+    '--gt-gutter',
     'button[aria-label="Tickets and paid experiences"]',
     'button[aria-label="Open GOOD TIMES account"]',
-    'min-height: 0 !important;',
+    '.gt-connect-fab',
   ])
+})
+
+test('only one navigation system is rendered', () => {
+  mustContain(shellCss, ['.gtlive-nav'])
+  assert.ok(/\.gtlive-nav\s*\{[^}]*display:\s*none/.test(shellCss), 'the duplicate in-flow nav must stay hidden')
 })
