@@ -1,0 +1,24 @@
+/* GOOD TIMES final responsive geometry contract.
+   Kept separate from the cinematic rich layer so viewport placement remains
+   testable and cannot be accidentally changed by visual-art updates. */
+
+@media (max-width:899px){
+  .gt-premium-experience>.gt-connect-fab,
+  .gt-premium-experience>button[aria-label="Tickets and paid experiences"],
+  .gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{
+    bottom:calc(94px + env(safe-area-inset-bottom,0px))!important;
+  }
+  .gt2-content{padding-bottom:145px!important}
+}
+
+@media (min-width:900px){
+  body{padding:0!important}
+  .gt-premium-experience>.gt2-app{
+    margin:20px auto!important;
+  }
+  .gt-premium-experience>.gt-rich-visuals{
+    inset:0!important;
+    left:0!important;right:0!important;top:0!important;bottom:0!important;
+    width:100vw!important;height:100dvh!important;
+  }
+}
