@@ -26,6 +26,13 @@ function ensure(source, marker, insertAfter, addition, label) {
   )
   source = ensure(
     source,
+    "import './features/experience/good-times-rich-hud.css'",
+    "import './features/experience/good-times-rich.css'",
+    "\nimport './features/experience/good-times-rich-hud.css'",
+    'Party Board HUD stylesheet import',
+  )
+  source = ensure(
+    source,
     "const LazyCreativeLayer = lazy(() => import('./features/experience/GoodTimesCreativeLayer.jsx'))",
     "const LazyAccountCenter = lazy(() => import('./features/experience/GoodTimesAccountCenter.jsx'))",
     "\nconst LazyCreativeLayer = lazy(() => import('./features/experience/GoodTimesCreativeLayer.jsx'))\nconst LazyPartyPulse = lazy(() => import('./features/experience/GoodTimesPartyPulse.jsx'))",
@@ -46,6 +53,7 @@ function ensure(source, marker, insertAfter, addition, label) {
   )
 
   if (!source.includes("else route=<><LazyCreativeLayer/><LazyCommandApp/><LazyPartyPulse/></>")) throw new Error('Rich Command experience is not the signed-in default')
+  if (!source.includes("good-times-rich-hud.css")) throw new Error('Party Board HUD layout guard is missing')
   if (source.includes('LazyNavigationBridge')) throw new Error('NavigationBridge is still present in the active customer bootstrap')
   write(path, source)
 }
