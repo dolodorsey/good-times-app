@@ -38,7 +38,15 @@
   .gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{
     bottom:calc(94px + env(safe-area-inset-bottom,0px))!important;
   }
+  /* Build is a focused task. Keep the persistent discovery/account utilities
+     off the form while the six-tab nav remains available. */
+  .gt-premium-experience:has(.gt2-nav button:nth-child(3).active)>.gt-connect-fab,
+  .gt-premium-experience:has(.gt2-nav button:nth-child(3).active)>button[aria-label="Tickets and paid experiences"],
+  .gt-premium-experience:has(.gt2-nav button:nth-child(3).active)>button[aria-label="Open GOOD TIMES account"]{
+    display:none!important;
+  }
   .gt2-content{padding-bottom:145px!important}
+  .gt-premium-experience:has(.gt2-nav button:nth-child(3).active) .gt2-content{padding-bottom:92px!important}
 }
 
 @media (min-width:900px){
