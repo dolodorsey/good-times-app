@@ -13,6 +13,8 @@ const liveUx = read('scripts/apply-live-ux-polish.mjs')
 const recommendationMigration = read('supabase/auth-migrations/20260808_capture_ai_itinerary_recommendation_sessions.sql')
 const privacy = read('public/privacy.html')
 const support = read('public/support.html')
+const indexHtml = read('index.html')
+const profileCss = read('src/features/experience/good-times-profile.css')
 
 const mustContain = (text, markers) => markers.forEach(marker => assert.ok(text.includes(marker), `missing contract marker: ${marker}`))
 
@@ -112,4 +114,21 @@ test('account deletion calls the authenticated server-side deletion function and
 test('store review privacy and support endpoints document deletion and privacy choices', () => {
   mustContain(privacy, ['Privacy Policy', 'delete your GOOD TIMES account', '/support.html', 'hello@thegoodtimesworldwide.com'])
   mustContain(support, ['Support & Privacy Choices', 'Delete your GOOD TIMES account', 'Delete account permanently', '/privacy.html'])
+})
+
+test('desktop web root is not trapped in a phone-width shell', () => {
+  mustContain(indexHtml, ['#root{width:100%;max-width:none;', '@media(min-width:900px){body{padding:0}'])
+  assert.equal(indexHtml.includes('max-width:430px;min-height:100dvh'), false, 'desktop root must not be capped at 430px')
+})
+
+test('member bridge controls cannot become viewport-sized overlays', () => {
+  mustContain(profileCss, [
+    '.gt-premium-experience>.gt-five-nav{',
+    'min-height:0!important;',
+    '.gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{',
+    'width:auto!important;',
+    '@media (min-width:900px){',
+    '.gt-premium-experience>.gtlive-app{',
+    'max-width:none!important;',
+  ])
 })
