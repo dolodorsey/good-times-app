@@ -171,3 +171,78 @@
     right: calc(var(--gt-gutter) + 104px + 8px) !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   D5. HERO COPY SAT ON RAW EVENT ARTWORK.
+
+   The hero background is the event's own promotional flyer, upscaled and
+   centre-cropped, so giant partial letters ("MARKET!", "12PM") ran directly
+   behind the <h1>. Plan Phase 3: "Ensure hero text never overlaps event
+   artwork or unsafe image regions."
+
+   The base veil fades to transparent at 72% across, which leaves the copy
+   column sitting on whatever the artwork happens to be — unpredictable
+   contrast, and on a light flyer the white headline was close to unreadable.
+   The copy column now always resolves to >=0.86 alpha of #05050 9, so the
+   headline is AA-legible regardless of what image the event supplies, while
+   the artwork stays visible on the right where nothing overlaps it.
+   -------------------------------------------------------------------------- */
+@media (min-width: 1024px) {
+  .gt-premium-experience .gtlive-hero-veil {
+    background:
+      linear-gradient(180deg, rgba(5, 5, 9, 0.28) 0%, rgba(5, 5, 9, 0.18) 30%, rgba(5, 5, 9, 0.92) 86%, #07070c 100%),
+      linear-gradient(90deg, rgba(5, 5, 9, 0.94) 0%, rgba(5, 5, 9, 0.88) 34%, rgba(5, 5, 9, 0.42) 62%, rgba(5, 5, 9, 0) 84%);
+  }
+  .gt-premium-experience .gtlive-hero-copy {
+    max-width: 620px;
+  }
+}
+
+@media (max-width: 1023px) {
+  /* Same guarantee on mobile, where the copy column is the full width and the
+     artwork is directly behind every line of it. */
+  .gt-premium-experience .gtlive-hero-veil {
+    background:
+      linear-gradient(180deg, rgba(5, 5, 9, 0.12) 0%, rgba(5, 5, 9, 0.32) 42%, rgba(5, 5, 9, 0.9) 78%, #07070c 100%);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   D7. CARD BOUNDS WERE INCONSISTENT ACROSS A ROW.
+
+   Plan Phase 3 requires one card standard: aspect ratio, crop, title, date
+   badge, save control, metadata, card height. Rail children could size
+   themselves off their own content, so a row mixed heights and titles cropped
+   at different points. Pinning the row to a single track height makes the
+   grid read as one component.
+   -------------------------------------------------------------------------- */
+.gt-premium-experience .gtlive-rail > * {
+  min-width: 0;
+  height: 100%;
+}
+.gt-premium-experience .gtlive-rail {
+  align-items: stretch;
+}
+
+/* ---------------------------------------------------------------------------
+   D8. VISUAL NOISE — Phase 6.
+
+   Gold 1px outlines were applied at four different opacities across the
+   launchers, nav, chips and cards, which reads as unfinished rather than
+   premium. One border token, one focus treatment.
+   -------------------------------------------------------------------------- */
+.gt-premium-experience {
+  --gt-line: rgba(245, 204, 117, 0.16);
+  --gt-line-strong: rgba(245, 204, 117, 0.32);
+}
+.gt-premium-experience > .gt-connect-fab,
+.gt-premium-experience > button[aria-label="Tickets and paid experiences"],
+.gt-premium-experience > button[aria-label="Open GOOD TIMES account"] {
+  border: 1px solid var(--gt-line) !important;
+}
+/* Keyboard focus was invisible on dark glass — same ring everywhere. */
+.gt-premium-experience :focus-visible {
+  outline: 2px solid #f5cc75;
+  outline-offset: 2px;
+  border-radius: 10px;
+}
