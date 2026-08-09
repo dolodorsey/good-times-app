@@ -106,8 +106,18 @@
   min-height:2.08em!important;
   line-height:1.04!important;
 }
-.gt-premium-experience .gtlive-rail{align-items:stretch!important}
-.gt-premium-experience .gtlive-rail>*{min-width:0!important;height:100%!important}
+/* These two declarations MUST stay inside the desktop breakpoint (see the
+   @media (min-width:960px) block below), and both are load-bearing:
+
+     - min-width:0 cancels the card's own min-width. Required so desktop grid
+       tracks can shrink; in the mobile flex scroller it removes the only thing
+       giving a card width.
+     - height:100% resolves against a parent whose height is set by its own
+       children in the auto-height flex rail.
+
+   Applied unscoped, every card measured 28x23 at 390px and 32x23 at 430px —
+   the Home rails rendered as a row of slivers. Guarded by the card-size
+   assertion in scripts/ui-geometry.test.mjs. */
 
 /* Shared state language across customer surfaces. */
 .gt-premium-experience :is(.gtlive-notice,.gtlive-compact-empty,.gtlive-inline-loader,.gt-connect-state,.gt-connect-empty,.gt-profile-notice){
@@ -288,6 +298,8 @@
     height:330px!important;
     border-radius:20px!important;
   }
+  .gtlive-rail{align-items:stretch!important}
+  .gtlive-rail>*{min-width:0!important;height:100%!important}
   .gtlive-card-copy{bottom:14px!important}
   .gtlive-card-copy h3{font-size:21px!important}
 

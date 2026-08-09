@@ -116,6 +116,7 @@ const geometry = (page) => page.evaluate(() => {
     ticketsAccountOverlap: overlaps(tickets, account),
     connectTicketsOverlap: overlaps(connect, tickets),
     hero: box('.gtlive-hero'),
+    card: box('.gtlive-rail .gtlive-event, .gtlive-rail .gtlive-venue'),
     dialogsTooBig: [...document.querySelectorAll('[role="dialog"], .gt-connect-sheet')]
       .filter((el) => { const r = el.getBoundingClientRect(); return r.width > vw + 4 })
       .map((el) => el.className),
@@ -161,6 +162,12 @@ for (const vp of VIEWPORTS) {
 
     // Regression: hero must occupy real area, not collapse.
     assert.ok(g.hero && g.hero.h > 100, `hero collapsed: ${JSON.stringify(g.hero)}`)
+
+    // Regression: `min-width:0; height:100%` applied to rail children outside
+    // the desktop breakpoint collapsed every card to 28x23 at 390px and 32x23
+    // at 430px. Neither overlap, overflow nor clipping catches that, so assert
+    // real card area directly.
+    assert.ok(g.card && g.card.w > 140 && g.card.h > 180, `rail card collapsed: ${JSON.stringify(g.card)}`)
 
     assert.deepEqual(g.dialogsTooBig, [], 'dialogs wider than the viewport')
     assert.deepEqual(errors, [], 'uncaught page errors')
