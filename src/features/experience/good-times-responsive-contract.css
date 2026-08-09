@@ -2,6 +2,16 @@
    Kept separate from the cinematic rich layer so viewport placement remains
    testable and cannot be accidentally changed by visual-art updates. */
 
+/* Task changes should feel immediate, not flash near-black while the old
+   zero-opacity screen animation runs. */
+.gt2-screen,.gt2-concierge-screen,.gt2-explore-browser{
+  animation:gt2TaskEnter .16s ease both!important;
+}
+@keyframes gt2TaskEnter{
+  from{opacity:.82;transform:translateY(3px)}
+  to{opacity:1;transform:none}
+}
+
 /* Party Board is a discovery HUD, not a permanent obstruction. Keep it on Home,
    Dates and Explore; hide it while the user is actively building/managing. */
 .gt-premium-experience:has(.gt2-nav button:nth-child(3).active)>.gt-party-pulse,
