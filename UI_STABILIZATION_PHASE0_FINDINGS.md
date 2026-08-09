@@ -1,28 +1,81 @@
-# GOOD TIMES — UI Stabilization: Phase 0 evidence + Phase 1/2 progress
+# GOOD TIMES — UI stabilization: evidence and acceptance pack
 
-Branch: `claude/ui-stabilization-v2`
+Branch: `claude/ui-stabilization-v2` (not merged to `main`)
 Plan: `GOOD_TIMES_UI_9_OF_10_EXECUTION_PLAN.md`
 Date: 2026-08-09
 
+---
+
+## Phase 8 — required evidence
+
+### Before / after screenshots
+
+`audit-evidence/phase0-baseline/` and `audit-evidence/phase8-final/`.
+
+Both runs cover **1440x900, 1280x800, 1024x768, 430x932, 390x844**, in
+**signed-out and signed-in** state, across landing, auth, Now, Dates, Build,
+Plans, Explore, Vault, Connect, Tickets and Account — 60 screenshots plus a
+`report.json` of measurements per run.
+
+### Measured result
+
+| | baseline | final |
+|---|---|---|
+| geometry violations (5 viewports x 2 states) | 9 | **0** |
+| unreachable surfaces | 5 of 6 nav targets | **0** |
+| visible navigation systems | 2 (one clipped, unreachable) | **1** |
+| Tickets/Account overlap @1440 | 72px | **0** |
+| `.gtlive-app` self-clipped content | 95px | **0** |
+| topbar visible @1440x900 | no | **yes** |
+| uncaught page errors | 0 | **0** |
+| emergency override stylesheets | 3 | **2** |
+| `npm run build` runs twice | fails | **passes** |
+
+### Browser console summary
+
+Zero page errors and zero uncaught exceptions at every viewport, both states.
+Two console **warnings** remain in the signed-in state on every viewport
+(non-fatal, not raised by layout code). The signed-out state is completely
+clean. One run showed 6 warnings at 1280x800 rather than 2 — transient, from
+upstream `/api` responses, not deterministic.
+
+### Deleted / consolidated CSS
+
+- **Deleted** `src/features/experience/good-times-overlay-safety.css` (43 lines)
+  and its `<link>` from `index.html`. Its entire purpose was undoing
+  `.gt-premium-experience > *`; that rule is now scoped at source.
+- **Rewrote** the bare `.gt-premium-experience > *` shell rule (3 occurrences:
+  base + 2 media queries) to exclude floating controls, using `:where()` so
+  specificity is unchanged and no cascade order shifts.
+- **Added** `src/features/experience/good-times-shell.css` — one annotated
+  sheet carrying the shell tokens, the single-nav rule, the utility-row layout,
+  hero legibility and the border/focus tokens.
+
+Net stylesheet count: **10 → 10** (one deleted, one added). This is honest
+rather than flattering: the plan asks for the emergency sheets to be reduced,
+and `good-times-desktop.css` and `good-times-profile.css` still contain shell
+overrides that duplicate each other. See "Not done".
+
+---
+
 ## How this was measured
 
-- Production build (`npm run build`) served locally from `dist/` with `/api/*`
-  proxied to `https://thegoodtimesworldwide.com` (local has no serverless
-  runtime). `vercel dev` is unusable here: the `"/(.*)" -> /index.html` rewrite
-  in `vercel.json` catches `/src/*`, `/gt-stabilizer.js` and
+- Production build (`npm run build`) served from `dist/` by
+  `scripts/serve-dist.mjs`, with `/api/*` proxied to production.
+  `vercel dev` is unusable here: the `"/(.*)" -> /index.html` rewrite in
+  `vercel.json` catches `/src/*`, `/gt-stabilizer.js` and
   `/gt-timezone-guard.js`, so every asset returns HTML and the app never boots.
-- Chromium via Playwright, real rendered DOM, `getBoundingClientRect` values.
-- Viewports: 1440x900, 1280x800, 1024x768, 430x932, 390x844.
-- Signed-out and signed-in. Signed-in uses an isolated QA identity
+- Chromium via Playwright. All figures are real `getBoundingClientRect` values.
+- Signed-in uses an isolated QA identity
   (`gt.ui.qa+20260809@thegoodtimesworldwide.com`, auth id
-  `94db7d26-70ff-489a-ab6c-3988fbf0d0c0`) created for this pass — no customer
-  data was used. **Delete this account when the pass is accepted.**
-- Evidence: `audit-evidence/phase0-baseline/` and `audit-evidence/phase2-after/`
-  (60 screenshots + `report.json` per run).
+  `94db7d26-70ff-489a-ab6c-3988fbf0d0c0`). No customer data was used.
+  **Delete this account when the pass is accepted.**
 
-## Phase 0 — defects with their responsible selector
+---
 
-### D1 — Two navigation systems, only one reachable  *(fixed)*
+## Defects found and fixed
+
+### D1 — Two navigation systems, only one reachable
 
 | | selector | position | z-index | rect @1440x900 | labels |
 |---|---|---|---|---|---|
@@ -31,116 +84,105 @@ Date: 2026-08-09
 
 `.gtlive-app` is `height:900px; overflow:hidden`, so its content box ends at
 y=924. The in-flow nav began at y=939 — 95px *below* the bottom of its own
-shell — and was clipped away entirely. The two navs do not even share a label
-set.
+shell — and was clipped away. The two navs do not even share a label set.
 
-Proof: in the baseline run, `1440x900__signed-in__nav-explore.png` is
+Proof: in the baseline, `1440x900__signed-in__nav-explore.png` is
 byte-identical to `nav-home.png`. Every automated nav click landed on a
 clipped, invisible button, so no navigation occurred at all.
 
-Root rule: `good-times-live.css:4` —
-`.gtlive-app{height:100dvh;max-width:540px;overflow:hidden}` (mobile-first
-shell), then forced to viewport height again by three separate `!important`
-overrides:
-- `good-times-profile.css:22` and `:30`
-- `good-times-desktop.css:30` and `:211`
+Source: `good-times-live.css:4` sets the mobile-first
+`height:100dvh; max-width:540px; overflow:hidden` shell, then it is forced back
+to viewport height by `good-times-profile.css:22,30` and
+`good-times-desktop.css:30,211`.
 
-### D2 — Content clipped behind floating chrome  *(fixed)*
+### D2 — Content clipped behind floating chrome
+The last ~116px of every rail sat under opaque chrome. Cards were sliced
+through their artwork with the title never reachable.
 
-`.gtlive-scroll` (the only scrolling surface, `flex:1; overflow-y:auto`, 747px)
-sits under `.gt-five-nav` and three fixed pills. The last ~116px of every rail
-was permanently under opaque chrome — the "Your starter picks" cards were
-sliced through the middle of their artwork with the title never reachable.
+### D3 — Floating controls overlapped
+`Tickets x1256→1370 (z8500)` vs `Account x1298→1388 (z9250)`: 72px overlap,
+Account covered the word "TICKETS". Three `position:fixed` elements with
+hardcoded insets from three different stylesheets and no shared layout.
 
-### D3 — Floating controls overlapped  *(fixed)*
+### D5 — Hero copy over raw event artwork
+The hero background is the event's own flyer, upscaled and centre-cropped. The
+veil faded to transparent at 72% across, so headline contrast depended on
+whichever image the event supplied.
 
-Measured at 1440x900:
-
-```
-Tickets   x 1256 → 1370   z-index 8500
-Account   x 1298 → 1388   z-index 9250
-```
-
-72px of overlap; Account won on z-index and covered the word "TICKETS".
-Cause: three independently `position:fixed` elements, each with a hardcoded
-inset set from a different stylesheet (`good-times-connect.css:1`,
-`good-times-desktop.css:190`, `good-times-overlay-safety.css:5`). No shared
-layout, so any width change re-broke them.
-
-### D4 — Desktop navigation is a mobile dock  *(partially addressed)*
-
-`.gt-five-nav` is a centered floating pill island. The plan requires "a desktop
-navigation system, not a mobile dock enlarged on screen". It is now a
-gutter-aligned opaque bar inside a defined bottom chrome band, but it is still
-a bottom dock, not a desktop nav. **Not finished.**
-
-### D5 — Hero uses raw event artwork  *(not addressed)*
-
-The hero background is the event's own promotional flyer, upscaled and
-center-cropped, so giant partial letters ("MARKET!", "12PM") sit behind the
-`<h1>`. Plan Phase 3 requires the hero never overlap unsafe image regions.
-
-### D6 — The build is not idempotent  *(reported, not fixed)*
-
-`npm run build` runs nine `apply-*.mjs` codemods that rewrite tracked source
-before `vite build`. Running it twice fails:
+### D6 — The build was not idempotent
+`npm run build` runs nine `apply-*.mjs` codemods that rewrite tracked source.
+A second run died:
 
 ```
 Error: Production release patch failed: media and fallback-plan helpers
-    at scripts/apply-production-release.mjs:7
+Error: GOOD TIMES multi-city polish could not locate Black-Owned filter
 ```
 
-A clean build mutates `api/data.js`, `public/sitemap.xml`,
-`GoodTimesLiveApp.jsx`, `GoodTimesPaymentsLauncher.jsx` and generates
-`public/guides/`, `public/llms.txt`. This is the mechanism behind the
-patch-on-patch CSS the plan describes: each pass bolts more on. Any local
-iteration requires `git checkout` of those paths between builds. This should be
-fixed before Phase 1 can genuinely "collapse the stack" — otherwise the
-codemods will re-inject what gets removed.
+Cause: applied-checks compared whole blocks, but later codemods edit lines that
+earlier ones inserted — `apply-growth-personalization` rewrites `venues` to
+`personalizedVenues` inside the exact line `apply-multicity-home-polish`
+anchors on. Fixed by checking whether a patch's *added* lines are present.
+Three consecutive builds now exit 0 and produce a byte-identical CSS bundle.
 
-## What changed
+### D7 / D8 — Inconsistent card bounds, four gold-hairline opacities
+Rail children sized off their own content; borders normalised to one token; a
+visible `:focus-visible` ring added (keyboard focus was invisible on dark glass).
 
-One new file, `src/features/experience/good-times-shell.css`, imported last
-from `main.jsx`. Every rule is annotated with the measurement that justifies it.
-It removes the duplicate nav, gives the scroll region clearance, and derives
-the three utility pills' positions from one another so they cannot overlap.
+---
 
-### Result
+## Phase 7 — regression protection
 
-| | baseline | after |
-|---|---|---|
-| geometry violations (5 viewports x 2 states) | 9 | 0 |
-| reachable nav systems | 1 of 2 | 1 of 1 |
-| Tickets/Account overlap | 72px | 0 |
-| topbar visible at 1440x900 | no | yes |
-| page errors | 0 | 0 |
+`scripts/ui-geometry.test.mjs` renders the production build at all five
+viewports, signed-out and signed-in, and asserts: no horizontal overflow, no
+fixed control outside the viewport, no Tickets/Account or Connect/Tickets
+intersection, exactly one visible nav, `.gtlive-app` does not clip its own
+content, hero has positive area, no dialog wider than the viewport, no page
+errors.
 
-The topbar (logo, "LIVE CITY CONCIERGE", city selector) was previously pushed
-out of the clipped shell entirely and is now visible — that was a side effect
-of reclaiming the 95px of overflow.
+**The failure path is verified, not assumed.** Reintroducing the
+Tickets/Account overlap by changing one offset takes the suite to 8 pass /
+3 fail; restoring it returns 11 pass / 0 fail.
 
-## Not done
+Worth recording: the first version asserted "exactly one visible nav" and that
+assertion did **not** catch the two-nav regression, because the duplicate nav's
+whole problem was that it rendered *outside* the viewport and so never counted
+as visible. The `.gtlive-app` self-clipping check is the one that holds.
 
-Phases 1 and 2 are partially complete; Phases 3–8 are not started.
+CI: `.github/workflows/ui-regression.yml` runs it on every PR and uploads all
+screenshots as artifacts for 14 days. The suite skips rather than fails when no
+browser or `GT_UI_BASE` is present, so `npm test` still runs anywhere. Signed-in
+coverage needs a `GT_UI_QA_SESSION` repo secret.
 
-- **Phase 1**: the consolidating sheet exists, but the superseded rules in
-  `good-times-overlay-safety.css`, `good-times-desktop.css` and
-  `good-times-profile.css` have **not** been deleted, and the sheet count has
-  gone up by one, not down. The plan's exit criteria explicitly require removing
-  the broad behaviour at source. Blocked in practice by D6.
-- **Phase 2**: desktop navigation is still a dock (D4).
-- **Phase 3–6**: Home composition, per-surface loading/empty/error states,
-  interaction matrix, and the polish pass are untouched.
-- **Phase 7**: no Playwright visual-regression tests committed. The harness used
-  here lives outside the repo in `~/.khg/gt-audit-tools/` and should be moved in
-  and wired to CI as `scripts/ui-*.test.mjs`.
-- **Phase 8**: no acceptance review.
+---
 
-## Known open defects
+## Not done — do not read this as 9/10
+
+The scoring gate in Phase 8 has **not** been met. What remains:
+
+- **Phase 1 is incomplete.** `good-times-desktop.css` (220 lines) and
+  `good-times-profile.css` (124 lines) still contain competing shell overrides
+  with `!important` on the same properties. Net sheet count is unchanged.
+- **Phase 2**: desktop navigation is still a bottom dock, not a desktop
+  navigation system. It is now opaque, gutter-aligned and inside a defined
+  chrome band, but the plan asks for more than that.
+- **Phase 3**: hero legibility and card bounds are fixed; the wider Home
+  composition pass (quick actions, curated desktop rows, removing
+  placeholder-looking imagery) is not done.
+- **Phase 4**: per-surface loading / success / empty / error states for Dates,
+  Build, Plans, Explore, Map, Vault, Connect, Tickets, Account — not started.
+- **Phase 5**: the repeated-interaction matrix (city switching, 5x open/close
+  of each overlay, slow network, orientation) has not been run.
+- **Phase 6**: typography scale, 4/8px rhythm, radii and shadow normalisation
+  beyond the border/focus token — not done.
+
+### Known open defects
 
 1. The desktop dock still overlaps the top edge of the first card rail at rest.
-2. Hero art direction (D5).
-3. Card heights in "Your starter picks" are inconsistent and titles are cropped.
-4. Two console warnings remain in the signed-in state on every viewport.
-5. `.gtlive-app` remains a fixed-height `overflow:hidden` box; the fix worked
+2. Home hero still uses raw event flyers as artwork; only the contrast is now
+   guaranteed, the art direction is not.
+3. Card titles in "Your starter picks" are still cropped.
+4. Two console warnings in the signed-in state on every viewport.
+5. `.gtlive-app` remains a fixed-height `overflow:hidden` box — the fix works
    around it rather than replacing it.
+6. The Connect sheet at 1440x900 extends slightly past the viewport bottom
+   (`max-height:88vh` measured against a taller offset).
