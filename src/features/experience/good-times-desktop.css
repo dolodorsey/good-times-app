@@ -1,0 +1,220 @@
+/* GOOD TIMES desktop composition — desktop is not a stretched phone shell. */
+@media (min-width: 960px) {
+  html, body, #root {
+    height: 100%;
+    min-height: 100%;
+    overflow: hidden !important;
+  }
+
+  body {
+    padding: 24px !important;
+    background:
+      radial-gradient(circle at 18% 0%, rgba(212,168,83,.13), transparent 27%),
+      radial-gradient(circle at 82% 8%, rgba(105,64,118,.12), transparent 25%),
+      #030307 !important;
+  }
+
+  #root {
+    background: transparent !important;
+  }
+
+  .gt-premium-experience {
+    height: 100%;
+    min-height: 0 !important;
+    display: grid;
+    place-items: center;
+    overflow: visible !important;
+  }
+
+  /* The actual app becomes a contained desktop product frame. */
+  .gt-premium-experience > .gtlive-app {
+    width: min(1380px, calc(100vw - 48px)) !important;
+    max-width: 1380px !important;
+    height: calc(100dvh - 48px) !important;
+    min-height: 640px !important;
+    margin: 0 auto !important;
+    border: 1px solid rgba(212,168,83,.20) !important;
+    border-radius: 28px !important;
+    overflow: hidden !important;
+    background: #07070c !important;
+    box-shadow: 0 34px 100px rgba(0,0,0,.56) !important;
+  }
+
+  .gtlive-topbar {
+    height: 72px !important;
+    flex-basis: 72px !important;
+    padding: 0 42px !important;
+    background: rgba(7,7,12,.94) !important;
+  }
+
+  .gtlive-brand img { width: 128px !important; }
+  .gtlive-brand span { display: block !important; }
+  .gtlive-topbar select { height: 38px !important; max-width: 150px !important; }
+
+  .gtlive-scroll {
+    padding-bottom: 104px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+  }
+
+  /* Lock the hero to a deliberate desktop proportion so the feed cannot overlap it. */
+  .gtlive-hero {
+    width: 100% !important;
+    height: 420px !important;
+    min-height: 420px !important;
+    max-height: 420px !important;
+    background-position: center 38% !important;
+    background-color: #17120d !important;
+    overflow: hidden !important;
+  }
+
+  .gtlive-hero-copy {
+    left: 52px !important;
+    right: auto !important;
+    bottom: 46px !important;
+    width: min(650px, 56%) !important;
+    z-index: 12 !important;
+  }
+
+  .gtlive-hero-copy h1 {
+    max-width: 650px !important;
+    margin: 9px 0 11px !important;
+    font-size: clamp(48px, 4.5vw, 74px) !important;
+    line-height: .94 !important;
+  }
+
+  .gtlive-hero-copy p {
+    max-width: 600px !important;
+    font-size: 13px !important;
+  }
+
+  .gtlive-live-badge { top: 24px !important; right: 28px !important; }
+
+  .gtlive-quick-row {
+    width: min(1240px, calc(100% - 72px)) !important;
+    grid-template-columns: repeat(4, minmax(0,1fr)) !important;
+    gap: 12px !important;
+    margin: 20px auto 0 !important;
+    padding: 0 !important;
+  }
+
+  .gtlive-quick-row button {
+    min-height: 58px !important;
+    border-radius: 16px !important;
+  }
+
+  .gtlive-section,
+  .gtlive-category-block,
+  .gtlive-page,
+  .gtlive-build {
+    width: min(1240px, calc(100% - 72px)) !important;
+    max-width: 1240px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .gtlive-section { padding-top: 30px !important; }
+  .gtlive-section-head { padding: 0 0 13px !important; }
+  .gtlive-section-head h2 { font-size: 30px !important; }
+
+  /* Desktop rails become stable four-card rows instead of stretched mobile scrollers. */
+  .gtlive-rail {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0,1fr)) !important;
+    gap: 14px !important;
+    width: 100% !important;
+    padding: 0 0 12px !important;
+    overflow: visible !important;
+    scroll-snap-type: none !important;
+  }
+
+  .gtlive-rail > :nth-child(n+5) { display: none !important; }
+
+  .gtlive-event,
+  .gtlive-venue,
+  .gtlive-rail .gtlive-event,
+  .gtlive-rail .gtlive-venue {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 320px !important;
+    border-radius: 20px !important;
+  }
+
+  .gtlive-category-block { padding: 34px 0 6px !important; }
+  .gtlive-category-mosaic,
+  .gtlive-explore-grid {
+    grid-template-columns: repeat(4, minmax(0,1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .gtlive-category-mosaic button,
+  .gtlive-explore-grid button { min-height: 170px !important; }
+
+  .gtlive-page { padding-top: 34px !important; }
+  .gtlive-page-head { padding: 0 0 20px !important; }
+  .gtlive-search,
+  .gtlive-segment { margin-left: 0 !important; margin-right: 0 !important; }
+  .gtlive-chips { padding-left: 0 !important; padding-right: 0 !important; }
+  .gtlive-grid {
+    grid-template-columns: repeat(4, minmax(0,1fr)) !important;
+    gap: 14px !important;
+    padding: 0 !important;
+  }
+  .gtlive-grid .gtlive-event,
+  .gtlive-grid .gtlive-venue { height: 300px !important; }
+
+  .gtlive-build-hero {
+    height: 330px !important;
+    border-radius: 24px !important;
+    margin-top: 28px !important;
+  }
+  .gtlive-build-card,
+  .gtlive-built-plan { max-width: 900px !important; margin-left: auto !important; margin-right: auto !important; }
+  .gtlive-plans { grid-template-columns: repeat(2,minmax(0,1fr)) !important; padding: 0 !important; }
+
+  /* Desktop navigation stays in one predictable dock. */
+  .gt-premium-experience > .gt-five-nav {
+    width: min(620px, calc(100vw - 420px)) !important;
+    max-width: 620px !important;
+    height: 64px !important;
+    min-height: 64px !important;
+    left: 50% !important;
+    bottom: 34px !important;
+    transform: translateX(-50%) !important;
+    border: 1px solid rgba(212,168,83,.20) !important;
+    border-radius: 20px !important;
+    background: rgba(8,8,13,.94) !important;
+    box-shadow: 0 18px 48px rgba(0,0,0,.42) !important;
+  }
+
+  .gt-connect-fab {
+    left: max(36px, calc(50% - 650px)) !important;
+    bottom: 40px !important;
+    height: 44px !important;
+  }
+
+  .gt-premium-experience > button[aria-label="Tickets and paid experiences"] {
+    right: max(36px, calc(50% - 650px)) !important;
+    bottom: 40px !important;
+    height: 44px !important;
+  }
+
+  .gt-premium-experience > button[aria-label="Open GOOD TIMES account"] {
+    right: max(36px, calc(50% - 650px)) !important;
+    bottom: 96px !important;
+    min-height: 36px !important;
+  }
+}
+
+@media (min-width: 960px) and (max-width: 1199px) {
+  body { padding: 16px !important; }
+  .gt-premium-experience > .gtlive-app {
+    width: calc(100vw - 32px) !important;
+    height: calc(100dvh - 32px) !important;
+  }
+  .gtlive-rail,
+  .gtlive-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+  .gtlive-rail > :nth-child(n+4) { display: none !important; }
+  .gtlive-category-mosaic,
+  .gtlive-explore-grid { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+}
