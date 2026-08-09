@@ -9,8 +9,11 @@ import './features/experience/good-times-scenes.css'
 import './features/experience/good-times-connect.css'
 import './features/experience/good-times-profile.css'
 import './current-media.css'
-// Phase 1/2 shell consolidation — load last so the canonical shell wins cascade ties.
+// Phase 1/2 shell consolidation — the canonical shell owns geometry.
 import './features/experience/good-times-shell.css'
+// Owner-approved rich experience loads after shell geometry so presentation can
+// be cinematic without reintroducing the old layout collisions.
+import './features/experience/good-times-rich.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
@@ -23,11 +26,12 @@ const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
 const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
 const LazyOnboarding = lazy(() => import('./features/onboarding/GoodTimesOnboarding.jsx'))
 const LazyCompletionBridge = lazy(() => import('./features/experience/GoodTimesCompletionBridge.jsx'))
-const LazyNavigationBridge = lazy(() => import('./features/experience/GoodTimesNavigationBridge.jsx'))
 const LazyNativeBridge = lazy(() => import('./features/experience/GoodTimesNativeBridge.jsx'))
 const LazyPaymentsLauncher = lazy(() => import('./features/experience/GoodTimesPaymentsBridge.jsx'))
 const LazyConnectHub = lazy(() => import('./features/experience/GoodTimesConnectHub.jsx'))
 const LazyAccountCenter = lazy(() => import('./features/experience/GoodTimesAccountCenter.jsx'))
+const LazyCreativeLayer = lazy(() => import('./features/experience/GoodTimesCreativeLayer.jsx'))
+const LazyPartyPulse = lazy(() => import('./features/experience/GoodTimesPartyPulse.jsx'))
 
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
@@ -118,15 +122,15 @@ async function bootstrap(){
   else if(!hasSession){route=<LazyOnboarding onComplete={(nextSession,prefs)=>{if(prefs){try{localStorage.setItem('gt_personalization',JSON.stringify({...prefs,updated_at:new Date().toISOString()}))}catch{}}window.location.reload()}}/>;loadingLabel='Opening your private concierge'}
   else if(legacyRoute){route=<LazyLegacyApp/>;loadingLabel='Opening legacy GOOD TIMES'}
   else if(commandRoute){route=<LazyCommandApp/>;loadingLabel='Opening command interface'}
-  else route=<LazyLiveApp/>
+  else route=<><LazyCreativeLayer/><LazyCommandApp/><LazyPartyPulse/></>
 
   const showMemberTools=hasSession&&!requestType&&!recoverySession&&!legacyRoute&&!commandRoute
   ReactDOM.createRoot(rootElement).render(
     <RuntimeBoundary>
-      <Suspense fallback={<RouteLoading label={loadingLabel}/>}>
+      <Suspense fallback={<RouteLoading label={loadingLabel}/> }>
         <PremiumRoot launch={showMemberTools}>
           {isNative?<LazyNativeBridge/>:null}
-          {showMemberTools?<><LazyCompletionBridge/><LazyNavigationBridge/><LazyAccountCenter/></>:null}
+          {showMemberTools?<><LazyCompletionBridge/><LazyAccountCenter/></>:null}
           {route}
           {showMemberTools?<><LazyConnectHub/><LazyPaymentsLauncher/></>:null}
         </PremiumRoot>
