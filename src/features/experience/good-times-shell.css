@@ -1,0 +1,345 @@
+/* GOOD TIMES — canonical responsive shell
+   This is the single authority for app geometry, navigation, utility controls,
+   desktop composition and shared state polish. It is imported last. */
+
+.gt-premium-experience{
+  --gt-gutter:14px;
+  --gt-line:rgba(245,204,117,.16);
+  --gt-line-strong:rgba(245,204,117,.32);
+  --gt-panel:rgba(11,11,17,.96);
+  --gt-panel-soft:rgba(255,255,255,.045);
+  --gt-muted:rgba(245,240,232,.56);
+  --gt-radius-sm:12px;
+  --gt-radius-md:18px;
+  --gt-radius-lg:24px;
+  --gt-shadow:0 20px 60px rgba(0,0,0,.38);
+  --gt-nav-h:70px;
+  --gt-util-h:40px;
+  --gt-bottom-safe:calc(var(--gt-nav-h) + var(--gt-util-h) + 34px + env(safe-area-inset-bottom,0px));
+}
+
+/* One navigation system. The bridge owns navigation; the legacy in-flow nav is
+   only retained as an internal state target for the bridge. */
+.gt-premium-experience .gtlive-nav{display:none!important}
+
+/* The app surface itself owns the page; floating member tools never inherit its
+   geometry. */
+.gt-premium-experience>.gtlive-app{
+  width:100%!important;
+  max-width:none!important;
+  min-height:0!important;
+  margin:0 auto!important;
+  overflow:hidden!important;
+}
+
+.gt-premium-experience .gtlive-scroll{
+  padding-bottom:var(--gt-bottom-safe)!important;
+  scroll-padding-bottom:var(--gt-bottom-safe)!important;
+}
+
+/* Shared mobile utility row. */
+.gt-premium-experience>.gt-connect-fab,
+.gt-premium-experience>button[aria-label="Tickets and paid experiences"],
+.gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{
+  position:fixed!important;
+  bottom:calc(var(--gt-nav-h) + 14px + env(safe-area-inset-bottom,0px))!important;
+  height:var(--gt-util-h)!important;
+  min-width:0!important;
+  padding:0 11px!important;
+  margin:0!important;
+  border:1px solid var(--gt-line)!important;
+  border-radius:999px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+  white-space:nowrap!important;
+  z-index:9200!important;
+  box-shadow:0 12px 32px rgba(0,0,0,.30)!important;
+  font-size:10px!important;
+}
+.gt-premium-experience>.gt-connect-fab{left:var(--gt-gutter)!important;right:auto!important}
+.gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{right:var(--gt-gutter)!important;left:auto!important;width:auto!important;max-width:none!important}
+.gt-premium-experience>button[aria-label="Tickets and paid experiences"]{right:calc(var(--gt-gutter) + 102px + 8px)!important;left:auto!important;width:auto!important;max-width:none!important}
+
+/* Mobile navigation remains thumb-friendly and anchored to the viewport. */
+.gt-premium-experience>.gt-five-nav{
+  min-height:var(--gt-nav-h)!important;
+  height:calc(var(--gt-nav-h) + env(safe-area-inset-bottom,0px))!important;
+  width:min(430px,100%)!important;
+  max-width:430px!important;
+  bottom:0!important;
+  left:50%!important;
+  right:auto!important;
+  transform:translateX(-50%)!important;
+  margin:0!important;
+  padding:7px 8px env(safe-area-inset-bottom,0px)!important;
+  overflow:visible!important;
+  border:0!important;
+  border-top:1px solid var(--gt-line)!important;
+  border-radius:0!important;
+  background:rgba(7,7,12,.97)!important;
+  box-shadow:0 -14px 40px rgba(0,0,0,.34)!important;
+  backdrop-filter:blur(22px)!important;
+  -webkit-backdrop-filter:blur(22px)!important;
+  z-index:9200!important;
+}
+
+/* Branded hero art is intentional and stable. Event flyer art stays in event
+   cards rather than being enlarged behind primary copy. */
+.gt-premium-experience .gtlive-hero{
+  background-image:linear-gradient(180deg,rgba(5,5,9,.08),rgba(5,5,9,.18) 35%,rgba(5,5,9,.86) 86%,#07070c 100%),url('https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics/GOODTIMES_HOMESCREEN.png')!important;
+  background-position:center!important;
+  background-size:cover!important;
+}
+.gt-premium-experience .gtlive-hero:before{background:inherit!important;background-position:center!important;background-size:cover!important}
+.gt-premium-experience .gtlive-hero-veil{
+  background:linear-gradient(180deg,rgba(5,5,9,.06),rgba(5,5,9,.26) 42%,rgba(5,5,9,.9) 80%,#07070c 100%)!important;
+}
+
+/* Cards keep two readable title lines instead of clipping text mid-word. */
+.gt-premium-experience .gtlive-card-copy h3{
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  overflow:hidden!important;
+  min-height:2.08em!important;
+  line-height:1.04!important;
+}
+.gt-premium-experience .gtlive-rail{align-items:stretch!important}
+.gt-premium-experience .gtlive-rail>*{min-width:0!important;height:100%!important}
+
+/* Shared state language across customer surfaces. */
+.gt-premium-experience :is(.gtlive-notice,.gtlive-compact-empty,.gtlive-inline-loader,.gt-connect-state,.gt-connect-empty,.gt-profile-notice){
+  border-color:var(--gt-line)!important;
+  border-radius:var(--gt-radius-md)!important;
+}
+.gt-premium-experience :is(.gtlive-compact-empty,.gt-connect-state,.gt-connect-empty){
+  background:radial-gradient(circle at 50% 0,rgba(212,168,83,.10),transparent 48%),rgba(15,15,22,.96)!important;
+  box-shadow:inset 0 1px rgba(255,255,255,.035)!important;
+}
+.gt-premium-experience :is(.gtlive-inline-loader,.gt-connect-state){color:var(--gt-muted)!important}
+
+/* Connect and ticket sheets are always contained inside the viewport. */
+.gt-premium-experience>.gt-connect-backdrop{padding:16px!important;align-items:flex-end!important}
+.gt-premium-experience .gt-connect-sheet{
+  width:min(820px,100%)!important;
+  max-height:calc(100dvh - 32px)!important;
+  border-radius:var(--gt-radius-lg) var(--gt-radius-lg) 0 0!important;
+}
+.gt-premium-experience .gt-connect-body{max-height:calc(100dvh - 214px)!important}
+.gt-premium-experience>[role="dialog"][aria-label="GOOD TIMES tickets"]{padding:16px!important;box-sizing:border-box!important}
+.gt-premium-experience>[role="dialog"][aria-label="GOOD TIMES tickets"]>section{max-height:calc(100dvh - 32px)!important}
+
+/* One coherent focus treatment. */
+.gt-premium-experience :focus-visible{outline:2px solid #f5cc75!important;outline-offset:2px!important}
+
+/* ------------------------------- DESKTOP --------------------------------- */
+@media (min-width:1024px){
+  html,body,#root{height:auto!important;min-height:100%!important;overflow-x:hidden!important;overflow-y:auto!important}
+  body{
+    padding:20px!important;
+    background:radial-gradient(circle at 18% 0,rgba(212,168,83,.13),transparent 27%),radial-gradient(circle at 82% 8%,rgba(105,64,118,.12),transparent 25%),#030307!important;
+  }
+  #root{background:transparent!important;overflow:visible!important}
+  .gt-premium-experience{
+    --gt-gutter:28px;
+    --gt-util-h:46px;
+    min-height:calc(100dvh - 40px)!important;
+    height:auto!important;
+    display:block!important;
+    overflow:visible!important;
+  }
+  .gt-premium-experience:after{display:none!important}
+  .gt-premium-experience>.gtlive-app{
+    width:min(1380px,calc(100vw - 40px))!important;
+    max-width:1380px!important;
+    height:auto!important;
+    min-height:calc(100dvh - 40px)!important;
+    max-height:none!important;
+    overflow:visible!important;
+    margin:0 auto!important;
+    border:1px solid rgba(212,168,83,.20)!important;
+    border-radius:26px!important;
+    background:#07070c!important;
+    box-shadow:0 34px 100px rgba(0,0,0,.52)!important;
+  }
+  .gtlive-topbar{
+    position:sticky!important;
+    top:20px!important;
+    z-index:9050!important;
+    height:72px!important;
+    flex-basis:72px!important;
+    padding:0 40px!important;
+    background:rgba(7,7,12,.96)!important;
+    border-radius:26px 26px 0 0!important;
+  }
+  .gtlive-brand img{width:128px!important}
+  .gtlive-brand span{display:block!important}
+  .gtlive-topbar select{height:38px!important;max-width:150px!important}
+
+  /* Desktop uses natural document height instead of a fixed-height clipped app. */
+  .gt-premium-experience .gtlive-scroll{
+    overflow:visible!important;
+    min-height:0!important;
+    padding-top:70px!important;
+    padding-bottom:72px!important;
+    scroll-padding:0!important;
+  }
+
+  /* Desktop navigation is a secondary header bar, not a bottom mobile dock. */
+  .gt-premium-experience>.gt-five-nav{
+    position:fixed!important;
+    top:102px!important;
+    bottom:auto!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    width:min(720px,calc(100vw - 580px))!important;
+    max-width:720px!important;
+    min-width:440px!important;
+    height:48px!important;
+    min-height:48px!important;
+    padding:4px 6px!important;
+    border:1px solid var(--gt-line)!important;
+    border-radius:14px!important;
+    background:rgba(10,10,17,.97)!important;
+    box-shadow:0 12px 32px rgba(0,0,0,.34)!important;
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    z-index:9250!important;
+  }
+  .gt-premium-experience>.gt-five-nav button{
+    min-width:0!important;
+    height:38px!important;
+    border-radius:10px!important;
+    flex-direction:row!important;
+    gap:7px!important;
+  }
+  .gt-premium-experience>.gt-five-nav button span{font-size:15px!important}
+  .gt-premium-experience>.gt-five-nav button small{font-size:9px!important;letter-spacing:.06em!important}
+
+  /* Utilities share the same desktop header row and cannot collide. */
+  .gt-premium-experience>.gt-connect-fab,
+  .gt-premium-experience>button[aria-label="Tickets and paid experiences"],
+  .gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{
+    top:104px!important;
+    bottom:auto!important;
+    height:44px!important;
+    min-width:118px!important;
+    padding:0 15px!important;
+    font-size:10px!important;
+    background:rgba(10,10,17,.97)!important;
+    z-index:9250!important;
+  }
+  .gt-premium-experience>.gt-connect-fab{left:28px!important;right:auto!important}
+  .gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{right:28px!important;left:auto!important}
+  .gt-premium-experience>button[aria-label="Tickets and paid experiences"]{right:158px!important;left:auto!important}
+
+  /* Planner switcher sits below the desktop navigation row, never inside the topbar. */
+  .gt-premium-experience>div[style*="z-index: 8050"]{top:160px!important}
+
+  .gtlive-hero{
+    width:100%!important;
+    height:410px!important;
+    min-height:410px!important;
+    max-height:410px!important;
+    overflow:hidden!important;
+  }
+  .gtlive-hero-veil{
+    background:linear-gradient(180deg,rgba(5,5,9,.22),rgba(5,5,9,.14) 30%,rgba(5,5,9,.92) 88%,#07070c 100%),linear-gradient(90deg,rgba(5,5,9,.94),rgba(5,5,9,.78) 38%,rgba(5,5,9,.20) 72%,transparent 88%)!important;
+  }
+  .gtlive-hero-copy{left:52px!important;right:auto!important;bottom:44px!important;width:min(650px,56%)!important;max-width:650px!important;z-index:12!important}
+  .gtlive-hero-copy h1{max-width:650px!important;margin:9px 0 11px!important;font-size:clamp(48px,4.4vw,72px)!important;line-height:.94!important}
+  .gtlive-hero-copy p{max-width:600px!important;font-size:13px!important}
+  .gtlive-live-badge{top:24px!important;right:28px!important}
+
+  .gtlive-quick-row{
+    width:min(1240px,calc(100% - 72px))!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:12px!important;
+    margin:20px auto 0!important;
+    padding:0!important;
+  }
+  .gtlive-quick-row button{min-height:58px!important;border-radius:16px!important}
+
+  .gtlive-section,.gtlive-category-block,.gtlive-page,.gtlive-build{
+    width:min(1240px,calc(100% - 72px))!important;
+    max-width:1240px!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+  .gtlive-section{padding-top:30px!important}
+  .gtlive-section-head{padding:0 0 13px!important}
+  .gtlive-section-head h2{font-size:30px!important}
+
+  .gtlive-rail{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:14px!important;
+    width:100%!important;
+    padding:0 0 12px!important;
+    overflow:visible!important;
+    scroll-snap-type:none!important;
+  }
+  .gtlive-rail>:nth-child(n+5){display:none!important}
+  .gtlive-event,.gtlive-venue,.gtlive-rail .gtlive-event,.gtlive-rail .gtlive-venue{
+    width:100%!important;
+    min-width:0!important;
+    height:330px!important;
+    border-radius:20px!important;
+  }
+  .gtlive-card-copy{bottom:14px!important}
+  .gtlive-card-copy h3{font-size:21px!important}
+
+  .gtlive-category-block{padding:34px 0 6px!important}
+  .gtlive-category-mosaic,.gtlive-explore-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important}
+  .gtlive-category-mosaic button,.gtlive-explore-grid button{min-height:170px!important}
+
+  .gtlive-page{padding-top:34px!important}
+  .gtlive-page-head{padding:0 0 20px!important}
+  .gtlive-search,.gtlive-segment{margin-left:0!important;margin-right:0!important}
+  .gtlive-chips{padding-left:0!important;padding-right:0!important}
+  .gtlive-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:14px!important;padding:0!important}
+  .gtlive-grid .gtlive-event,.gtlive-grid .gtlive-venue{height:310px!important}
+
+  .gtlive-build-hero{height:330px!important;border-radius:24px!important;margin-top:28px!important}
+  .gtlive-build-card,.gtlive-built-plan{max-width:900px!important;margin-left:auto!important;margin-right:auto!important}
+  .gtlive-plans{grid-template-columns:repeat(2,minmax(0,1fr))!important;padding:0!important}
+
+  /* Map and sheets respect the desktop frame and the header navigation row. */
+  .gt-premium-experience>section[aria-label^="GOOD TIMES map"]{
+    inset:164px 24px 24px!important;
+    width:min(1380px,calc(100vw - 48px))!important;
+    max-width:1380px!important;
+    margin:0 auto!important;
+    border:1px solid var(--gt-line)!important;
+    border-radius:22px!important;
+    overflow:auto!important;
+    box-shadow:var(--gt-shadow)!important;
+  }
+  .gt-premium-experience>.gt-connect-backdrop{padding:20px!important}
+  .gt-premium-experience .gt-connect-sheet{max-height:calc(100dvh - 40px)!important;border-radius:24px!important}
+  .gt-premium-experience .gt-connect-body{max-height:calc(100dvh - 220px)!important}
+}
+
+@media (min-width:1024px) and (max-width:1199px){
+  body{padding:16px!important}
+  .gt-premium-experience>.gtlive-app{width:calc(100vw - 32px)!important;min-height:calc(100dvh - 32px)!important}
+  .gt-premium-experience>.gt-five-nav{top:98px!important;width:calc(100vw - 580px)!important;min-width:420px!important}
+  .gt-premium-experience>.gt-connect-fab,
+  .gt-premium-experience>button[aria-label="Tickets and paid experiences"],
+  .gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{top:100px!important}
+  .gt-premium-experience>.gt-connect-fab{left:20px!important}
+  .gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{right:20px!important}
+  .gt-premium-experience>button[aria-label="Tickets and paid experiences"]{right:148px!important}
+  .gtlive-rail,.gtlive-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .gtlive-rail>:nth-child(n+4){display:none!important}
+  .gtlive-category-mosaic,.gtlive-explore-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+
+@media (max-width:420px){
+  .gt-premium-experience>button[aria-label="Tickets and paid experiences"]{right:calc(var(--gt-gutter) + 94px + 6px)!important}
+  .gt-premium-experience>.gt-connect-fab,
+  .gt-premium-experience>button[aria-label="Tickets and paid experiences"],
+  .gt-premium-experience>button[aria-label="Open GOOD TIMES account"]{padding:0 9px!important;font-size:9px!important}
+}

@@ -1,0 +1,82 @@
+name: UI regression
+
+# Render the production build in Chromium at every required viewport.
+# Green static CI is not UI acceptance; screenshots are retained for review.
+
+on:
+  pull_request:
+  push:
+    branches: [main, 'claude/**', 'hotfix/**']
+  workflow_dispatch:
+
+concurrency:
+  group: ui-regression-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  geometry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci --include=dev
+
+      - name: Build production bundle
+        run: npm run build
+
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+        with:
+          chrome-version: stable
+
+      - name: Serve the build
+        run: |
+          node scripts/serve-dist.mjs &
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:4180/; then
+              echo "server up"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "server failed to start"
+          exit 1
+
+      # GitHub does not permit direct `secrets.*` references inside step `if:`.
+      # Put it in env and decide in the shell instead, so the workflow itself
+      # remains valid even when the optional signed-in QA secret is absent.
+      - name: Prepare optional QA session
+        env:
+          GT_UI_QA_SESSION: ${{ secrets.GT_UI_QA_SESSION }}
+        run: |
+          if [ -n "$GT_UI_QA_SESSION" ]; then
+            printf '%s' "$GT_UI_QA_SESSION" > /tmp/gt-qa-session.json
+            echo "signed-in QA enabled"
+          else
+            rm -f /tmp/gt-qa-session.json
+            echo "signed-in QA secret not configured; signed-out browser gates will still run"
+          fi
+
+      - name: Rendered geometry and interaction gates
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_SESSION: /tmp/gt-qa-session.json
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: node --test scripts/ui-geometry.test.mjs scripts/ui-interaction.test.mjs
+
+      - name: Upload rendered screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-screenshots-${{ github.sha }}
+          path: ui-artifacts
+          if-no-files-found: warn
+          retention-days: 14
