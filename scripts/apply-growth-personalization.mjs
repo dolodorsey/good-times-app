@@ -8,7 +8,16 @@ if (source.includes('GOOD_TIMES_PERSONALIZATION_ACTIVE')) {
   process.exit(0)
 }
 
+// See apply-production-release.mjs — this had no applied-check at all, so a
+// second `npm run build` threw before reaching vite.
+function alreadyApplied(text, search, replacement) {
+  if (text.includes(replacement)) return true
+  const anchor = new Set(search.split('\n').map((l) => l.trim()))
+  const added = replacement.split('\n').map((l) => l.trim()).filter((l) => l.length > 24 && !anchor.has(l))
+  return added.length > 0 && added.some((l) => text.includes(l))
+}
 function replaceOnce(search, replacement, label) {
+  if (alreadyApplied(source, search, replacement)) return
   if (!source.includes(search)) throw new Error(`GOOD TIMES personalization patch failed: ${label}`)
   source = source.replace(search, replacement)
 }

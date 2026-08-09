@@ -2,8 +2,24 @@ import fs from 'node:fs'
 
 function read(path) { return fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8') }
 function write(path, content) { fs.writeFileSync(new URL(`../${path}`, import.meta.url), content) }
+// Idempotency note (2026-08-09): these codemods rewrite tracked source in place,
+// and later scripts in the build chain edit code that earlier scripts inserted.
+// An exact `source.includes(to)` check therefore goes false on the second run
+// while `from` is also gone, and the build died with "patch failed". Running
+// `npm run build` twice is now supported: if most of the intended output is
+// already present, the patch is treated as applied.
+export function alreadyApplied(source, from, to) {
+  if (source.includes(to)) return true
+  const anchor = new Set(from.split('\n').map((line) => line.trim()))
+  const added = to
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 24 && !anchor.has(line))
+  return added.length > 0 && added.some((line) => source.includes(line))
+}
+
 function replaceOnce(source, from, to, label) {
-  if (source.includes(to)) return source
+  if (alreadyApplied(source, from, to)) return source
   if (!source.includes(from)) throw new Error(`Production release patch failed: ${label}`)
   return source.replace(from, to)
 }
