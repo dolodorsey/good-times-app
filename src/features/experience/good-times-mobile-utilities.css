@@ -1,0 +1,35 @@
+/* GOOD TIMES mobile utility orb — one intentional control instead of three
+   permanent desktop pills covering the customer experience. */
+.gt-mobile-utilities{display:none}
+@media(max-width:899px){
+  /* Dock the utility into the header between the brand and city selector. The
+     menu drops downward when opened; nothing permanent floats over Home cards. */
+  .gt-premium-experience>.gt-mobile-utilities{
+    position:fixed!important;
+    left:auto!important;right:88px!important;top:13px!important;bottom:auto!important;
+    width:44px!important;height:44px!important;min-height:0!important;max-width:none!important;
+    margin:0!important;padding:0!important;overflow:visible!important;
+    z-index:9350!important;display:block!important;pointer-events:none!important;
+    background:transparent!important;box-shadow:none!important;border-radius:0!important;
+  }
+  .gt-mobile-utilities__orb,.gt-mobile-utilities__menu{pointer-events:auto}
+  .gt-mobile-utilities__orb{
+    width:44px;height:44px;border-radius:50%;border:1px solid rgba(241,213,154,.42);background:radial-gradient(circle at 34% 24%,rgba(241,213,154,.23),transparent 42%),rgba(8,8,14,.92);color:#f1d59a;display:grid;place-items:center;box-shadow:0 10px 28px rgba(0,0,0,.38);backdrop-filter:blur(20px) saturate(1.14);transition:transform .18s ease,border-color .18s ease,background .18s ease
+  }
+  .gt-mobile-utilities__orb span{font-size:17px;line-height:1}
+  .gt-mobile-utilities.open .gt-mobile-utilities__orb{transform:rotate(45deg);border-color:rgba(241,213,154,.72);background:rgba(25,21,16,.96)}
+  .gt-mobile-utilities__menu{
+    position:absolute;right:-74px;top:52px;width:min(252px,calc(100vw - 28px));padding:8px;border:1px solid rgba(241,213,154,.24);border-radius:18px;background:rgba(8,8,14,.97);box-shadow:0 22px 70px rgba(0,0,0,.58);backdrop-filter:blur(24px) saturate(1.16);display:grid;gap:5px;animation:gtUtilityIn .16s ease both
+  }
+  .gt-mobile-utilities__menu button{
+    min-height:54px;padding:8px 10px;border-radius:13px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.035);color:#fff;display:grid;grid-template-columns:30px 1fr;grid-template-rows:auto auto;grid-template-areas:'icon title' 'icon copy';column-gap:9px;text-align:left
+  }
+  .gt-mobile-utilities__menu button:active{transform:scale(.985);background:rgba(241,213,154,.08)}
+  .gt-mobile-utilities__menu span{grid-area:icon;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;align-self:center;background:rgba(241,213,154,.11);color:#f1d59a;font-size:14px}
+  .gt-mobile-utilities__menu b{grid-area:title;align-self:end;font-size:9px;letter-spacing:.08em;text-transform:uppercase}
+  .gt-mobile-utilities__menu small{grid-area:copy;color:rgba(247,244,237,.5);font-size:7px;margin-top:2px}
+  .gt-premium-experience:has(.gt2-nav button:nth-child(3).active)>.gt-mobile-utilities,
+  .gt-premium-experience:has(.gt2-nav button:nth-child(5).active)>.gt-mobile-utilities{display:none!important}
+}
+@keyframes gtUtilityIn{from{opacity:0;transform:translateY(-4px) scale(.98)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.gt-mobile-utilities__menu,.gt-mobile-utilities__orb{animation:none!important;transition:none!important}}

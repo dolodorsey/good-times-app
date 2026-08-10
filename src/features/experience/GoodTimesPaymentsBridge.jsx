@@ -1,16 +1,32 @@
 import React, { useEffect } from 'react'
 import GoodTimesPaymentsLauncher from './GoodTimesPaymentsLauncher.jsx'
 import { readSession } from '../auth/client.js'
+import { registerPaymentsOpener, requestPayments } from './good-times-payments-controller.js'
 
 const CHECKOUT_PATH='/functions/v1/khg-payment-checkout'
 const CATALOG_URL='https://dzlmtvodpyhetvektfuo.supabase.co/functions/v1/khg-payment-catalog?limit=100'
 let catalogCache={loadedAt:0,events:[]}
 
 function normalize(value){return String(value||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}
-function openPayments(){
+function clickPaymentsLauncher(view='shop'){
   const button=document.querySelector('button[aria-label="Tickets and paid experiences"]')
-  if(button instanceof HTMLElement){button.click();return true}
-  return false
+  if(!(button instanceof HTMLElement))return false
+  const previousCss=button.style.cssText
+  button.style.setProperty('display','flex','important')
+  button.style.setProperty('position','fixed','important')
+  button.style.setProperty('left','-9999px','important')
+  button.style.setProperty('right','auto','important')
+  button.style.setProperty('top','0','important')
+  button.style.setProperty('bottom','auto','important')
+  button.click()
+  queueMicrotask(()=>{
+    button.style.cssText=previousCss
+    if(view==='wallet'){
+      const wallet=[...document.querySelectorAll('button')].find(node=>String(node.textContent||'').trim().toLowerCase().startsWith('my tickets'))
+      if(wallet instanceof HTMLElement)wallet.click()
+    }
+  })
+  return true
 }
 async function loadOwnedEvents(){
   if(Date.now()-catalogCache.loadedAt<60000)return catalogCache.events
@@ -32,6 +48,7 @@ function matchOwnedEvent(title,events){
 
 export default function GoodTimesPaymentsBridge(){
   useEffect(()=>{
+    const unregisterPayments=registerPaymentsOpener(view=>clickPaymentsLauncher(view))
     const previousFetch=window.fetch.bind(window)
     window.fetch=async(input,init)=>{
       try{
@@ -55,7 +72,7 @@ export default function GoodTimesPaymentsBridge(){
       return previousFetch(input,init)
     }
 
-    const onOpen=()=>{openPayments()}
+    const onOpen=event=>{requestPayments(event?.detail?.view||'shop')}
     const onTicketIntent=async event=>{
       const target=event.target instanceof Element?event.target.closest('a,button'):null
       if(!target)return
@@ -69,17 +86,18 @@ export default function GoodTimesPaymentsBridge(){
       event.stopPropagation()
       const owned=matchOwnedEvent(title,await loadOwnedEvents())
       if(owned){
-        openPayments()
+        requestPayments('shop')
         try{window.dispatchEvent(new CustomEvent('gt:payment-intent-captured',{detail:{surface:'event_detail',label,event_id:owned.id,event_name:owned.name}}))}catch{}
         return
       }
       if(href){window.open(href,'_blank','noopener,noreferrer');return}
-      openPayments()
+      requestPayments('shop')
     }
 
     window.addEventListener('gt:open-payments',onOpen)
     document.addEventListener('click',onTicketIntent,true)
     return()=>{
+      unregisterPayments()
       window.fetch=previousFetch
       window.removeEventListener('gt:open-payments',onOpen)
       document.removeEventListener('click',onTicketIntent,true)
