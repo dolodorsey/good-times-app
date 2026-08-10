@@ -11,10 +11,20 @@ function normalize(value){return String(value||'').toLowerCase().replace(/[^a-z0
 function clickPaymentsLauncher(view='shop'){
   const button=document.querySelector('button[aria-label="Tickets and paid experiences"]')
   if(!(button instanceof HTMLElement))return false
+  const previousCss=button.style.cssText
+  button.style.setProperty('display','flex','important')
+  button.style.setProperty('position','fixed','important')
+  button.style.setProperty('left','-9999px','important')
+  button.style.setProperty('right','auto','important')
+  button.style.setProperty('top','0','important')
+  button.style.setProperty('bottom','auto','important')
   button.click()
-  if(view==='wallet')queueMicrotask(()=>{
-    const wallet=[...document.querySelectorAll('button')].find(node=>String(node.textContent||'').trim().toLowerCase().startsWith('my tickets'))
-    if(wallet instanceof HTMLElement)wallet.click()
+  queueMicrotask(()=>{
+    button.style.cssText=previousCss
+    if(view==='wallet'){
+      const wallet=[...document.querySelectorAll('button')].find(node=>String(node.textContent||'').trim().toLowerCase().startsWith('my tickets'))
+      if(wallet instanceof HTMLElement)wallet.click()
+    }
   })
   return true
 }
