@@ -11,8 +11,8 @@ const responsive=fs.readFileSync(new URL('../src/features/experience/good-times-
 test('creative layer reads only approved active Supabase manifest rows',()=>{
   assert.match(assets,/gt_asset_manifest\?select=/)
   assert.match(assets,/approved=eq\.true&is_active=eq\.true/)
-  assert.match(assets,/GOOD_TIMES_ANIMATION\.mp4/)
-  assert.match(assets,/GOODTIMES_HOMESCREEN\.png/)
+  assert.match(assets,/kollective\/animations\/GOODTIMES\.mp4/)
+  assert.match(assets,/motion\/goodtimes\.jpg/)
   assert.match(layer,/loadGoodTimesAssetManifest/)
   assert.match(layer,/GT_APPROVED_DEFAULTS/)
   assert.match(layer,/data-creative-source="gt_asset_manifest"/)
@@ -28,12 +28,14 @@ test('retired screenshot collage is no longer the rendered Explore treatment',()
 
 test('unsafe Google Places image endpoints and retired creative are blocked by media resolver',()=>{
   assert.match(assets,/maps\.googleapis\.com\/maps\/api\/place\/photo/)
+  assert.match(assets,/GOODTIMES_HOMESCREEN\.png/)
   assert.match(assets,/GOODTIMES_SCREENS\.png/)
   assert.match(assets,/safeCustomerImage/)
 })
 
 test('home and build surfaces use current cinematic layer rather than raw stale category art',()=>{
   assert.match(refresh,/\.gt2-hero\{/)
-  assert.match(refresh,/var\(--gt-current-home\)!important/)
+  assert.match(refresh,/motion\/goodtimes\.jpg/)
+  assert.doesNotMatch(refresh,/good_times\/graphics\/GOODTIMES_HOMESCREEN\.png/)
   assert.match(refresh,/\.gt2-concierge-hero,\.gt2-builder/)
 })
