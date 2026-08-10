@@ -1,13 +1,10 @@
 import React, { useEffect, useState } from 'react'
+import { requestPayments } from './good-times-payments-controller.js'
 
 function clickControl(selector){
   const target=document.querySelector(selector)
   if(target instanceof HTMLElement){target.click();return true}
   return false
-}
-
-function openTickets(){
-  window.dispatchEvent(new CustomEvent('gt:open-payments',{detail:{view:'shop'}}))
 }
 
 export default function GoodTimesUtilityMenu(){
@@ -30,7 +27,7 @@ export default function GoodTimesUtilityMenu(){
   if(!mobile)return null
 
   const run=(selector)=>{setOpen(false);window.setTimeout(()=>clickControl(selector),0)}
-  const runTickets=()=>{setOpen(false);window.setTimeout(openTickets,0)}
+  const runTickets=()=>{setOpen(false);requestPayments('shop')}
   return <div className={`gt-mobile-utilities ${open?'open':''}`}>
     {open&&<div className="gt-mobile-utilities__menu" role="menu" aria-label="GOOD TIMES utilities">
       <button type="button" role="menuitem" onClick={()=>run('.gt-connect-fab')}><span>＋</span><b>Connect</b><small>Current · Network · Links</small></button>
