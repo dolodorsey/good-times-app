@@ -55,32 +55,32 @@
 .gt2-builder-vibes.visual button em{position:absolute;right:8px;top:8px;width:21px;height:21px;border-radius:50%;display:grid;place-items:center;background:#f1d59a;color:#21180b;font-size:8px;font-style:normal;font-weight:900}
 .gt2-builder-vibes.visual button.active{border-color:rgba(241,213,154,.78)!important;box-shadow:0 0 0 1px rgba(241,213,154,.18),0 12px 28px rgba(0,0,0,.28)!important;transform:translateY(-2px)}
 
-/* Explore uses the dedicated Supabase category pack. The image is the visual
-   subject; the veil now protects type without burying the owner-approved art. */
-.gt2-explore-browser{background:linear-gradient(180deg,rgba(5,5,10,.30),rgba(5,5,10,.70))!important}
+/* Explore uses the dedicated Supabase category pack. The image owns the upper
+   two-thirds of each card; darkness is reserved for the lower text zone. */
+.gt2-explore-browser{background:linear-gradient(180deg,rgba(5,5,10,.28),rgba(5,5,10,.62))!important}
 .gt2-category-grid>button,
 .gt2-category-grid>button:nth-child(3n+1),
 .gt2-category-grid>button:nth-child(3n+2),
 .gt2-category-grid>button:nth-child(3n){
   position:relative!important;isolation:isolate!important;overflow:hidden!important;
+  background-color:#14131a!important;
   background-image:
-    linear-gradient(180deg,rgba(6,6,11,.04) 0%,rgba(6,6,11,.18) 48%,rgba(6,6,11,.80) 100%),
-    radial-gradient(circle at 82% 16%,hsl(var(--gt-cat-hue) 78% 62% / .10),transparent 36%),
+    linear-gradient(180deg,rgba(6,6,11,0) 0%,rgba(6,6,11,0) 50%,rgba(6,6,11,.10) 62%,rgba(6,6,11,.84) 100%),
     var(--gt-cat-image)!important;
-  background-size:cover,cover,cover!important;
+  background-size:cover,cover!important;
   background-position:center!important;
-  border-color:rgba(241,213,154,.22)!important;
+  border-color:rgba(241,213,154,.24)!important;
   min-height:218px!important;
-  box-shadow:inset 0 -46px 72px rgba(3,3,8,.14),0 12px 34px rgba(0,0,0,.18)!important;
+  box-shadow:inset 0 -42px 70px rgba(3,3,8,.12),0 12px 34px rgba(0,0,0,.18)!important;
   transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,filter .25s ease!important;
 }
 .gt2-category-grid>button[data-has-art='false']{background-image:radial-gradient(circle at 82% 16%,hsl(var(--gt-cat-hue) 78% 62% / .26),transparent 34%),linear-gradient(145deg,rgba(25,24,31,.74),rgba(8,8,13,.88))!important}
-.gt2-category-grid>button:before{content:''!important;position:absolute!important;inset:0!important;z-index:-1!important;background:linear-gradient(120deg,transparent 0 45%,rgba(255,255,255,.035) 50%,transparent 56%)!important;opacity:.45!important}
+.gt2-category-grid>button:before{content:''!important;position:absolute!important;inset:0!important;z-index:-1!important;background:linear-gradient(120deg,transparent 0 45%,rgba(255,255,255,.03) 50%,transparent 56%)!important;opacity:.24!important}
 .gt2-category-grid>button:after{content:'';position:absolute;width:45%;height:190%;left:-65%;top:-45%;transform:rotate(18deg);background:linear-gradient(90deg,transparent,rgba(241,213,154,.13),transparent);transition:left .55s cubic-bezier(.2,.8,.2,1);pointer-events:none}
-.gt2-category-grid>button:hover:after{left:125%}.gt2-category-grid>button:hover{transform:translateY(-5px)!important;border-color:rgba(241,213,154,.56)!important;box-shadow:0 24px 65px rgba(0,0,0,.42),0 0 42px hsl(var(--gt-cat-hue) 70% 50% / .10)!important;filter:saturate(1.14) brightness(1.04)}
-.gt2-category-grid .gt2-category-mark{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:#f4d993;background:rgba(8,8,14,.48)!important;border:1px solid rgba(244,217,147,.34);backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:17px}
-.gt2-category-grid>button strong{max-width:92%;font-size:24px!important;text-wrap:balance;text-shadow:0 3px 18px rgba(0,0,0,.92)}
-.gt2-category-grid>button small{color:rgba(247,244,237,.82)!important;text-shadow:0 2px 10px rgba(0,0,0,.9)}
+.gt2-category-grid>button:hover:after{left:125%}.gt2-category-grid>button:hover{transform:translateY(-5px)!important;border-color:rgba(241,213,154,.58)!important;box-shadow:0 24px 65px rgba(0,0,0,.42),0 0 42px hsl(var(--gt-cat-hue) 70% 50% / .10)!important;filter:saturate(1.18) brightness(1.08)}
+.gt2-category-grid .gt2-category-mark{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;color:#f4d993;background:rgba(8,8,14,.44)!important;border:1px solid rgba(244,217,147,.36);backdrop-filter:blur(10px);box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:17px}
+.gt2-category-grid>button strong{max-width:92%;font-size:24px!important;text-wrap:balance;text-shadow:0 3px 18px rgba(0,0,0,.94)}
+.gt2-category-grid>button small{color:rgba(247,244,237,.84)!important;text-shadow:0 2px 10px rgba(0,0,0,.92)}
 
 /* Activate the GOOD TIMES navigation artwork already in Supabase. */
 .gt2-nav button>span{width:28px!important;height:28px!important;display:block!important;border-radius:9px!important;background-size:cover!important;background-position:center!important;background-repeat:no-repeat!important;font-size:0!important;color:transparent!important;opacity:.72;filter:saturate(.9) brightness(.9);transition:opacity .18s ease,filter .18s ease,transform .18s ease}
