@@ -1,0 +1,83 @@
+/* Owner-reviewed GOOD TIMES creative refresh — approved current Supabase media only. */
+
+/* Retire the repeated old screenshot-collage category treatment. */
+.gt2-category-grid>button.gt2-category-creative{
+  background-image:var(--gt-category-cover)!important;
+  background-size:cover!important;
+  background-position:center!important;
+  min-height:190px!important;
+  border-color:rgba(241,213,154,.2)!important;
+  box-shadow:0 18px 44px rgba(0,0,0,.34)!important;
+}
+.gt2-category-grid>button.gt2-category-creative:before{
+  background:linear-gradient(180deg,rgba(5,5,10,.08) 0%,rgba(5,5,10,.32) 38%,rgba(5,5,10,.94) 88%)!important;
+}
+.gt2-category-grid>button.gt2-category-creative:after{
+  content:'';
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:radial-gradient(circle at 84% 12%,rgba(241,213,154,.22),transparent 32%);
+  pointer-events:none;
+}
+.gt2-category-grid>button.gt2-category-creative .gt2-category-mark{
+  background:rgba(5,5,10,.58)!important;
+  border:1px solid rgba(241,213,154,.3);
+  backdrop-filter:blur(12px);
+}
+.gt2-category-grid>button.gt2-category-creative strong{
+  font-size:25px!important;
+  text-shadow:0 3px 18px rgba(0,0,0,.85);
+}
+.gt2-category-grid>button.gt2-category-creative small{
+  color:rgba(247,244,237,.72)!important;
+  text-shadow:0 2px 10px rgba(0,0,0,.8);
+}
+
+/* Replace retired old collage art in the task surfaces with current approved media. */
+.gt2-command-launch{
+  background:linear-gradient(100deg,rgba(8,8,13,.2),rgba(8,8,13,.9)),url('https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/motion/goodtimes.jpg') center/cover!important;
+}
+.gt2-concierge-hero{
+  background:linear-gradient(180deg,rgba(6,6,11,.28),rgba(6,6,11,.94)),url('https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics/LOCATION_IMAGES/VISIONS.jpg') center 45%/cover!important;
+}
+.gt2-builder{
+  background:linear-gradient(145deg,rgba(20,18,18,.86),rgba(8,8,14,.96) 74%),url('https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics/LOCATION_IMAGES/UTOPIA_DOWNTOWN.webp') center/cover!important;
+}
+
+/* Never show map/logo/placeholder art as if it were a venue photograph. */
+.gt2-image-fallback{
+  background:
+    linear-gradient(180deg,rgba(5,5,10,.28),rgba(5,5,10,.86)),
+    url('https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/motion/goodtimes.jpg') center/cover!important;
+}
+.gt2-image-fallback span{
+  width:48px;height:48px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(6,6,11,.72);border:1px solid rgba(241,213,154,.3);backdrop-filter:blur(10px);
+  font-size:17px!important;
+}
+
+/* If the live feed briefly misses while Party Board has already recovered, the
+   Home state should still look intentional rather than like a dead black panel. */
+.gt2-content>.gt2-empty:first-child{
+  min-height:360px;
+  margin:0!important;
+  border-radius:0!important;
+  border-left:0!important;border-right:0!important;
+  background:
+    linear-gradient(180deg,rgba(5,5,10,.22),rgba(5,5,10,.9)),
+    url('https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/motion/goodtimes.jpg') center/cover!important;
+}
+
+/* More useful desktop density; stop leaving three quarters of a row empty. */
+@media(min-width:900px){
+  .gt2-category-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:16px!important}
+  .gt2-category-grid>button.gt2-category-creative{min-height:210px!important}
+  .gt2-horizontal{padding-right:28px!important}
+  .gt2-venue-card.compact,.gt2-event-card.compact{width:290px!important;min-width:290px!important}
+}
+
+@media(max-width:899px){
+  .gt2-category-grid>button.gt2-category-creative{min-height:160px!important}
+  .gt2-category-grid>button.gt2-category-creative strong{font-size:20px!important}
+}
