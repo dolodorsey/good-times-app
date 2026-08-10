@@ -1,4 +1,4 @@
-import baseHandler from './data-live.js'
+import baseHandler, { cityClock } from './data-live.js'
 
 const MAX_EVENTS = 120
 const MAX_VENUES = 180
@@ -25,7 +25,20 @@ function parseVibes(value) {
   return [...new Set(String(value || '').split(',').map(v=>v.trim().toLowerCase()).filter(v=>ALLOWED_VIBES.has(v)))].slice(0,5)
 }
 function textOf(item) {
-  return [item?.title,item?.name,item?.category_key,item?.subcategory_key,item?.subcategory,...(item?.vibe_tags||[])].filter(Boolean).join(' ').toLowerCase()
+  return [item?.title,item?.name,item?.venue_name,item?.category_key,item?.subcategory_key,item?.subcategory,...(item?.vibe_tags||[])].filter(Boolean).join(' ').toLowerCase()
+}
+function eventMinutes(value){const match=String(value||'').match(/^(\d{1,2}):(\d{2})/);return match?Number(match[1])*60+Number(match[2]):-1}
+function sameNightPriority(item,serviceDate){
+  if(item?.event_date!==serviceDate)return 9
+  const text=textOf(item)
+  const minutes=eventMinutes(item?.event_time)
+  const evening=minutes>=17*60
+  const party=item?.category_key==='nightlife'||item?.category_key==='day_parties_brunch'||/\b(party|nightclub|club night|after party|after-party|lounge|rooftop|dj|dance|r&b|rnb|hip hop|hip-hop|afrobeats|amapiano)\b/.test(text)
+  if(party&&evening)return 0
+  if(item?.category_key==='concerts_live_music'&&evening)return 1
+  if(evening)return 2
+  if(party)return 3
+  return 6
 }
 function eventScore(item,index,vibes) {
   let score = Number(item?.good_times_score || 0) * 10 - Number(item?.display_priority || 50) - index / 1000
@@ -63,23 +76,37 @@ function venueScore(item,index,vibes) {
   if (item?.is_featured) score += 15
   return score
 }
-function personalizeBody(body,vibes) {
+function personalizeBody(body,vibes,city) {
   if (!vibes.length || typeof body !== 'string') return body
   try {
     const payload=JSON.parse(body)
     if (!payload?.ok || !Array.isArray(payload.events) || !Array.isArray(payload.venues)) return body
-    payload.events=[...payload.events].map((item,index)=>({item,index,score:eventScore(item,index,vibes)})).sort((a,b)=>b.score-a.score).map(({item})=>item)
+    const serviceDate=payload?.local_clock?.service_date||cityClock(city).serviceDate
+    payload.events=[...payload.events]
+      .map((item,index)=>({item,index,score:eventScore(item,index,vibes)}))
+      .sort((a,b)=>{
+        const date=String(a.item?.event_date||'').localeCompare(String(b.item?.event_date||''))
+        if(date)return date
+        if(a.item?.event_date===serviceDate){
+          const urgency=sameNightPriority(a.item,serviceDate)-sameNightPriority(b.item,serviceDate)
+          if(urgency)return urgency
+          const time=eventMinutes(b.item?.event_time)-eventMinutes(a.item?.event_time)
+          if(time)return time
+        }
+        return b.score-a.score||a.index-b.index
+      })
+      .map(({item})=>item)
     payload.venues=[...payload.venues].map((item,index)=>({item,index,score:venueScore(item,index,vibes)})).sort((a,b)=>b.score-a.score).map(({item})=>item)
     payload.personalized=true
-    payload.personalization={vibes}
+    payload.personalization={vibes,service_date:serviceDate,ordering:'service-date-then-nightlife-then-taste'}
     return JSON.stringify(payload)
   } catch { return body }
 }
-function captureResponse(response,vibes,onFinish) {
+function captureResponse(response,vibes,city,onFinish) {
   const originalEnd = response.end.bind(response)
   response.end = body => {
     const status=response.statusCode || 200
-    const output=status===200 ? personalizeBody(body,vibes) : body
+    const output=status===200 ? personalizeBody(body,vibes,city) : body
     try { onFinish(status, output, response.getHeaders?.() || {}) } catch {}
     return originalEnd(output)
   }
@@ -91,8 +118,9 @@ export default async function handler(request, response) {
   const eventLimit = clamp(incoming.searchParams.get('event_limit'), 100, MAX_EVENTS)
   const venueLimit = clamp(incoming.searchParams.get('venue_limit'), 140, MAX_VENUES)
   const vibes=parseVibes(incoming.searchParams.get('vibes'))
+  const clock=cityClock(city)
   const vibeKey=vibes.join(',') || 'default'
-  const key = `${city}:${eventLimit}:${venueLimit}:${vibeKey}`
+  const key = `${city}:${clock.serviceDate}:${eventLimit}:${venueLimit}:${vibeKey}`
   const cached = cache.get(key)
 
   if (cached && Date.now() - cached.at < 60_000 && request.method !== 'HEAD') {
@@ -111,7 +139,7 @@ export default async function handler(request, response) {
   rewritten.searchParams.set('venue_limit', String(venueLimit))
   request.url = `${rewritten.pathname}${rewritten.search}`
 
-  captureResponse(response,vibes,(status,body)=>{
+  captureResponse(response,vibes,city,(status,body)=>{
     if (status === 200 && typeof body === 'string' && body.length > 20 && request.method !== 'HEAD') {
       cache.set(key, { at: Date.now(), body })
       if(vibes.length)response.setHeader('X-Good-Times-Personalized','true')
