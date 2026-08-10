@@ -6,6 +6,7 @@ const responsive=fs.readFileSync(new URL('../src/features/experience/good-times-
 const utilities=fs.readFileSync(new URL('../src/features/experience/good-times-mobile-utilities.css',import.meta.url),'utf8')
 const utilityComponent=fs.readFileSync(new URL('../src/features/experience/GoodTimesUtilityMenu.jsx',import.meta.url),'utf8')
 const main=fs.readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8')
+const launch=fs.readFileSync(new URL('../src/current-media.css',import.meta.url),'utf8')
 const venueSql=fs.readFileSync(new URL('../supabase/migrations/20260810041700_dedupe_live_venue_photography.sql',import.meta.url),'utf8')
 
 test('mobile member utilities collapse into one 44px orb instead of permanent desktop pills',()=>{
@@ -18,7 +19,7 @@ test('mobile member utilities collapse into one 44px orb instead of permanent de
   assert.match(main,/LazyUtilityMenu/)
 })
 
-test('Home exposes the approved current motion and current poster only',()=>{
+test('Home and launch expose the approved current motion and current poster only',()=>{
   assert.match(responsive,/\.gt-rich-video\{\n  opacity:\.42!important/)
   assert.match(responsive,/var\(--gt-current-home\) center\/cover!important/)
   assert.doesNotMatch(responsive,/GOODTIMES_HOMESCREEN\.png/)
@@ -26,6 +27,8 @@ test('Home exposes the approved current motion and current poster only',()=>{
   assert.match(main,/kollective\/animations\/GOODTIMES\.mp4/)
   assert.doesNotMatch(main,/GOODTIMES_HOMESCREEN\.png/)
   assert.doesNotMatch(main,/GOOD_TIMES_ANIMATION\.mp4/)
+  assert.match(launch,/brand-graphics\/motion\/goodtimes\.jpg/)
+  assert.doesNotMatch(launch,/GOODTIMES_HOMESCREEN\.png/)
 })
 
 test('live venue payload keeps one strongest customer card per hero image',()=>{
