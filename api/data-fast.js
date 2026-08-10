@@ -21,11 +21,34 @@ const NON_PARTY_SIGNALS=/\b(yoga|pilates|fitness|workout|workshop|class|comedy|s
 const APPROVED_VENUE_MEDIA='/brand-graphics/good_times/graphics/LOCATION_IMAGES/'
 const CATEGORY_MEDIA_BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds'
 const VENUE_CATEGORY_MEDIA={
-  nightclub:'gt-cat-nightlife.webp',lounge:'gt-cat-nightlife.webp',hookah:'gt-cat-nightlife.webp',bar:'gt-cat-nightlife.webp',cocktail_bar:'gt-cat-nightlife.webp',rooftop:'gt-cat-nightlife.webp',speakeasy:'gt-cat-nightlife.webp',jazz:'gt-cat-nightlife.webp',entertainment:'gt-cat-nightlife.webp',
-  restaurant:'gt-cat-dining.webp',food_and_dining:'gt-cat-dining.webp',food_hall:'gt-cat-dining.webp',coffee:'gt-cat-dining.webp',wine_bar:'gt-cat-dining.webp',brunch:'event-rooftop-party.jpg',
-  culture:'gt-cat-culture.webp',museum:'gt-cat-culture.webp',gallery:'gt-cat-culture.webp',comedy:'event-comedy-show.jpg',event_creative:'gt-cat-culture.webp',
-  spa:'gt-cat-wellness.webp',fitness:'gt-cat-wellness.webp',gym:'gt-cat-wellness.webp',shopping:'gt-cat-shopping.webp',housing:'gt-bg-waterfront-venue.webp',outdoor_adventures:'gt-cat-adventure.webp',
+  nightclub:['gt-cat-nightlife.webp','gt-bg-nightlife-district.webp','gt-bg-rooftop-lounge.webp','gt-cat-exclusive.webp'],
+  lounge:['gt-cat-nightlife.webp','gt-bg-rooftop-lounge.webp','gt-cat-dating.webp','gt-cat-exclusive.webp'],
+  hookah:['gt-cat-nightlife.webp','gt-bg-social-scene.webp','gt-cat-exclusive.webp'],
+  bar:['gt-cat-nightlife.webp','gt-bg-rooftop-lounge.webp','gt-cat-dating.webp'],
+  cocktail_bar:['gt-bg-rooftop-lounge.webp','gt-cat-nightlife.webp','gt-cat-dating.webp'],
+  rooftop:['gt-bg-rooftop-lounge.webp','event-rooftop-party.jpg','gt-cat-nightlife.webp'],
+  speakeasy:['gt-cat-exclusive.webp','gt-cat-nightlife.webp','gt-bg-grand-venue.webp'],
+  jazz:['gt-cat-music.webp','gt-cat-nightlife.webp','gt-bg-grand-venue.webp'],
+  entertainment:['gt-cat-nightlife.webp','gt-cat-exclusive.webp','gt-bg-social-scene.webp'],
+  restaurant:['gt-cat-dining.webp','gt-bg-grand-venue.webp','gt-cat-dating.webp'],
+  food_and_dining:['gt-cat-dining.webp','gt-bg-grand-venue.webp','gt-cat-dating.webp'],
+  food_hall:['gt-cat-dining.webp','gt-bg-social-scene.webp','gt-bg-grand-venue.webp'],
+  coffee:['gt-cat-dining.webp','gt-cat-mood-chill.webp','gt-cat-dating.webp'],
+  wine_bar:['gt-cat-dining.webp','gt-cat-dating.webp','gt-cat-exclusive.webp'],
+  brunch:['event-rooftop-party.jpg','gt-cat-dining.webp','gt-cat-mood-bougie.webp'],
+  culture:['gt-cat-culture.webp','gt-bg-social-scene.webp','gt-bg-grand-venue.webp'],
+  museum:['gt-cat-culture.webp','gt-bg-grand-venue.webp','gt-cat-adventure.webp'],
+  gallery:['gt-cat-culture.webp','gt-bg-grand-venue.webp','gt-cat-mood-explore.webp'],
+  comedy:['event-comedy-show.jpg','gt-cat-culture.webp','gt-bg-social-scene.webp'],
+  event_creative:['gt-cat-culture.webp','gt-bg-social-scene.webp','gt-cat-mood-explore.webp'],
+  spa:['gt-cat-wellness.webp','gt-cat-mood-chill.webp','gt-bg-waterfront-venue.webp'],
+  fitness:['gt-cat-wellness.webp','gt-cat-mood-chill.webp','gt-cat-adventure.webp'],
+  gym:['gt-cat-wellness.webp','gt-cat-adventure.webp','gt-cat-mood-turnt.webp'],
+  shopping:['gt-cat-shopping.webp','gt-cat-mood-bougie.webp','gt-bg-social-scene.webp'],
+  housing:['gt-bg-waterfront-venue.webp','gt-bg-grand-venue.webp','gt-bg-panoramic-skyline.webp'],
+  outdoor_adventures:['gt-cat-adventure.webp','gt-bg-panoramic-skyline.webp','gt-bg-waterfront-venue.webp'],
 }
+const DEFAULT_VENUE_MEDIA=['gt-cat-nightlife.webp','gt-bg-social-scene.webp','gt-bg-grand-venue.webp','gt-cat-adventure.webp']
 
 function clamp(value, fallback, max) {
   const parsed = Number.parseInt(String(value ?? ''), 10)
@@ -37,6 +60,11 @@ function parseVibes(value) {
 }
 function textOf(item) {
   return [item?.title,item?.name,item?.venue_name,item?.raw_type,item?.raw_category,item?.category_key,item?.subcategory_key,item?.subcategory,...(item?.vibe_tags||[])].filter(Boolean).join(' ').toLowerCase()
+}
+function stableHash(value){
+  let hash=2166136261
+  for(const char of String(value||'')){hash^=char.charCodeAt(0);hash=Math.imul(hash,16777619)}
+  return hash>>>0
 }
 function eventMinutes(value){const match=String(value||'').match(/^(\d{1,2}):(\d{2})/);return match?Number(match[1])*60+Number(match[2]):-1}
 function nightlifeSubcategory(item){
@@ -102,11 +130,18 @@ export function brittleVenueImage(url){
   return !value||/logo|wordmark|logotype|artboard|fit=pad|bottle/i.test(value)
 }
 export function customerVenueMedia(item){
-  if(hasApprovedGoodTimesVenueMedia(item))return item
-  if(!brittleVenueImage(item?.hero_image))return item
+  if(hasApprovedGoodTimesVenueMedia(item))return{...item,image_source:'good_times_approved',image_is_category_fallback:false}
+  if(!brittleVenueImage(item?.hero_image))return{...item,image_source:'venue_direct',image_is_category_fallback:false}
   const key=String(item?.venue_category_key||item?.category_key||'').toLowerCase()
-  const fallback=VENUE_CATEGORY_MEDIA[key]||'gt-cat-nightlife.webp'
+  const pool=VENUE_CATEGORY_MEDIA[key]||DEFAULT_VENUE_MEDIA
+  const identity=item?.id||`${item?.name||''}:${item?.neighborhood||''}:${key}`
+  const fallback=pool[stableHash(identity)%pool.length]
   return{...item,hero_image:`${CATEGORY_MEDIA_BASE}/${fallback}`,image_source:'good_times_category_fallback',image_is_category_fallback:true}
+}
+function venueMediaPriority(item){
+  if(item?.image_source==='good_times_approved'||hasApprovedGoodTimesVenueMedia(item))return 0
+  if(item?.image_source==='venue_direct'&&!item?.image_is_category_fallback)return 1
+  return 2
 }
 function venueScore(item,index,vibes) {
   let score = Number(item?.quality_score || 0) * 10 + Number(item?.culture_score || 0) * 2 + Number(item?.google_rating || 0) * 20 - index / 1000
@@ -121,13 +156,21 @@ function venueScore(item,index,vibes) {
     if (vibe==='free' && /park|market|museum|community|public/.test(text)) score += 120
     if (vibe==='vip' && (item?.is_featured || /vip|exclusive|luxury|premium|bottle/.test(text))) score += 180
   }
-  if (hasApprovedGoodTimesVenueMedia(item)) score += 180
+  if (hasApprovedGoodTimesVenueMedia(item)) score += 220
+  else if(!item?.image_is_category_fallback) score += 100
+  else score -= 120
   if (item?.is_black_owned) score += 70
   if (item?.is_culture_pick) score += 60
   if (/nightclub|lounge|rooftop|hookah|late night/.test(text)) score += 45
   if (item?.booking_link) score += 18
   if (item?.is_featured) score += 15
   return score
+}
+function rankVenueMedia(rows,vibes){
+  return [...rows]
+    .map((item,index)=>({item,index,media:venueMediaPriority(item),score:venueScore(item,index,vibes)}))
+    .sort((a,b)=>a.media-b.media||b.score-a.score||a.index-b.index)
+    .map(({item})=>item)
 }
 function venueIdentity(item){
   return String(item?.venue_name||'location-tba').toLowerCase().replace(/\b(restaurant|and|&|the|at)\b/g,' ').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')
@@ -166,12 +209,12 @@ function personalizeBody(body,vibes,city) {
           return b.score-a.score||a.index-b.index
         })
         .map(({item})=>item)
-      payload.venues=[...payload.venues].map((item,index)=>({item,index,score:venueScore(item,index,vibes)})).sort((a,b)=>b.score-a.score).map(({item})=>item)
       payload.personalized=true
       payload.personalization={vibes,service_date:serviceDate,ordering:'service-date-then-nightlife-then-taste'}
     }
+    payload.venues=rankVenueMedia(payload.venues,vibes)
     payload.events=diversifyEventsByVenue(payload.events)
-    payload.curation={...(payload.curation||{}),venue_diversity:true,venue_media_guard:true,ordering:'date-then-one-strong-move-per-venue-before-repeats'}
+    payload.curation={...(payload.curation||{}),venue_diversity:true,venue_media_guard:true,venue_media_ordering:'approved-photo-then-direct-photo-then-diverse-fallback',ordering:'date-then-one-strong-move-per-venue-before-repeats'}
     return JSON.stringify(payload)
   } catch { return body }
 }
