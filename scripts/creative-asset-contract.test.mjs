@@ -11,9 +11,11 @@ const responsive=fs.readFileSync(new URL('../src/features/experience/good-times-
 test('creative layer reads only approved active Supabase manifest rows',()=>{
   assert.match(assets,/gt_asset_manifest\?select=/)
   assert.match(assets,/approved=eq\.true&is_active=eq\.true/)
+  assert.match(assets,/GOOD_TIMES_ANIMATION\.mp4/)
+  assert.match(assets,/GOODTIMES_HOMESCREEN\.png/)
+  assert.match(layer,/loadGoodTimesAssetManifest/)
+  assert.match(layer,/GT_APPROVED_DEFAULTS/)
   assert.match(layer,/data-creative-source="gt_asset_manifest"/)
-  assert.match(layer,/GOOD_TIMES_ANIMATION\.mp4/)
-  assert.match(layer,/GOODTIMES_HOMESCREEN\.png/)
 })
 
 test('retired screenshot collage is no longer the rendered Explore treatment',()=>{
