@@ -61,16 +61,16 @@ jobs:
             echo "signed-in QA enabled"
           else
             rm -f /tmp/gt-qa-session.json
-            echo "signed-in QA secret not configured; signed-out browser gates will still run"
+            echo "signed-in QA secret not configured; deterministic signed-in fixtures will still run"
           fi
 
-      - name: Rendered geometry and interaction gates
+      - name: Rendered geometry, interaction and creative gates
         env:
           GT_UI_BASE: http://localhost:4180
           GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           GT_UI_SESSION: /tmp/gt-qa-session.json
           GT_UI_ARTIFACTS: ui-artifacts
-        run: node --test scripts/ui-geometry.test.mjs scripts/ui-interaction.test.mjs
+        run: node --test scripts/ui-geometry.test.mjs scripts/ui-interaction.test.mjs scripts/ui-creative-assets.test.mjs
 
       - name: Upload rendered screenshots
         if: always()
