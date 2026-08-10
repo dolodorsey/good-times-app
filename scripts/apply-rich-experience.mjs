@@ -52,9 +52,33 @@ function ensure(source, marker, insertAfter, addition, label) {
     '',
   )
 
+  // Owner-reviewed current media. Never let the retired collage home image or
+  // older animation sneak back into launch/loading because those surfaces sit
+  // outside GoodTimesCreativeLayer.
+  source = source.replace(
+    "const GT_CURRENT_MEDIA_BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics'\nconst GT_CURRENT_LOGO=`${GT_CURRENT_MEDIA_BASE}/GOOD_TIMES_logo.png`\nconst GT_CURRENT_HOME=`${GT_CURRENT_MEDIA_BASE}/GOODTIMES_HOMESCREEN.png`\nconst GT_CURRENT_ANIMATION=`${GT_CURRENT_MEDIA_BASE}/GOOD_TIMES_ANIMATION.mp4`",
+    "const GT_CURRENT_MEDIA_BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics'\nconst GT_CURRENT_LOGO=`${GT_CURRENT_MEDIA_BASE}/good_times/graphics/GOOD_TIMES_logo.png`\nconst GT_CURRENT_HOME=`${GT_CURRENT_MEDIA_BASE}/motion/goodtimes.jpg`\nconst GT_CURRENT_ANIMATION=`${GT_CURRENT_MEDIA_BASE}/kollective/animations/GOODTIMES.mp4`",
+  )
+
   if (!source.includes("else route=<><LazyCreativeLayer/><LazyCommandApp/><LazyPartyPulse/></>")) throw new Error('Rich Command experience is not the signed-in default')
   if (!source.includes("good-times-rich-hud.css")) throw new Error('Party Board HUD layout guard is missing')
   if (source.includes('LazyNavigationBridge')) throw new Error('NavigationBridge is still present in the active customer bootstrap')
+  if (!source.includes('/motion/goodtimes.jpg') || !source.includes('/kollective/animations/GOODTIMES.mp4')) throw new Error('Current launch media is not enforced')
+  if (source.includes('GT_CURRENT_HOME=`${GT_CURRENT_MEDIA_BASE}/GOODTIMES_HOMESCREEN.png`')) throw new Error('Retired launch poster is still active')
+  write(path, source)
+}
+
+// Onboarding is rendered before the signed-in creative layer, so it must use the
+// same current media pack rather than the retired August collage assets.
+{
+  const path = 'src/features/onboarding/GoodTimesOnboarding.jsx'
+  let source = read(path)
+  source = source.replace(
+    "const BG_BASE = 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics'\nconst CURRENT_LOGO = `${BG_BASE}/GOOD_TIMES_logo.png`\nconst CURRENT_HOME = `${BG_BASE}/GOODTIMES_HOMESCREEN.png`\nconst CURRENT_ANIMATION = `${BG_BASE}/GOOD_TIMES_ANIMATION.mp4`",
+    "const BG_BASE = 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics'\nconst CURRENT_LOGO = `${BG_BASE}/good_times/graphics/GOOD_TIMES_logo.png`\nconst CURRENT_HOME = `${BG_BASE}/motion/goodtimes.jpg`\nconst CURRENT_ANIMATION = `${BG_BASE}/kollective/animations/GOODTIMES.mp4`",
+  )
+  if (!source.includes('/motion/goodtimes.jpg') || !source.includes('/kollective/animations/GOODTIMES.mp4')) throw new Error('Current onboarding media is not enforced')
+  if (source.includes('/GOODTIMES_HOMESCREEN.png') || source.includes('/GOOD_TIMES_ANIMATION.mp4')) throw new Error('Retired onboarding media is still active')
   write(path, source)
 }
 
