@@ -18,6 +18,7 @@ const EVENT_CATEGORIES = {
 const NIGHTLIFE_VENUES=/\b(utopia restaurant|vision restaurant|vision lounge|josephine lounge|p sports bar|penthouse|revel atlanta|opium atlanta|magic city|blue flame|strokers|cheetah atlanta|soho lounge)\b/i
 const NIGHTLIFE_SIGNALS=/\b(after dark|after party|after-party|sundays?|party|nightlife|nightclub|club night|lounge|rooftop|dj|dance hall|dancehall|afrobeats|amapiano|r&b|rnb|hip hop|hip-hop)\b/i
 const NON_PARTY_SIGNALS=/\b(yoga|pilates|fitness|workout|workshop|class|comedy|stand-up|stand up|theater|theatre|screening|artist talk|live music show|concert|symphony|lecture|seminar)\b/i
+const APPROVED_VENUE_MEDIA='/brand-graphics/good_times/graphics/LOCATION_IMAGES/'
 
 function clamp(value, fallback, max) {
   const parsed = Number.parseInt(String(value ?? ''), 10)
@@ -86,6 +87,9 @@ function eventScore(item,index,vibes) {
   if (item?.is_featured) score += 15
   return score
 }
+export function hasApprovedGoodTimesVenueMedia(item){
+  return String(item?.hero_image||'').includes(APPROVED_VENUE_MEDIA)
+}
 function venueScore(item,index,vibes) {
   let score = Number(item?.quality_score || 0) * 10 + Number(item?.culture_score || 0) * 2 + Number(item?.google_rating || 0) * 20 - index / 1000
   const text=textOf(item)
@@ -99,8 +103,14 @@ function venueScore(item,index,vibes) {
     if (vibe==='free' && /park|market|museum|community|public/.test(text)) score += 120
     if (vibe==='vip' && (item?.is_featured || /vip|exclusive|luxury|premium|bottle/.test(text))) score += 180
   }
+  // Visual quality is part of the customer ranking, but never changes factual
+  // ownership/verification fields. Approved GOOD TIMES photography should beat
+  // brittle website logos when otherwise-comparable culture/nightlife venues compete.
+  if (hasApprovedGoodTimesVenueMedia(item)) score += 180
+  if (item?.is_black_owned) score += 70
+  if (item?.is_culture_pick) score += 60
+  if (/nightclub|lounge|rooftop|hookah|late night/.test(text)) score += 45
   if (item?.booking_link) score += 18
-  if (item?.is_culture_pick) score += 25
   if (item?.is_featured) score += 15
   return score
 }
