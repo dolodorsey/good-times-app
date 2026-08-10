@@ -31,7 +31,7 @@ function safeImage(value){
   if(!text||/maps\.googleapis\.com\/maps\/api\/place\/photo/i.test(text)||/maps\.gstatic\.com/i.test(text)||/[?&]key=/i.test(text))return null
   return text.startsWith('http://')?text.replace(/^http:\/\//i,'https://'):text
 }
-function decode(value){return String(value||'').replace(/&amp;/gi,'&').replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&nbsp;/gi,' ')}
+function decode(value){return String(value||'').replace(/&amp;/gi,'&').replace(/&#8217;/gi,"'").replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&nbsp;/gi,' ')}
 
 async function fetchRows(path,label){
   let lastError=null
@@ -41,7 +41,7 @@ async function fetchRows(path,label){
     try{
       const response=await fetch(`${CONTENT_URL}/rest/v1/${path}`,{headers:headers(),cache:'no-store',signal:controller.signal})
       const text=await response.text()
-      if(!response.ok)throw new Error(`${label} HTTP ${response.status}: ${text.slice(0,180)}`)
+      if(!response.ok)throw new Error(`${label} HTTP ${response.status}: ${text.slice(0,220)}`)
       const rows=text?JSON.parse(text):[]
       if(!Array.isArray(rows))throw new Error(`${label} returned invalid data`)
       return rows
@@ -85,7 +85,7 @@ function customerReadyEvent(item){
   const venue=String(item.venue_name||'').trim()
   if(!title||!venue||!taxonomy.category||!safeImage(item.image_url)||!item.ticket_url)return false
   if(/^(atlanta|houston|miami|dallas|charlotte|phoenix|scottsdale|las vegas|los angeles|new york|washington dc|tba|online|virtual|warehouse)$/i.test(venue))return false
-  if(/\b(sold out|mon-fri 2026|make money fast|timeshare|webinar)\b/i.test(title))return false
+  if(/\b(online reserved|zoom id|virtual event|sold out|mon-fri 2026|make money fast|timeshare|webinar)\b/i.test(`${title} ${venue}`))return false
   return true
 }
 function mapEvents(rows){return rows.map((item,index)=>{const taxonomy=inferCustomerTaxonomy(item);return{
@@ -102,14 +102,14 @@ function mapVenues(rows){
     category_key:row.venue_category_key||'venue',
     subcategory:row.venue_subcategory||row.subcategory||null,
     hero_image:safeImage(row.hero_image),
-  }))
+  })).filter(row=>row.hero_image)
   return dedupeCustomerVenues(normalized)
 }
 function send(response,status,payload,cache='MISS'){
   response.statusCode=status
   response.setHeader('Content-Type','application/json; charset=utf-8')
   response.setHeader('Cache-Control',status===200?'public, s-maxage=60, stale-while-revalidate=600':'no-store')
-  response.setHeader('X-Good-Times-Live-Gateway','v2')
+  response.setHeader('X-Good-Times-Live-Gateway','v3')
   response.setHeader('X-Good-Times-Cache',cache)
   response.end(JSON.stringify(payload))
 }
@@ -124,9 +124,10 @@ export default async function handler(request,response){
   const eventFetchLimit=Math.min(Math.max(eventLimit*3,180),540)
   const venueFetchLimit=Math.min(Math.max(venueLimit*3,240),540)
   const eventPath=`gt_shows?select=${SHOW_SELECT}&city_key=eq.${encodeURIComponent(city)}&show_date=gte.${today}&status=in.(confirmed,tentative)&image_url=not.is.null&ticket_url=not.is.null&order=good_times_score.desc.nullslast,display_priority.asc.nullslast,show_date.asc&limit=${eventFetchLimit}`
-  const venuePath=`mv_gt_venue_taxonomy_directory?select=${VENUE_SELECT}&city_key=eq.${encodeURIComponent(city)}&hero_image=not.is.null&order=quality_score.desc.nullslast,google_rating.desc.nullslast&limit=${venueFetchLimit}`
+  const venuePath=`v_gt_venue_taxonomy_directory?select=${VENUE_SELECT}&city_key=eq.${encodeURIComponent(city)}&hero_image=not.is.null&order=quality_score.desc.nullslast,google_rating.desc.nullslast&limit=${venueFetchLimit}`
   const [eventResult,venueResult]=await Promise.allSettled([fetchRows(eventPath,'events'),fetchRows(venuePath,'venues')])
   const cacheKey=city
+  if(eventResult.status==='rejected'||venueResult.status==='rejected')console.warn('[GOOD TIMES data-live partial]',{city,events:eventResult.status==='rejected'?eventResult.reason?.message:null,venues:venueResult.status==='rejected'?venueResult.reason?.message:null})
   if(eventResult.status==='rejected'&&venueResult.status==='rejected'){
     const stale=CACHE.get(cacheKey)
     if(stale&&Date.now()-stale.at<15*60*1000)return send(response,200,{...stale.payload,degraded:true,coverage:{...stale.payload.coverage,notice:'Live sources are refreshing; showing the most recent verified city snapshot.'}},'STALE')
