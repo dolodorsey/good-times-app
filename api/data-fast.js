@@ -19,6 +19,13 @@ const NIGHTLIFE_VENUES=/\b(utopia restaurant|vision restaurant|vision lounge|jos
 const NIGHTLIFE_SIGNALS=/\b(after dark|after party|after-party|sundays?|party|nightlife|nightclub|club night|lounge|rooftop|dj|dance hall|dancehall|afrobeats|amapiano|r&b|rnb|hip hop|hip-hop)\b/i
 const NON_PARTY_SIGNALS=/\b(yoga|pilates|fitness|workout|workshop|class|comedy|stand-up|stand up|theater|theatre|screening|artist talk|live music show|concert|symphony|lecture|seminar)\b/i
 const APPROVED_VENUE_MEDIA='/brand-graphics/good_times/graphics/LOCATION_IMAGES/'
+const CATEGORY_MEDIA_BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds'
+const VENUE_CATEGORY_MEDIA={
+  nightclub:'gt-cat-nightlife.webp',lounge:'gt-cat-nightlife.webp',hookah:'gt-cat-nightlife.webp',bar:'gt-cat-nightlife.webp',cocktail_bar:'gt-cat-nightlife.webp',rooftop:'gt-cat-nightlife.webp',speakeasy:'gt-cat-nightlife.webp',jazz:'gt-cat-nightlife.webp',entertainment:'gt-cat-nightlife.webp',
+  restaurant:'gt-cat-dining.webp',food_and_dining:'gt-cat-dining.webp',food_hall:'gt-cat-dining.webp',coffee:'gt-cat-dining.webp',wine_bar:'gt-cat-dining.webp',brunch:'event-rooftop-party.jpg',
+  culture:'gt-cat-culture.webp',museum:'gt-cat-culture.webp',gallery:'gt-cat-culture.webp',comedy:'event-comedy-show.jpg',event_creative:'gt-cat-culture.webp',
+  spa:'gt-cat-wellness.webp',fitness:'gt-cat-wellness.webp',gym:'gt-cat-wellness.webp',shopping:'gt-cat-shopping.webp',housing:'gt-bg-waterfront-venue.webp',outdoor_adventures:'gt-cat-adventure.webp',
+}
 
 function clamp(value, fallback, max) {
   const parsed = Number.parseInt(String(value ?? ''), 10)
@@ -90,6 +97,17 @@ function eventScore(item,index,vibes) {
 export function hasApprovedGoodTimesVenueMedia(item){
   return String(item?.hero_image||'').includes(APPROVED_VENUE_MEDIA)
 }
+export function brittleVenueImage(url){
+  const value=String(url||'')
+  return !value||/(?:^|[\/_.-])(logo|wordmark|logotype)(?:[\/_.?&-]|$)|artboard|fit=pad/i.test(value)
+}
+export function customerVenueMedia(item){
+  if(hasApprovedGoodTimesVenueMedia(item))return item
+  if(!brittleVenueImage(item?.hero_image))return item
+  const key=String(item?.venue_category_key||item?.category_key||'').toLowerCase()
+  const fallback=VENUE_CATEGORY_MEDIA[key]||'gt-cat-nightlife.webp'
+  return{...item,hero_image:`${CATEGORY_MEDIA_BASE}/${fallback}`,image_source:'good_times_category_fallback',image_is_category_fallback:true}
+}
 function venueScore(item,index,vibes) {
   let score = Number(item?.quality_score || 0) * 10 + Number(item?.culture_score || 0) * 2 + Number(item?.google_rating || 0) * 20 - index / 1000
   const text=textOf(item)
@@ -103,9 +121,6 @@ function venueScore(item,index,vibes) {
     if (vibe==='free' && /park|market|museum|community|public/.test(text)) score += 120
     if (vibe==='vip' && (item?.is_featured || /vip|exclusive|luxury|premium|bottle/.test(text))) score += 180
   }
-  // Visual quality is part of customer presentation, but never changes factual
-  // ownership or verification. Approved GOOD TIMES photography should beat
-  // brittle website logos when otherwise-comparable culture/nightlife venues compete.
   if (hasApprovedGoodTimesVenueMedia(item)) score += 180
   if (item?.is_black_owned) score += 70
   if (item?.is_culture_pick) score += 60
@@ -134,6 +149,7 @@ function personalizeBody(body,vibes,city) {
     const payload=JSON.parse(body)
     if (!payload?.ok || !Array.isArray(payload.events) || !Array.isArray(payload.venues)) return body
     payload.events=payload.events.map(normalizeCustomerEventTaxonomy)
+    payload.venues=payload.venues.map(customerVenueMedia)
     const serviceDate=payload?.local_clock?.service_date||cityClock(city).serviceDate
     if(vibes.length){
       payload.events=[...payload.events]
@@ -155,7 +171,7 @@ function personalizeBody(body,vibes,city) {
       payload.personalization={vibes,service_date:serviceDate,ordering:'service-date-then-nightlife-then-taste'}
     }
     payload.events=diversifyEventsByVenue(payload.events)
-    payload.curation={...(payload.curation||{}),venue_diversity:true,ordering:'date-then-one-strong-move-per-venue-before-repeats'}
+    payload.curation={...(payload.curation||{}),venue_diversity:true,venue_media_guard:true,ordering:'date-then-one-strong-move-per-venue-before-repeats'}
     return JSON.stringify(payload)
   } catch { return body }
 }
