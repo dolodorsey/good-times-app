@@ -1,4 +1,21 @@
 import React, { useMemo } from 'react'
+import './good-times-creative-refresh.css'
+
+const STORAGE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics'
+const CURRENT_POSTER=`${STORAGE}/motion/goodtimes.jpg`
+const CURRENT_CATEGORY_FALLBACKS=[
+  `${STORAGE}/good_times/graphics/LOCATION_IMAGES/VISIONS.jpg`,
+  `${STORAGE}/good_times/graphics/LOCATION_IMAGES/REVEL.webp`,
+  `${STORAGE}/good_times/graphics/LOCATION_IMAGES/UTOPIA_DOWNTOWN.webp`,
+  `${STORAGE}/good_times/graphics/LOCATION_IMAGES/OPIUM_ATL.jpg`,
+  `${STORAGE}/good_times/graphics/LOCATION_IMAGES/MAGIC_CITY.webp`,
+  `${STORAGE}/good_times/graphics/LOCATION_IMAGES/VIVIDE.jpg`,
+  `${STORAGE}/good_times/graphics/LOCATION_IMAGES/BLUE_FLAME.jpg`,
+  `${STORAGE}/good_times/graphics/LOCATION_IMAGES/STROKERS.jpg`,
+  `${STORAGE}/good_times/graphics/LOCATION_IMAGES/CHEETAH.jpg`,
+  `${STORAGE}/good_times/graphics/LOCATION_IMAGES/PLATNIUM_21.jpg`,
+]
+const suspiciousMedia=/Artboard|maps\.gstatic|maps\.googleapis|staticmap|map-marker|GOODTIMES_SCREENS|ChatGPT_Image_Feb_10_2026/i
 
 function uniqueVenues(rows) {
   const seen = new Set()
@@ -7,6 +24,10 @@ function uniqueVenues(rows) {
     seen.add(row.id)
     return true
   })
+}
+function usableImage(value){
+  const url=String(value||'').trim()
+  return /^https:\/\//i.test(url)&&!suspiciousMedia.test(url)
 }
 
 export default function ExploreTaxonomyBrowser({
@@ -23,10 +44,15 @@ export default function ExploreTaxonomyBrowser({
   onMapMode,
   renderVenue,
 }) {
-  const categoryRows = useMemo(() => taxonomy.map(category => ({
-    ...category,
-    count: new Set(directory.filter(row => row.category_key === category.id).map(row => row.id)).size,
-  })), [directory, taxonomy])
+  const categoryRows = useMemo(() => taxonomy.map((category,index) => {
+    const matching=directory.filter(row => row.category_key === category.id)
+    const representative=matching.find(row=>usableImage(row.hero_image))
+    return {
+      ...category,
+      count:new Set(matching.map(row => row.id)).size,
+      cover:representative?.hero_image || CURRENT_CATEGORY_FALLBACKS[index % CURRENT_CATEGORY_FALLBACKS.length] || CURRENT_POSTER,
+    }
+  }), [directory, taxonomy])
 
   const activeCategory = taxonomy.find(category => category.id === selectedCategory) || null
   const subcategoryRows = activeCategory?.subcategoryRows || []
@@ -68,7 +94,7 @@ export default function ExploreTaxonomyBrowser({
     {!activeCategory && <>
       <div className="gt2-taxonomy-heading"><span>DISCOVER BY CATEGORY</span><small>Choose a lane to see its subcategories and best-matched places.</small></div>
       <div className="gt2-category-grid">
-        {categoryRows.map(category => <button key={category.id} type="button" onClick={() => { onCategory?.(category.id);onSubcategory?.(null) }}>
+        {categoryRows.map(category => <button key={category.id} type="button" className="gt2-category-creative" style={{'--gt-category-cover':`url("${category.cover}")`}} onClick={() => { onCategory?.(category.id);onSubcategory?.(null) }}>
           <span className="gt2-category-mark">{category.icon || '✦'}</span>
           <strong>{category.name}</strong>
           <small>{category.subcategoryRows?.length || 0} subcategories · {category.count} places</small>
