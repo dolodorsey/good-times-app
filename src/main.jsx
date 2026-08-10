@@ -39,10 +39,10 @@ const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
 const directRoutes = { '/join':'join','/concierge-request':'concierge-request','/trip':'trip','/group':'group' }
 const HOSTED_API_ORIGIN='https://thegoodtimesworldwide.com'
-const GT_CURRENT_MEDIA_BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics'
-const GT_CURRENT_LOGO=`${GT_CURRENT_MEDIA_BASE}/GOOD_TIMES_logo.png`
-const GT_CURRENT_HOME=`${GT_CURRENT_MEDIA_BASE}/GOODTIMES_HOMESCREEN.png`
-const GT_CURRENT_ANIMATION=`${GT_CURRENT_MEDIA_BASE}/GOOD_TIMES_ANIMATION.mp4`
+const GT_STORAGE_BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics'
+const GT_CURRENT_LOGO=`${GT_STORAGE_BASE}/good_times/graphics/GOOD_TIMES_logo.png`
+const GT_CURRENT_HOME=`${GT_STORAGE_BASE}/motion/goodtimes.jpg`
+const GT_CURRENT_ANIMATION=`${GT_STORAGE_BASE}/kollective/animations/GOODTIMES.mp4`
 
 function installDataRequestGuard(){
   if(typeof window==='undefined'||window.__GOOD_TIMES_FETCH_GUARD__)return
