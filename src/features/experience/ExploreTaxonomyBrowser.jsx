@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { loadExploreCounts, loadExploreDirectory } from '../intelligence/client.js'
 
 function uniqueVenues(rows) {
   const seen = new Set()
@@ -16,6 +17,11 @@ function categoryHue(key,index) {
   return (hash + index * 17) % 360
 }
 
+function exactCount(rows,categoryKey,subcategoryKey=null) {
+  const match=(rows||[]).find(row=>row.category_key===categoryKey&&(subcategoryKey===null?row.subcategory_key==null:row.subcategory_key===subcategoryKey))
+  return Number(match?.place_count||0)
+}
+
 export default function ExploreTaxonomyBrowser({
   taxonomy = [],
   directory = [],
@@ -30,17 +36,47 @@ export default function ExploreTaxonomyBrowser({
   onMapMode,
   renderVenue,
 }) {
-  const categoryRows = useMemo(() => taxonomy.map(category => ({
-    ...category,
-    count: new Set(directory.filter(row => row.category_key === category.id).map(row => row.id)).size,
-  })), [directory, taxonomy])
+  const [countRows,setCountRows]=useState([])
+  const [categoryDirectory,setCategoryDirectory]=useState([])
+  const [categoryLoading,setCategoryLoading]=useState(false)
+  const [categoryError,setCategoryError]=useState('')
+
+  useEffect(()=>{
+    let alive=true
+    setCountRows([])
+    loadExploreCounts(cityName).then(rows=>{if(alive)setCountRows(Array.isArray(rows)?rows:[])}).catch(()=>{if(alive)setCountRows([])})
+    return()=>{alive=false}
+  },[cityName])
+
+  useEffect(()=>{
+    let alive=true
+    setCategoryError('')
+    if(!selectedCategory){
+      setCategoryDirectory([])
+      setCategoryLoading(false)
+      return()=>{alive=false}
+    }
+    setCategoryLoading(true)
+    loadExploreDirectory(cityName,{category:selectedCategory,limit:2500})
+      .then(rows=>{if(alive)setCategoryDirectory(Array.isArray(rows)?rows:[])})
+      .catch(error=>{if(alive){setCategoryDirectory([]);setCategoryError(error?.message||'This category could not be loaded.')}})
+      .finally(()=>{if(alive)setCategoryLoading(false)})
+    return()=>{alive=false}
+  },[cityName,selectedCategory])
+
+  const categoryRows = useMemo(() => taxonomy.map(category => {
+    const exact=exactCount(countRows,category.id)
+    const fallback=new Set(directory.filter(row => row.category_key === category.id).map(row => row.id)).size
+    return {...category,count:exact||fallback}
+  }), [countRows,directory,taxonomy])
 
   const activeCategory = taxonomy.find(category => category.id === selectedCategory) || null
   const subcategoryRows = activeCategory?.subcategoryRows || []
   const needle = String(query || '').trim().toLowerCase()
+  const activeDirectory = selectedCategory && categoryDirectory.length ? categoryDirectory : directory
 
   const filteredRows = useMemo(() => {
-    const rows = directory.filter(row => {
+    const rows = activeDirectory.filter(row => {
       if (selectedCategory && row.category_key !== selectedCategory) return false
       if (selectedSubcategory && row.subcategory_key !== selectedSubcategory) return false
       if (!needle) return true
@@ -55,15 +91,16 @@ export default function ExploreTaxonomyBrowser({
       ].filter(Boolean).join(' ').toLowerCase().includes(needle)
     })
     return uniqueVenues(rows)
-  }, [directory, needle, selectedCategory, selectedSubcategory])
+  }, [activeDirectory, needle, selectedCategory, selectedSubcategory])
 
   const selectedSubcategoryLabel = subcategoryRows.find(row => row.subcategory_key === selectedSubcategory)?.subcategory_name
+  const activeTotal=activeCategory ? (exactCount(countRows,activeCategory.id)||new Set(activeDirectory.filter(row=>row.category_key===activeCategory.id).map(row=>row.id)).size) : 0
 
   return <section className="gt2-explore-browser">
     <div className="gt2-screen-heading">
       <span>EXPLORE</span>
       <h1>{activeCategory ? activeCategory.name : 'Know the city.'}</h1>
-      <p>{activeCategory ? `${filteredRows.length} verified places in ${cityName}.` : `${categoryRows.length} categories and ${taxonomy.reduce((sum, category) => sum + (category.subcategoryRows?.length || 0), 0)} subcategories.`}</p>
+      <p>{activeCategory ? `${activeTotal} verified places in ${cityName}.` : `${categoryRows.length} categories and ${taxonomy.reduce((sum, category) => sum + (category.subcategoryRows?.length || 0), 0)} subcategories.`}</p>
     </div>
 
     <div className="gt2-search">
@@ -97,16 +134,20 @@ export default function ExploreTaxonomyBrowser({
       </div>
 
       <div className="gt2-subcategory-rail">
-        <button className={!selectedSubcategory ? 'active' : ''} onClick={() => onSubcategory?.(null)}>All {activeCategory.name}</button>
+        <button className={!selectedSubcategory ? 'active' : ''} onClick={() => onSubcategory?.(null)}>All {activeCategory.name}<small>{activeTotal}</small></button>
         {subcategoryRows.map(subcategory => {
-          const count = new Set(directory.filter(row => row.subcategory_key === subcategory.subcategory_key).map(row => row.id)).size
+          const exact=exactCount(countRows,activeCategory.id,subcategory.subcategory_key)
+          const fallback=new Set(activeDirectory.filter(row => row.category_key===activeCategory.id&&row.subcategory_key === subcategory.subcategory_key).map(row => row.id)).size
+          const count=exact||fallback
           return <button key={subcategory.subcategory_key} className={selectedSubcategory === subcategory.subcategory_key ? 'active' : ''} onClick={() => onSubcategory?.(subcategory.subcategory_key)}>{subcategory.subcategory_name}<small>{count}</small></button>
         })}
       </div>
 
-      <div className="gt2-taxonomy-heading compact"><span>{selectedSubcategoryLabel || activeCategory.name}</span><small>{filteredRows.length} unique verified places</small></div>
+      <div className="gt2-taxonomy-heading compact"><span>{selectedSubcategoryLabel || activeCategory.name}</span><small>{categoryLoading ? 'Loading complete verified directory…' : `${filteredRows.length} loaded · ${selectedSubcategory ? exactCount(countRows,activeCategory.id,selectedSubcategory)||filteredRows.length : activeTotal} verified places`}</small></div>
 
-      {mapMode ? <div className="gt2-map-view">
+      {categoryLoading && !categoryDirectory.length ? <div className="gt2-empty"><span>✦</span><h2>Loading verified places</h2><p>Pulling the complete {activeCategory.name} directory for {cityName}.</p></div>
+      : categoryError && !filteredRows.length ? <div className="gt2-empty"><span>!</span><h2>Directory temporarily unavailable</h2><p>{categoryError}</p></div>
+      : mapMode ? <div className="gt2-map-view">
         <div className="gt2-map-frame"><iframe title={`${cityName} map`} src="https://www.openstreetmap.org/export/embed.html?bbox=-84.62%2C33.60%2C-84.15%2C34.02&layer=mapnik"/><div className="gt2-map-veil"/><div className="gt2-map-count">⌖ {filteredRows.filter(venue => venue.latitude != null && venue.longitude != null).length} map-ready places</div></div>
         <div className="gt2-horizontal">{filteredRows.slice(0, 20).map(venue => renderVenue?.(venue, true))}</div>
       </div> : filteredRows.length ? <div className="gt2-venue-grid">{filteredRows.map(venue => renderVenue?.(venue, false))}</div> : <div className="gt2-empty"><span>⌕</span><h2>No verified matches yet</h2><p>Try another subcategory or clear the search. This lane remains visible while its sourcing agent fills it.</p></div>}
