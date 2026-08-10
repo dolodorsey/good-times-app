@@ -14,7 +14,7 @@ test('mobile member utilities collapse into one 44px orb instead of permanent de
   assert.match(utilities,/\.gt-mobile-utilities__orb\{\n    width:44px;height:44px/)
   assert.match(utilityComponent,/Open GOOD TIMES utilities/)
   assert.match(utilityComponent,/\.gt-connect-fab/)
-  assert.match(utilityComponent,/Tickets and paid experiences/)
+  assert.match(utilityComponent,/gt:open-payments/)
   assert.match(utilityComponent,/Open GOOD TIMES account/)
   assert.match(main,/LazyUtilityMenu/)
 })
