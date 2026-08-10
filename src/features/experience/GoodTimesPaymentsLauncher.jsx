@@ -30,6 +30,16 @@ export default function GoodTimesPaymentsLauncher(){
 
   useEffect(()=>{if(open&&view==='shop'&&events.length===0)void loadCatalog()},[open,view])
   useEffect(()=>{if(open&&view==='wallet')void loadWallet()},[open,view])
+  useEffect(()=>{
+    const onOpen=event=>{
+      const nextView=event?.detail?.view==='wallet'?'wallet':'shop'
+      setView(nextView)
+      setOpen(true)
+      void tapHaptic()
+    }
+    window.addEventListener('gt:open-payments',onOpen)
+    return()=>window.removeEventListener('gt:open-payments',onOpen)
+  },[])
 
   async function loadCatalog(){
     setLoading(true);setError('')
@@ -151,14 +161,18 @@ export default function GoodTimesPaymentsLauncher(){
                     <div style={{fontSize:20,fontWeight:900,marginTop:6,lineHeight:1.05}}>{ticket.event_name||'GOOD TIMES Ticket'}</div>
                     <div style={{fontSize:11,color:'rgba(245,240,232,.52)',marginTop:5}}>{venue}</div>
                   </div>
-                  <div style={{borderRadius:99,padding:'6px 9px',fontSize:9,fontWeight:900,letterSpacing:'.08em',textTransform:'uppercase',border:`1px solid ${checked?'rgba(107,255,184,.35)':'rgba(212,168,83,.28)'}`,background:checked?'rgba(107,255,184,.09)':'rgba(212,168,83,.08)',color:checked?'#8FFFCB':'#F2D58F'}}>{checked?'Checked in':titleCase(ticket.status||'active')}</div>
+                  <div style={{borderRadius:99,padding:'6px 9px',fontSize:9,fontWeight:900,letterSpacing:'.08em',textTransform:'uppercase',border:`1px solid ${checked?'rgba(107,255,184,.35)':'rgba(212,168,83,.28)'}`,background:checked?'rgba(107,255,184,.09)':'rgba(212,168,83,.08)',color:checked?'#8FFFCB':'#F2D58F'}}>{checked?'Checked in':'Valid'}</div>
                 </div>
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8,marginTop:14}}>
-                  <div style={{border:'1px solid rgba(255,255,255,.07)',borderRadius:12,padding:'10px 11px',background:'rgba(255,255,255,.025)'}}><div style={{fontSize:8,letterSpacing:'.12em',color:'rgba(245,240,232,.38)',fontWeight:900}}>TIER</div><div style={{fontSize:12,fontWeight:800,marginTop:3}}>{ticket.tier||'General Admission'}</div></div>
-                  <div style={{border:'1px solid rgba(255,255,255,.07)',borderRadius:12,padding:'10px 11px',background:'rgba(255,255,255,.025)'}}><div style={{fontSize:8,letterSpacing:'.12em',color:'rgba(245,240,232,.38)',fontWeight:900}}>TICKET</div><div style={{fontSize:12,fontWeight:800,marginTop:3,overflow:'hidden',textOverflow:'ellipsis'}}>{ticket.ticket_number||'Issued after payment'}</div></div>
+                <div style={{display:'grid',gridTemplateColumns:qrImage?'1fr 124px':'1fr',gap:12,alignItems:'center',marginTop:14}}>
+                  <div style={{display:'grid',gap:7,fontSize:11,color:'rgba(245,240,232,.68)'}}>
+                    <div><span style={{display:'block',fontSize:8,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(245,240,232,.38)'}}>Tier</span><strong>{ticket.tier_label||titleCase(ticket.ticket_type)||'Admission'}</strong></div>
+                    {ticket.seat_info&&<div><span style={{display:'block',fontSize:8,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(245,240,232,.38)'}}>Seat / access</span><strong>{ticket.seat_info}</strong></div>}
+                    {ticket.ticket_code&&<div><span style={{display:'block',fontSize:8,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(245,240,232,.38)'}}>Ticket code</span><strong>{ticket.ticket_code}</strong></div>}
+                    {ticket.qr_code&&<div><span style={{display:'block',fontSize:8,letterSpacing:'.12em',textTransform:'uppercase',color:'rgba(245,240,232,.38)'}}>QR reference</span><strong style={{wordBreak:'break-all'}}>{qrImage?'Scan code shown':'Available at entry'}</strong></div>}
+                  </div>
+                  {qrImage&&<div style={{background:'#fff',padding:8,borderRadius:14}}><img src={qrImage} alt={`Entry code for ${ticket.event_name||'ticket'}`} style={{display:'block',width:'100%',aspectRatio:'1',objectFit:'contain'}}/></div>}
                 </div>
-                {qrImage&&<div style={{marginTop:14,display:'flex',gap:12,alignItems:'center',padding:12,borderRadius:14,background:'#fff',color:'#111'}}><img src={qrImage} alt="Ticket QR code" style={{width:92,height:92,objectFit:'contain'}}/><div><div style={{fontSize:9,fontWeight:900,letterSpacing:'.12em'}}>SCAN AT ENTRY</div><div style={{fontSize:11,marginTop:5,color:'#444'}}>Keep this code ready when you arrive.</div></div></div>}
-                {!qrImage&&<div style={{marginTop:12,fontSize:10,color:'rgba(245,240,232,.42)'}}>QR entry credential will appear here when one is issued for this ticket.</div>}
+                {ticket.external_ticket_url&&<a href={ticket.external_ticket_url} target="_blank" rel="noreferrer" onClick={event=>{event.preventDefault();void openLink(ticket.external_ticket_url)}} style={{display:'flex',alignItems:'center',justifyContent:'center',marginTop:13,minHeight:42,borderRadius:12,border:'1px solid rgba(212,168,83,.24)',background:'rgba(212,168,83,.08)',color:'#F2D58F',fontSize:10,fontWeight:900,textDecoration:'none',textTransform:'uppercase',letterSpacing:'.08em'}}>Open official ticket</a>}
               </article>
             })}
           </div>
