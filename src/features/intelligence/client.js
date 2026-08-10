@@ -50,17 +50,31 @@ function normalizeCity(city) {
 const liveDataCache = new Map()
 const liveDataInflight = new Map()
 
+function validLivePayload(payload) {
+  return Boolean(payload?.ok && payload?.connected && Array.isArray(payload.events) && Array.isArray(payload.venues))
+}
+
+async function requestLivePayload(normalizedCity) {
+  try {
+    const fast = await fetchJson(`/api/data-fast?city=${encodeURIComponent(normalizedCity)}&event_limit=120&venue_limit=180`)
+    if (validLivePayload(fast)) return fast
+  } catch (error) {
+    console.warn('[GOOD TIMES live data] Personalized gateway unavailable; falling back to canonical gateway.', error)
+  }
+
+  const canonical = await fetchJson(`/api/data?city=${encodeURIComponent(normalizedCity)}&event_limit=120&venue_limit=180`)
+  if (!validLivePayload(canonical)) throw new Error('GOOD TIMES data gateway returned an invalid response.')
+  return canonical
+}
+
 async function loadSameOriginData(city) {
   const normalizedCity = normalizeCity(city)
   const cached = liveDataCache.get(normalizedCity)
   if (cached && Date.now() - cached.loadedAt < 30000) return cached.payload
   if (liveDataInflight.has(normalizedCity)) return liveDataInflight.get(normalizedCity)
 
-  const request = fetchJson(`/api/data-fast?city=${encodeURIComponent(normalizedCity)}&event_limit=120&venue_limit=180`)
+  const request = requestLivePayload(normalizedCity)
     .then(payload => {
-      if (!payload?.ok || !payload?.connected || !Array.isArray(payload.events) || !Array.isArray(payload.venues)) {
-        throw new Error('GOOD TIMES data gateway returned an invalid response.')
-      }
       liveDataCache.set(normalizedCity, { payload, loadedAt: Date.now() })
       return payload
     })
