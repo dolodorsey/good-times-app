@@ -39,53 +39,58 @@ async function routes(ctx){
 
 async function openOrb(page){
   const orb=page.getByRole('button',{name:'Open GOOD TIMES utilities'})
-  await orb.waitFor({state:'visible',timeout:15000})
+  await orb.waitFor({state:'visible',timeout:8000})
   await orb.click()
-  await page.getByRole('menu',{name:'GOOD TIMES utilities'}).waitFor({state:'visible',timeout:5000})
+  await page.getByRole('menu',{name:'GOOD TIMES utilities'}).waitFor({state:'visible',timeout:4000})
 }
 
-test('mobile utility orb opens real Connect, Tickets and Account actions',{skip},async()=>{
+test('mobile utility orb opens real Connect, Tickets and Account actions',{skip,timeout:60000},async()=>{
   fs.mkdirSync(OUT,{recursive:true})
   const browser=process.env.GT_UI_CHROME_PATH
     ? await chromium.launch({executablePath:process.env.GT_UI_CHROME_PATH,headless:true,args:['--no-sandbox']})
     : await chromium.launch({channel:process.env.GT_UI_CHANNEL||'chrome',headless:true})
-  const ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true})
-  await ctx.addInitScript(s=>{
-    localStorage.setItem('gt_session',JSON.stringify(s))
-    localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['nightlife']}))
-    sessionStorage.setItem('gt_premium_launch','1')
-    sessionStorage.setItem('gt_splash_shown','1')
-  },SESSION)
-  await routes(ctx)
-  const page=await ctx.newPage()
-  const errors=[]
-  page.on('pageerror',error=>errors.push(String(error)))
-  await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
-  await page.waitForSelector('.gt2-app',{timeout:30000})
+  let ctx=null
+  try{
+    ctx=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true})
+    await ctx.addInitScript(s=>{
+      localStorage.setItem('gt_session',JSON.stringify(s))
+      localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['nightlife']}))
+      sessionStorage.setItem('gt_premium_launch','1')
+      sessionStorage.setItem('gt_splash_shown','1')
+    },SESSION)
+    await routes(ctx)
+    const page=await ctx.newPage()
+    const errors=[]
+    page.on('pageerror',error=>errors.push(String(error)))
+    await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
+    await page.waitForSelector('.gt2-app',{timeout:15000})
 
-  const hidden=await page.evaluate(()=>[
-    document.querySelector('.gt-connect-fab'),
-    document.querySelector('button[aria-label="Tickets and paid experiences"]'),
-    document.querySelector('button[aria-label="Open GOOD TIMES account"]'),
-  ].map(node=>node?getComputedStyle(node).display:null))
-  assert.deepEqual(hidden,['none','none','none'])
-  await page.screenshot({path:path.join(OUT,'390x844__signed-in-home-utility-orb.png'),fullPage:true})
+    const hidden=await page.evaluate(()=>[
+      document.querySelector('.gt-connect-fab'),
+      document.querySelector('button[aria-label="Tickets and paid experiences"]'),
+      document.querySelector('button[aria-label="Open GOOD TIMES account"]'),
+    ].map(node=>node?getComputedStyle(node).display:null))
+    assert.deepEqual(hidden,['none','none','none'])
+    await page.screenshot({path:path.join(OUT,'390x844__signed-in-home-utility-orb.png'),fullPage:true})
 
-  await openOrb(page)
-  await page.getByRole('menuitem',{name:/Account/i}).click()
-  await page.locator('section[aria-label="GOOD TIMES account"]').waitFor({state:'visible',timeout:5000})
-  await page.getByRole('button',{name:'Close account'}).click()
+    await openOrb(page)
+    await page.getByRole('menuitem',{name:/Account/i}).click()
+    await page.locator('section[aria-label="GOOD TIMES account"]').waitFor({state:'visible',timeout:4000})
+    await page.getByRole('button',{name:'Close account'}).click()
 
-  await openOrb(page)
-  await page.getByRole('menuitem',{name:/Connect/i}).click()
-  await page.locator('.gt-connect-sheet').waitFor({state:'visible',timeout:5000})
-  await page.getByRole('button',{name:'Close'}).click()
+    await openOrb(page)
+    await page.getByRole('menuitem',{name:/Connect/i}).click()
+    await page.locator('.gt-connect-sheet').waitFor({state:'visible',timeout:4000})
+    await page.getByRole('button',{name:'Close',exact:true}).click()
 
-  await openOrb(page)
-  await page.getByRole('menuitem',{name:/Tickets/i}).click()
-  await page.getByRole('dialog',{name:'GOOD TIMES tickets'}).waitFor({state:'visible',timeout:5000})
-  await page.getByRole('button',{name:'Close tickets'}).click()
+    await openOrb(page)
+    await page.getByRole('menuitem',{name:/Tickets/i}).click()
+    await page.getByRole('dialog',{name:'GOOD TIMES tickets'}).waitFor({state:'visible',timeout:4000})
+    await page.getByRole('button',{name:'Close tickets'}).click()
 
-  assert.deepEqual(errors,[],'uncaught page errors')
-  await ctx.close();await browser.close()
+    assert.deepEqual(errors,[],'uncaught page errors')
+  }finally{
+    await ctx?.close().catch(()=>{})
+    await browser.close().catch(()=>{})
+  }
 })
