@@ -7,12 +7,6 @@ const PARTY_WORDS = /\b(day party|night party|party|club|rooftop|after party|aft
 const NIGHT_WORDS = /\b(club|night|nightlife|after party|after-party|lounge|late night|sundays|fridays|saturdays)\b/i
 const LABEL_TO_ID = new Map(cityOptions.map(([id,label]) => [String(label).toLowerCase(), id]))
 
-function daysAway(value){
-  if(!value)return 999
-  const today=new Date(`${todayISO()}T12:00:00`)
-  const next=new Date(`${value}T12:00:00`)
-  return Math.round((next-today)/86400000)
-}
 function hourOf(value){
   const match=String(value||'').match(/^(\d{1,2}):/)
   return match?Number(match[1]):-1
@@ -50,6 +44,20 @@ function partyPriority(event){
   if(/\b(rooftop|dj|dance|r&b|rnb|hip hop|hip-hop|afrobeats|amapiano)\b/i.test(text))score+=9
   if(/\bbrunch\b/i.test(text)&&!/\b(day party|night party|after party|club)\b/i.test(text))score-=24
   return score
+}
+function venueKey(item){
+  return String(item?.venue_name||'location-tba').toLowerCase().replace(/\b(restaurant|and|&|the|at)\b/g,' ').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')
+}
+function diversifyPartyRows(rows){
+  const byDate=new Map()
+  for(const item of rows||[]){const date=item?.event_date||'undated';if(!byDate.has(date))byDate.set(date,[]);byDate.get(date).push(item)}
+  const output=[]
+  for(const group of byDate.values()){
+    const seen=new Set(),repeats=[]
+    for(const item of group){const key=venueKey(item);if(!seen.has(key)){seen.add(key);output.push(item)}else repeats.push(item)}
+    output.push(...repeats)
+  }
+  return output
 }
 function mediaUrl(value){
   const text=String(value||'').trim()
@@ -115,15 +123,15 @@ export default function GoodTimesPartyPulse(){
     return()=>{cancelled=true}
   },[city])
 
-  const tonight=useMemo(()=>events
+  const tonight=useMemo(()=>diversifyPartyRows(events
     .filter(item=>item.event_date===serviceDate&&partyPriority(item)>=70)
-    .sort((a,b)=>partyPriority(b)-partyPriority(a)||String(b.event_time||'').localeCompare(String(a.event_time||''))),[events,serviceDate])
-  const week=useMemo(()=>events
+    .sort((a,b)=>partyPriority(b)-partyPriority(a)||String(b.event_time||'').localeCompare(String(a.event_time||'')))),[events,serviceDate])
+  const week=useMemo(()=>diversifyPartyRows(events
     .filter(item=>{
       const diff=Math.round((new Date(`${item.event_date}T12:00:00`)-new Date(`${serviceDate}T12:00:00`))/86400000)
       return diff>=0&&diff<=7
     })
-    .sort((a,b)=>String(a.event_date||'').localeCompare(String(b.event_date||''))||partyPriority(b)-partyPriority(a)||String(b.event_time||'').localeCompare(String(a.event_time||''))),[events,serviceDate])
+    .sort((a,b)=>String(a.event_date||'').localeCompare(String(b.event_date||''))||partyPriority(b)-partyPriority(a)||String(b.event_time||'').localeCompare(String(a.event_time||'')))),[events,serviceDate])
   useEffect(()=>{if(!tonight.length&&week.length)setMode('week')},[tonight.length,week.length])
   const rows=mode==='tonight'?tonight:week
   const top=rows[0]||week[0]||null
@@ -147,7 +155,7 @@ export default function GoodTimesPartyPulse(){
 
     {open&&<div className="gt-party-drawer">
       <div className="gt-party-drawer-head">
-        <div><span>WHAT’S ACTUALLY POPPING</span><h2>Party & club moves</h2><p>Current source-backed nightlife for {cityLabel(city)}.</p></div>
+        <div><span>WHAT’S ACTUALLY POPPING</span><h2>Party & club moves</h2><p>One strongest move per venue first. Current source-backed nightlife for {cityLabel(city)}.</p></div>
         <button type="button" onClick={()=>setOpen(false)}>×</button>
       </div>
       <div className="gt-party-tabs"><button className={mode==='tonight'?'active':''} onClick={()=>setMode('tonight')}>Tonight <small>{tonight.length}</small></button><button className={mode==='week'?'active':''} onClick={()=>setMode('week')}>This Week <small>{week.length}</small></button></div>

@@ -104,6 +104,20 @@ function venueScore(item,index,vibes) {
   if (item?.is_featured) score += 15
   return score
 }
+function venueIdentity(item){
+  return String(item?.venue_name||'location-tba').toLowerCase().replace(/\b(restaurant|and|&|the|at)\b/g,' ').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')
+}
+export function diversifyEventsByVenue(events){
+  const groups=new Map()
+  for(const item of events||[]){const date=item?.event_date||'undated';if(!groups.has(date))groups.set(date,[]);groups.get(date).push(item)}
+  const output=[]
+  for(const rows of groups.values()){
+    const seen=new Set(),repeats=[]
+    for(const item of rows){const key=venueIdentity(item);if(!seen.has(key)){seen.add(key);output.push(item)}else repeats.push(item)}
+    output.push(...repeats)
+  }
+  return output
+}
 function personalizeBody(body,vibes,city) {
   if (typeof body !== 'string') return body
   try {
@@ -130,6 +144,8 @@ function personalizeBody(body,vibes,city) {
       payload.personalized=true
       payload.personalization={vibes,service_date:serviceDate,ordering:'service-date-then-nightlife-then-taste'}
     }
+    payload.events=diversifyEventsByVenue(payload.events)
+    payload.curation={...(payload.curation||{}),venue_diversity:true,ordering:'date-then-one-strong-move-per-venue-before-repeats'}
     return JSON.stringify(payload)
   } catch { return body }
 }

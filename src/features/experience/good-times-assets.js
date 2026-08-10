@@ -1,6 +1,7 @@
 import { KHG_SUPABASE_URL, khgF } from '../../lib/supabase.js'
 
-export const GT_STORAGE_BASE = `${KHG_SUPABASE_URL}/storage/v1/object/public/brand-graphics`
+export const GT_STORAGE_ROOT = `${KHG_SUPABASE_URL}/storage/v1/object/public`
+export const GT_STORAGE_BASE = `${GT_STORAGE_ROOT}/brand-graphics`
 
 export const GT_APPROVED_DEFAULTS = Object.freeze({
   motion: 'kollective/animations/GOODTIMES.mp4',
@@ -8,26 +9,31 @@ export const GT_APPROVED_DEFAULTS = Object.freeze({
   logo: 'good_times/graphics/GOOD_TIMES_logo.png',
 })
 
-export function gtAssetUrl(path) {
+export function gtAssetUrl(path, bucket = 'brand-graphics') {
   if (!path) return ''
   if (/^https?:\/\//i.test(path)) return path
-  return `${GT_STORAGE_BASE}/${String(path).split('/').map(encodeURIComponent).join('/')}`
+  const encoded = String(path).split('/').map(encodeURIComponent).join('/')
+  return `${GT_STORAGE_ROOT}/${encodeURIComponent(bucket || 'brand-graphics')}/${encoded}`
 }
 
 let manifestPromise = null
 
 export async function loadGoodTimesAssetManifest() {
   if (!manifestPromise) {
-    manifestPromise = khgF('gt_asset_manifest?select=asset_key,asset_type,surface,city_key,category_key,venue_slug,storage_path,priority,metadata&approved=eq.true&is_active=eq.true&order=priority.asc,asset_key.asc')
-      .then(rows => Array.isArray(rows) ? rows.map(row => ({ ...row, url: gtAssetUrl(row.storage_path) })) : [])
+    manifestPromise = khgF('gt_asset_manifest?select=asset_key,asset_type,surface,city_key,category_key,venue_slug,storage_bucket,storage_path,priority,metadata&approved=eq.true&is_active=eq.true&order=priority.asc,asset_key.asc')
+      .then(rows => Array.isArray(rows) ? rows.map(row => ({ ...row, url: gtAssetUrl(row.storage_path, row.storage_bucket || 'brand-graphics') })) : [])
       .catch(() => [])
   }
   return manifestPromise
 }
 
-export function pickManifestAsset(rows, surface, predicate = () => true, fallbackPath = '') {
+export function pickManifestAsset(rows, surface, predicate = () => true, fallbackPath = '', fallbackBucket = 'brand-graphics') {
   const row = (rows || []).find(asset => asset.surface === surface && predicate(asset))
-  return row?.url || gtAssetUrl(fallbackPath)
+  return row?.url || gtAssetUrl(fallbackPath, fallbackBucket)
+}
+
+export function manifestAssetForCategory(rows, surface, categoryKey, fallbackPath = '', fallbackBucket = 'brand-graphics') {
+  return pickManifestAsset(rows, surface, asset => asset.category_key === categoryKey, fallbackPath, fallbackBucket)
 }
 
 export function approvedVenueImage(rows, venue) {
