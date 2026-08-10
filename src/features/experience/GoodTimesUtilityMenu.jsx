@@ -6,6 +6,10 @@ function clickControl(selector){
   return false
 }
 
+function openTickets(){
+  window.dispatchEvent(new CustomEvent('gt:open-payments',{detail:{view:'shop'}}))
+}
+
 export default function GoodTimesUtilityMenu(){
   const[mobile,setMobile]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(max-width:899px)').matches)
   const[open,setOpen]=useState(false)
@@ -26,10 +30,11 @@ export default function GoodTimesUtilityMenu(){
   if(!mobile)return null
 
   const run=(selector)=>{setOpen(false);window.setTimeout(()=>clickControl(selector),0)}
+  const runTickets=()=>{setOpen(false);window.setTimeout(openTickets,0)}
   return <div className={`gt-mobile-utilities ${open?'open':''}`}>
     {open&&<div className="gt-mobile-utilities__menu" role="menu" aria-label="GOOD TIMES utilities">
       <button type="button" role="menuitem" onClick={()=>run('.gt-connect-fab')}><span>＋</span><b>Connect</b><small>Current · Network · Links</small></button>
-      <button type="button" role="menuitem" onClick={()=>run('button[aria-label="Tickets and paid experiences"]')}><span>✦</span><b>Tickets</b><small>Tickets · VIP · Wallet</small></button>
+      <button type="button" role="menuitem" onClick={runTickets}><span>✦</span><b>Tickets</b><small>Tickets · VIP · Wallet</small></button>
       <button type="button" role="menuitem" onClick={()=>run('button[aria-label="Open GOOD TIMES account"]')}><span>◎</span><b>Account</b><small>Profile · Privacy · Sign out</small></button>
     </div>}
     <button className="gt-mobile-utilities__orb" type="button" aria-label={open?'Close GOOD TIMES utilities':'Open GOOD TIMES utilities'} aria-expanded={open} onClick={()=>setOpen(value=>!value)}>
