@@ -41,12 +41,17 @@ test('Party Board exposes Tonight and This Week and can seed Build My Night', ()
 
 test('Supabase creative assets are part of the customer visual layer', () => {
   const component = read('src/features/experience/GoodTimesCreativeLayer.jsx')
+  const assets = read('src/features/experience/good-times-assets.js')
+  const refresh = read('src/features/experience/good-times-creative-refresh.css')
   const css = read('src/features/experience/good-times-rich.css')
-  assert.match(component, /GOOD_TIMES_ANIMATION\.mp4/)
-  assert.match(component, /GOODTIMES_HOMESCREEN\.png/)
-  assert.match(component, /ChatGPT_Image_Feb_10_2026_03_52_56_AM\.png/)
+  assert.match(assets, /GOOD_TIMES_ANIMATION\.mp4/)
+  assert.match(assets, /GOODTIMES_HOMESCREEN\.png/)
+  assert.match(assets, /approved=eq\.true&is_active=eq\.true/)
+  assert.match(component, /loadGoodTimesAssetManifest/)
+  assert.match(component, /data-creative-source="gt_asset_manifest"/)
+  assert.doesNotMatch(component, /ChatGPT_Image_Feb_10_2026/)
+  assert.match(refresh, /data-creative-mode|motion-glass|gt2-category-grid/)
   assert.match(css, /gt-party-pulse/)
-  assert.match(css, /good_times\/graphics/)
 })
 
 test('Party Board event selection prefills the interactive Build My Night concierge', () => {
