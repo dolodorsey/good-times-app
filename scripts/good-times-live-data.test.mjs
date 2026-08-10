@@ -13,7 +13,7 @@ test('GOOD TIMES data gateway canonicalizes city values and caps public limits',
   assert.equal(clampLimit('0', 400, 400), 400)
 })
 
-test('Atlanta customer gateway reads bounded current shows and verified venues', () => {
+test('Atlanta legacy gateway remains bounded while the customer app uses the fast live path', () => {
   const queries = buildGatewayQueries({ city:'atlanta', today:'2026-08-06', eventLimit:500, venueLimit:400 })
   assert.match(queries.eventPath, /^gt_shows\?/)
   assert.match(queries.eventPath, /city_key=eq\.atlanta/)
@@ -52,9 +52,9 @@ test('arena concerts do not inherit the intimate-shows fallback', () => {
   )
 })
 
-test('Frontend uses same-origin event inventory and cannot bypass freshness', () => {
+test('Frontend uses same-origin fast event inventory and cannot bypass freshness', () => {
   const client = read('src/features/intelligence/client.js')
-  assert.match(client, /\/api\/data\?city=/)
+  assert.match(client, /\/api\/data-fast\?city=/)
   assert.match(client, /Same-origin event gateway failed; event inventory is hidden/)
   assert.doesNotMatch(client, /loadEventsDirect/)
   assert.match(client, /Same-origin venue gateway failed; using direct verified venue feed/)

@@ -3,7 +3,7 @@ import { readSession } from '../auth/client.js'
 import { cityLabel, cityOptions, loadGoodTimesProfile, todayISO } from '../intelligence/client.js'
 
 const PARTY_CATEGORIES = new Set(['nightlife','day_parties_brunch'])
-const PARTY_WORDS = /\b(day party|night party|party|club|rooftop|after party|after-party|brunch|dj|dance|r&b|rnb|hip hop|hip-hop|karaoke|lounge|pool party)\b/i
+const PARTY_WORDS = /\b(day party|night party|party|club|rooftop|after party|after-party|brunch|dj|dance|r&b|rnb|hip hop|hip-hop|karaoke|lounge|pool party|afrobeats|amapiano)\b/i
 const NIGHT_WORDS = /\b(club|night|nightlife|after party|after-party|lounge|late night|sundays|fridays|saturdays)\b/i
 const LABEL_TO_ID = new Map(cityOptions.map(([id,label]) => [String(label).toLowerCase(), id]))
 
@@ -47,7 +47,7 @@ function partyPriority(event){
   else if(hour>=15)score+=12
   if(NIGHT_WORDS.test(text))score+=26
   if(/\bparty\b/i.test(text))score+=14
-  if(/\b(rooftop|dj|dance|r&b|rnb|hip hop|hip-hop)\b/i.test(text))score+=9
+  if(/\b(rooftop|dj|dance|r&b|rnb|hip hop|hip-hop|afrobeats|amapiano)\b/i.test(text))score+=9
   if(/\bbrunch\b/i.test(text)&&!/\b(day party|night party|after party|club)\b/i.test(text))score-=24
   return score
 }
@@ -66,6 +66,7 @@ function clickNav(label){
 export default function GoodTimesPartyPulse(){
   const [city,setCity]=useState('atlanta')
   const [events,setEvents]=useState([])
+  const [serviceDate,setServiceDate]=useState(todayISO())
   const [mode,setMode]=useState('tonight')
   const [open,setOpen]=useState(false)
   const [loading,setLoading]=useState(true)
@@ -98,10 +99,13 @@ export default function GoodTimesPartyPulse(){
     setLoading(true)
     ;(async()=>{
       try{
-        const response=await fetch(`/api/data?city=${encodeURIComponent(city)}&event_limit=120&venue_limit=20`,{cache:'no-store',headers:{Accept:'application/json'}})
+        const response=await fetch(`/api/data-fast?city=${encodeURIComponent(city)}&event_limit=120&venue_limit=20`,{cache:'no-store',headers:{Accept:'application/json'}})
         const payload=await response.json().catch(()=>null)
         if(!response.ok||!payload?.ok)throw new Error(payload?.error||'Party feed unavailable')
-        if(!cancelled)setEvents((payload.events||[]).filter(isParty))
+        if(!cancelled){
+          setServiceDate(payload?.local_clock?.service_date||todayISO())
+          setEvents((payload.events||[]).filter(isParty))
+        }
       }catch{
         if(!cancelled)setEvents([])
       }finally{
@@ -112,11 +116,14 @@ export default function GoodTimesPartyPulse(){
   },[city])
 
   const tonight=useMemo(()=>events
-    .filter(item=>daysAway(item.event_date)===0&&partyPriority(item)>=70)
-    .sort((a,b)=>partyPriority(b)-partyPriority(a)||String(a.event_time||'99:99').localeCompare(String(b.event_time||'99:99'))),[events])
+    .filter(item=>item.event_date===serviceDate&&partyPriority(item)>=70)
+    .sort((a,b)=>partyPriority(b)-partyPriority(a)||String(b.event_time||'').localeCompare(String(a.event_time||''))),[events,serviceDate])
   const week=useMemo(()=>events
-    .filter(item=>daysAway(item.event_date)>=0&&daysAway(item.event_date)<=7)
-    .sort((a,b)=>String(a.event_date||'').localeCompare(String(b.event_date||''))||partyPriority(b)-partyPriority(a)||String(a.event_time||'99:99').localeCompare(String(b.event_time||'99:99'))),[events])
+    .filter(item=>{
+      const diff=Math.round((new Date(`${item.event_date}T12:00:00`)-new Date(`${serviceDate}T12:00:00`))/86400000)
+      return diff>=0&&diff<=7
+    })
+    .sort((a,b)=>String(a.event_date||'').localeCompare(String(b.event_date||''))||partyPriority(b)-partyPriority(a)||String(b.event_time||'').localeCompare(String(a.event_time||''))),[events,serviceDate])
   useEffect(()=>{if(!tonight.length&&week.length)setMode('week')},[tonight.length,week.length])
   const rows=mode==='tonight'?tonight:week
   const top=rows[0]||week[0]||null

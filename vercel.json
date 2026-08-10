@@ -6,7 +6,8 @@
   "rewrites": [
     { "source": "/admin", "destination": "/api/not-found" },
     { "source": "/admin.html", "destination": "/api/not-found" },
-    { "source": "/api/data", "destination": "/api/data-fast" },
+    { "source": "/api/data", "destination": "/api/data-live" },
+    { "source": "/api/data-fast", "destination": "/api/data-live" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

@@ -56,7 +56,7 @@ async function loadSameOriginData(city) {
   if (cached && Date.now() - cached.loadedAt < 30000) return cached.payload
   if (liveDataInflight.has(normalizedCity)) return liveDataInflight.get(normalizedCity)
 
-  const request = fetchJson(`/api/data?city=${encodeURIComponent(normalizedCity)}&event_limit=500&venue_limit=400`)
+  const request = fetchJson(`/api/data-fast?city=${encodeURIComponent(normalizedCity)}&event_limit=120&venue_limit=180`)
     .then(payload => {
       if (!payload?.ok || !payload?.connected || !Array.isArray(payload.events) || !Array.isArray(payload.venues)) {
         throw new Error('GOOD TIMES data gateway returned an invalid response.')
@@ -103,10 +103,20 @@ export async function loadExploreTaxonomy() {
   }))
 }
 
-export async function loadExploreDirectory(city = 'atlanta', { limit = 2500 } = {}) {
+export async function loadExploreCounts(city = 'atlanta') {
   const normalizedCity = normalizeCity(city)
   return fetchJson(
-    `${KHG_SUPABASE_URL}/rest/v1/v_gt_venue_taxonomy_directory?select=id,city_key,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,category_key,category_name,subcategory,subcategory_key,venue_category_key,venue_subcategory,tab_tags,search_tags,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,instagram_handle,sourced_from,website,phone,booking_link,status,taxonomy_confidence,latitude,longitude&city_key=eq.${encodeURIComponent(normalizedCity)}&order=taxonomy_confidence.desc,quality_score.desc.nullslast,google_rating.desc.nullslast&limit=${limit}`,
+    `${KHG_SUPABASE_URL}/rest/v1/v_gt_venue_taxonomy_counts?select=category_key,subcategory_key,place_count&city_key=eq.${encodeURIComponent(normalizedCity)}`,
+    { headers: gatewayHeaders },
+  )
+}
+
+export async function loadExploreDirectory(city = 'atlanta', { limit = 2500, category = null, subcategory = null } = {}) {
+  const normalizedCity = normalizeCity(city)
+  const categoryFilter = category ? `&category_key=eq.${encodeURIComponent(category)}` : ''
+  const subcategoryFilter = subcategory ? `&subcategory_key=eq.${encodeURIComponent(subcategory)}` : ''
+  return fetchJson(
+    `${KHG_SUPABASE_URL}/rest/v1/v_gt_venue_taxonomy_directory?select=id,city_key,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,category_key,category_name,subcategory,subcategory_key,venue_category_key,venue_subcategory,tab_tags,search_tags,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,instagram_handle,sourced_from,website,phone,booking_link,status,taxonomy_confidence,latitude,longitude&city_key=eq.${encodeURIComponent(normalizedCity)}${categoryFilter}${subcategoryFilter}&order=taxonomy_confidence.desc,quality_score.desc.nullslast,google_rating.desc.nullslast&limit=${limit}`,
     { headers: gatewayHeaders },
   )
 }
@@ -156,6 +166,7 @@ export async function checkGoodTimesLiveData(city = 'atlanta') {
     eventAgeHours: payload?.coverage?.event_age_hours ?? null,
     notice: payload?.coverage?.notice || null,
     generatedAt: payload?.generated_at || null,
+    localClock: payload?.local_clock || null,
   }
 }
 

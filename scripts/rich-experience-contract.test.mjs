@@ -36,7 +36,8 @@ test('Party Board exposes Tonight and This Week and can seed Build My Night', ()
   assert.match(source, /This Week/)
   assert.match(source, /goodtimes:build-seed/)
   assert.match(source, /Build around this/)
-  assert.match(source, /\/api\/data\?city=/)
+  assert.match(source, /\/api\/data-fast\?city=/)
+  assert.match(source, /local_clock\?\.service_date/)
 })
 
 test('Supabase creative assets are part of the customer visual layer', () => {
