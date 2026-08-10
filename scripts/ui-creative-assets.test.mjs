@@ -83,7 +83,7 @@ async function prove(width,height,name){
   page.on('pageerror',error=>errors.push(String(error)))
   await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
   await page.waitForSelector('.gt2-app',{timeout:30000})
-  await page.getByRole('button',{name:/Explore/i}).click()
+  await page.locator('.gt2-nav button').filter({hasText:'Explore'}).click()
   await page.waitForSelector('.gt2-category-grid>button',{timeout:15000})
   await page.waitForFunction(()=>[...document.querySelectorAll('.gt2-category-grid>button')].every(card=>card.dataset.hasArt==='true'&&getComputedStyle(card).backgroundImage.includes('good-times-backgrounds')),{timeout:15000})
   await page.waitForTimeout(1600)
