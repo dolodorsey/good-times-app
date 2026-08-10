@@ -24,6 +24,21 @@ test('customer taxonomy patch permanently protects obvious real-world intents', 
   assert.match(patched, /adult skating session.*family_kids/)
 })
 
+test('second intent cleanup protects tours, training, fitness, creator and game events', () => {
+  assert.match(patched, /black atlanta bus tour.*tours_sightseeing/)
+  assert.match(patched, /\\bzumba\\b.*wellness_fitness/)
+  assert.match(patched, /creative industry mixer.*creative_creator/)
+  assert.match(patched, /dynamics 365 fundamentals.*business_professional/)
+  assert.match(patched, /handling challenging calls.*classes_workshops/)
+  assert.match(patched, /ballistic bingo.*games_interactive/)
+  assert.match(patched, /money talks: the real return of sustainable partnerships.*finance_investing/)
+  assert.match(patched, /exploring atlanta.*food tour.*dining_culinary/)
+})
+
 test('high-confidence intent rules execute before broad concert classification', () => {
   assert.ok(patched.indexOf('High-confidence intent rules') < patched.indexOf('const concertSignal'))
+})
+
+test('taxonomy patch is idempotent when build scripts run repeatedly', () => {
+  assert.equal(patchTaxonomySource(patched), patched)
 })
