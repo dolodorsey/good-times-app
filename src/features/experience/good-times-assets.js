@@ -3,8 +3,8 @@ import { KHG_SUPABASE_URL, khgF } from '../../lib/supabase.js'
 export const GT_STORAGE_BASE = `${KHG_SUPABASE_URL}/storage/v1/object/public/brand-graphics`
 
 export const GT_APPROVED_DEFAULTS = Object.freeze({
-  motion: 'good_times/graphics/GOOD_TIMES_ANIMATION.mp4',
-  home: 'good_times/graphics/GOODTIMES_HOMESCREEN.png',
+  motion: 'kollective/animations/GOODTIMES.mp4',
+  home: 'motion/goodtimes.jpg',
   logo: 'good_times/graphics/GOOD_TIMES_logo.png',
 })
 
@@ -44,6 +44,7 @@ export function safeCustomerImage(url) {
     'maps.gstatic.com',
     '/staticmap',
     'streetview',
+    'GOODTIMES_HOMESCREEN.png',
     'GOODTIMES_SCREENS.png',
     'ChatGPT_Image_Feb_10_2026_03_52_56_AM.png',
     'ChatGPT_Image_Feb_10_2026_04_06_58_AM.png',
