@@ -15,6 +15,9 @@ const EVENT_CATEGORIES = {
   free:new Set(['free_things_to_do','community_civic']),
   vip:new Set(['vip_exclusive','nightlife']),
 }
+const NIGHTLIFE_VENUES=/\b(utopia restaurant|vision restaurant|vision lounge|josephine lounge|p sports bar|penthouse|revel atlanta|opium atlanta|magic city|blue flame|strokers|cheetah atlanta|soho lounge)\b/i
+const NIGHTLIFE_SIGNALS=/\b(after dark|after party|after-party|sundays?|party|nightlife|nightclub|club night|lounge|rooftop|dj|dance hall|dancehall|afrobeats|amapiano|r&b|rnb|hip hop|hip-hop)\b/i
+const NON_PARTY_SIGNALS=/\b(yoga|pilates|fitness|workout|workshop|class|comedy|stand-up|stand up|theater|theatre|screening|artist talk|live music show|concert|symphony|lecture|seminar)\b/i
 
 function clamp(value, fallback, max) {
   const parsed = Number.parseInt(String(value ?? ''), 10)
@@ -25,9 +28,34 @@ function parseVibes(value) {
   return [...new Set(String(value || '').split(',').map(v=>v.trim().toLowerCase()).filter(v=>ALLOWED_VIBES.has(v)))].slice(0,5)
 }
 function textOf(item) {
-  return [item?.title,item?.name,item?.venue_name,item?.category_key,item?.subcategory_key,item?.subcategory,...(item?.vibe_tags||[])].filter(Boolean).join(' ').toLowerCase()
+  return [item?.title,item?.name,item?.venue_name,item?.raw_type,item?.raw_category,item?.category_key,item?.subcategory_key,item?.subcategory,...(item?.vibe_tags||[])].filter(Boolean).join(' ').toLowerCase()
 }
 function eventMinutes(value){const match=String(value||'').match(/^(\d{1,2}):(\d{2})/);return match?Number(match[1])*60+Number(match[2]):-1}
+function nightlifeSubcategory(item){
+  const text=textOf(item)
+  if(/\bafter party|after-party\b/.test(text))return'after_parties'
+  if(/\brooftop\b/.test(text))return'rooftop_nights'
+  if(/\b(sundays?|weekly)\b/.test(text))return'weekly_parties'
+  if(/\b(after dark|late night)\b/.test(text))return'late_night'
+  if(/\blounge\b/.test(text))return'lounges'
+  return item?.subcategory_key&&String(item.subcategory_key).startsWith('night')?item.subcategory_key:'weekly_parties'
+}
+export function normalizeCustomerEventTaxonomy(item){
+  if(!item)return item
+  const text=textOf(item)
+  const venue=String(item.venue_name||'')
+  const rawType=String(item.raw_type||'').toLowerCase()
+  const start=eventMinutes(item.event_time)
+  const evening=start<0||start>=17*60
+  const explicitDayParty=item.category_key==='day_parties_brunch'||/\b(day party|brunch party)\b/i.test(text)
+  if(explicitDayParty&&start>=0&&start<18*60)return item
+  const knownVenue=NIGHTLIFE_VENUES.test(venue)
+  const partySignal=NIGHTLIFE_SIGNALS.test(text)
+  const protectedNonParty=NON_PARTY_SIGNALS.test(text)&&rawType!=='nightlife'
+  const recurringNightlife=(rawType==='nightlife')||(knownVenue&&evening&&partySignal&&!protectedNonParty)
+  if(!recurringNightlife)return item
+  return{...item,category_key:'nightlife',subcategory_key:nightlifeSubcategory(item),taxonomy_source:'customer_nightlife_override'}
+}
 function sameNightPriority(item,serviceDate){
   if(item?.event_date!==serviceDate)return 9
   const text=textOf(item)
@@ -77,28 +105,31 @@ function venueScore(item,index,vibes) {
   return score
 }
 function personalizeBody(body,vibes,city) {
-  if (!vibes.length || typeof body !== 'string') return body
+  if (typeof body !== 'string') return body
   try {
     const payload=JSON.parse(body)
     if (!payload?.ok || !Array.isArray(payload.events) || !Array.isArray(payload.venues)) return body
+    payload.events=payload.events.map(normalizeCustomerEventTaxonomy)
     const serviceDate=payload?.local_clock?.service_date||cityClock(city).serviceDate
-    payload.events=[...payload.events]
-      .map((item,index)=>({item,index,score:eventScore(item,index,vibes)}))
-      .sort((a,b)=>{
-        const date=String(a.item?.event_date||'').localeCompare(String(b.item?.event_date||''))
-        if(date)return date
-        if(a.item?.event_date===serviceDate){
-          const urgency=sameNightPriority(a.item,serviceDate)-sameNightPriority(b.item,serviceDate)
-          if(urgency)return urgency
-          const time=eventMinutes(b.item?.event_time)-eventMinutes(a.item?.event_time)
-          if(time)return time
-        }
-        return b.score-a.score||a.index-b.index
-      })
-      .map(({item})=>item)
-    payload.venues=[...payload.venues].map((item,index)=>({item,index,score:venueScore(item,index,vibes)})).sort((a,b)=>b.score-a.score).map(({item})=>item)
-    payload.personalized=true
-    payload.personalization={vibes,service_date:serviceDate,ordering:'service-date-then-nightlife-then-taste'}
+    if(vibes.length){
+      payload.events=[...payload.events]
+        .map((item,index)=>({item,index,score:eventScore(item,index,vibes)}))
+        .sort((a,b)=>{
+          const date=String(a.item?.event_date||'').localeCompare(String(b.item?.event_date||''))
+          if(date)return date
+          if(a.item?.event_date===serviceDate){
+            const urgency=sameNightPriority(a.item,serviceDate)-sameNightPriority(b.item,serviceDate)
+            if(urgency)return urgency
+            const time=eventMinutes(b.item?.event_time)-eventMinutes(a.item?.event_time)
+            if(time)return time
+          }
+          return b.score-a.score||a.index-b.index
+        })
+        .map(({item})=>item)
+      payload.venues=[...payload.venues].map((item,index)=>({item,index,score:venueScore(item,index,vibes)})).sort((a,b)=>b.score-a.score).map(({item})=>item)
+      payload.personalized=true
+      payload.personalization={vibes,service_date:serviceDate,ordering:'service-date-then-nightlife-then-taste'}
+    }
     return JSON.stringify(payload)
   } catch { return body }
 }

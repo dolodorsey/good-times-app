@@ -25,18 +25,7 @@ const CITY_TIMEZONES=Object.freeze({
   scottsdale:'America/Phoenix',
 })
 
-const SHOW_SELECT=[
-  'id','event_name','event_type','genre','city_key','show_date','show_time','venue_name','ticket_url',
-  'image_url','organizer','display_priority','good_times_score','category_key_v2','subcategory_key_v2',
-  'is_featured','is_curated','updated_at',
-].join(',')
-const VENUE_SELECT=[
-  'id','city_key','name','neighborhood','side_of_town','short_desc','hero_image','google_rating','google_reviews',
-  'quality_score','price_range','vibe_tags','culture_tier','is_khg','is_culture_pick','is_black_owned','culture_tags',
-  'instagram_handle','website','phone','booking_link','status','latitude','longitude','venue_category_key','venue_subcategory',
-].join(',')
-
-function headers(){return{apikey:CONTENT_KEY,Authorization:`Bearer ${CONTENT_KEY}`,Accept:'application/json'}}
+function headers(){return{apikey:CONTENT_KEY,Authorization:`Bearer ${CONTENT_KEY}`,Accept:'application/json','Content-Type':'application/json'}}
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
 function shiftISODate(value,days){const d=new Date(`${value}T12:00:00Z`);d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)}
 function clockPart(parts,type){return parts.find(part=>part.type===type)?.value||''}
@@ -58,24 +47,27 @@ function safeImage(value){
 }
 function decode(value){return String(value||'').replace(/&amp;/gi,'&').replace(/&#8217;/gi,"'").replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&nbsp;/gi,' ')}
 
-async function fetchRows(path,label){
+async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLimit}){
   let lastError=null
   for(let attempt=0;attempt<2;attempt+=1){
     const controller=new AbortController()
-    const timer=setTimeout(()=>controller.abort(),4500)
+    const timer=setTimeout(()=>controller.abort(),7000)
     try{
-      const response=await fetch(`${CONTENT_URL}/rest/v1/${path}`,{headers:headers(),cache:'no-store',signal:controller.signal})
+      const response=await fetch(`${CONTENT_URL}/rest/v1/rpc/gt_public_live_inventory`,{
+        method:'POST',headers:headers(),cache:'no-store',signal:controller.signal,
+        body:JSON.stringify({p_city:city,p_service_date:serviceDate,p_event_limit:eventFetchLimit,p_venue_limit:venueFetchLimit}),
+      })
       const text=await response.text()
-      if(!response.ok)throw new Error(`${label} HTTP ${response.status}: ${text.slice(0,220)}`)
-      const rows=text?JSON.parse(text):[]
-      if(!Array.isArray(rows))throw new Error(`${label} returned invalid data`)
-      return rows
+      if(!response.ok)throw new Error(`inventory RPC HTTP ${response.status}: ${text.slice(0,240)}`)
+      const payload=text?JSON.parse(text):null
+      if(!payload||!Array.isArray(payload.events)||!Array.isArray(payload.venues))throw new Error('inventory RPC returned invalid data')
+      return payload
     }catch(error){
-      lastError=error?.name==='AbortError'?new Error(`${label} timed out`):error
-      if(attempt===0)await wait(160)
+      lastError=error?.name==='AbortError'?new Error('inventory RPC timed out'):error
+      if(attempt===0)await wait(180)
     }finally{clearTimeout(timer)}
   }
-  throw lastError||new Error(`${label} failed`)
+  throw lastError||new Error('inventory RPC failed')
 }
 
 function eventMinutes(value){const m=String(value||'').match(/^(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):-1}
@@ -91,7 +83,7 @@ function nightlifePriority(item,serviceDate){
   if(party)return 3
   return 6
 }
-function rankEvents(rows,city,clock){
+function rankEvents(rows,clock){
   return [...rows].sort((a,b)=>{
     const date=String(a.show_date||'').localeCompare(String(b.show_date||''))
     if(date)return date
@@ -140,7 +132,7 @@ function send(response,status,payload,cache='MISS'){
   response.statusCode=status
   response.setHeader('Content-Type','application/json; charset=utf-8')
   response.setHeader('Cache-Control',status===200?'public, s-maxage=60, stale-while-revalidate=600':'no-store')
-  response.setHeader('X-Good-Times-Live-Gateway','v5')
+  response.setHeader('X-Good-Times-Live-Gateway','v6')
   response.setHeader('X-Good-Times-Cache',cache)
   response.end(JSON.stringify(payload))
 }
@@ -154,32 +146,31 @@ export default async function handler(request,response){
   const clock=cityClock(city)
   const eventFetchLimit=Math.min(Math.max(eventLimit*4,360),720)
   const venueFetchLimit=Math.min(Math.max(venueLimit*3,240),540)
-  const eventPath=`gt_shows?select=${SHOW_SELECT}&city_key=eq.${encodeURIComponent(city)}&show_date=gte.${clock.serviceDate}&status=in.(confirmed,tentative)&image_url=not.is.null&ticket_url=not.is.null&order=show_date.asc,good_times_score.desc.nullslast,display_priority.asc.nullslast&limit=${eventFetchLimit}`
-  const venuePath=`v_gt_venue_taxonomy_directory?select=${VENUE_SELECT}&city_key=eq.${encodeURIComponent(city)}&hero_image=not.is.null&order=quality_score.desc.nullslast,google_rating.desc.nullslast&limit=${venueFetchLimit}`
-  const [eventResult,venueResult]=await Promise.allSettled([fetchRows(eventPath,'events'),fetchRows(venuePath,'venues')])
   const cacheKey=`${city}:${clock.serviceDate}`
-  if(eventResult.status==='rejected'||venueResult.status==='rejected')console.warn('[GOOD TIMES data-live partial]',{city,events:eventResult.status==='rejected'?eventResult.reason?.message:null,venues:venueResult.status==='rejected'?venueResult.reason?.message:null})
-  if(eventResult.status==='rejected'&&venueResult.status==='rejected'){
+  let inventory
+  try{
+    inventory=await fetchInventoryRPC({city,serviceDate:clock.serviceDate,eventFetchLimit,venueFetchLimit})
+  }catch(error){
     const stale=CACHE.get(cacheKey)
     if(stale&&Date.now()-stale.at<15*60*1000)return send(response,200,{...stale.payload,degraded:true,coverage:{...stale.payload.coverage,notice:'Live sources are refreshing; showing the most recent verified city snapshot.'}},'STALE')
-    console.error('[GOOD TIMES data-live]',{city,events:eventResult.reason?.message,venues:venueResult.reason?.message})
+    console.error('[GOOD TIMES data-live]',{city,error:error?.message})
     return send(response,503,{ok:false,connected:false,city,source:'good-times-fast-customer-inventory',generated_at:new Date().toISOString(),error:'GOOD TIMES live data is temporarily unavailable.'})
   }
-  const rawEvents=eventResult.status==='fulfilled'?eventResult.value:[]
-  const rawVenues=venueResult.status==='fulfilled'?venueResult.value:[]
-  const freshness=eventResult.status==='fulfilled'?getEventFreshness(rawEvents,new Date()):{status:'unavailable',live:false,latest_update:null,age_hours:null}
+  const rawEvents=inventory.events
+  const rawVenues=inventory.venues
+  const freshness=getEventFreshness(rawEvents,new Date())
   const readyEvents=freshness.live?rawEvents.filter(item=>customerReadyEvent(item,clock)):[]
-  const ranked=rankEvents(dedupeCustomerEvents(readyEvents),city,clock)
+  const ranked=rankEvents(dedupeCustomerEvents(readyEvents),clock)
   const events=mapEvents(ranked).slice(0,eventLimit)
   const venues=mapVenues(rawVenues).slice(0,venueLimit)
-  const degraded=eventResult.status==='rejected'||venueResult.status==='rejected'||freshness.status==='stale'
+  const degraded=freshness.status==='stale'
   const payload={
     ok:true,connected:true,degraded,city,source:'good-times-fast-customer-inventory',generated_at:new Date().toISOString(),
     local_clock:{time_zone:clock.timeZone,calendar_date:clock.calendarDate,service_date:clock.serviceDate,hour:clock.hour,minute:clock.minute},
-    coverage:{events_live:freshness.live,event_status:freshness.status,event_latest_update:freshness.latest_update,event_age_hours:freshness.age_hours,event_freshness_max_hours:EVENT_FRESHNESS_MAX_HOURS,venues_live:venueResult.status==='fulfilled',notice:degraded?'One live source is refreshing; available verified inventory remains visible.':null},
+    coverage:{events_live:freshness.live,event_status:freshness.status,event_latest_update:freshness.latest_update,event_age_hours:freshness.age_hours,event_freshness_max_hours:EVENT_FRESHNESS_MAX_HOURS,venues_live:true,notice:degraded?'Live event freshness is outside the normal window; verified venue inventory remains visible.':null},
     counts:{events:events.length,venues:venues.length},events,venues,
   }
   CACHE.set(cacheKey,{at:Date.now(),payload})
-  if(request.method==='HEAD'){response.statusCode=200;response.setHeader('X-Good-Times-Events',String(events.length));response.setHeader('X-Good-Times-Venues',String(venues.length));response.setHeader('X-Good-Times-Degraded',String(degraded));response.setHeader('X-Good-Times-Service-Date',clock.serviceDate);return response.end()}
+  if(request.method==='HEAD'){response.statusCode=200;response.setHeader('X-Good-Times-Events',String(events.length));response.setHeader('X-Good-Times-Venues',String(venues.length));response.setHeader('X-Good-Times-Degraded',String(degraded));response.setHeader('X-Good-Times-Service-Date',clock.serviceDate);response.setHeader('X-Good-Times-Live-Gateway','v6');return response.end()}
   return send(response,200,payload)
 }
