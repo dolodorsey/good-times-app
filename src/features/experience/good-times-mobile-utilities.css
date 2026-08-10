@@ -2,8 +2,16 @@
    permanent desktop pills covering the customer experience. */
 .gt-mobile-utilities{display:none}
 @media(max-width:899px){
-  .gt-mobile-utilities{
-    position:fixed;right:14px;bottom:calc(91px + env(safe-area-inset-bottom,0px));z-index:9350;display:grid;justify-items:end;gap:8px;pointer-events:none
+  /* Direct-child escape hatch: the legacy premium child rule must never turn
+     this compact utility into a viewport-sized shell. */
+  .gt-premium-experience>.gt-mobile-utilities{
+    position:fixed!important;
+    left:auto!important;right:14px!important;top:auto!important;
+    bottom:calc(91px + env(safe-area-inset-bottom,0px))!important;
+    width:auto!important;height:auto!important;min-height:0!important;max-width:none!important;
+    margin:0!important;padding:0!important;overflow:visible!important;
+    z-index:9350!important;display:grid!important;justify-items:end;gap:8px;pointer-events:none!important;
+    background:transparent!important;box-shadow:none!important;border-radius:0!important;
   }
   .gt-mobile-utilities__orb,.gt-mobile-utilities__menu{pointer-events:auto}
   .gt-mobile-utilities__orb{
