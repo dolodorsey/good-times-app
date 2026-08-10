@@ -1,3 +1,5 @@
+@import './good-times-creative-refresh.css';
+
 /* GOOD TIMES final responsive geometry contract.
    Kept separate from the cinematic rich layer so viewport placement remains
    testable and cannot be accidentally changed by visual-art updates. */

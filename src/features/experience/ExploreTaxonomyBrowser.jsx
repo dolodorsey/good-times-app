@@ -9,6 +9,13 @@ function uniqueVenues(rows) {
   })
 }
 
+function categoryHue(key,index) {
+  const text=String(key||index)
+  let hash=0
+  for(let position=0;position<text.length;position+=1)hash=(hash*31+text.charCodeAt(position))%360
+  return (hash + index * 17) % 360
+}
+
 export default function ExploreTaxonomyBrowser({
   taxonomy = [],
   directory = [],
@@ -67,8 +74,14 @@ export default function ExploreTaxonomyBrowser({
 
     {!activeCategory && <>
       <div className="gt2-taxonomy-heading"><span>DISCOVER BY CATEGORY</span><small>Choose a lane to see its subcategories and best-matched places.</small></div>
-      <div className="gt2-category-grid">
-        {categoryRows.map(category => <button key={category.id} type="button" onClick={() => { onCategory?.(category.id);onSubcategory?.(null) }}>
+      <div className="gt2-category-grid" data-creative-mode="motion-glass">
+        {categoryRows.map((category,index) => <button
+          key={category.id}
+          type="button"
+          data-gt-category={category.id}
+          style={{ '--gt-cat-hue': categoryHue(category.id,index), '--gt-cat-order': index }}
+          onClick={() => { onCategory?.(category.id);onSubcategory?.(null) }}
+        >
           <span className="gt2-category-mark">{category.icon || '✦'}</span>
           <strong>{category.name}</strong>
           <small>{category.subcategoryRows?.length || 0} subcategories · {category.count} places</small>

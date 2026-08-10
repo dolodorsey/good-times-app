@@ -1,19 +1,34 @@
-import React from 'react'
-
-const BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics'
-const HOME=`${BASE}/GOODTIMES_HOMESCREEN.png`
-const VIDEO=`${BASE}/GOOD_TIMES_ANIMATION.mp4`
-const ART=[
-  `${BASE}/ChatGPT_Image_Feb_10_2026_03_52_56_AM.png`,
-  `${BASE}/ChatGPT_Image_Feb_10_2026_04_06_58_AM.png`,
-  `${BASE}/ChatGPT_Image_Feb_10_2026_04_10_54_AM.png`,
-]
+import React, { useEffect, useMemo, useState } from 'react'
+import { GT_APPROVED_DEFAULTS, gtAssetUrl, loadGoodTimesAssetManifest, pickManifestAsset } from './good-times-assets.js'
 
 export default function GoodTimesCreativeLayer(){
-  return <div className="gt-rich-visuals" aria-hidden="true">
-    <video className="gt-rich-video" autoPlay muted loop playsInline preload="metadata" poster={HOME} src={VIDEO}/>
+  const [assets,setAssets]=useState([])
+
+  useEffect(()=>{
+    let alive=true
+    loadGoodTimesAssetManifest().then(rows=>{ if(alive)setAssets(rows) })
+    return()=>{ alive=false }
+  },[])
+
+  const creative=useMemo(()=>{
+    const home=pickManifestAsset(assets,'home_hero',()=>true,GT_APPROVED_DEFAULTS.home)
+    const video=pickManifestAsset(assets,'global_motion',()=>true,GT_APPROVED_DEFAULTS.motion)
+    const venueArt=(assets||[])
+      .filter(asset=>asset.surface==='places_that_matter'&&asset.asset_type==='venue_image')
+      .slice(0,3)
+      .map(asset=>asset.url)
+    const fallbackVenueArt=[
+      gtAssetUrl('good_times/graphics/LOCATION_IMAGES/UTOPIA_DOWNTOWN.webp'),
+      gtAssetUrl('good_times/graphics/LOCATION_IMAGES/VISIONS.jpg'),
+      gtAssetUrl('good_times/graphics/LOCATION_IMAGES/REVEL.webp'),
+    ]
+    return { home,video,art:venueArt.length===3?venueArt:fallbackVenueArt }
+  },[assets])
+
+  return <div className="gt-rich-visuals" aria-hidden="true" data-creative-source="gt_asset_manifest">
+    <video className="gt-rich-video" autoPlay muted loop playsInline preload="metadata" poster={creative.home} src={creative.video}/>
     <div className="gt-rich-video-veil"/>
-    <div className="gt-rich-art-stack">{ART.map((src,index)=><img key={src} className={`gt-rich-art art-${index+1}`} src={src} alt="" loading="eager"/>)}</div>
+    <div className="gt-rich-art-stack">{creative.art.map((src,index)=><img key={src} className={`gt-rich-art art-${index+1}`} src={src} alt="" loading="eager"/>)}</div>
     <div className="gt-rich-grain"/>
   </div>
 }
