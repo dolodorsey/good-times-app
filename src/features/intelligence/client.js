@@ -55,15 +55,15 @@ function validLivePayload(payload) {
 }
 
 async function requestLivePayload(normalizedCity) {
-  const query=`city=${encodeURIComponent(normalizedCity)}&event_limit=120&venue_limit=180`
   try {
-    const fast=await fetchJson(`/api/data-fast?${query}`)
-    if(validLivePayload(fast))return fast
+    const fast = await fetchJson(`/api/data-fast?city=${encodeURIComponent(normalizedCity)}&event_limit=120&venue_limit=180`)
+    if (validLivePayload(fast)) return fast
   } catch (error) {
     console.warn('[GOOD TIMES live data] Personalized gateway unavailable; falling back to canonical gateway.', error)
   }
-  const canonical=await fetchJson(`/api/data?${query}`)
-  if(!validLivePayload(canonical))throw new Error('GOOD TIMES data gateway returned an invalid response.')
+
+  const canonical = await fetchJson(`/api/data?city=${encodeURIComponent(normalizedCity)}&event_limit=120&venue_limit=180`)
+  if (!validLivePayload(canonical)) throw new Error('GOOD TIMES data gateway returned an invalid response.')
   return canonical
 }
 
@@ -286,30 +286,25 @@ export async function recordTasteSignal({
   }
 }
 
-export async function askGoodTimesConcierge({ query, action = 'recommend', city = 'atlanta', thread_id = null }, session = readSession()) {
+export async function askGoodTimesConcierge(input, session = readSession()) {
   if (!session?.access_token) throw new Error('Please sign in again.')
-  return fetchJson(
-    `${GT_SUPABASE_URL}/functions/v1/good-times-recommendation-ledger`,
-    {
-      method: 'POST',
-      headers: gtHeaders(session.access_token),
-      body: JSON.stringify({ query, action, city: normalizeCity(city), thread_id }),
-    },
-  )
+  return fetchJson(`${GT_SUPABASE_URL}/functions/v1/good-times-live-concierge`, {
+    method: 'POST',
+    headers: gtHeaders(session.access_token),
+    body: JSON.stringify({ today: todayISO(), ...input }),
+  })
 }
 
 export function cityLabel(city) {
   return ({
-    atlanta: 'Atlanta', houston: 'Houston', los_angeles: 'Los Angeles', washington_dc: 'Washington DC',
+    atlanta: 'Atlanta', houston: 'Houston', los_angeles: 'Los Angeles', washington_dc: 'Washington, DC',
     miami: 'Miami', dallas: 'Dallas', charlotte: 'Charlotte', new_york: 'New York',
     phoenix: 'Phoenix', scottsdale: 'Scottsdale', las_vegas: 'Las Vegas',
-  })[normalizeCity(city)] || String(city || 'Atlanta')
+  })[city] || String(city || '').replaceAll('_', ' ').replace(/\b\w/g, value => value.toUpperCase())
 }
 
-export function cityOptions() {
-  return [
-    ['atlanta','Atlanta'],['houston','Houston'],['los_angeles','Los Angeles'],['washington_dc','Washington DC'],
-    ['miami','Miami'],['dallas','Dallas'],['charlotte','Charlotte'],['new_york','New York'],
-    ['phoenix','Phoenix'],['scottsdale','Scottsdale'],['las_vegas','Las Vegas'],
-  ]
-}
+export const cityOptions = [
+  ['atlanta', 'Atlanta'], ['houston', 'Houston'], ['los_angeles', 'Los Angeles'], ['miami', 'Miami'],
+  ['charlotte', 'Charlotte'], ['washington_dc', 'Washington, DC'], ['new_york', 'New York'],
+  ['dallas', 'Dallas'], ['phoenix', 'Phoenix'], ['scottsdale', 'Scottsdale'], ['las_vegas', 'Las Vegas'],
+]
