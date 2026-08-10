@@ -50,17 +50,31 @@ function normalizeCity(city) {
 const liveDataCache = new Map()
 const liveDataInflight = new Map()
 
+function validLivePayload(payload) {
+  return Boolean(payload?.ok && payload?.connected && Array.isArray(payload.events) && Array.isArray(payload.venues))
+}
+
+async function requestLivePayload(normalizedCity) {
+  const query=`city=${encodeURIComponent(normalizedCity)}&event_limit=120&venue_limit=180`
+  try {
+    const fast=await fetchJson(`/api/data-fast?${query}`)
+    if(validLivePayload(fast))return fast
+  } catch (error) {
+    console.warn('[GOOD TIMES live data] Personalized gateway unavailable; falling back to canonical gateway.', error)
+  }
+  const canonical=await fetchJson(`/api/data?${query}`)
+  if(!validLivePayload(canonical))throw new Error('GOOD TIMES data gateway returned an invalid response.')
+  return canonical
+}
+
 async function loadSameOriginData(city) {
   const normalizedCity = normalizeCity(city)
   const cached = liveDataCache.get(normalizedCity)
   if (cached && Date.now() - cached.loadedAt < 30000) return cached.payload
   if (liveDataInflight.has(normalizedCity)) return liveDataInflight.get(normalizedCity)
 
-  const request = fetchJson(`/api/data-fast?city=${encodeURIComponent(normalizedCity)}&event_limit=120&venue_limit=180`)
+  const request = requestLivePayload(normalizedCity)
     .then(payload => {
-      if (!payload?.ok || !payload?.connected || !Array.isArray(payload.events) || !Array.isArray(payload.venues)) {
-        throw new Error('GOOD TIMES data gateway returned an invalid response.')
-      }
       liveDataCache.set(normalizedCity, { payload, loadedAt: Date.now() })
       return payload
     })
@@ -137,7 +151,7 @@ export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}
     return payload.events.slice(0, limit)
   } catch (gatewayError) {
     // Do not bypass the server freshness/customer-readiness gate with a direct event feed.
-    console.warn('[GOOD TIMES live data] Same-origin event gateway failed; event inventory is hidden until the verified gateway recovers.', gatewayError)
+    console.warn('[GOOD TIMES live data] Both verified event gateways failed; event inventory is hidden until they recover.', gatewayError)
     return []
   }
 }
@@ -272,25 +286,30 @@ export async function recordTasteSignal({
   }
 }
 
-export async function askGoodTimesConcierge(input, session = readSession()) {
+export async function askGoodTimesConcierge({ query, action = 'recommend', city = 'atlanta', thread_id = null }, session = readSession()) {
   if (!session?.access_token) throw new Error('Please sign in again.')
-  return fetchJson(`${GT_SUPABASE_URL}/functions/v1/good-times-live-concierge`, {
-    method: 'POST',
-    headers: gtHeaders(session.access_token),
-    body: JSON.stringify({ today: todayISO(), ...input }),
-  })
+  return fetchJson(
+    `${GT_SUPABASE_URL}/functions/v1/good-times-recommendation-ledger`,
+    {
+      method: 'POST',
+      headers: gtHeaders(session.access_token),
+      body: JSON.stringify({ query, action, city: normalizeCity(city), thread_id }),
+    },
+  )
 }
 
 export function cityLabel(city) {
   return ({
-    atlanta: 'Atlanta', houston: 'Houston', los_angeles: 'Los Angeles', washington_dc: 'Washington, DC',
+    atlanta: 'Atlanta', houston: 'Houston', los_angeles: 'Los Angeles', washington_dc: 'Washington DC',
     miami: 'Miami', dallas: 'Dallas', charlotte: 'Charlotte', new_york: 'New York',
     phoenix: 'Phoenix', scottsdale: 'Scottsdale', las_vegas: 'Las Vegas',
-  })[city] || String(city || '').replaceAll('_', ' ').replace(/\b\w/g, value => value.toUpperCase())
+  })[normalizeCity(city)] || String(city || 'Atlanta')
 }
 
-export const cityOptions = [
-  ['atlanta', 'Atlanta'], ['houston', 'Houston'], ['los_angeles', 'Los Angeles'], ['miami', 'Miami'],
-  ['charlotte', 'Charlotte'], ['washington_dc', 'Washington, DC'], ['new_york', 'New York'],
-  ['dallas', 'Dallas'], ['phoenix', 'Phoenix'], ['scottsdale', 'Scottsdale'], ['las_vegas', 'Las Vegas'],
-]
+export function cityOptions() {
+  return [
+    ['atlanta','Atlanta'],['houston','Houston'],['los_angeles','Los Angeles'],['washington_dc','Washington DC'],
+    ['miami','Miami'],['dallas','Dallas'],['charlotte','Charlotte'],['new_york','New York'],
+    ['phoenix','Phoenix'],['scottsdale','Scottsdale'],['las_vegas','Las Vegas'],
+  ]
+}
