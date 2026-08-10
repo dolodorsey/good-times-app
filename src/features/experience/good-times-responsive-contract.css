@@ -43,6 +43,13 @@
   background:transparent!important;
   animation:none!important;
 }
+
+/* The Home Build My Night strip previously inherited the retired collage from
+   good-times-rich.css. Force the current approved poster here. */
+.gt2-command-launch{
+  background:linear-gradient(90deg,rgba(8,8,13,.18),rgba(8,8,13,.78)),var(--gt-current-home) center/cover!important;
+}
+
 @media(prefers-reduced-motion:reduce){
   .gt-premium-experience:has(.gt2-nav button:nth-child(1).active) .gt2-hero{
     background-image:linear-gradient(90deg,rgba(4,4,8,.84) 0%,rgba(4,4,8,.48) 48%,rgba(4,4,8,.16) 100%),var(--gt-current-home)!important;
