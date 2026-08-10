@@ -140,7 +140,7 @@ function send(response,status,payload,cache='MISS'){
   response.statusCode=status
   response.setHeader('Content-Type','application/json; charset=utf-8')
   response.setHeader('Cache-Control',status===200?'public, s-maxage=60, stale-while-revalidate=600':'no-store')
-  response.setHeader('X-Good-Times-Live-Gateway','v4')
+  response.setHeader('X-Good-Times-Live-Gateway','v5')
   response.setHeader('X-Good-Times-Cache',cache)
   response.end(JSON.stringify(payload))
 }
@@ -152,9 +152,9 @@ export default async function handler(request,response){
   const eventLimit=clampLimit(url.searchParams.get('event_limit'),120,180)
   const venueLimit=clampLimit(url.searchParams.get('venue_limit'),120,180)
   const clock=cityClock(city)
-  const eventFetchLimit=Math.min(Math.max(eventLimit*3,180),540)
+  const eventFetchLimit=Math.min(Math.max(eventLimit*4,360),720)
   const venueFetchLimit=Math.min(Math.max(venueLimit*3,240),540)
-  const eventPath=`gt_shows?select=${SHOW_SELECT}&city_key=eq.${encodeURIComponent(city)}&show_date=gte.${clock.serviceDate}&status=in.(confirmed,tentative)&image_url=not.is.null&ticket_url=not.is.null&order=good_times_score.desc.nullslast,display_priority.asc.nullslast,show_date.asc&limit=${eventFetchLimit}`
+  const eventPath=`gt_shows?select=${SHOW_SELECT}&city_key=eq.${encodeURIComponent(city)}&show_date=gte.${clock.serviceDate}&status=in.(confirmed,tentative)&image_url=not.is.null&ticket_url=not.is.null&order=show_date.asc,good_times_score.desc.nullslast,display_priority.asc.nullslast&limit=${eventFetchLimit}`
   const venuePath=`v_gt_venue_taxonomy_directory?select=${VENUE_SELECT}&city_key=eq.${encodeURIComponent(city)}&hero_image=not.is.null&order=quality_score.desc.nullslast,google_rating.desc.nullslast&limit=${venueFetchLimit}`
   const [eventResult,venueResult]=await Promise.allSettled([fetchRows(eventPath,'events'),fetchRows(venuePath,'venues')])
   const cacheKey=`${city}:${clock.serviceDate}`
