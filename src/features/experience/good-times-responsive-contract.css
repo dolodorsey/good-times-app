@@ -22,6 +22,33 @@
   display:none!important;
 }
 
+/* On Home, the approved global GOOD TIMES MP4 is part of the hero experience,
+   not an invisible wallpaper behind an opaque app. The hero remains legible and
+   reduced-motion users keep the static approved poster treatment. */
+.gt-premium-experience:has(.gt2-nav button:nth-child(1).active)>.gt-rich-visuals .gt-rich-video{
+  opacity:.42!important;
+  filter:saturate(1.18) contrast(1.06) brightness(.84)!important;
+}
+.gt-premium-experience:has(.gt2-nav button:nth-child(1).active)>.gt-rich-visuals .gt-rich-video-veil{
+  background:linear-gradient(180deg,rgba(4,4,9,.14),rgba(4,4,9,.54) 70%,rgba(5,5,10,.92) 100%),radial-gradient(circle at 78% 14%,rgba(216,175,91,.18),transparent 36%)!important;
+}
+.gt-premium-experience:has(.gt2-nav button:nth-child(1).active)>.gt2-app{
+  background:linear-gradient(180deg,rgba(6,6,11,.64),rgba(6,6,11,.80) 46%,rgba(6,6,11,.96))!important;
+}
+.gt-premium-experience:has(.gt2-nav button:nth-child(1).active) .gt2-hero{
+  background-color:transparent!important;
+  background-image:linear-gradient(90deg,rgba(4,4,8,.78) 0%,rgba(4,4,8,.34) 50%,rgba(4,4,8,.08) 100%)!important;
+}
+.gt-premium-experience:has(.gt2-nav button:nth-child(1).active) .gt2-hero:before{
+  background:transparent!important;
+  animation:none!important;
+}
+@media(prefers-reduced-motion:reduce){
+  .gt-premium-experience:has(.gt2-nav button:nth-child(1).active) .gt2-hero{
+    background-image:linear-gradient(90deg,rgba(4,4,8,.84) 0%,rgba(4,4,8,.48) 48%,rgba(4,4,8,.16) 100%),var(--gt-current-home)!important;
+  }
+}
+
 @media (max-width:899px){
   .gt2-nav{
     position:fixed!important;
