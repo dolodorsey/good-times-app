@@ -22,11 +22,12 @@ test('GOOD TIMES keeps the previous nightlife service date through 4 AM local',(
   assert.equal(clock.hour,1)
 })
 
-test('fast gateway fetches the local service date and drops stale same-day inventory',()=>{
+test('fast gateway fetches the local service date first and drops stale same-day inventory',()=>{
   assert.match(liveSource,/show_date=gte\.\$\{clock\.serviceDate\}/)
+  assert.match(liveSource,/order=show_date\.asc,good_times_score\.desc\.nullslast,display_priority\.asc\.nullslast/)
   assert.match(liveSource,/isStaleServiceDayEvent/)
   assert.match(liveSource,/clock\.serviceMinute-\(6\*60\)/)
-  assert.match(liveSource,/X-Good-Times-Live-Gateway','v4'/)
+  assert.match(liveSource,/X-Good-Times-Live-Gateway','v5'/)
 })
 
 test('personalization cannot move a future date ahead of the current nightlife service date',()=>{
