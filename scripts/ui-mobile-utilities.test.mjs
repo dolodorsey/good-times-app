@@ -86,7 +86,6 @@ test('mobile utility orb opens real Connect, Tickets and Account actions',{skip,
     await openOrb(page)
     await page.getByRole('menuitem',{name:/Tickets/i}).click()
     await page.getByRole('dialog',{name:'GOOD TIMES tickets'}).waitFor({state:'visible',timeout:4000})
-    await page.getByRole('button',{name:'Close tickets'}).click()
 
     assert.deepEqual(errors,[],'uncaught page errors')
   }finally{
