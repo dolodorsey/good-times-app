@@ -1,4 +1,4 @@
-import baseHandler from './data.js'
+import baseHandler from './data-live.js'
 
 const MAX_EVENTS = 120
 const MAX_VENUES = 180
@@ -86,7 +86,7 @@ function captureResponse(response,vibes,onFinish) {
 }
 
 export default async function handler(request, response) {
-  const incoming = new URL(request.url || '/api/data', 'https://goodtimesworldwide.com')
+  const incoming = new URL(request.url || '/api/data-fast', 'https://thegoodtimesworldwide.com')
   const city = cityKey(incoming.searchParams.get('city'))
   const eventLimit = clamp(incoming.searchParams.get('event_limit'), 100, MAX_EVENTS)
   const venueLimit = clamp(incoming.searchParams.get('venue_limit'), 140, MAX_VENUES)
@@ -105,7 +105,7 @@ export default async function handler(request, response) {
     return
   }
 
-  const rewritten = new URL('/api/data', 'https://goodtimesworldwide.com')
+  const rewritten = new URL('/api/data-live', 'https://thegoodtimesworldwide.com')
   rewritten.searchParams.set('city', city)
   rewritten.searchParams.set('event_limit', String(eventLimit))
   rewritten.searchParams.set('venue_limit', String(venueLimit))
