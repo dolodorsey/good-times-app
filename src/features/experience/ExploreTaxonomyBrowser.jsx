@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { loadExploreCounts, loadExploreDirectory } from '../intelligence/client.js'
+import { loadGoodTimesAssetManifest, manifestAssetForCategory } from './good-times-assets.js'
 
 function uniqueVenues(rows) {
   const seen = new Set()
@@ -37,6 +38,7 @@ export default function ExploreTaxonomyBrowser({
   renderVenue,
 }) {
   const [countRows,setCountRows]=useState([])
+  const [creativeAssets,setCreativeAssets]=useState([])
   const [categoryDirectory,setCategoryDirectory]=useState([])
   const [categoryLoading,setCategoryLoading]=useState(false)
   const [categoryError,setCategoryError]=useState('')
@@ -44,7 +46,14 @@ export default function ExploreTaxonomyBrowser({
   useEffect(()=>{
     let alive=true
     setCountRows([])
-    loadExploreCounts(cityName).then(rows=>{if(alive)setCountRows(Array.isArray(rows)?rows:[])}).catch(()=>{if(alive)setCountRows([])})
+    Promise.all([
+      loadExploreCounts(cityName).catch(()=>[]),
+      loadGoodTimesAssetManifest().catch(()=>[]),
+    ]).then(([counts,assets])=>{
+      if(!alive)return
+      setCountRows(Array.isArray(counts)?counts:[])
+      setCreativeAssets(Array.isArray(assets)?assets:[])
+    })
     return()=>{alive=false}
   },[cityName])
 
@@ -67,8 +76,9 @@ export default function ExploreTaxonomyBrowser({
   const categoryRows = useMemo(() => taxonomy.map(category => {
     const exact=exactCount(countRows,category.id)
     const fallback=new Set(directory.filter(row => row.category_key === category.id).map(row => row.id)).size
-    return {...category,count:exact||fallback}
-  }), [countRows,directory,taxonomy])
+    const art=manifestAssetForCategory(creativeAssets,'explore_category',category.id)
+    return {...category,count:exact||fallback,art}
+  }), [countRows,creativeAssets,directory,taxonomy])
 
   const activeCategory = taxonomy.find(category => category.id === selectedCategory) || null
   const subcategoryRows = activeCategory?.subcategoryRows || []
@@ -111,12 +121,13 @@ export default function ExploreTaxonomyBrowser({
 
     {!activeCategory && <>
       <div className="gt2-taxonomy-heading"><span>DISCOVER BY CATEGORY</span><small>Choose a lane to see its subcategories and best-matched places.</small></div>
-      <div className="gt2-category-grid" data-creative-mode="motion-glass">
+      <div className="gt2-category-grid" data-creative-mode="supabase-category-art">
         {categoryRows.map((category,index) => <button
           key={category.id}
           type="button"
           data-gt-category={category.id}
-          style={{ '--gt-cat-hue': categoryHue(category.id,index), '--gt-cat-order': index }}
+          data-has-art={category.art?'true':'false'}
+          style={{ '--gt-cat-hue': categoryHue(category.id,index), '--gt-cat-order': index, '--gt-cat-image': category.art ? `url("${category.art}")` : 'none' }}
           onClick={() => { onCategory?.(category.id);onSubcategory?.(null) }}
         >
           <span className="gt2-category-mark">{category.icon || '✦'}</span>
