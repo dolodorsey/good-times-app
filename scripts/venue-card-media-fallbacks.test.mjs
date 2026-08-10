@@ -2,8 +2,10 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { brittleVenueImage, customerVenueMedia } from '../api/data-fast.js'
 
-test('logo and padded placeholder media are rejected',()=>{
+test('logo, bottle and padded placeholder media are rejected',()=>{
   assert.equal(brittleVenueImage('https://example.com/brand-logo.png'),true)
+  assert.equal(brittleVenueImage('https://example.com/StarLogo-02.png'),true)
+  assert.equal(brittleVenueImage('https://example.com/Web.Bottle-02.png'),true)
   assert.equal(brittleVenueImage('https://example.com/Artboard+1.png'),true)
   assert.equal(brittleVenueImage('https://cdn.example.com/image.png?fit=pad'),true)
   assert.equal(brittleVenueImage('https://example.com/real-room-photo.jpg'),false)
