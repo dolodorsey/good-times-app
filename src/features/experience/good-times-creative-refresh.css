@@ -1,14 +1,16 @@
 /* GOOD TIMES creative refresh — 2026-08-09
-   Owner visual review retired the three repeated screenshot-collage images.
-   The animation/home creative and real venue photography are the approved visual layer. */
+   Owner visual review retired the repeated screenshot-collage treatment and the
+   dated GOODTIMES_HOMESCREEN collage. Current motion/poster assets and real
+   venue photography are the approved customer visual layer. */
 :root{
-  --gt-current-home:url('https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics/GOODTIMES_HOMESCREEN.png');
+  --gt-current-home:url('https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/motion/goodtimes.jpg');
 }
 
-/* Home is a GOOD TIMES editorial surface, not a blown-up third-party flyer. */
+/* Home is an editorial GOOD TIMES surface driven by the current motion poster,
+   not the old Angel Wings/screenshot collage or a blown-up third-party flyer. */
 .gt2-hero{
   background-image:
-    linear-gradient(90deg,rgba(4,4,8,.88) 0%,rgba(4,4,8,.58) 48%,rgba(4,4,8,.28) 100%),
+    linear-gradient(90deg,rgba(4,4,8,.84) 0%,rgba(4,4,8,.50) 48%,rgba(4,4,8,.20) 100%),
     var(--gt-current-home)!important;
   background-size:cover!important;
   background-position:center!important;
@@ -16,18 +18,18 @@
 .gt2-hero .gt2-hero-copy{max-width:680px}
 .gt2-hero .gt2-hero-copy h1{text-wrap:balance}
 
-/* Build My Night sits over the live motion layer instead of the retired static screenshots. */
+/* Build My Night sits over the current live motion layer. */
 .gt2-concierge-hero,.gt2-builder{
   background-image:
-    radial-gradient(circle at 15% 15%,rgba(241,213,154,.17),transparent 32%),
-    radial-gradient(circle at 84% 10%,rgba(104,72,180,.15),transparent 30%),
-    linear-gradient(145deg,rgba(13,12,18,.88),rgba(5,5,10,.72))!important;
-  backdrop-filter:blur(16px) saturate(1.1)!important;
+    radial-gradient(circle at 15% 15%,rgba(241,213,154,.14),transparent 32%),
+    radial-gradient(circle at 84% 10%,rgba(104,72,180,.11),transparent 30%),
+    linear-gradient(145deg,rgba(13,12,18,.70),rgba(5,5,10,.54))!important;
+  backdrop-filter:blur(13px) saturate(1.08)!important;
 }
 
 /* The old CSS rotated three screenshot collages across all 25 categories.
-   Kill those raster backgrounds completely. Every category gets its own living
-   glass treatment while the approved Supabase animation remains visible below. */
+   Kill those raster backgrounds completely. Each category gets an individual
+   motion-glass identity while the newest Supabase GOODTIMES.mp4 reads below. */
 .gt2-category-grid>button,
 .gt2-category-grid>button:nth-child(3n+1),
 .gt2-category-grid>button:nth-child(3n+2),
@@ -37,10 +39,10 @@
   overflow:hidden!important;
   background-image:none!important;
   background:
-    radial-gradient(circle at 82% 16%,hsl(var(--gt-cat-hue) 78% 62% / .24),transparent 34%),
-    radial-gradient(circle at 12% 100%,hsl(calc(var(--gt-cat-hue) + 48) 72% 52% / .15),transparent 42%),
-    linear-gradient(145deg,rgba(25,24,31,.82),rgba(8,8,13,.9))!important;
-  border-color:rgba(241,213,154,.14)!important;
+    radial-gradient(circle at 82% 16%,hsl(var(--gt-cat-hue) 78% 62% / .27),transparent 34%),
+    radial-gradient(circle at 12% 100%,hsl(calc(var(--gt-cat-hue) + 48) 72% 52% / .17),transparent 42%),
+    linear-gradient(145deg,rgba(25,24,31,.68),rgba(8,8,13,.78))!important;
+  border-color:rgba(241,213,154,.16)!important;
   min-height:196px!important;
   transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease,background .25s ease!important;
 }
@@ -50,7 +52,7 @@
   inset:0!important;
   z-index:-1!important;
   background:
-    linear-gradient(120deg,transparent 0 45%,rgba(255,255,255,.035) 50%,transparent 56%),
+    linear-gradient(120deg,transparent 0 45%,rgba(255,255,255,.04) 50%,transparent 56%),
     repeating-linear-gradient(135deg,rgba(255,255,255,.018) 0 1px,transparent 1px 9px)!important;
   opacity:.9!important;
 }
@@ -97,26 +99,34 @@
 }
 .gt2-image-fallback span{color:#f1d59a!important;text-shadow:0 6px 30px rgba(241,213,154,.22)}
 
-/* A transient data miss should still look like a branded product, never a giant dead black panel. */
+/* A transient data miss remains branded instead of becoming a dead black slab. */
 .gt2-content>.gt2-empty:first-child{
   min-height:330px;
   display:grid;
   align-content:center;
   background:
-    linear-gradient(90deg,rgba(5,5,10,.9),rgba(5,5,10,.58)),
+    linear-gradient(90deg,rgba(5,5,10,.82),rgba(5,5,10,.45)),
     var(--gt-current-home) center/cover!important;
   border-bottom:1px solid rgba(241,213,154,.14);
 }
 
-/* Let the current motion layer read through the large discovery surfaces. */
+/* Let the current motion layer read through the discovery and concierge areas. */
 .gt2-explore-browser,.gt2-concierge-screen{
-  background:linear-gradient(180deg,rgba(5,5,10,.72),rgba(5,5,10,.9))!important;
+  background:linear-gradient(180deg,rgba(5,5,10,.46),rgba(5,5,10,.76))!important;
 }
 
 @media(max-width:899px){
   .gt2-category-grid>button{min-height:156px!important}
   .gt2-category-grid .gt2-category-mark{width:40px;height:40px}
   .gt2-content>.gt2-empty:first-child{min-height:260px}
+
+  /* Explore needs the canvas for discovery. Remove the floating utility row
+     while this tab is active; primary nav and Party Board remain available. */
+  .gt-premium-experience:has(.gt2-nav button:nth-child(5).active)>.gt-connect-fab,
+  .gt-premium-experience:has(.gt2-nav button:nth-child(5).active)>button[aria-label="Tickets and paid experiences"],
+  .gt-premium-experience:has(.gt2-nav button:nth-child(5).active)>button[aria-label="Open GOOD TIMES account"]{
+    display:none!important;
+  }
 }
 
 @media(prefers-reduced-motion:reduce){
