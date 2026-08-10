@@ -99,7 +99,7 @@ export function hasApprovedGoodTimesVenueMedia(item){
 }
 export function brittleVenueImage(url){
   const value=String(url||'')
-  return !value||/(?:^|[\/_.-])(logo|wordmark|logotype)(?:[\/_.?&-]|$)|artboard|fit=pad/i.test(value)
+  return !value||/logo|wordmark|logotype|artboard|fit=pad|bottle/i.test(value)
 }
 export function customerVenueMedia(item){
   if(hasApprovedGoodTimesVenueMedia(item))return item
