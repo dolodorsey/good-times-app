@@ -272,32 +272,25 @@ export async function recordTasteSignal({
   }
 }
 
-export async function askGoodTimesConcierge({ query, action = 'recommend', city = 'atlanta', thread_id = null, context = {} }, session = readSession()) {
-  if (!query?.trim()) throw new Error('Tell GOOD TIMES what kind of move you want.')
-  if (!session?.access_token) throw new Error('Please sign in again to use the concierge.')
-  return fetchJson(`${GT_SUPABASE_URL}/functions/v1/good-times-concierge`, {
+export async function askGoodTimesConcierge(input, session = readSession()) {
+  if (!session?.access_token) throw new Error('Please sign in again.')
+  return fetchJson(`${GT_SUPABASE_URL}/functions/v1/good-times-live-concierge`, {
     method: 'POST',
     headers: gtHeaders(session.access_token),
-    body: JSON.stringify({ query: query.trim(), action, city_slug: city, thread_id, context }),
+    body: JSON.stringify({ today: todayISO(), ...input }),
   })
 }
 
-export async function createConnectRequest({ profileId, requestType, title, message, city = 'atlanta', context = {} }, session = readSession()) {
-  if (!profileId || !session?.access_token) throw new Error('Please sign in again.')
-  const rows = await fetchJson(`${GT_SUPABASE_URL}/rest/v1/gt_connect_requests`, {
-    method: 'POST',
-    headers: { ...gtHeaders(session.access_token), Prefer: 'return=representation' },
-    body: JSON.stringify({ user_id: profileId, request_type: requestType, title, message, city_slug: city, context }),
-  })
-  return rows?.[0] || null
+export function cityLabel(city) {
+  return ({
+    atlanta: 'Atlanta', houston: 'Houston', los_angeles: 'Los Angeles', washington_dc: 'Washington, DC',
+    miami: 'Miami', dallas: 'Dallas', charlotte: 'Charlotte', new_york: 'New York',
+    phoenix: 'Phoenix', scottsdale: 'Scottsdale', las_vegas: 'Las Vegas',
+  })[city] || String(city || '').replaceAll('_', ' ').replace(/\b\w/g, value => value.toUpperCase())
 }
 
-export function cityOptions() {
-  return [
-    ['atlanta','Atlanta'],['charlotte','Charlotte'],['dallas','Dallas'],['houston','Houston'],['las_vegas','Las Vegas'],['los_angeles','Los Angeles'],['miami','Miami'],['new_york','New York'],['phoenix','Phoenix'],['scottsdale','Scottsdale'],['washington_dc','Washington DC'],
-  ]
-}
-
-export function cityLabel(value) {
-  return cityOptions().find(([key]) => key === normalizeCity(value))?.[1] || String(value || 'Atlanta').replaceAll('_',' ').replace(/\b\w/g, letter => letter.toUpperCase())
-}
+export const cityOptions = [
+  ['atlanta', 'Atlanta'], ['houston', 'Houston'], ['los_angeles', 'Los Angeles'], ['miami', 'Miami'],
+  ['charlotte', 'Charlotte'], ['washington_dc', 'Washington, DC'], ['new_york', 'New York'],
+  ['dallas', 'Dallas'], ['phoenix', 'Phoenix'], ['scottsdale', 'Scottsdale'], ['las_vegas', 'Las Vegas'],
+]
