@@ -5,6 +5,8 @@ import fs from 'node:fs'
 const responsive=fs.readFileSync(new URL('../src/features/experience/good-times-responsive-contract.css',import.meta.url),'utf8')
 const utilities=fs.readFileSync(new URL('../src/features/experience/good-times-mobile-utilities.css',import.meta.url),'utf8')
 const utilityComponent=fs.readFileSync(new URL('../src/features/experience/GoodTimesUtilityMenu.jsx',import.meta.url),'utf8')
+const paymentsBridge=fs.readFileSync(new URL('../src/features/experience/GoodTimesPaymentsBridge.jsx',import.meta.url),'utf8')
+const paymentsController=fs.readFileSync(new URL('../src/features/experience/good-times-payments-controller.js',import.meta.url),'utf8')
 const main=fs.readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8')
 const launch=fs.readFileSync(new URL('../src/current-media.css',import.meta.url),'utf8')
 const venueSql=fs.readFileSync(new URL('../supabase/migrations/20260810041700_dedupe_live_venue_photography.sql',import.meta.url),'utf8')
@@ -14,9 +16,17 @@ test('mobile member utilities collapse into one 44px orb instead of permanent de
   assert.match(utilities,/\.gt-mobile-utilities__orb\{\n    width:44px;height:44px/)
   assert.match(utilityComponent,/Open GOOD TIMES utilities/)
   assert.match(utilityComponent,/\.gt-connect-fab/)
-  assert.match(utilityComponent,/gt:open-payments/)
+  assert.match(utilityComponent,/requestPayments\('shop'\)/)
   assert.match(utilityComponent,/Open GOOD TIMES account/)
   assert.match(main,/LazyUtilityMenu/)
+})
+
+test('Tickets uses a queued controller instead of depending on event timing or a visible launcher',()=>{
+  assert.match(paymentsController,/let pendingView=null/)
+  assert.match(paymentsController,/registerPaymentsOpener/)
+  assert.match(paymentsController,/requestPayments/)
+  assert.match(paymentsBridge,/registerPaymentsOpener\(view=>clickPaymentsLauncher\(view\)\)/)
+  assert.match(paymentsBridge,/requestPayments\('shop'\)/)
 })
 
 test('Home and launch expose the approved current motion and current poster only',()=>{
