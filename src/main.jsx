@@ -32,6 +32,7 @@ const LazyNativeBridge = lazy(() => import('./features/experience/GoodTimesNativ
 const LazyPaymentsLauncher = lazy(() => import('./features/experience/GoodTimesPaymentsBridge.jsx'))
 const LazyConnectHub = lazy(() => import('./features/experience/GoodTimesConnectHub.jsx'))
 const LazyAccountCenter = lazy(() => import('./features/experience/GoodTimesAccountCenter.jsx'))
+const LazyUtilityMenu = lazy(() => import('./features/experience/GoodTimesUtilityMenu.jsx'))
 const LazyCreativeLayer = lazy(() => import('./features/experience/GoodTimesCreativeLayer.jsx'))
 const LazyPartyPulse = lazy(() => import('./features/experience/GoodTimesPartyPulse.jsx'))
 
@@ -39,10 +40,10 @@ const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
 const directRoutes = { '/join':'join','/concierge-request':'concierge-request','/trip':'trip','/group':'group' }
 const HOSTED_API_ORIGIN='https://thegoodtimesworldwide.com'
-const GT_CURRENT_MEDIA_BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics'
-const GT_CURRENT_LOGO=`${GT_CURRENT_MEDIA_BASE}/GOOD_TIMES_logo.png`
-const GT_CURRENT_HOME=`${GT_CURRENT_MEDIA_BASE}/GOODTIMES_HOMESCREEN.png`
-const GT_CURRENT_ANIMATION=`${GT_CURRENT_MEDIA_BASE}/GOOD_TIMES_ANIMATION.mp4`
+const GT_CURRENT_MEDIA_BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics'
+const GT_CURRENT_LOGO=`${GT_CURRENT_MEDIA_BASE}/good_times/graphics/GOOD_TIMES_logo.png`
+const GT_CURRENT_HOME=`${GT_CURRENT_MEDIA_BASE}/motion/goodtimes.jpg`
+const GT_CURRENT_ANIMATION=`${GT_CURRENT_MEDIA_BASE}/kollective/animations/GOODTIMES.mp4`
 
 function installDataRequestGuard(){
   if(typeof window==='undefined'||window.__GOOD_TIMES_FETCH_GUARD__)return
@@ -132,7 +133,7 @@ async function bootstrap(){
       <Suspense fallback={<RouteLoading label={loadingLabel}/> }>
         <PremiumRoot launch={showMemberTools}>
           {isNative?<LazyNativeBridge/>:null}
-          {showMemberTools?<><LazyCompletionBridge/><LazyAccountCenter/></>:null}
+          {showMemberTools?<><LazyCompletionBridge/><LazyAccountCenter/><LazyUtilityMenu/></>:null}
           {route}
           {showMemberTools?<><LazyConnectHub/><LazyPaymentsLauncher/></>:null}
         </PremiumRoot>
