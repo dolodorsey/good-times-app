@@ -17,6 +17,7 @@ import './features/experience/good-times-rich.css'
 // Final viewport contract owns fixed-control placement and safe-area spacing.
 import './features/experience/good-times-responsive-contract.css'
 import GoodTimesShellControl from './features/experience/GoodTimesShellControl.jsx'
+import BuildMyNightRouteHost from './features/experience/BuildMyNightRouteHost.jsx'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
@@ -135,7 +136,7 @@ async function bootstrap(){
       <Suspense fallback={<RouteLoading label={loadingLabel}/> }>
         <PremiumRoot launch={showMemberTools}>
           {isNative?<LazyNativeBridge/>:null}
-          {showMemberTools?<><LazyCompletionBridge/><LazyAccountCenter/><LazyUtilityMenu/></>:null}
+          {showMemberTools?<><LazyCompletionBridge/><LazyAccountCenter/><LazyUtilityMenu/><BuildMyNightRouteHost/></>:null}
           {route}
           {showShellControl?<GoodTimesShellControl/>:null}
           {showMemberTools?<><LazyConnectHub/><LazyPaymentsLauncher/></>:null}
