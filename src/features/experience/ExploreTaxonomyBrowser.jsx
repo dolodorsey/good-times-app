@@ -23,6 +23,20 @@ function exactCount(rows,categoryKey,subcategoryKey=null) {
   return Number(match?.place_count||0)
 }
 
+function normalizeSubcategories(category) {
+  if (Array.isArray(category?.subcategoryRows)) return category.subcategoryRows
+  if (Array.isArray(category?.subcategories)) {
+    return category.subcategories.map((subcategory,index) => ({
+      category_key: category.id,
+      subcategory_key: subcategory.subcategory_key || subcategory.id,
+      subcategory_name: subcategory.subcategory_name || subcategory.name,
+      description: subcategory.description || null,
+      sort_order: subcategory.sort_order ?? index,
+    }))
+  }
+  return []
+}
+
 export default function ExploreTaxonomyBrowser({
   taxonomy = [],
   directory = [],
@@ -73,14 +87,19 @@ export default function ExploreTaxonomyBrowser({
     return()=>{alive=false}
   },[cityName,selectedCategory])
 
-  const categoryRows = useMemo(() => taxonomy.map(category => {
+  const normalizedTaxonomy = useMemo(() => (taxonomy || []).map(category => ({
+    ...category,
+    subcategoryRows: normalizeSubcategories(category),
+  })), [taxonomy])
+
+  const categoryRows = useMemo(() => normalizedTaxonomy.map(category => {
     const exact=exactCount(countRows,category.id)
     const fallback=new Set(directory.filter(row => row.category_key === category.id).map(row => row.id)).size
     const art=manifestAssetForCategory(creativeAssets,'explore_category',category.id)
     return {...category,count:exact||fallback,art}
-  }), [countRows,creativeAssets,directory,taxonomy])
+  }), [countRows,creativeAssets,directory,normalizedTaxonomy])
 
-  const activeCategory = taxonomy.find(category => category.id === selectedCategory) || null
+  const activeCategory = normalizedTaxonomy.find(category => category.id === selectedCategory) || null
   const subcategoryRows = activeCategory?.subcategoryRows || []
   const needle = String(query || '').trim().toLowerCase()
   const activeDirectory = selectedCategory && categoryDirectory.length ? categoryDirectory : directory
@@ -105,12 +124,13 @@ export default function ExploreTaxonomyBrowser({
 
   const selectedSubcategoryLabel = subcategoryRows.find(row => row.subcategory_key === selectedSubcategory)?.subcategory_name
   const activeTotal=activeCategory ? (exactCount(countRows,activeCategory.id)||new Set(activeDirectory.filter(row=>row.category_key===activeCategory.id).map(row=>row.id)).size) : 0
+  const totalSubcategories=normalizedTaxonomy.reduce((sum, category) => sum + (category.subcategoryRows?.length || 0), 0)
 
   return <section className="gt2-explore-browser">
     <div className="gt2-screen-heading">
       <span>EXPLORE</span>
       <h1>{activeCategory ? activeCategory.name : 'Know the city.'}</h1>
-      <p>{activeCategory ? `${activeTotal} verified places in ${cityName}.` : `${categoryRows.length} categories and ${taxonomy.reduce((sum, category) => sum + (category.subcategoryRows?.length || 0), 0)} subcategories.`}</p>
+      <p>{activeCategory ? `${activeTotal} verified places in ${cityName}.` : `${categoryRows.length} categories and ${totalSubcategories} subcategories.`}</p>
     </div>
 
     <div className="gt2-search">
@@ -120,7 +140,7 @@ export default function ExploreTaxonomyBrowser({
     </div>
 
     {!activeCategory && <>
-      <div className="gt2-taxonomy-heading"><span>DISCOVER BY CATEGORY</span><small>Choose a lane to see its subcategories and best-matched places.</small></div>
+      <div className="gt2-taxonomy-heading"><span>DISCOVER BY CATEGORY</span><small>Choose a lane to open its complete subcategory list.</small></div>
       <div className="gt2-category-grid" data-creative-mode="supabase-category-art">
         {categoryRows.map((category,index) => <button
           key={category.id}
@@ -144,7 +164,8 @@ export default function ExploreTaxonomyBrowser({
         <div className="gt2-explore-toggle"><button className={!mapMode ? 'active' : ''} onClick={() => onMapMode?.(false)}>Directory</button><button className={mapMode ? 'active' : ''} onClick={() => onMapMode?.(true)}>Map</button></div>
       </div>
 
-      <div className="gt2-subcategory-rail">
+      <div className="gt2-taxonomy-heading compact"><span>SUBCATEGORIES</span><small>{subcategoryRows.length} ways to narrow {activeCategory.name}. Choose one or view everything.</small></div>
+      <div className="gt2-subcategory-rail" data-gt-subcategories={activeCategory.id}>
         <button className={!selectedSubcategory ? 'active' : ''} onClick={() => onSubcategory?.(null)}>All {activeCategory.name}<small>{activeTotal}</small></button>
         {subcategoryRows.map(subcategory => {
           const exact=exactCount(countRows,activeCategory.id,subcategory.subcategory_key)
