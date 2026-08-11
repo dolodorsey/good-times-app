@@ -74,7 +74,7 @@ export default function BuildMyNightPanel({ cityName, busy = false, onBuild }) {
     </div>
 
     {step===0&&<div className="gt2-builder-stage">
-      <div className="gt2-builder-stage-title"><div><span>STEP ONE</span><h3>What kind of night?</h3></div><small>Choose up to four. Your first choice becomes the lead vibe.</small></div>
+      <div className="gt2-builder-stage-title"><div><span>STEP ONE</span><h3>Pick up to four vibes</h3></div><small>Choose up to four. Your first choice becomes the lead vibe.</small></div>
       <div className="gt2-builder-vibes visual">
         <div>{VIBE_CONFIG.map(([vibe,art]) => <button
           type="button"
