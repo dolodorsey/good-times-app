@@ -32,8 +32,9 @@
 .gt2-nav{border-color:rgba(239,189,85,.4)!important;background:rgba(5,12,19,.97)!important;box-shadow:0 -12px 35px rgba(0,0,0,.42)!important}
 .gt2-nav button.active small{color:var(--gt-ref-gold)!important}
 
-/* Explore is a deliberate three-across catalog. Both category cards and the
-   resulting verified venue directory use the same rhythm. */
+/* Explore is category-first and intentionally dense. Category cards and the
+   verified venue directory share the same catalog rhythm without reverting
+   phones to oversized one-up cards. */
 .gt2-explore-browser .gt2-category-grid,
 .gt2-explore-browser .gt2-venue-grid{
   display:grid!important;
@@ -42,6 +43,12 @@
 }
 .gt2-explore-browser .gt2-category-grid>button{min-height:250px!important}
 .gt2-explore-browser .gt2-venue-grid .gt2-venue-image{height:220px!important}
+
+/* Non-grid compatibility fallback. Modern supported browsers stay on the
+   responsive two-/three-column catalog below. */
+@supports not (display:grid){
+  .gt2-explore-browser .gt2-category-grid,.gt2-explore-browser .gt2-venue-grid{grid-template-columns:1fr!important}
+}
 
 /* Build My Night follows the supplied guided-screen hierarchy: cinematic
    introduction, clear four-step rail, then large visual choices. */
@@ -68,7 +75,9 @@
 }
 @media (max-width:599px){
   .gt2-topbar{min-height:72px!important;padding:10px 14px!important}.gt2-mark{width:44px!important;height:44px!important}.gt2-brand strong{font-size:17px!important}.gt2-brand small{font-size:6px!important}.gt2-city{min-height:42px!important;padding:0 13px!important}
-  .gt2-explore-browser .gt2-category-grid,.gt2-explore-browser .gt2-venue-grid{grid-template-columns:1fr!important;gap:14px!important;padding:0 16px!important}
-  .gt2-explore-browser .gt2-category-grid>button{min-height:210px!important}.gt2-explore-browser .gt2-venue-grid .gt2-venue-image{height:210px!important}
+  .gt2-explore-browser .gt2-category-grid,.gt2-explore-browser .gt2-venue-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;padding:0 12px!important}
+  .gt2-explore-browser .gt2-category-grid>button{min-height:148px!important}
+  .gt2-explore-browser .gt2-venue-grid .gt2-venue-image{height:132px!important}
+  .gt2-explore-browser .gt2-venue-card{border-radius:14px!important}
   .gt2-builder-vibes.visual button{min-height:112px!important}
 }
