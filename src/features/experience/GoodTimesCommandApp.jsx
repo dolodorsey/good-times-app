@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { clearSession, readSession, updatePreferences } from '../auth/client.js'
 import {
   askGoodTimesConcierge,
@@ -238,6 +238,8 @@ export default function GoodTimesCommandApp() {
   const [conciergeError, setConciergeError] = useState('')
   const [threadId, setThreadId] = useState(null)
   const [toast, setToast] = useState('')
+  const [heroIndex, setHeroIndex] = useState(0)
+  const contentRef = useRef(null)
 
   const refreshAccountData = useCallback(async nextProfile => {
     if (!nextProfile?.id) return
@@ -296,10 +298,45 @@ export default function GoodTimesCommandApp() {
     events.forEach(event => counts.set(event.category_key || 'experience', (counts.get(event.category_key || 'experience') || 0) + 1))
     return [...counts.entries()].sort((a,b) => b[1] - a[1])
   }, [events])
-  const heroEvent = useMemo(() => events.find(event => event.is_featured && event.image_url) || events.find(event => event.image_url) || events[0], [events])
   const tonightEvents = useMemo(() => events.filter(isTonight).slice(0, 12), [events])
   const nextSeven = useMemo(() => events.filter(event => daysFromToday(event.event_date) >= 0 && daysFromToday(event.event_date) <= 7).slice(0, 16), [events])
-  const cultureVenues = useMemo(() => venues.filter(venue => venue.is_culture_pick || venue.is_black_owned || venue.is_khg).slice(0, 14), [venues])
+  const heroEvents = useMemo(() => {
+    const ranked = [...events].sort((a,b) => Number(isTonight(b)) - Number(isTonight(a)) || Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)))
+    const images = new Set()
+    return ranked.filter(event => {
+      const image = String(event.image_url || '').trim()
+      if (!image || images.has(image)) return false
+      images.add(image)
+      return true
+    }).slice(0, 6)
+  }, [events])
+  const heroEvent = heroEvents[heroIndex % Math.max(heroEvents.length, 1)] || events[0]
+  const upcomingConcerts = useMemo(() => events.filter(event => event.category_key === 'concerts_live_music' && daysFromToday(event.event_date) >= 0).slice(0, 12), [events])
+  const cultureVenues = useMemo(() => {
+    const images = new Set()
+    return venues.filter(venue => venue.is_culture_pick || venue.is_black_owned || venue.is_khg).filter(venue => {
+      const image = String(venue.hero_image || '').trim()
+      if (!image) return true
+      if (images.has(image)) return false
+      images.add(image)
+      return true
+    }).slice(0, 14)
+  }, [venues])
+
+  useEffect(() => {
+    setHeroIndex(0)
+    if (heroEvents.length < 2 || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined
+    const timer = window.setInterval(() => setHeroIndex(index => (index + 1) % heroEvents.length), 6500)
+    return () => window.clearInterval(timer)
+  }, [heroEvents])
+
+  const openScreen = useCallback((nextTab, options = {}) => {
+    setTab(nextTab)
+    if (options.dateMode) setDateMode(options.dateMode)
+    if (options.category) setCategory(options.category)
+    if (options.clearQuery !== false) setQuery('')
+    window.requestAnimationFrame(() => contentRef.current?.scrollTo({ top: 0, behavior: 'instant' }))
+  }, [])
 
   const filteredEvents = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -373,7 +410,6 @@ export default function GoodTimesCommandApp() {
       setConciergeBusy(false)
     }
   }
-
   const planAroundEvent = event => {
     setSelectedEvent(null)
     setTab('concierge')
@@ -408,7 +444,7 @@ export default function GoodTimesCommandApp() {
       <button className="gt2-city" onClick={() => setTab('profile')}><span>⌖</span>{cityLabel(city)}</button>
     </header>
 
-    <main className="gt2-content">
+    <main className="gt2-content" ref={contentRef}>
       {tab === 'home' && <>
         {heroEvent ? <section className="gt2-hero" style={heroEvent.image_url ? { backgroundImage: `url(${heroEvent.image_url})` } : undefined}>
           <div className="gt2-hero-veil"/>
@@ -416,12 +452,13 @@ export default function GoodTimesCommandApp() {
             <span>{isTonight(heroEvent) ? 'TONIGHT IN ' : 'CURATED FOR '}{cityLabel(city).toUpperCase()}</span>
             <h1>{heroEvent.title}</h1>
             <p>{formatDate(heroEvent.event_date)} · {formatTime(heroEvent.event_time)}<br/>{heroEvent.venue_name || 'Location TBA'}</p>
-            <div><button onClick={() => openEvent(heroEvent)}>See the move</button><button onClick={() => { setTab('concierge');setConciergeQuery('Build my night tonight') }}>Build my night</button></div>
+            <div><button onClick={() => openEvent(heroEvent)}>See the move</button><button onClick={() => { openScreen('concierge');setConciergeQuery('Build my night tonight') }}>Build my night</button></div>
           </div>
-          <div className="gt2-hero-index"><strong>{events.length}</strong><small>upcoming experiences</small></div>
+          <div className="gt2-hero-index"><strong>{heroIndex + 1}</strong><small>of {heroEvents.length || 1} featured</small></div>
+          {heroEvents.length > 1 && <div className="gt2-hero-controls" aria-label="Featured experiences">{heroEvents.map((event,index) => <button key={event.event_key} className={index===heroIndex?'active':''} aria-label={`Show ${event.title}`} onClick={() => setHeroIndex(index)}/>)}</div>}
         </section> : <EmptyState title="No current experiences" body="The source feed has no current records for this city." />}
 
-        <button className="gt2-command-launch" onClick={() => setTab('concierge')}><span>✦</span><div><small>BUILD MY NIGHT</small><strong>Turn your vibe into a complete plan.</strong></div><em>›</em></button>
+        <button className="gt2-command-launch" onClick={() => openScreen('concierge')}><span>✦</span><div><small>BUILD MY NIGHT</small><strong>Turn your vibe into a complete plan.</strong></div><em>›</em></button>
 
         <section className="gt2-pulse">
           <div><strong>{events.length}</strong><span>Experiences</span></div>
@@ -430,22 +467,29 @@ export default function GoodTimesCommandApp() {
           <div><strong>{savedItems.length}</strong><span>Saved</span></div>
         </section>
 
-        <section className="gt2-section">
-          <div className="gt2-section-title"><div><span>RIGHT NOW</span><h2>{tonightEvents.length ? 'Tonight’s moves' : 'Next up'}</h2></div><button onClick={() => { setDateMode(tonightEvents.length ? 'today' : 'upcoming');setTab('dates') }}>See all ›</button></div>
+        <section className="gt2-section gt2-section-tonight">
+          <div className="gt2-section-title"><div><span>RIGHT NOW</span><h2>{tonightEvents.length ? 'Tonight’s moves' : 'Next up'}</h2></div><button onClick={() => openScreen('dates',{dateMode:tonightEvents.length?'today':'upcoming',category:'all'})}>See all tonight <span>›</span></button></div>
           <div className="gt2-horizontal">
             {(tonightEvents.length ? tonightEvents : events).slice(0,12).map(event => <EventCard compact key={event.event_key} event={event} saved={savedKeySet.has(`event:${event.event_key}`)} onOpen={() => openEvent(event)} onSave={() => toggleSave('event',event.event_key)}/>) }
           </div>
         </section>
 
-        <section className="gt2-section gt2-dark-section">
-          <div className="gt2-section-title"><div><span>NEXT SEVEN DAYS</span><h2>Worth leaving home for</h2></div><button onClick={() => { setDateMode('week');setTab('dates') }}>Open calendar ›</button></div>
+        {upcomingConcerts.length > 0 && <section className="gt2-section gt2-section-concerts">
+          <div className="gt2-section-title"><div><span>LIVE MUSIC</span><h2>Upcoming concerts</h2></div><button onClick={() => openScreen('dates',{dateMode:'upcoming',category:'concerts_live_music'})}>See all concerts <span>›</span></button></div>
+          <div className="gt2-horizontal">
+            {upcomingConcerts.map(event => <EventCard compact key={event.event_key} event={event} saved={savedKeySet.has(`event:${event.event_key}`)} onOpen={() => openEvent(event)} onSave={() => toggleSave('event',event.event_key)}/>) }
+          </div>
+        </section>}
+
+        <section className="gt2-section gt2-dark-section gt2-section-week">
+          <div className="gt2-section-title"><div><span>NEXT SEVEN DAYS</span><h2>Worth leaving home for</h2></div><button onClick={() => openScreen('dates',{dateMode:'week',category:'all'})}>Open calendar <span>›</span></button></div>
           <div className="gt2-event-grid">
             {nextSeven.slice(0,6).map(event => <EventCard key={event.event_key} event={event} saved={savedKeySet.has(`event:${event.event_key}`)} onOpen={() => openEvent(event)} onSave={() => toggleSave('event',event.event_key)}/>) }
           </div>
         </section>
 
-        <section className="gt2-section">
-          <div className="gt2-section-title"><div><span>CULTURE LAYER</span><h2>Places that matter</h2></div><button onClick={() => setTab('explore')}>Explore city ›</button></div>
+        <section className="gt2-section gt2-section-places">
+          <div className="gt2-section-title"><div><span>CULTURE LAYER</span><h2>Places that matter</h2></div><button onClick={() => openScreen('explore')}>Explore places <span>›</span></button></div>
           <div className="gt2-horizontal">
             {(cultureVenues.length ? cultureVenues : venues).slice(0,12).map(venue => <VenueCard compact key={venue.id} venue={venue} saved={savedKeySet.has(`venue:${venue.id}`)} onOpen={() => openVenue(venue)} onSave={() => toggleSave('venue',venue.id)}/>) }
           </div>
@@ -510,7 +554,7 @@ export default function GoodTimesCommandApp() {
       </section>}
     </main>
 
-    <nav className="gt2-nav" aria-label="GOOD TIMES navigation">{TAB_CONFIG.map(([id,mark,label]) => <button key={id} className={tab===id?'active':''} onClick={() => { setTab(id);setQuery('');window.scrollTo({top:0,behavior:'instant'}) }}><span>{mark}</span><small>{label}</small></button>)}</nav>
+    <nav className="gt2-nav" aria-label="GOOD TIMES navigation">{TAB_CONFIG.map(([id,mark,label]) => <button key={id} className={tab===id?'active':''} onClick={() => openScreen(id)}><span>{mark}</span><small>{label}</small></button>)}</nav>
     {selectedEvent && <EventSheet event={selectedEvent} saved={savedKeySet.has(`event:${selectedEvent.event_key}`)} onClose={() => setSelectedEvent(null)} onSave={() => toggleSave('event',selectedEvent.event_key)} onConcierge={() => planAroundEvent(selectedEvent)}/>} 
     {selectedVenue && <VenueSheet venue={selectedVenue} saved={savedKeySet.has(`venue:${selectedVenue.id}`)} onClose={() => setSelectedVenue(null)} onSave={() => toggleSave('venue',selectedVenue.id)} onConcierge={() => planAroundVenue(selectedVenue)}/>} 
     {toast && <div className="gt2-toast">{toast}</div>}

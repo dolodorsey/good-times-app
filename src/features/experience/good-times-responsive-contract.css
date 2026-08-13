@@ -51,6 +51,23 @@
   background:linear-gradient(90deg,rgba(8,8,13,.18),rgba(8,8,13,.78)),var(--gt-current-home) center/cover!important;
 }
 
+/* Home discovery controls: readable actions, intentional section changes and
+   an in-flow search surface that cannot pin itself over the event grid. */
+.gt2-search{position:relative!important;top:auto!important}
+.gt2-section-title>button{min-height:42px!important;padding:0 14px!important;border:1px solid rgba(241,213,154,.28)!important;border-radius:999px!important;background:rgba(241,213,154,.09)!important;color:#f1d59a!important;font-weight:800!important;white-space:nowrap!important}
+.gt2-section-title>button span{margin-left:4px;font-size:14px}
+.gt2-section-tonight{border-top:1px solid rgba(255,112,133,.24);background:radial-gradient(circle at 8% 0%,rgba(255,93,119,.13),transparent 36%)}
+.gt2-section-tonight .gt2-section-title>div>span{color:#ff9dae!important}
+.gt2-section-concerts{margin-top:12px;border-top:1px solid rgba(155,117,255,.28);background:radial-gradient(circle at 92% 0%,rgba(126,80,255,.19),transparent 38%)}
+.gt2-section-concerts .gt2-section-title>div>span{color:#cbbaff!important}
+.gt2-section-week{border-top:1px solid rgba(90,184,212,.25);background:radial-gradient(circle at 10% 0%,rgba(58,156,190,.13),transparent 36%)!important}
+.gt2-section-week .gt2-section-title>div>span{color:#9ddbec!important}
+.gt2-section-places{margin-top:12px;padding-top:38px;border-top:1px solid rgba(241,213,154,.31);background:radial-gradient(circle at 88% 0%,rgba(213,180,111,.17),transparent 38%)}
+.gt2-section-places .gt2-venue-card.compact{border-color:rgba(241,213,154,.3)}
+.gt2-hero-controls{position:absolute;z-index:14;left:21px;bottom:17px;display:flex;gap:7px}
+.gt2-hero-controls button{width:8px;height:8px;padding:0;border:0;border-radius:99px;background:rgba(255,255,255,.4);transition:width .2s ease,background .2s ease}
+.gt2-hero-controls button.active{width:26px;background:#f1d59a}
+
 @media(prefers-reduced-motion:reduce){
   .gt-premium-experience:has(.gt2-nav button:nth-child(1).active) .gt2-hero{
     background-image:linear-gradient(90deg,rgba(4,4,8,.84) 0%,rgba(4,4,8,.48) 48%,rgba(4,4,8,.16) 100%),var(--gt-current-home)!important;
@@ -69,6 +86,12 @@
     max-width:480px!important;
     min-height:79px!important;
     z-index:9300!important;
+    display:grid!important;
+    visibility:visible!important;
+    opacity:1!important;
+    padding-bottom:calc(9px + env(safe-area-inset-bottom,0px))!important;
+    background:rgba(6,6,11,.98)!important;
+    box-shadow:0 -20px 48px rgba(0,0,0,.68)!important;
   }
 
   /* Original desktop utility launchers remain in the DOM as programmatic action
@@ -79,7 +102,7 @@
     display:none!important;
   }
 
-  .gt2-content{padding-bottom:104px!important}
+  .gt2-content{padding-bottom:calc(104px + env(safe-area-inset-bottom,0px))!important}
   .gt-premium-experience:has(.gt2-nav button:nth-child(3).active) .gt2-content{padding-bottom:92px!important}
 }
 
