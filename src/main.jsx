@@ -16,6 +16,7 @@ import './features/experience/good-times-shell.css'
 import './features/experience/good-times-rich.css'
 // Final viewport contract owns fixed-control placement and safe-area spacing.
 import './features/experience/good-times-responsive-contract.css'
+import './features/experience/good-times-reference-update.css'
 import GoodTimesShellControl from './features/experience/GoodTimesShellControl.jsx'
 import BuildMyNightRouteHost from './features/experience/BuildMyNightRouteHost.jsx'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
