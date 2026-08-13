@@ -44,6 +44,12 @@
 .gt2-explore-browser .gt2-category-grid>button{min-height:250px!important}
 .gt2-explore-browser .gt2-venue-grid .gt2-venue-image{height:220px!important}
 
+/* Non-grid compatibility fallback. Modern supported browsers stay on the
+   responsive two-/three-column catalog below. */
+@supports not (display:grid){
+  .gt2-explore-browser .gt2-category-grid,.gt2-explore-browser .gt2-venue-grid{grid-template-columns:1fr!important}
+}
+
 /* Build My Night follows the supplied guided-screen hierarchy: cinematic
    introduction, clear four-step rail, then large visual choices. */
 .gt2-concierge-hero{min-height:500px!important;border-bottom:1px solid rgba(239,189,85,.34)!important}
