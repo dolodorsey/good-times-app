@@ -43,6 +43,7 @@ const MIN_TARGET = 44;
 const TABS = ['Now', 'Dates', 'Build My Night', 'Plans', 'Explore', 'Vault'];
 const VIEWPORTS = [
   { name: 'mobile', width: 390, height: 844, scale: 2, mobile: true },
+  { name: 'tablet', width: 820, height: 1180, scale: 1, mobile: true },
   { name: 'desktop', width: 1440, height: 900, scale: 1, mobile: false },
 ];
 
@@ -204,6 +205,10 @@ function inspect() {
     undersized: undersized.slice(0, 12),
     brokenImages: [...new Set(brokenImages)].slice(0, 8),
     navBelowFold: nav ? nav.y >= window.innerHeight : null,
+    navHeight: nav ? nav.bottom - nav.y : null,
+    eventGridColumns: document.querySelector('.gt2-event-grid,.gt2-venue-grid,.gt2-category-grid')
+      ? getComputedStyle(document.querySelector('.gt2-event-grid,.gt2-venue-grid,.gt2-category-grid')).gridTemplateColumns.split(' ').length
+      : null,
     chromeOverlap,
   };
 }
@@ -264,11 +269,38 @@ for (const viewport of VIEWPORTS) {
     if (result.textLength < 120) fail(screen, 'empty-screen', `only ${result.textLength} characters rendered`);
     if (result.overflowX > 2) fail(screen, 'horizontal-overflow', `${result.overflowX}px wider than the viewport`);
     if (result.navBelowFold) fail(screen, 'nav-below-fold', 'primary navigation laid out past the bottom of the viewport');
+    if (result.navHeight > 92) fail(screen, 'oversized-navigation', `${Math.round(result.navHeight)}px tall (maximum 92px)`);
+    if (viewport.name === 'tablet' && ['Dates','Explore'].includes(tab) && result.eventGridColumns && result.eventGridColumns !== 3) {
+      fail(screen, 'tablet-grid-density', `${result.eventGridColumns} columns rendered; expected 3`);
+    }
     if (result.chromeOverlap.length) fail(screen, 'chrome-overlaps-content', result.chromeOverlap.join(', '));
     if (result.clipped.length) fail(screen, 'clipped-element', result.clipped.map((c) => `${c.tag}.${c.cls}`).join('; '));
     if (result.brokenImages.length) fail(screen, 'broken-image', result.brokenImages.join('; '));
     if (viewport.mobile && result.undersized.length) {
       fail(screen, 'touch-target', result.undersized.map((t) => `"${t.label}" ${t.w}x${t.h} (min ${MIN_TARGET})`).join('; '));
+    }
+  }
+
+  if (viewport.name === 'mobile') {
+    const explore = page.locator('button[data-gt-tab="explore"]');
+    await explore.click({ force: true });
+    await page.waitForTimeout(1_000);
+    const firstCategory = page.locator('[data-gt-category]').first();
+    if (await firstCategory.count()) {
+      await firstCategory.click({ force: true });
+      await page.waitForTimeout(1_000);
+      const stage = await page.locator('[data-gt-explore-stage]').getAttribute('data-gt-explore-stage');
+      const earlyEntries = await page.locator('.gt2-venue-grid').count();
+      await capture(page, { path: path.join(OUT, 'mobile-explore-subcategories.png'), fullPage: true });
+      if (stage !== 'subcategories' || earlyEntries) fail('mobile · Explore flow', 'subcategory-step', `stage=${stage}; venue grids before selection=${earlyEntries}`);
+      const firstSubcategory = page.locator('[data-gt-subcategories] button').nth(1);
+      if (await firstSubcategory.count()) {
+        await firstSubcategory.click({ force: true });
+        await page.waitForTimeout(2_000);
+        const nextStage = await page.locator('[data-gt-explore-stage]').getAttribute('data-gt-explore-stage');
+        await capture(page, { path: path.join(OUT, 'mobile-explore-directory.png'), fullPage: true });
+        if (nextStage !== 'directory') fail('mobile · Explore flow', 'directory-step', `stage=${nextStage}`);
+      }
     }
   }
 

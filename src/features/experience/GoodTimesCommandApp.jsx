@@ -54,7 +54,7 @@ const VENUE_LABELS = {
 const TAB_CONFIG = [
   ['home', '⌂', 'Now'],
   ['dates', '◫', 'Dates'],
-  ['concierge', '✦', 'Build Night'],
+  ['concierge', '✦', 'Build My Night'],
   ['plans', '≋', 'Plans'],
   ['explore', '◇', 'Explore'],
   ['vault', '▣', 'Vault'],
@@ -510,7 +510,7 @@ export default function GoodTimesCommandApp() {
       </section>}
     </main>
 
-    <nav className="gt2-nav" aria-label="GOOD TIMES navigation">{TAB_CONFIG.map(([id,mark,label]) => <button key={id} className={tab===id?'active':''} onClick={() => { setTab(id);setQuery('');window.scrollTo({top:0,behavior:'instant'}) }}><span>{mark}</span><small>{label}</small></button>)}</nav>
+    <nav className="gt2-nav" aria-label="GOOD TIMES navigation">{TAB_CONFIG.map(([id,mark,label]) => <button key={id} data-gt-tab={id} className={tab===id?'active':''} onClick={() => { setTab(id);setQuery('');document.querySelector('.gt2-content')?.scrollTo?.({top:0,behavior:'instant'}) }}><span>{mark}</span><small>{label}</small></button>)}</nav>
     {selectedEvent && <EventSheet event={selectedEvent} saved={savedKeySet.has(`event:${selectedEvent.event_key}`)} onClose={() => setSelectedEvent(null)} onSave={() => toggleSave('event',selectedEvent.event_key)} onConcierge={() => planAroundEvent(selectedEvent)}/>} 
     {selectedVenue && <VenueSheet venue={selectedVenue} saved={savedKeySet.has(`venue:${selectedVenue.id}`)} onClose={() => setSelectedVenue(null)} onSave={() => toggleSave('venue',selectedVenue.id)} onConcierge={() => planAroundVenue(selectedVenue)}/>} 
     {toast && <div className="gt2-toast">{toast}</div>}

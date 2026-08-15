@@ -81,3 +81,20 @@
   .gt2-explore-browser .gt2-venue-card{border-radius:14px!important}
   .gt2-builder-vibes.visual button{min-height:112px!important}
 }
+
+/* Final owner review: compact the customer shell and keep content above it.
+   This file loads last, so these declarations deliberately resolve older
+   illustrated-nav and 500px builder-hero rules without changing the brand. */
+@media (max-width:899px){
+  .gt2-explore-browser{padding-top:18px!important}
+  .gt2-concierge-screen>.gt2-concierge-hero{min-height:300px!important;height:auto!important}
+  .gt2-nav{height:62px!important;min-height:62px!important;padding:4px 6px env(safe-area-inset-bottom,0px)!important}
+  .gt2-nav button,.gt2-nav button:nth-child(3){height:54px!important;min-height:54px!important;border-radius:9px!important;background:transparent!important;box-shadow:none!important;transform:none!important}
+  .gt2-nav button.active{background:rgba(239,189,85,.07)!important}
+  .gt2-nav button.active:after{content:'';position:absolute;left:50%;bottom:2px;width:20px;height:2px;border-radius:99px;background:var(--gt-ref-gold);transform:translateX(-50%)}
+}
+@media (max-width:599px){
+  .gt2-explore-browser .gt2-category-grid,.gt2-explore-browser .gt2-venue-grid{grid-template-columns:1fr!important;gap:12px!important;padding:0 14px!important}
+  .gt2-explore-browser .gt2-category-grid>button{min-height:142px!important}
+  .gt2-explore-browser .gt2-venue-grid .gt2-venue-image{height:210px!important}
+}

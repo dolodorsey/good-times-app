@@ -5,9 +5,13 @@ const buttonText=element=>String(element?.textContent||'').replace(/\s+/g,' ').t
 
 export default function GoodTimesShellControl(){
   const[header,setHeader]=useState(null)
+  const[isHome,setIsHome]=useState(true)
 
   useEffect(()=>{
-    const sync=()=>setHeader(document.querySelector('.gt2-topbar'))
+    const sync=()=>{
+      setHeader(document.querySelector('.gt2-topbar'))
+      setIsHome(Boolean(document.querySelector('.gt2-nav button[data-gt-tab="home"].active')))
+    }
     sync()
     const observer=new MutationObserver(sync)
     observer.observe(document.body,{childList:true,subtree:true})
@@ -40,6 +44,6 @@ export default function GoodTimesShellControl(){
       .gt-shell-back span{font-size:19px;line-height:1;margin-top:-2px}
       @media(max-width:390px){.gt2-topbar{padding-left:10px!important;padding-right:10px!important}.gt-shell-back{min-width:42px;padding:0 7px;font-size:0}.gt-shell-back span{font-size:22px}.gt2-brand strong{font-size:13px}.gt2-brand small{display:none}.gt2-city{padding:0 9px!important}}
     `}</style>
-    {header?createPortal(<button type="button" className="gt-shell-back" onClick={goBack} aria-label="Go back"><span>‹</span>BACK</button>,header):null}
+    {header&&!isHome?createPortal(<button type="button" className="gt-shell-back" onClick={goBack} aria-label="Go back"><span>‹</span>BACK</button>,header):null}
   </>
 }
