@@ -45,6 +45,13 @@ export async function loadExploreTaxonomy(khgF) {
 
   if (!Array.isArray(categories) || !categories.length) return [];
 
+  // khgF resolves to [] for both "no rows" and "request failed", so an empty
+  // subcategory response is treated as a transport failure rather than as proof
+  // that every category is empty. Without this, one dropped request wiped the
+  // whole Explore catalog and the screen reported "0 categories and 0
+  // subcategories" as if that were the truth.
+  const subcategoriesLoaded = Array.isArray(subcategories) && subcategories.length > 0;
+
   const grouped = new Map();
   for (const subcategory of Array.isArray(subcategories) ? subcategories : []) {
     if (!grouped.has(subcategory.category_key)) grouped.set(subcategory.category_key, []);
@@ -66,7 +73,7 @@ export async function loadExploreTaxonomy(khgF) {
         subcategoryRows: rows,
       };
     })
-    .filter((category) => category.subs.length > 0);
+    .filter((category) => !subcategoriesLoaded || category.subs.length > 0);
 }
 
 export { CATEGORY_META };

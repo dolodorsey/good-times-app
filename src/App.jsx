@@ -99,7 +99,6 @@ function GTLoadingOverlay({message="Curating your experience..."}){
 if(typeof document!=="undefined"&&!document.getElementById("gt-bg-styles")){
   const s=document.createElement("style");s.id="gt-bg-styles";
   s.textContent=`
-    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&display=swap');
     @keyframes gtFadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
     @keyframes gtSlowZoom{0%{transform:scale(1)}100%{transform:scale(1.08)}}
     @keyframes gtPulse{0%,100%{opacity:0.4}50%{opacity:1}}
@@ -2402,7 +2401,6 @@ function GoodTimesApp({userSession,userPrefs,onSignOut}){
         @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
         @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
         @keyframes shimmer{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@300;400;500;600;700&display=swap');
       `}</style>
     </div>
   );

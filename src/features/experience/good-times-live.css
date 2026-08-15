@@ -1,4 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600;700;800&display=swap');
+/* Google Fonts are requested once, asynchronously, from index.html.
+   Do not @import them here: a bundled @import is render-blocking and makes the
+   whole app fail to mount when the font host is unreachable. */
 :root{--live-bg:#050509;--live-panel:#101017;--live-text:#fffaf4;--live-muted:#a5a0aa;--live-gold:#f5cc75;--live-violet:#a855f7;--live-coral:#ff4d6d;--live-line:rgba(255,255,255,.11)}
 html,body,#root{height:100%;margin:0;background:#050509;overflow:hidden}*{box-sizing:border-box}button,input,select{font:inherit}.gt-premium-experience{height:100%;min-height:0;overflow:hidden;background:radial-gradient(circle at 15% 0%,rgba(168,85,247,.15),transparent 30%),radial-gradient(circle at 90% 100%,rgba(255,77,109,.11),transparent 28%),#050509}.gt-premium-experience:before{content:'';position:fixed;inset:0;pointer-events:none;opacity:.08;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:42px 42px}
 .gtlive-app{height:100dvh;max-width:540px;margin:0 auto;display:flex;flex-direction:column;position:relative;overflow:hidden;background:linear-gradient(180deg,#06060b,#07070c);color:var(--live-text);font-family:'DM Sans',sans-serif;box-shadow:0 0 100px rgba(0,0,0,.65)}

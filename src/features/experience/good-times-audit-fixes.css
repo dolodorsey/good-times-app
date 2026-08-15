@@ -1,0 +1,229 @@
+/* GOOD TIMES — screen-audit geometry fixes (2026-08-15)
+   Produced from a full-app screenshot pass at 390x844 (iPhone) and 1440x900
+   (desktop). Every rule below is anchored to a measured defect, noted inline.
+   Kept in its own layer so the fixes stay reviewable and reversible. */
+
+/* ─────────────────────────────────────────────────────────────
+   1. TOUCH TARGETS
+   Measured: "See all ›" 29x9, "Open calendar ›" 57x9, "Explore city ›" 46x9,
+   "Save event" 39x39, "Go back" 42x39. Apple HIG and WCAG 2.1 AA both want
+   >=44x44. Section-title links were effectively un-tappable on a phone.
+   ───────────────────────────────────────────────────────────── */
+.gt2-section-title button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 6px 10px;
+  margin: -6px -10px -6px 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.gt2-save {
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+
+/* Date range tabs (113x39), Build My Night step pills (76x38), the builder's
+   Recommend / Build plan actions (179x39) and the empty-state primaries
+   (105x43, 131x43) all sat just under the threshold. */
+.gt2-date-tabs button,
+.gt2-builder-progress button,
+.gt2-builder-actions button,
+.gt2-composer button,
+.gt2-empty .gt2-primary,
+.gt2-primary {
+  min-height: 44px !important;
+}
+
+/* Category filter chips were 25px tall — the hardest control on the app to hit
+   and the one users touch most on Dates. */
+.gt2-filter-rail button {
+  min-height: 44px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+}
+
+.gt-shell-back {
+  min-width: 44px !important;
+  min-height: 44px !important;
+}
+
+.gt2-topbar .gt2-city,
+.gt2-topbar button.gt2-city {
+  height: auto !important;
+  min-height: 44px !important;
+}
+
+/* Search fields measured 310x18 inside a ~100px pill — the input box did not
+   fill its own container, so most of the visible field was dead to touch and
+   the caret sat off-centre. */
+.gt2-search input,
+.gt2-explore-browser input[type='search'],
+.gt2-explore-browser input[type='text'] {
+  min-height: 44px;
+  align-self: stretch;
+  width: 100%;
+  text-overflow: ellipsis;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   2. EVENT TITLES
+   Measured: hero h1 rendered 680x330 (5 lines) from an unclamped scraped
+   title. Titles now cap at 3 lines on the hero and 2 in cards.
+   ───────────────────────────────────────────────────────────── */
+.gt2-hero h1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.gt2-event-copy h3,
+.gt2-card h3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   3. DESKTOP (>=900px) — the mobile contract had no counterpart here, so the
+   desktop build shipped three real collisions. All three are measured.
+   ───────────────────────────────────────────────────────────── */
+@media (min-width: 900px) {
+  /* 3a. Primary navigation was position:relative and laid out at y=900 in a
+     900px viewport — the entire tab bar sat below the fold on load. Pin it. */
+  .gt-premium-experience > .gt2-app > .gt2-nav,
+  .gt-premium-experience .gt2-nav {
+    position: fixed !important;
+    left: 50% !important;
+    right: auto !important;
+    bottom: 0 !important;
+    top: auto !important;
+    transform: translateX(-50%) !important;
+    width: min(1360px, calc(100vw - 80px)) !important;
+    z-index: 9300 !important;
+  }
+
+  .gt-premium-experience .gt2-nav {
+    min-height: 72px !important;
+    align-items: center !important;
+  }
+
+  .gt2-content {
+    padding-bottom: 108px !important;
+  }
+
+  /* 3b. CONNECT / TICKETS / ACCOUNT are position:fixed at y=104-148 while
+     content starts at y=109 — they covered the "CURATED FOR ATLANTA" eyebrow
+     and the "120 UPCOMING EXPERIENCES" badge. Lift them into the empty middle
+     band of the 88px top bar, left of the city selector. */
+  .gt-premium-experience > .gt-connect-fab,
+  .gt-premium-experience > button[aria-label='Tickets and paid experiences'],
+  .gt-premium-experience > button[aria-label='Open GOOD TIMES account'] {
+    top: 43px !important;
+    bottom: auto !important;
+    left: auto !important;
+  }
+
+  .gt-premium-experience > button[aria-label='Open GOOD TIMES account'] {
+    right: 208px !important;
+  }
+
+  .gt-premium-experience > button[aria-label='Tickets and paid experiences'] {
+    right: 334px !important;
+  }
+
+  .gt-premium-experience > .gt-connect-fab {
+    right: 460px !important;
+  }
+
+  /* 3c. Party Board is fixed at x=986..1416, y=164..236 — straight through the
+     upcoming-experiences badge. Drop it into the empty right column of the hero,
+     clear of both the badge above it and the stats row below. */
+  .gt-premium-experience > .gt-party-pulse {
+    top: 300px !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: 28px !important;
+    width: min(430px, 34vw) !important;
+  }
+
+  /* Below ~1180px the three utility pills would start crowding the brand mark,
+     so drop to the compact single-orb treatment already built for mobile. */
+  @media (max-width: 1180px) {
+    .gt-premium-experience > .gt-connect-fab,
+    .gt-premium-experience > button[aria-label='Tickets and paid experiences'],
+    .gt-premium-experience > button[aria-label='Open GOOD TIMES account'] {
+      display: none !important;
+    }
+
+    .gt-premium-experience > .gt-mobile-utilities {
+      display: block !important;
+      position: fixed !important;
+      right: 168px !important;
+      top: 43px !important;
+      left: auto !important;
+      bottom: auto !important;
+      width: 44px !important;
+      height: 44px !important;
+      z-index: 9350 !important;
+      pointer-events: none !important;
+      background: transparent !important;
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   4. TOP DEAD SPACE
+   Measured on mobile: Build My Night pushed its first content ~900px down —
+   more than a full viewport of empty black before anything readable. Plans and
+   Explore lost roughly 230px the same way. Cap the reserved hero space so a
+   tab always opens with content in view.
+   ───────────────────────────────────────────────────────────── */
+@media (max-width: 899px) {
+  .gt2-concierge-screen > :first-child,
+  .gt2-screen > .gt2-screen-intro {
+    padding-top: 0 !important;
+  }
+
+  /* good-times-reference-update.css pins this hero to min-height:500px, which on
+     a 390x844 phone pushed the first readable line to y=451 — the screen opened
+     on roughly a full viewport of empty black. Higher specificity so this wins
+     over the several !important rules that stack on the bare class. */
+  .gt2-concierge-screen > .gt2-concierge-hero,
+  .gt2-screen > .gt2-screen-hero {
+    min-height: min(42vh, 330px) !important;
+    padding-top: 18px !important;
+  }
+
+  .gt2-screen,
+  .gt2-concierge-screen {
+    padding-top: 12px !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   5. DECORATIVE LAYER
+   The cinematic art/video layer intentionally bleeds past the viewport. Make
+   that explicit so it is never mistaken for a layout overflow and can never
+   generate a horizontal scrollbar.
+   ───────────────────────────────────────────────────────────── */
+.gt-rich-visuals,
+.gt-rich-visuals .gt-rich-video,
+.gt-rich-visuals .gt-rich-art {
+  pointer-events: none;
+}
+
+.gt-premium-experience {
+  overflow-x: clip;
+}

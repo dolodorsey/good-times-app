@@ -130,7 +130,11 @@ export default function ExploreTaxonomyBrowser({
     <div className="gt2-screen-heading">
       <span>EXPLORE</span>
       <h1>{activeCategory ? activeCategory.name : 'Know the city.'}</h1>
-      <p>{activeCategory ? `${activeTotal} verified places in ${cityName}.` : `${categoryRows.length} categories and ${totalSubcategories} subcategories.`}</p>
+      <p>{activeCategory
+        ? `${activeTotal} verified places in ${cityName}.`
+        : categoryRows.length
+          ? `${categoryRows.length} categories and ${totalSubcategories} subcategories.`
+          : 'Catalog unavailable right now — check your connection and pull to refresh.'}</p>
     </div>
 
     <div className="gt2-search">
