@@ -107,7 +107,10 @@
     position: fixed !important;
     left: 50% !important;
     right: auto !important;
-    bottom: 0 !important;
+    /* Offset by the shell inset — see the note below on #root being the
+       containing block. Set here, in the highest-specificity nav rule, so it
+       cannot be outranked by a longer selector in this same file. */
+    bottom: var(--gt-desktop-shell-inset, 0px) !important;
     top: auto !important;
     transform: translateX(-50%) !important;
     width: min(1360px, calc(100vw - 80px)) !important;
@@ -117,6 +120,16 @@
   .gt-premium-experience .gt2-nav {
     min-height: 72px !important;
     align-items: center !important;
+  }
+
+  /* index.html gives #root `transform: translateZ(0)`, which makes #root — not
+     the viewport — the containing block for every position:fixed child. With the
+     desktop shell inset, #root measures 920px in a 900px viewport, so a nav at
+     `bottom: 0` docked 20px BELOW the fold. Both values now come from one
+     custom property, so the inset and the nav offset cannot drift apart. */
+  .gt-premium-experience {
+    --gt-desktop-shell-inset: 20px;
+    padding-top: var(--gt-desktop-shell-inset) !important;
   }
 
   .gt2-content {
