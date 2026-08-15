@@ -42,6 +42,8 @@ const LazyPartyPulse = lazy(() => import('./features/experience/GoodTimesPartyPu
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
 const directRoutes = { '/join':'join','/concierge-request':'concierge-request','/trip':'trip','/group':'group' }
+const PROVIDER_ONBOARDING_URL='https://forms.thekollectivehospitality.com/f/good-times/provider-onboarding'
+const providerRoutes=new Set(['/provider','/provider-onboarding','/become-a-provider'])
 const HOSTED_API_ORIGIN='https://thegoodtimesworldwide.com'
 const GT_CURRENT_MEDIA_BASE='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics'
 const GT_CURRENT_LOGO=`${GT_CURRENT_MEDIA_BASE}/good_times/graphics/GOOD_TIMES_logo.png`
@@ -108,10 +110,17 @@ function PremiumRoot({children,launch=false}){
   if(showLaunch)return <div className="gt-launch" role="status" aria-label="Opening GOOD TIMES"><video className="gt-current-launch-video" autoPlay muted loop playsInline preload="metadata" poster={GT_CURRENT_HOME} src={GT_CURRENT_ANIMATION}/><div className="gt-launch__scene"/><div className="gt-launch__content"><img className="gt-launch__logo" src={GT_CURRENT_LOGO} alt="GOOD TIMES"/><div className="gt-launch__eyebrow">Worldwide experience concierge</div><div className="gt-launch__title">Your next move starts here.</div><div className="gt-launch__line"/></div></div>
   return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}</div>
 }
+function ProviderOpportunityLink(){
+  return <a href="/provider" style={{position:'fixed',left:'50%',bottom:'max(16px,env(safe-area-inset-bottom))',transform:'translateX(-50%)',zIndex:80,padding:'10px 16px',borderRadius:999,border:'1px solid rgba(212,168,83,.45)',background:'rgba(6,6,12,.86)',backdropFilter:'blur(14px)',color:'#D4A853',fontSize:11,fontWeight:800,letterSpacing:'.08em',textTransform:'uppercase',textDecoration:'none',whiteSpace:'nowrap'}}>Work with GOOD TIMES · Provider onboarding ↗</a>
+}
 
 async function bootstrap(){
   const rootElement=document.getElementById('root')
   if(!rootElement)throw new Error('GOOD TIMES root element is missing')
+  if(providerRoutes.has(pathname)){
+    window.location.replace(PROVIDER_ONBOARDING_URL)
+    return
+  }
   const recoverySession=parseRecoverySession(window.location.hash)
   const requestType=directRoutes[pathname]
   const legacyRoute=pathname==='/legacy'
@@ -132,6 +141,7 @@ async function bootstrap(){
 
   const showMemberTools=hasSession&&!requestType&&!recoverySession&&!legacyRoute&&!commandRoute
   const showShellControl=hasSession&&!requestType&&!recoverySession&&!legacyRoute
+  const showProviderOpportunity=!hasSession&&!requestType&&!recoverySession
   ReactDOM.createRoot(rootElement).render(
     <RuntimeBoundary>
       <Suspense fallback={<RouteLoading label={loadingLabel}/> }>
@@ -139,6 +149,7 @@ async function bootstrap(){
           {isNative?<LazyNativeBridge/>:null}
           {showMemberTools?<><LazyCompletionBridge/><LazyAccountCenter/><LazyUtilityMenu/><BuildMyNightRouteHost/></>:null}
           {route}
+          {showProviderOpportunity?<ProviderOpportunityLink/>:null}
           {showShellControl?<GoodTimesShellControl/>:null}
           {showMemberTools?<><LazyConnectHub/><LazyPaymentsLauncher/></>:null}
         </PremiumRoot>
