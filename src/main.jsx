@@ -17,6 +17,9 @@ import './features/experience/good-times-rich.css'
 // Final viewport contract owns fixed-control placement and safe-area spacing.
 import './features/experience/good-times-responsive-contract.css'
 import './features/experience/good-times-reference-update.css'
+// App Review-specific device geometry loads last so older phone-shell rules
+// cannot re-narrow the iPad or guest experience.
+import './features/experience/good-times-app-review.css'
 import GoodTimesShellControl from './features/experience/GoodTimesShellControl.jsx'
 import BuildMyNightRouteHost from './features/experience/BuildMyNightRouteHost.jsx'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
@@ -148,7 +151,7 @@ function SignedOutGuestExperience(){
   if(showAuth)return <>
     <LazyOnboarding onComplete={complete}/>
     <button type="button" className="gt-guest-back" onClick={()=>setShowAuth(false)}>← Continue as guest</button>
-    <style>{`.gt-guest-back{position:fixed;left:14px;top:calc(14px + env(safe-area-inset-top,0px));z-index:9700;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid rgba(245,204,117,.34);background:rgba(7,7,12,.92);color:#f5cc75;font:800 10px/1 'DM Sans',system-ui,sans-serif;letter-spacing:.05em}`}</style>
+    <style>{`.gt-guest-back{position:fixed;left:14px;top:calc(14px + env(safe-area-inset-top,0px));zIndex:9700;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid rgba(245,204,117,.34);background:rgba(7,7,12,.92);color:#f5cc75;font:800 10px/1 'DM Sans',system-ui,sans-serif;letter-spacing:.05em}`}</style>
   </>
   return <div className="gt-guest-mode">
     <LazyCreativeLayer/>
