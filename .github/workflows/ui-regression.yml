@@ -72,6 +72,13 @@ jobs:
           GT_UI_ARTIFACTS: ui-artifacts
         run: node --test scripts/ui-geometry.test.mjs scripts/app-review-ipad-rendered.test.mjs scripts/ui-interaction.test.mjs scripts/ui-creative-assets.test.mjs scripts/ui-mobile-utilities.test.mjs scripts/ui-font-resilience.test.mjs
 
+      - name: Capture App Store-ready screenshots
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: node scripts/app-store-screenshot-capture.mjs
+
       - name: Upload rendered screenshots
         if: always()
         uses: actions/upload-artifact@v4
