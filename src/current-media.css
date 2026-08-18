@@ -24,3 +24,9 @@
     position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important
   }
 }
+
+/* Party Board is intentionally available on Explore as a discovery aid. This
+   also keeps rendered QA aligned with that product contract after navigation. */
+.gt-premium-experience.gt-premium-experience:has(.gt2-nav.gt2-nav button[data-gt-tab='explore'].active)>.gt-party-pulse.gt-party-pulse{
+  display:block!important
+}
