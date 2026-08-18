@@ -1,6 +1,11 @@
 name: GOOD TIMES App Store Review Remediation
 
 on:
+  pull_request:
+    paths:
+      - '.github/workflows/ios-app-review-remediation.yml'
+      - 'scripts/app-store-review-remediation.py'
+      - 'scripts/app-store-screenshot-capture.mjs'
   push:
     branches: [main]
     paths:
@@ -13,11 +18,30 @@ permissions:
   id-token: write
 
 concurrency:
-  group: good-times-app-store-remediation
+  group: good-times-app-store-remediation-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Validate remediation source
+        run: |
+          python3 -m py_compile scripts/app-store-review-remediation.py
+          node --check scripts/app-store-screenshot-capture.mjs
+      - name: Install locked dependencies
+        run: npm ci --include=dev
+      - name: Build current GOOD TIMES customer app
+        run: npm run build
+
   remediate:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
@@ -32,6 +56,11 @@ jobs:
         with:
           node-version: 24
           cache: npm
+
+      - name: Validate remediation source
+        run: |
+          python3 -m py_compile scripts/app-store-review-remediation.py
+          node --check scripts/app-store-screenshot-capture.mjs
 
       - name: Install locked dependencies
         run: npm ci --include=dev
