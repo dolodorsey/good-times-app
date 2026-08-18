@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Install App Store Connect client
         run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
-      - name: Read current GOOD TIMES App Store state
+      - name: Deep-read current GOOD TIMES App Store state
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
@@ -31,48 +31,55 @@ jobs:
           BASE='https://api.appstoreconnect.apple.com/v1'; BUNDLE='com.kollective.goodtimes'; VERSION='1.1.0'; LOCALE='en-US'
           token=jwt.encode({'iss':os.environ['ASC_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},os.environ['ASC_PRIVATE_KEY'],algorithm='ES256',headers={'kid':os.environ['ASC_KEY_ID'],'typ':'JWT'})
           H={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
-          def get(path,params=None):
+          def get(path,params=None,allow_404=False):
               r=requests.get(BASE+path,headers=H,params=params,timeout=45)
+              if allow_404 and r.status_code==404: return None
               if not r.ok: raise SystemExit(f'GET {path} HTTP {r.status_code}: {r.text[:4000]}')
               return r.json()
           apps=get('/apps',{'filter[bundleId]':BUNDLE,'limit':'10'})['data']; exact=[a for a in apps if a.get('attributes',{}).get('bundleId')==BUNDLE]
           if len(exact)!=1: raise SystemExit(f'Expected one app, got {len(exact)}')
-          app=exact[0]; app_id=app['id']
+          app=exact[0]; app_id=app['id']; aa=app.get('attributes',{})
           versions=get(f'/apps/{app_id}/appStoreVersions',{'limit':'200'})['data']; matches=[v for v in versions if v.get('attributes',{}).get('platform')=='IOS' and v.get('attributes',{}).get('versionString')==VERSION]
           if len(matches)!=1: raise SystemExit(f'Expected one iOS {VERSION}, got {len(matches)}')
           version=matches[0]; vid=version['id']; va=version.get('attributes',{})
-          locs=get(f'/appStoreVersions/{vid}/appStoreVersionLocalizations',{'filter[locale]':LOCALE,'limit':'50'})['data']; loc=locs[0] if len(locs)==1 else None
-          support=loc.get('attributes',{}).get('supportUrl') if loc else None
-          screenshot_counts={}
-          if loc:
-              sets=get(f'/appStoreVersionLocalizations/{loc["id"]}/appScreenshotSets',{'limit':'200'})['data']
+          vlocs=get(f'/appStoreVersions/{vid}/appStoreVersionLocalizations',{'limit':'200'})['data']; vloc=next((l for l in vlocs if l.get('attributes',{}).get('locale')==LOCALE),None)
+          screenshot_sets=[]
+          if vloc:
+              sets=get(f'/appStoreVersionLocalizations/{vloc["id"]}/appScreenshotSets',{'limit':'200'})['data']
               for s in sets:
-                  dtype=s.get('attributes',{}).get('screenshotDisplayType')
-                  if dtype in {'APP_IPHONE_67','APP_IPAD_PRO_3GEN_129'}:
-                      shots=get(f'/appScreenshotSets/{s["id"]}/appScreenshots',{'limit':'200'})['data']
-                      screenshot_counts[dtype]=len(shots)
+                  shots=get(f'/appScreenshotSets/{s["id"]}/appScreenshots',{'limit':'200'})['data']
+                  screenshot_sets.append({'id':s['id'],'displayType':s.get('attributes',{}).get('screenshotDisplayType'),'count':len(shots),'deliveryStates':[x.get('attributes',{}).get('assetDeliveryState',{}).get('state') for x in shots]})
           review=get(f'/appStoreVersions/{vid}/appStoreReviewDetail')['data']; ra=review.get('attributes',{})
-          build_rel=get(f'/appStoreVersions/{vid}/relationships/build')['data']
-          attached=None
+          build_rel=get(f'/appStoreVersions/{vid}/relationships/build')['data']; attached=None
           if build_rel:
-              b=get(f'/builds/{build_rel["id"]}')['data']; ba=b.get('attributes',{}); attached={'id':b['id'],'number':ba.get('version'),'uploadedDate':ba.get('uploadedDate'),'processingState':ba.get('processingState'),'audience':ba.get('buildAudienceType')}
-          builds=get(f'/apps/{app_id}/builds',{'limit':'200'})['data']
-          latest=[]
-          for b in sorted(builds,key=lambda x:x.get('attributes',{}).get('uploadedDate') or '',reverse=True)[:10]:
-              a=b.get('attributes',{}); latest.append({'id':b['id'],'number':a.get('version'),'uploadedDate':a.get('uploadedDate'),'processingState':a.get('processingState'),'audience':a.get('buildAudienceType')})
-          subs=get(f'/apps/{app_id}/reviewSubmissions',{'limit':'200'})['data']; sub_states=[{'id':s['id'],'state':s.get('attributes',{}).get('state')} for s in subs]
+              b=get(f'/builds/{build_rel["id"]}')['data']; ba=b.get('attributes',{})
+              enc_rel=get(f'/builds/{b["id"]}/relationships/appEncryptionDeclaration',allow_404=True)
+              attached={'id':b['id'],'number':ba.get('version'),'uploadedDate':ba.get('uploadedDate'),'processingState':ba.get('processingState'),'audience':ba.get('buildAudienceType'),'usesNonExemptEncryption':ba.get('usesNonExemptEncryption'),'hasEncryptionDeclaration':bool(enc_rel and enc_rel.get('data'))}
+          infos=get(f'/apps/{app_id}/appInfos',{'limit':'200'})['data']; info_rows=[]
+          for info in infos:
+              ia=info.get('attributes',{}); age=get(f'/appInfos/{info["id"]}/ageRatingDeclaration',allow_404=True)
+              ilocs=get(f'/appInfos/{info["id"]}/appInfoLocalizations',{'limit':'200'})['data']
+              info_rows.append({'id':info['id'],'state':ia.get('appStoreState') or ia.get('state'),'locales':[x.get('attributes',{}).get('locale') for x in ilocs],'ageRating':age.get('data',{}).get('attributes',{}) if age else None})
+          declarations=get(f'/apps/{app_id}/appEncryptionDeclarations',{'limit':'200'},allow_404=True)
+          enc=[{'id':d['id'],**d.get('attributes',{})} for d in (declarations.get('data',[]) if declarations else [])]
+          subs=get(f'/apps/{app_id}/reviewSubmissions',{'limit':'200'})['data']; sub_states=[]
+          for s in subs:
+              items=get(f'/reviewSubmissions/{s["id"]}/items',{'limit':'200'})['data']
+              sub_states.append({'id':s['id'],'state':s.get('attributes',{}).get('state'),'itemCount':len(items),'items':[{'id':i['id'],'state':i.get('attributes',{}).get('state'),'relationships':i.get('relationships',{})} for i in items]})
+          legacy=get(f'/appStoreVersions/{vid}/appStoreVersionSubmission',allow_404=True)
           out={
-            'appId':app_id,'versionId':vid,'versionState':va.get('appVersionState') or va.get('appStoreState'),
-            'supportUrl':support,'demoAccountRequired':ra.get('demoAccountRequired'),'demoAccountName':ra.get('demoAccountName'),'demoPasswordPresent':bool(ra.get('demoAccountPassword')),
-            'screenshotCounts':screenshot_counts,'attachedBuild':attached,'latestBuilds':latest,'reviewSubmissions':sub_states
+            'appId':app_id,'appName':aa.get('name'),'contentRightsDeclaration':aa.get('contentRightsDeclaration'),'isOrEverWasMadeForKids':aa.get('isOrEverWasMadeForKids'),
+            'versionId':vid,'versionAttributes':va,'versionLocales':[x.get('attributes',{}) for x in vlocs],
+            'screenshotSets':screenshot_sets,
+            'reviewDetail':{'demoAccountRequired':ra.get('demoAccountRequired'),'demoAccountName':ra.get('demoAccountName'),'demoPasswordPresent':bool(ra.get('demoAccountPassword')),'contactFirstNamePresent':bool(ra.get('contactFirstName')),'contactLastNamePresent':bool(ra.get('contactLastName')),'contactPhonePresent':bool(ra.get('contactPhone')),'contactEmailPresent':bool(ra.get('contactEmail')),'notesPresent':bool(ra.get('notes'))},
+            'attachedBuild':attached,'appInfos':info_rows,'appEncryptionDeclarations':enc,'reviewSubmissions':sub_states,'legacyVersionSubmission':legacy.get('data') if legacy else None
           }
-          Path('/tmp/app-store-progress.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
-          print(json.dumps(out,indent=2))
+          Path('/tmp/app-store-progress.json').write_text(json.dumps(out,indent=2),encoding='utf-8'); print(json.dumps(out,indent=2))
           PY
-      - name: Post probe to issue 69
+      - name: Post deep probe to issue 69
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           BODY=$(cat /tmp/app-store-progress.json)
-          jq -n --arg body "## App Store progress probe\n\n\`\`\`json\n${BODY}\n\`\`\`" '{body:$body}' > /tmp/comment.json
+          jq -n --arg body "## Deep App Store readiness probe\n\n\`\`\`json\n${BODY}\n\`\`\`" '{body:$body}' > /tmp/comment.json
           curl --fail --silent --show-error -X POST -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' --data-binary @/tmp/comment.json "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
