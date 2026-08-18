@@ -1,0 +1,78 @@
+name: GOOD TIMES App Store Progress Probe
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios-app-store-progress-probe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Install App Store Connect client
+        run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+      - name: Read current GOOD TIMES App Store state
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time
+          from pathlib import Path
+          import jwt, requests
+          BASE='https://api.appstoreconnect.apple.com/v1'; BUNDLE='com.kollective.goodtimes'; VERSION='1.1.0'; LOCALE='en-US'
+          token=jwt.encode({'iss':os.environ['ASC_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},os.environ['ASC_PRIVATE_KEY'],algorithm='ES256',headers={'kid':os.environ['ASC_KEY_ID'],'typ':'JWT'})
+          H={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
+          def get(path,params=None):
+              r=requests.get(BASE+path,headers=H,params=params,timeout=45)
+              if not r.ok: raise SystemExit(f'GET {path} HTTP {r.status_code}: {r.text[:4000]}')
+              return r.json()
+          apps=get('/apps',{'filter[bundleId]':BUNDLE,'limit':'10'})['data']; exact=[a for a in apps if a.get('attributes',{}).get('bundleId')==BUNDLE]
+          if len(exact)!=1: raise SystemExit(f'Expected one app, got {len(exact)}')
+          app=exact[0]; app_id=app['id']
+          versions=get(f'/apps/{app_id}/appStoreVersions',{'limit':'200'})['data']; matches=[v for v in versions if v.get('attributes',{}).get('platform')=='IOS' and v.get('attributes',{}).get('versionString')==VERSION]
+          if len(matches)!=1: raise SystemExit(f'Expected one iOS {VERSION}, got {len(matches)}')
+          version=matches[0]; vid=version['id']; va=version.get('attributes',{})
+          locs=get(f'/appStoreVersions/{vid}/appStoreVersionLocalizations',{'filter[locale]':LOCALE,'limit':'50'})['data']; loc=locs[0] if len(locs)==1 else None
+          support=loc.get('attributes',{}).get('supportUrl') if loc else None
+          screenshot_counts={}
+          if loc:
+              sets=get(f'/appStoreVersionLocalizations/{loc["id"]}/appScreenshotSets',{'limit':'200'})['data']
+              for s in sets:
+                  dtype=s.get('attributes',{}).get('screenshotDisplayType')
+                  if dtype in {'APP_IPHONE_67','APP_IPAD_PRO_3GEN_129'}:
+                      shots=get(f'/appScreenshotSets/{s["id"]}/appScreenshots',{'limit':'200'})['data']
+                      screenshot_counts[dtype]=len(shots)
+          review=get(f'/appStoreVersions/{vid}/appStoreReviewDetail')['data']; ra=review.get('attributes',{})
+          build_rel=get(f'/appStoreVersions/{vid}/relationships/build')['data']
+          attached=None
+          if build_rel:
+              b=get(f'/builds/{build_rel["id"]}')['data']; ba=b.get('attributes',{}); attached={'id':b['id'],'number':ba.get('version'),'uploadedDate':ba.get('uploadedDate'),'processingState':ba.get('processingState'),'audience':ba.get('buildAudienceType')}
+          builds=get(f'/apps/{app_id}/builds',{'limit':'200'})['data']
+          latest=[]
+          for b in sorted(builds,key=lambda x:x.get('attributes',{}).get('uploadedDate') or '',reverse=True)[:10]:
+              a=b.get('attributes',{}); latest.append({'id':b['id'],'number':a.get('version'),'uploadedDate':a.get('uploadedDate'),'processingState':a.get('processingState'),'audience':a.get('buildAudienceType')})
+          subs=get(f'/apps/{app_id}/reviewSubmissions',{'limit':'200'})['data']; sub_states=[{'id':s['id'],'state':s.get('attributes',{}).get('state')} for s in subs]
+          out={
+            'appId':app_id,'versionId':vid,'versionState':va.get('appVersionState') or va.get('appStoreState'),
+            'supportUrl':support,'demoAccountRequired':ra.get('demoAccountRequired'),'demoAccountName':ra.get('demoAccountName'),'demoPasswordPresent':bool(ra.get('demoAccountPassword')),
+            'screenshotCounts':screenshot_counts,'attachedBuild':attached,'latestBuilds':latest,'reviewSubmissions':sub_states
+          }
+          Path('/tmp/app-store-progress.json').write_text(json.dumps(out,indent=2),encoding='utf-8')
+          print(json.dumps(out,indent=2))
+          PY
+      - name: Post probe to issue 69
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          BODY=$(cat /tmp/app-store-progress.json)
+          jq -n --arg body "## App Store progress probe\n\n\`\`\`json\n${BODY}\n\`\`\`" '{body:$body}' > /tmp/comment.json
+          curl --fail --silent --show-error -X POST -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' --data-binary @/tmp/comment.json "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
