@@ -114,6 +114,50 @@ function ProviderOpportunityLink(){
   return <a href="/provider" style={{position:'fixed',left:'50%',bottom:'max(16px,env(safe-area-inset-bottom))',transform:'translateX(-50%)',zIndex:80,padding:'10px 16px',borderRadius:999,border:'1px solid rgba(212,168,83,.45)',background:'rgba(6,6,12,.86)',backdropFilter:'blur(14px)',color:'#D4A853',fontSize:11,fontWeight:800,letterSpacing:'.08em',textTransform:'uppercase',textDecoration:'none',whiteSpace:'nowrap'}}>Work with GOOD TIMES · Provider onboarding ↗</a>
 }
 
+function GuestAccessBar({onAuth}){
+  return <>
+    <div className="gt-guest-access" role="status">
+      <div><strong>Browsing as guest</strong><span>Events, nightlife and local discovery are open without an account.</span></div>
+      <button type="button" onClick={onAuth}>Sign in / Create account</button>
+    </div>
+    <style>{`
+      .gt-guest-mode .gt2-nav button[data-gt-tab="concierge"],
+      .gt-guest-mode .gt2-nav button[data-gt-tab="plans"],
+      .gt-guest-mode .gt2-nav button[data-gt-tab="vault"],
+      .gt-guest-mode .gt2-save,
+      .gt-guest-mode .gt2-command-launch,
+      .gt-guest-mode .gt2-detail-actions button{display:none!important}
+      .gt-guest-mode .gt2-city{pointer-events:none!important;cursor:default!important;opacity:.85!important}
+      .gt-guest-access{position:fixed;right:12px;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:9500;display:flex;align-items:center;gap:10px;max-width:min(430px,calc(100vw - 24px));padding:10px 10px 10px 13px;border:1px solid rgba(245,204,117,.28);border-radius:16px;background:rgba(7,7,12,.94);backdrop-filter:blur(18px);box-shadow:0 14px 40px rgba(0,0,0,.42);color:#fffaf4;font-family:'DM Sans',system-ui,sans-serif}
+      .gt-guest-access div{display:grid;gap:2px;min-width:0}
+      .gt-guest-access strong{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#f5cc75}
+      .gt-guest-access span{font-size:9px;line-height:1.35;color:rgba(255,255,255,.58)}
+      .gt-guest-access button{flex:0 0 auto;min-height:40px;padding:0 12px;border-radius:11px;border:1px solid rgba(245,204,117,.36);background:#f5cc75;color:#09090d;font-size:10px;font-weight:900;white-space:nowrap}
+      .gt-guest-back{position:fixed;left:14px;top:calc(14px + env(safe-area-inset-top,0px));z-index:9700;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid rgba(245,204,117,.34);background:rgba(7,7,12,.92);color:#f5cc75;font:800 10px/1 'DM Sans',system-ui,sans-serif;letter-spacing:.05em}
+      @media(max-width:600px){.gt-guest-access span{display:none}.gt-guest-access{left:12px;right:12px;justify-content:space-between}.gt-guest-access div{display:block}.gt-guest-access strong{font-size:9px}}
+    `}</style>
+  </>
+}
+
+function SignedOutGuestExperience(){
+  const[showAuth,setShowAuth]=useState(false)
+  const complete=(nextSession,prefs)=>{
+    if(prefs){try{localStorage.setItem('gt_personalization',JSON.stringify({...prefs,updated_at:new Date().toISOString()}))}catch{}}
+    if(nextSession)window.location.reload()
+  }
+  if(showAuth)return <>
+    <LazyOnboarding onComplete={complete}/>
+    <button type="button" className="gt-guest-back" onClick={()=>setShowAuth(false)}>← Continue as guest</button>
+    <style>{`.gt-guest-back{position:fixed;left:14px;top:calc(14px + env(safe-area-inset-top,0px));z-index:9700;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid rgba(245,204,117,.34);background:rgba(7,7,12,.92);color:#f5cc75;font:800 10px/1 'DM Sans',system-ui,sans-serif;letter-spacing:.05em}`}</style>
+  </>
+  return <div className="gt-guest-mode">
+    <LazyCreativeLayer/>
+    <LazyCommandApp/>
+    <LazyPartyPulse/>
+    <GuestAccessBar onAuth={()=>setShowAuth(true)}/>
+  </div>
+}
+
 async function bootstrap(){
   const rootElement=document.getElementById('root')
   if(!rootElement)throw new Error('GOOD TIMES root element is missing')
@@ -134,14 +178,14 @@ async function bootstrap(){
   let loadingLabel='Opening GOOD TIMES Live'
   if(recoverySession){route=<LazyPasswordRecovery recoverySession={recoverySession}/>;loadingLabel='Securing your account'}
   else if(requestType){route=<LazyDirectRequest requestType={requestType}/>;loadingLabel='Opening your concierge request'}
-  else if(!hasSession){route=<LazyOnboarding onComplete={(nextSession,prefs)=>{if(prefs){try{localStorage.setItem('gt_personalization',JSON.stringify({...prefs,updated_at:new Date().toISOString()}))}catch{}}window.location.reload()}}/>;loadingLabel='Opening your private concierge'}
+  else if(!hasSession){route=<SignedOutGuestExperience/>;loadingLabel='Opening GOOD TIMES guest access'}
   else if(legacyRoute){route=<LazyLegacyApp/>;loadingLabel='Opening legacy GOOD TIMES'}
   else if(commandRoute){route=<LazyCommandApp/>;loadingLabel='Opening command interface'}
   else route=<><LazyCreativeLayer/><LazyCommandApp/><LazyPartyPulse/></>
 
   const showMemberTools=hasSession&&!requestType&&!recoverySession&&!legacyRoute&&!commandRoute
   const showShellControl=hasSession&&!requestType&&!recoverySession&&!legacyRoute
-  const showProviderOpportunity=!hasSession&&!requestType&&!recoverySession
+  const showProviderOpportunity=false
   ReactDOM.createRoot(rootElement).render(
     <RuntimeBoundary>
       <Suspense fallback={<RouteLoading label={loadingLabel}/> }>
