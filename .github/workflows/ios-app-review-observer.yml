@@ -2,7 +2,7 @@ name: GOOD TIMES App Store Remediation Observer
 
 on:
   workflow_run:
-    workflows: ["GOOD TIMES App Store Review Remediation"]
+    workflows: ["GOOD TIMES App Store Review Remediation", "GOOD TIMES Finalize App Review"]
     types: [requested, in_progress, completed]
 
 permissions:
@@ -20,13 +20,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_NAME: ${{ github.event.workflow_run.name }}
           RUN_STATUS: ${{ github.event.workflow_run.status }}
           RUN_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
           RUN_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
           set -euo pipefail
-          BODY="App Store remediation workflow run ${RUN_ID}: status=${RUN_STATUS}, conclusion=${RUN_CONCLUSION:-pending}, commit=${RUN_SHA}, ${RUN_URL}"
+          BODY="${RUN_NAME} run ${RUN_ID}: status=${RUN_STATUS}, conclusion=${RUN_CONCLUSION:-pending}, commit=${RUN_SHA}, ${RUN_URL}"
           jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/comment.json"
           curl --fail --silent --show-error -X POST \
             -H "Authorization: Bearer $GH_TOKEN" \
