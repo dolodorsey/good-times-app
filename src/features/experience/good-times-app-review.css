@@ -16,6 +16,7 @@
 .gt-premium-experience .gt-guest-mode .gt2-hero-copy>div>button:last-child{
   display:none!important;
 }
+.gt-guest-back{z-index:9700!important}
 
 /* iPad portrait widths must use the tablet canvas rather than centering the
    480px phone composition that caused the first App Review design rejection. */
