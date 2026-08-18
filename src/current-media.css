@@ -25,6 +25,12 @@
   }
 }
 
+/* Guest discovery exposes only non-account surfaces. Spread those three tabs
+   across the available navigation and remove account-only Build My Night entry
+   points until the customer chooses Sign in / Create account. */
+.gt-guest-mode .gt2-nav{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.gt-guest-mode .gt2-hero-copy>div>button:last-child{display:none!important}
+
 /* Party Board is intentionally available on Explore as a discovery aid. This
    also keeps rendered QA aligned with that product contract after navigation. */
 .gt-premium-experience.gt-premium-experience:has(.gt2-nav.gt2-nav button[data-gt-tab='explore'].active)>.gt-party-pulse.gt-party-pulse{
