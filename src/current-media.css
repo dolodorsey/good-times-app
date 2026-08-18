@@ -1,1 +1,26 @@
 .gt-current-launch-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;filter:saturate(1.08) contrast(1.05) brightness(.88)}.gt-launch__scene{z-index:1!important;background-image:linear-gradient(180deg,rgba(6,6,12,.04),rgba(6,6,12,.62)),url('https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/motion/goodtimes.jpg')!important;background-position:center!important;background-size:cover!important;opacity:.24}.gt-launch__content{z-index:2!important}.gt-launch__logo,.gt-route-loading img{content:url('https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics/GOOD_TIMES_logo.png')}.gt-launch:after{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(6,6,12,.04),rgba(6,6,12,.14) 38%,rgba(6,6,12,.84) 100%),radial-gradient(circle at 50% 24%,rgba(212,168,83,.12),transparent 36%)}@media(prefers-reduced-motion:reduce){.gt-current-launch-video{display:none}.gt-launch__scene{opacity:1}}
+
+/* App Review viewport hardening. iPad should use the available canvas instead of
+   rendering a 480px phone shell in the middle of the display. */
+@media (min-width:600px) and (max-width:899px){
+  .gt-premium-experience .gt2-app,.gt-premium-experience .gt2-loading{
+    width:100%!important;max-width:none!important;margin:0!important;box-shadow:none!important
+  }
+  .gt-premium-experience .gt2-nav{
+    width:100%!important;max-width:100%!important;left:50%!important;right:auto!important
+  }
+}
+
+/* index.html promotes #root to a containing block with translateZ(0). That is
+   useful on phones, but on natural-height desktop/tablet-landscape pages it
+   makes position:fixed controls attach to the bottom of the full document.
+   Release them back to the viewport at desktop widths. */
+@media (min-width:900px){
+  #root{transform:none!important}
+  .gt-premium-experience .gt-guest-mode>.gt2-app{
+    width:min(1440px,calc(100vw - 40px))!important;max-width:1440px!important;margin:0 auto!important
+  }
+  .gt-premium-experience .gt-guest-mode>.gt-rich-visuals{
+    position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important
+  }
+}
