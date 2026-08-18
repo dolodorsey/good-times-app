@@ -1,71 +1,18 @@
-name: GOOD TIMES Repair Rejected App Store Version
+name: GOOD TIMES Repair Rejected App Store Version — RETIRED
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/ios-repair-rejected-version.yml'
 
 permissions:
   contents: read
 
 jobs:
-  repair:
+  retired:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
-      - name: Rename rejected version and attach build 250
-        env:
-          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
-          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+      - name: Stop obsolete repair path
         run: |
-          python3 - <<'PY'
-          import json, os, time
-          from pathlib import Path
-          import jwt, requests
-          BASE='https://api.appstoreconnect.apple.com/v1'; BUNDLE='com.kollective.goodtimes'; OLD='1.0'; TARGET='1.1.0'; BUILD_NUMBER='250'
-          token=jwt.encode({'iss':os.environ['ASC_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},os.environ['ASC_PRIVATE_KEY'],algorithm='ES256',headers={'kid':os.environ['ASC_KEY_ID'],'typ':'JWT'})
-          H={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
-          def req(method,path,params=None,payload=None):
-              r=requests.request(method,BASE+path,headers=H,params=params,json=payload,timeout=45)
-              if not r.ok: raise SystemExit(f'{method} {path} HTTP {r.status_code}: {r.text[:4000]}')
-              return {} if r.status_code==204 or not r.content else r.json()
-          apps=req('GET','/apps',{'filter[bundleId]':BUNDLE,'limit':'10'})['data']; exact=[a for a in apps if a.get('attributes',{}).get('bundleId')==BUNDLE]
-          if len(exact)!=1: raise SystemExit(f'Expected one GOOD TIMES app, found {len(exact)}')
-          app_id=exact[0]['id']
-          versions=req('GET',f'/apps/{app_id}/appStoreVersions',{'limit':'200'})['data']
-          target=[v for v in versions if v.get('attributes',{}).get('platform')=='IOS' and v.get('attributes',{}).get('versionString')==TARGET]
-          if target:
-              version=target[0]; print(f'Target App Store version {TARGET} already exists; using {version["id"]}.')
-          else:
-              candidates=[v for v in versions if v.get('attributes',{}).get('platform')=='IOS' and v.get('attributes',{}).get('versionString')==OLD]
-              if len(candidates)!=1: raise SystemExit(f'Expected one iOS {OLD} version, found {len(candidates)}')
-              version=candidates[0]; state=version.get('attributes',{}).get('appVersionState') or version.get('attributes',{}).get('appStoreState')
-              if state!='REJECTED': raise SystemExit(f'Refusing rename: iOS {OLD} state is {state}, expected REJECTED')
-              vid=version['id']
-              version=req('PATCH',f'/appStoreVersions/{vid}',payload={'data':{'type':'appStoreVersions','id':vid,'attributes':{'versionString':TARGET}}})['data']
-              print(f'Renamed rejected App Store version {OLD} -> {TARGET}.')
-          vid=version['id']
-          verify=req('GET',f'/appStoreVersions/{vid}')['data']; attrs=verify.get('attributes',{})
-          if attrs.get('versionString')!=TARGET: raise SystemExit(f'Version rename did not persist: {attrs}')
-          builds=req('GET',f'/apps/{app_id}/builds',{'limit':'200'})['data']; matches=[b for b in builds if b.get('attributes',{}).get('version')==BUILD_NUMBER]
-          if len(matches)!=1: raise SystemExit(f'Expected exactly one build {BUILD_NUMBER}, found {len(matches)}')
-          build=matches[0]; ba=build.get('attributes',{})
-          if ba.get('processingState')!='VALID' or ba.get('buildAudienceType')!='APP_STORE_ELIGIBLE': raise SystemExit(f'Build {BUILD_NUMBER} is not App Store eligible: {ba}')
-          req('PATCH',f'/appStoreVersions/{vid}/relationships/build',payload={'data':{'type':'builds','id':build['id']}})
-          linkage=req('GET',f'/appStoreVersions/{vid}/relationships/build')['data']
-          if not linkage or linkage.get('id')!=build['id']: raise SystemExit('Build relationship read-back verification failed')
-          evidence={'bundleId':BUNDLE,'appId':app_id,'appStoreVersionId':vid,'versionString':TARGET,'appVersionState':attrs.get('appVersionState') or attrs.get('appStoreState'),'buildNumber':BUILD_NUMBER,'buildId':build['id'],'buildProcessingState':ba.get('processingState'),'buildAudienceType':ba.get('buildAudienceType'),'verified':True}
-          out=Path(os.environ['RUNNER_TEMP'])/'good-times-repaired-version.json'; out.write_text(json.dumps(evidence,indent=2),encoding='utf-8'); print(json.dumps(evidence,indent=2))
-          PY
-      - name: Preserve repair evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: GOOD-TIMES-repaired-store-version-${{ github.run_number }}
-          path: ${{ runner.temp }}/good-times-repaired-version.json
-          if-no-files-found: ignore
+          echo "This workflow is retired. It previously renamed the rejected 1.0 version and attached build 250."
+          echo "Build 250 is obsolete and must not be attached or resubmitted."
+          echo "Use the current iOS build pipeline, select the newly validated App Store Connect build, then use GOOD TIMES Resubmit App Review with explicit version/build inputs."
+          exit 1

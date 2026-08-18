@@ -2,33 +2,53 @@ name: GOOD TIMES Resubmit App Review
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/ios-resubmit-review.yml'
+    inputs:
+      version:
+        description: App Store version to submit (for example 1.1.0)
+        required: true
+        type: string
+      build:
+        description: Exact App Store Connect build number to submit
+        required: true
+        type: string
+      confirmation:
+        description: Type RESUBMIT to confirm this writes to App Store Connect
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 jobs:
   resubmit:
+    if: inputs.confirmation == 'RESUBMIT'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
-      - name: Validate and resubmit unresolved GOOD TIMES review
+      - name: Validate and resubmit the explicitly selected GOOD TIMES build
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          TARGET_VERSION: ${{ inputs.version }}
+          TARGET_BUILD: ${{ inputs.build }}
         run: |
           python3 - <<'PY'
           import json, os, time
           from pathlib import Path
           import jwt, requests
 
-          BASE='https://api.appstoreconnect.apple.com/v1'; BUNDLE='com.kollective.goodtimes'; VERSION='1.1.0'; BUILD='250'
+          BASE='https://api.appstoreconnect.apple.com/v1'
+          BUNDLE='com.kollective.goodtimes'
+          VERSION=os.environ['TARGET_VERSION'].strip()
+          BUILD=os.environ['TARGET_BUILD'].strip()
+          if not VERSION or not BUILD:
+              raise SystemExit('Version and build inputs are required')
+          if BUILD == '250':
+              raise SystemExit('Build 250 is retired and cannot be resubmitted by this workflow')
+
           token=jwt.encode({'iss':os.environ['ASC_ISSUER_ID'],'iat':int(time.time()),'exp':int(time.time())+900,'aud':'appstoreconnect-v1'},os.environ['ASC_PRIVATE_KEY'],algorithm='ES256',headers={'kid':os.environ['ASC_KEY_ID'],'typ':'JWT'})
           H={'Authorization':f'Bearer {token}','Content-Type':'application/json'}
 
@@ -40,25 +60,43 @@ jobs:
                   return r
               return {} if r.status_code==204 or not r.content else r.json()
 
-          apps=req('GET','/apps',{'filter[bundleId]':BUNDLE,'limit':'10'})['data']; exact=[a for a in apps if a.get('attributes',{}).get('bundleId')==BUNDLE]
+          apps=req('GET','/apps',{'filter[bundleId]':BUNDLE,'limit':'10'})['data']
+          exact=[a for a in apps if a.get('attributes',{}).get('bundleId')==BUNDLE]
           if len(exact)!=1: raise SystemExit('GOOD TIMES app resolution failed')
           app_id=exact[0]['id']
-          versions=req('GET',f'/apps/{app_id}/appStoreVersions',{'limit':'200'})['data']; vm=[v for v in versions if v.get('attributes',{}).get('platform')=='IOS' and v.get('attributes',{}).get('versionString')==VERSION]
+
+          versions=req('GET',f'/apps/{app_id}/appStoreVersions',{'limit':'200'})['data']
+          vm=[v for v in versions if v.get('attributes',{}).get('platform')=='IOS' and v.get('attributes',{}).get('versionString')==VERSION]
           if len(vm)!=1: raise SystemExit(f'Expected one iOS {VERSION}, found {len(vm)}')
-          version=vm[0]; vid=version['id']; vstate=version.get('attributes',{}).get('appVersionState') or version.get('attributes',{}).get('appStoreState')
-          if vstate not in {'PREPARE_FOR_SUBMISSION','REJECTED','DEVELOPER_REJECTED','METADATA_REJECTED','READY_FOR_REVIEW'}: raise SystemExit(f'Unsafe app-version state for resubmission: {vstate}')
+          version=vm[0]
+          vid=version['id']
+          vstate=version.get('attributes',{}).get('appVersionState') or version.get('attributes',{}).get('appStoreState')
+          if vstate not in {'PREPARE_FOR_SUBMISSION','REJECTED','DEVELOPER_REJECTED','METADATA_REJECTED','READY_FOR_REVIEW'}:
+              raise SystemExit(f'Unsafe app-version state for resubmission: {vstate}')
+
           build_rel=req('GET',f'/appStoreVersions/{vid}/relationships/build')['data']
           if not build_rel: raise SystemExit('No build attached to App Store version')
-          build=req('GET',f'/builds/{build_rel["id"]}')['data']; ba=build.get('attributes',{})
-          if ba.get('version')!=BUILD or ba.get('processingState')!='VALID' or ba.get('buildAudienceType')!='APP_STORE_ELIGIBLE': raise SystemExit(f'Attached build is not expected valid build {BUILD}: {ba}')
-          review=req('GET',f'/appStoreVersions/{vid}/appStoreReviewDetail')['data']; ra=review.get('attributes',{})
+          build=req('GET',f'/builds/{build_rel["id"]}')['data']
+          ba=build.get('attributes',{})
+          if ba.get('version')!=BUILD:
+              raise SystemExit(f'Attached build {ba.get("version")} does not match explicitly requested build {BUILD}')
+          if ba.get('processingState')!='VALID' or ba.get('buildAudienceType')!='APP_STORE_ELIGIBLE':
+              raise SystemExit(f'Attached build is not App Store eligible: {ba}')
+
+          review=req('GET',f'/appStoreVersions/{vid}/appStoreReviewDetail')['data']
+          ra=review.get('attributes',{})
           required=['contactFirstName','contactLastName','contactPhone','contactEmail']
           missing=[k for k in required if not ra.get(k)]
           if missing: raise SystemExit(f'App Review contact details incomplete: {missing}')
-          if ra.get('demoAccountRequired') and (not ra.get('demoAccountName') or not ra.get('demoAccountPassword')): raise SystemExit('Demo account is required but credentials are incomplete')
-          subs=req('GET',f'/apps/{app_id}/reviewSubmissions',{'limit':'200'})['data']; unresolved=[s for s in subs if s.get('attributes',{}).get('state')=='UNRESOLVED_ISSUES']
+          if ra.get('demoAccountRequired') and (not ra.get('demoAccountName') or not ra.get('demoAccountPassword')):
+              raise SystemExit('Demo account is required but credentials are incomplete')
+
+          subs=req('GET',f'/apps/{app_id}/reviewSubmissions',{'limit':'200'})['data']
+          unresolved=[s for s in subs if s.get('attributes',{}).get('state')=='UNRESOLVED_ISSUES']
           if len(unresolved)!=1: raise SystemExit(f'Expected exactly one UNRESOLVED_ISSUES submission, found {len(unresolved)}')
-          sub=unresolved[0]; sid=sub['id']; items=req('GET',f'/reviewSubmissions/{sid}/items',{'limit':'200'})['data']
+          sub=unresolved[0]
+          sid=sub['id']
+          items=req('GET',f'/reviewSubmissions/{sid}/items',{'limit':'200'})['data']
           if len(items)!=1: raise SystemExit(f'Expected one review item, found {len(items)}')
 
           payload={'data':{'type':'reviewSubmissions','id':sid,'attributes':{'submitted':True}}}
@@ -80,10 +118,15 @@ jobs:
           if not submitted:
               raise SystemExit(f'App Store version never became review-ready after bounded retries: {last_error}')
 
-          final=req('GET',f'/reviewSubmissions/{sid}')['data']; fstate=final.get('attributes',{}).get('state')
-          if fstate not in {'READY_FOR_REVIEW','WAITING_FOR_REVIEW','IN_REVIEW'}: raise SystemExit(f'Resubmission request returned unexpected state {fstate}: {json.dumps(final)[:4000]}')
+          final=req('GET',f'/reviewSubmissions/{sid}')['data']
+          fstate=final.get('attributes',{}).get('state')
+          if fstate not in {'READY_FOR_REVIEW','WAITING_FOR_REVIEW','IN_REVIEW'}:
+              raise SystemExit(f'Resubmission request returned unexpected state {fstate}: {json.dumps(final)[:4000]}')
+
           evidence={'bundleId':BUNDLE,'appId':app_id,'version':VERSION,'versionId':vid,'build':BUILD,'buildId':build['id'],'reviewSubmissionId':sid,'previousState':'UNRESOLVED_ISSUES','currentState':fstate,'submitted':True,'verified':True}
-          out=Path(os.environ['RUNNER_TEMP'])/'good-times-resubmission.json'; out.write_text(json.dumps(evidence,indent=2),encoding='utf-8'); print(json.dumps(evidence,indent=2))
+          out=Path(os.environ['RUNNER_TEMP'])/'good-times-resubmission.json'
+          out.write_text(json.dumps(evidence,indent=2),encoding='utf-8')
+          print(json.dumps(evidence,indent=2))
           PY
       - name: Preserve resubmission evidence
         if: always()
