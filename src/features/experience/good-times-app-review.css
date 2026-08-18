@@ -21,6 +21,14 @@
 /* iPad portrait widths must use the tablet canvas rather than centering the
    480px phone composition that caused the first App Review design rejection. */
 @media (min-width:600px) and (max-width:899px){
+  html body #root .gt-premium-experience>.gt-guest-mode{
+    width:100%!important;
+    max-width:none!important;
+    min-height:100dvh!important;
+    margin:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
   html body #root .gt-premium-experience .gt-guest-mode .gt2-app,
   html body #root .gt-premium-experience>.gt2-app,
   html body #root .gt-premium-experience .gt2-loading{
@@ -53,10 +61,17 @@
    transform containing block and give the command app the available frame. */
 @media (min-width:900px){
   html body #root{transform:none!important;overflow:visible!important}
-  html body #root .gt-premium-experience .gt-guest-mode .gt2-app,
-  html body #root .gt-premium-experience>.gt2-app{
+  html body #root .gt-premium-experience>.gt-guest-mode{
     width:min(1440px,calc(100vw - 40px))!important;
     max-width:1440px!important;
+    min-height:calc(100dvh - 40px)!important;
+    margin:0 auto!important;
+    box-shadow:none!important;
+  }
+  html body #root .gt-premium-experience .gt-guest-mode .gt2-app,
+  html body #root .gt-premium-experience>.gt2-app{
+    width:100%!important;
+    max-width:none!important;
     margin-left:auto!important;
     margin-right:auto!important;
   }
