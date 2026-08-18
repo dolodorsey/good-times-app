@@ -1,0 +1,153 @@
+name: GOOD TIMES App Store Review Remediation
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/ios-app-review-remediation.yml'
+      - 'scripts/app-store-review-remediation.py'
+      - 'scripts/app-store-screenshot-capture.mjs'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/ios-app-review-remediation.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+concurrency:
+  group: good-times-app-store-remediation-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Validate remediation source
+        run: |
+          python3 -m py_compile scripts/app-store-review-remediation.py
+          node --check scripts/app-store-screenshot-capture.mjs
+      - name: Install locked dependencies
+        run: npm ci --include=dev
+      - name: Build current GOOD TIMES customer app
+        run: npm run build
+
+  remediate:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      TARGET_VERSION: '1.1.0'
+      MIN_BUILD_UPLOADED_AT: '2026-08-18T23:12:00Z'
+      GT_UI_BASE: 'http://localhost:4180'
+      GT_UI_ARTIFACTS: 'ui-artifacts'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Validate remediation source
+        run: |
+          python3 -m py_compile scripts/app-store-review-remediation.py
+          node --check scripts/app-store-screenshot-capture.mjs
+
+      - name: Install locked dependencies
+        run: npm ci --include=dev
+
+      - name: Build current GOOD TIMES customer app
+        run: npm run build
+
+      - uses: browser-actions/setup-chrome@v1
+        id: chrome
+        with:
+          chrome-version: stable
+
+      - name: Serve current build for App Store screenshots
+        run: |
+          node scripts/serve-dist.mjs &
+          for i in $(seq 1 30); do
+            if curl -sf -o /dev/null http://localhost:4180/; then
+              exit 0
+            fi
+            sleep 1
+          done
+          echo 'GOOD TIMES local production server failed to start'
+          exit 1
+
+      - name: Capture real app-in-use screenshots at Apple pixel sizes
+        env:
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node scripts/app-store-screenshot-capture.mjs
+
+      - name: Install App Store Connect client dependencies
+        run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+
+      - name: Get review credentials from the OIDC-protected GOOD TIMES vault
+        shell: bash
+        run: |
+          set -euo pipefail
+          OIDC_RESPONSE=$(curl --fail --silent --show-error \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=good-times-app-review")
+          OIDC_TOKEN=$(printf '%s' "$OIDC_RESPONSE" | jq -r '.value')
+          test -n "$OIDC_TOKEN" && test "$OIDC_TOKEN" != null
+          CREDS=$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer $OIDC_TOKEN" \
+            'https://czocqfaovfpjweayniuw.supabase.co/functions/v1/good-times-app-review-credential-vault')
+          REVIEW_USERNAME=$(printf '%s' "$CREDS" | jq -r '.username')
+          REVIEW_PASSWORD=$(printf '%s' "$CREDS" | jq -r '.password')
+          test -n "$REVIEW_USERNAME" && test "$REVIEW_USERNAME" != null
+          test -n "$REVIEW_PASSWORD" && test "$REVIEW_PASSWORD" != null
+          echo "::add-mask::$REVIEW_PASSWORD"
+          echo "REVIEW_USERNAME=$REVIEW_USERNAME" >> "$GITHUB_ENV"
+          echo "REVIEW_PASSWORD=$REVIEW_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Update App Store review package and attach fresh post-fix build
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        run: python3 scripts/app-store-review-remediation.py
+
+      - name: Preserve remediation evidence and generated screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-app-store-remediation-${{ github.run_number }}
+          path: |
+            ${{ runner.temp }}/good-times-app-store-remediation.json
+            ${{ runner.temp }}/good-times-app-store-remediation.md
+            ui-artifacts/app-store
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Post non-secret execution evidence to issue 69
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          REPORT="$RUNNER_TEMP/good-times-app-store-remediation.md"
+          if [ ! -f "$REPORT" ]; then
+            printf '%s\n' '## GOOD TIMES App Store remediation' '' '- **Result:** INCOMPLETE' '- The workflow stopped before the remediation script produced evidence. Inspect the workflow job logs.' > "$REPORT"
+          fi
+          jq -n --rawfile body "$REPORT" '{body:$body}' > "$RUNNER_TEMP/comment.json"
+          curl --fail --silent --show-error \
+            -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            -H 'X-GitHub-Api-Version: 2022-11-28' \
+            --data-binary @"$RUNNER_TEMP/comment.json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
