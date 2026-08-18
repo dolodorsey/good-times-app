@@ -16,7 +16,7 @@ concurrency:
 jobs:
   geometry:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -49,9 +49,6 @@ jobs:
           echo "server failed to start"
           exit 1
 
-      # GitHub does not permit direct `secrets.*` references inside step `if:`.
-      # Put it in env and decide in the shell instead, so the workflow itself
-      # remains valid even when the optional signed-in QA secret is absent.
       - name: Prepare optional QA session
         env:
           GT_UI_QA_SESSION: ${{ secrets.GT_UI_QA_SESSION }}
@@ -64,13 +61,43 @@ jobs:
             echo "signed-in QA secret not configured; deterministic signed-in fixtures will still run"
           fi
 
-      - name: Rendered geometry, interaction and creative gates
+      - name: Prove App Review iPad layouts
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: timeout 120s node --test --test-concurrency=1 scripts/app-review-ipad-rendered.test.mjs
+
+      - name: Capture App Store-ready screenshots
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: timeout 180s node scripts/app-store-screenshot-capture.mjs
+
+      - name: Rendered geometry gate
         env:
           GT_UI_BASE: http://localhost:4180
           GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           GT_UI_SESSION: /tmp/gt-qa-session.json
           GT_UI_ARTIFACTS: ui-artifacts
-        run: node --test scripts/ui-geometry.test.mjs scripts/ui-interaction.test.mjs scripts/ui-creative-assets.test.mjs scripts/ui-mobile-utilities.test.mjs scripts/ui-font-resilience.test.mjs
+        run: timeout 600s node --test --test-concurrency=1 scripts/ui-geometry.test.mjs
+
+      - name: Creative, font and mobile utility gates
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_SESSION: /tmp/gt-qa-session.json
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: timeout 480s node --test --test-concurrency=1 scripts/ui-creative-assets.test.mjs scripts/ui-mobile-utilities.test.mjs scripts/ui-font-resilience.test.mjs
+
+      - name: Interaction torture gate
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_SESSION: /tmp/gt-qa-session.json
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: timeout 480s node --test --test-concurrency=1 scripts/ui-interaction.test.mjs
 
       - name: Upload rendered screenshots
         if: always()

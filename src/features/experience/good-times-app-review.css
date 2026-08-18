@@ -1,0 +1,98 @@
+/* GOOD TIMES — final App Review viewport contract.
+   This file is imported after every other visual layer so Apple-device geometry
+   cannot be re-narrowed by older phone-shell rules. */
+
+/* Signed-out GOOD TIMES is a real guest experience, not an auth wall. Keep only
+   the non-account discovery destinations visible until the user elects to sign in. */
+.gt-premium-experience .gt-guest-mode .gt2-nav{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+.gt-premium-experience .gt-guest-mode .gt2-nav button[data-gt-tab='concierge'],
+.gt-premium-experience .gt-guest-mode .gt2-nav button[data-gt-tab='plans'],
+.gt-premium-experience .gt-guest-mode .gt2-nav button[data-gt-tab='vault'],
+.gt-premium-experience .gt-guest-mode .gt2-save,
+.gt-premium-experience .gt-guest-mode .gt2-command-launch,
+.gt-premium-experience .gt-guest-mode .gt2-detail-actions button,
+.gt-premium-experience .gt-guest-mode .gt2-hero-copy>div>button:last-child{
+  display:none!important;
+}
+.gt-guest-back{z-index:9700!important}
+
+/* iPad portrait widths must use the tablet canvas rather than centering the
+   480px phone composition that caused the first App Review design rejection. */
+@media (min-width:600px) and (max-width:899px){
+  html body #root .gt-premium-experience>.gt-guest-mode{
+    width:100%!important;
+    max-width:none!important;
+    min-height:100dvh!important;
+    margin:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
+  html body #root .gt-premium-experience .gt-guest-mode .gt2-app,
+  html body #root .gt-premium-experience>.gt2-app,
+  html body #root .gt-premium-experience .gt2-loading{
+    width:100%!important;
+    max-width:none!important;
+    margin-left:0!important;
+    margin-right:0!important;
+    box-shadow:none!important;
+  }
+  html body #root .gt-premium-experience .gt2-nav{
+    width:100%!important;
+    max-width:none!important;
+    left:0!important;
+    right:0!important;
+    transform:none!important;
+  }
+  .gt-premium-experience .gt2-event-grid,
+  .gt-premium-experience .gt2-venue-grid,
+  .gt-premium-experience .gt2-category-grid,
+  .gt-premium-experience .gt2-subcategory-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  .gt-premium-experience .gt2-hero-copy{
+    width:min(650px,74vw)!important;
+    right:auto!important;
+  }
+}
+
+/* iPad landscape and desktop: release fixed chrome from #root's historical
+   transform containing block and give the command app the available frame. */
+@media (min-width:900px){
+  html body #root{transform:none!important;overflow:visible!important}
+  html body #root .gt-premium-experience>.gt-guest-mode{
+    width:min(1440px,calc(100vw - 40px))!important;
+    max-width:1440px!important;
+    min-height:calc(100dvh - 40px)!important;
+    margin:0 auto!important;
+    box-shadow:none!important;
+  }
+  html body #root .gt-premium-experience .gt-guest-mode .gt2-app,
+  html body #root .gt-premium-experience>.gt2-app{
+    width:100%!important;
+    max-width:none!important;
+    margin-left:auto!important;
+    margin-right:auto!important;
+  }
+  html body #root .gt-premium-experience .gt2-nav{
+    width:min(1360px,calc(100vw - 80px))!important;
+    max-width:1360px!important;
+    left:50%!important;
+    right:auto!important;
+    transform:translateX(-50%)!important;
+    bottom:20px!important;
+  }
+  .gt-premium-experience .gt-guest-mode .gt-rich-visuals{
+    position:fixed!important;
+    inset:0!important;
+    width:100vw!important;
+    height:100dvh!important;
+  }
+}
+
+/* Explore remains a discovery surface in guest mode, so Party Board may stay
+   visible there while account-only screens continue to suppress it. */
+.gt-premium-experience.gt-premium-experience:has(.gt2-nav.gt2-nav button[data-gt-tab='explore'].active)>.gt-party-pulse.gt-party-pulse{
+  display:block!important;
+}
