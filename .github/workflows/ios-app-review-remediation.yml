@@ -1,4 +1,4 @@
-# Execution trigger: 2026-08-18 App Review remediation — observable run
+# Execution trigger: 2026-08-18 App Review remediation — milestone diagnostics
 name: GOOD TIMES App Store Review Remediation
 
 on:
@@ -56,13 +56,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          jq -n --arg body "GOOD TIMES App Store remediation started for commit ${GITHUB_SHA}. Waiting for the current app build, screenshot replacement, review-account update, and fresh iOS build verification." '{body:$body}' > "$RUNNER_TEMP/start-comment.json"
-          curl --fail --silent --show-error -X POST \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H 'Accept: application/vnd.github+json' \
-            -H 'X-GitHub-Api-Version: 2022-11-28' \
-            --data-binary @"$RUNNER_TEMP/start-comment.json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
+          jq -n --arg body "GOOD TIMES App Store remediation started for commit ${GITHUB_SHA}." '{body:$body}' > "$RUNNER_TEMP/start-comment.json"
+          curl --fail --silent --show-error -X POST -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' --data-binary @"$RUNNER_TEMP/start-comment.json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
 
       - uses: actions/checkout@v4
 
@@ -81,6 +76,14 @@ jobs:
 
       - name: Build current GOOD TIMES customer app
         run: npm run build
+
+      - name: Mark production build complete
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          jq -n --arg body "App Store remediation milestone: current GOOD TIMES production bundle built successfully." '{body:$body}' > "$RUNNER_TEMP/milestone.json"
+          curl --fail --silent --show-error -X POST -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' --data-binary @"$RUNNER_TEMP/milestone.json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
 
       - uses: browser-actions/setup-chrome@v1
         id: chrome
@@ -104,6 +107,14 @@ jobs:
           GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
         run: node scripts/app-store-screenshot-capture.mjs
 
+      - name: Mark screenshots captured
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          jq -n --arg body "App Store remediation milestone: real app-in-use iPhone and 13-inch iPad screenshots captured at Apple pixel sizes." '{body:$body}' > "$RUNNER_TEMP/milestone.json"
+          curl --fail --silent --show-error -X POST -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' --data-binary @"$RUNNER_TEMP/milestone.json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
+
       - name: Install App Store Connect client dependencies
         run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
 
@@ -111,14 +122,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          OIDC_RESPONSE=$(curl --fail --silent --show-error \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=good-times-app-review")
+          OIDC_RESPONSE=$(curl --fail --silent --show-error -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=good-times-app-review")
           OIDC_TOKEN=$(printf '%s' "$OIDC_RESPONSE" | jq -r '.value')
           test -n "$OIDC_TOKEN" && test "$OIDC_TOKEN" != null
-          CREDS=$(curl --fail --silent --show-error \
-            -H "Authorization: Bearer $OIDC_TOKEN" \
-            'https://czocqfaovfpjweayniuw.supabase.co/functions/v1/good-times-app-review-credential-vault')
+          CREDS=$(curl --fail --silent --show-error -H "Authorization: Bearer $OIDC_TOKEN" 'https://czocqfaovfpjweayniuw.supabase.co/functions/v1/good-times-app-review-credential-vault')
           REVIEW_USERNAME=$(printf '%s' "$CREDS" | jq -r '.username')
           REVIEW_PASSWORD=$(printf '%s' "$CREDS" | jq -r '.password')
           test -n "$REVIEW_USERNAME" && test "$REVIEW_USERNAME" != null
@@ -126,6 +133,22 @@ jobs:
           echo "::add-mask::$REVIEW_PASSWORD"
           echo "REVIEW_USERNAME=$REVIEW_USERNAME" >> "$GITHUB_ENV"
           echo "REVIEW_PASSWORD=$REVIEW_PASSWORD" >> "$GITHUB_ENV"
+
+      - name: Mark secure review credentials loaded
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          jq -n --arg body "App Store remediation milestone: validated Apple reviewer credentials loaded through the OIDC-protected Supabase vault. Password not logged." '{body:$body}' > "$RUNNER_TEMP/milestone.json"
+          curl --fail --silent --show-error -X POST -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' --data-binary @"$RUNNER_TEMP/milestone.json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
+
+      - name: Mark App Store Connect remediation starting
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          jq -n --arg body "App Store remediation milestone: starting App Store Connect support URL, demo account, screenshot replacement, fresh-build attachment, and review-state updates." '{body:$body}' > "$RUNNER_TEMP/milestone.json"
+          curl --fail --silent --show-error -X POST -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' --data-binary @"$RUNNER_TEMP/milestone.json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
 
       - name: Update App Store review package and attach fresh post-fix build
         env:
@@ -155,13 +178,7 @@ jobs:
           set -euo pipefail
           REPORT="$RUNNER_TEMP/good-times-app-store-remediation.md"
           if [ ! -f "$REPORT" ]; then
-            printf '%s\n' '## GOOD TIMES App Store remediation' '' '- **Result:** INCOMPLETE' '- The workflow stopped before the remediation script produced evidence. Inspect the workflow job logs.' > "$REPORT"
+            printf '%s\n' '## GOOD TIMES App Store remediation' '' '- **Result:** INCOMPLETE' '- The workflow stopped before the remediation script produced evidence. The last milestone above identifies the stage.' > "$REPORT"
           fi
           jq -n --rawfile body "$REPORT" '{body:$body}' > "$RUNNER_TEMP/comment.json"
-          curl --fail --silent --show-error \
-            -X POST \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H 'Accept: application/vnd.github+json' \
-            -H 'X-GitHub-Api-Version: 2022-11-28' \
-            --data-binary @"$RUNNER_TEMP/comment.json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
+          curl --fail --silent --show-error -X POST -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' --data-binary @"$RUNNER_TEMP/comment.json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
