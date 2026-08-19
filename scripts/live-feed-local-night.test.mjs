@@ -27,12 +27,13 @@ test('fast gateway uses one Supabase inventory RPC and drops stale same-day inve
   assert.match(liveSource,/p_service_date:serviceDate/)
   assert.match(liveSource,/isStaleServiceDayEvent/)
   assert.match(liveSource,/clock\.serviceMinute-\(6\*60\)/)
-  assert.match(liveSource,/X-Good-Times-Live-Gateway','v6'/)
+  assert.match(liveSource,/X-Good-Times-Live-Gateway','v7'/)
+  assert.match(liveSource,/scoreGoodTimesEvent/)
 })
 
 test('personalization cannot move a future date ahead of the current nightlife service date',()=>{
   assert.match(fastSource,/serviceDate=payload\?\.local_clock\?\.service_date\|\|cityClock\(city\)\.serviceDate/)
   assert.match(fastSource,/const date=String\(a\.item\?\.event_date\|\|''\)\.localeCompare\(String\(b\.item\?\.event_date\|\|''\)\)/)
   assert.match(fastSource,/sameNightPriority\(a\.item,serviceDate\)-sameNightPriority\(b\.item,serviceDate\)/)
-  assert.match(fastSource,/service-date-then-nightlife-then-taste/)
+  assert.match(fastSource,/ordering:'quality-first-then-intent'/)
 })
