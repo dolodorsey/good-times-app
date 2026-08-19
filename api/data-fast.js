@@ -1,4 +1,10 @@
 import baseHandler, { cityClock } from './data-live.js'
+import {
+  applyGoodTimesEventIntelligence,
+  applyGoodTimesVenueIntelligence,
+  scoreGoodTimesEvent,
+  scoreGoodTimesVenue,
+} from './good-times-intelligence.js'
 
 const MAX_EVENTS = 120
 const MAX_VENUES = 180
@@ -77,22 +83,22 @@ function sameNightPriority(item,serviceDate){
   return 6
 }
 function eventScore(item,index,vibes) {
-  let score = Number(item?.good_times_score || 0) * 10 - Number(item?.display_priority || 50) - index / 1000
+  const intelligence=scoreGoodTimesEvent(item)
+  let score = intelligence.total * 10 - index / 1000
   const text=textOf(item)
+  let affinity=0
   for (const vibe of vibes) {
-    if (EVENT_CATEGORIES[vibe]?.has(item?.category_key)) score += 180
-    if (vibe==='grown' && /grown|r&b|soul|cocktail|lounge|rooftop/.test(text)) score += 80
-    if (vibe==='turnt' && /party|club|dj|hip hop|rap|edm/.test(text)) score += 80
-    if (vibe==='date' && /date|dinner|wine|art|comedy|rooftop/.test(text)) score += 80
-    if (vibe==='live' && /concert|live music|jazz|r&b|rap|soul|gospel/.test(text)) score += 90
-    if (vibe==='food' && /food|brunch|chef|tasting|dining/.test(text)) score += 90
-    if (vibe==='culture' && /black|culture|museum|art|hbcu|diaspora/.test(text)) score += 90
-    if (vibe==='free' && /free|community|market|park/.test(text)) score += 100
-    if (vibe==='vip' && /vip|exclusive|premium|celebrity|table/.test(text)) score += 100
+    if (EVENT_CATEGORIES[vibe]?.has(item?.category_key)) affinity += 65
+    if (vibe==='grown' && /grown|r&b|soul|cocktail|lounge|rooftop/.test(text)) affinity += 35
+    if (vibe==='turnt' && /party|club|dj|hip hop|rap|edm/.test(text)) affinity += 35
+    if (vibe==='date' && /date|dinner|wine|art|comedy|rooftop/.test(text)) affinity += 35
+    if (vibe==='live' && /concert|live music|jazz|r&b|rap|soul|gospel/.test(text)) affinity += 40
+    if (vibe==='food' && /food|brunch|chef|tasting|dining/.test(text)) affinity += 40
+    if (vibe==='culture' && /black|culture|museum|art|hbcu|diaspora/.test(text)) affinity += 40
+    if (vibe==='free' && /free|community|market|park/.test(text)) affinity += 45
+    if (vibe==='vip' && /vip|exclusive|premium|celebrity|table/.test(text)) affinity += 45
   }
-  if (item?.is_curated) score += 25
-  if (item?.is_featured) score += 15
-  return score
+  return score + Math.min(affinity,180)
 }
 export function hasApprovedGoodTimesVenueMedia(item){
   return String(item?.hero_image||'').includes(APPROVED_VENUE_MEDIA)
@@ -102,32 +108,35 @@ export function brittleVenueImage(url){
   return !value||/logo|wordmark|logotype|artboard|fit=pad|bottle/i.test(value)
 }
 export function customerVenueMedia(item){
-  if(hasApprovedGoodTimesVenueMedia(item))return item
-  if(!brittleVenueImage(item?.hero_image))return item
-  const key=String(item?.venue_category_key||item?.category_key||'').toLowerCase()
+  const enriched=applyGoodTimesVenueIntelligence(item)
+  if(!brittleVenueImage(enriched?.hero_image))return enriched
+  const key=String(enriched?.venue_category_key||enriched?.category_key||'').toLowerCase()
   const fallback=VENUE_CATEGORY_MEDIA[key]||'gt-cat-nightlife.webp'
-  return{...item,hero_image:`${CATEGORY_MEDIA_BASE}/${fallback}`,image_source:'good_times_category_fallback',image_is_category_fallback:true}
+  return{
+    ...enriched,
+    hero_image:`${CATEGORY_MEDIA_BASE}/${fallback}`,
+    image_source:'good_times_category_fallback',
+    image_is_category_fallback:true,
+    visual_quality_score:0,
+  }
 }
 function venueScore(item,index,vibes) {
-  let score = Number(item?.quality_score || 0) * 10 + Number(item?.culture_score || 0) * 2 + Number(item?.google_rating || 0) * 20 - index / 1000
+  const intelligence=scoreGoodTimesVenue(item)
+  let score = intelligence.total * 10 - index / 1000
   const text=textOf(item)
+  let affinity=0
   for (const vibe of vibes) {
-    if (vibe==='grown' && /lounge|cocktail|rooftop|restaurant|fine dining|jazz/.test(text)) score += 170
-    if (vibe==='turnt' && /nightclub|club|party|hookah|late night/.test(text)) score += 170
-    if (vibe==='date' && /restaurant|rooftop|cocktail|wine|date|brunch/.test(text)) score += 170
-    if (vibe==='live' && /live music|jazz|concert|music|bar/.test(text)) score += 150
-    if (vibe==='food' && /restaurant|brunch|coffee|food|dining|chef/.test(text)) score += 170
-    if (vibe==='culture' && (item?.is_black_owned || item?.is_culture_pick || /culture|museum|gallery|black/.test(text))) score += 190
-    if (vibe==='free' && /park|market|museum|community|public/.test(text)) score += 120
-    if (vibe==='vip' && (item?.is_featured || /vip|exclusive|luxury|premium|bottle/.test(text))) score += 180
+    if (vibe==='grown' && /lounge|cocktail|rooftop|restaurant|fine dining|jazz/.test(text)) affinity += 60
+    if (vibe==='turnt' && /nightclub|club|party|hookah|late night/.test(text)) affinity += 60
+    if (vibe==='date' && /restaurant|rooftop|cocktail|wine|date|brunch/.test(text)) affinity += 60
+    if (vibe==='live' && /live music|jazz|concert|music|bar/.test(text)) affinity += 55
+    if (vibe==='food' && /restaurant|brunch|coffee|food|dining|chef/.test(text)) affinity += 60
+    if (vibe==='culture' && (item?.is_black_owned || item?.is_culture_pick || /culture|museum|gallery|black/.test(text))) affinity += 65
+    if (vibe==='free' && /park|market|museum|community|public/.test(text)) affinity += 50
+    if (vibe==='vip' && (item?.is_featured || /vip|exclusive|luxury|premium|bottle/.test(text))) affinity += 65
   }
-  if (hasApprovedGoodTimesVenueMedia(item)) score += 180
-  if (item?.is_black_owned) score += 70
-  if (item?.is_culture_pick) score += 60
-  if (/nightclub|lounge|rooftop|hookah|late night/.test(text)) score += 45
-  if (item?.booking_link) score += 18
-  if (item?.is_featured) score += 15
-  return score
+  // Personal intent can reorder strong candidates, but cannot overpower base quality.
+  return score + Math.min(affinity,180)
 }
 function venueIdentity(item){
   return String(item?.venue_name||'location-tba').toLowerCase().replace(/\b(restaurant|and|&|the|at)\b/g,' ').replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ')
@@ -148,7 +157,7 @@ function personalizeBody(body,vibes,city) {
   try {
     const payload=JSON.parse(body)
     if (!payload?.ok || !Array.isArray(payload.events) || !Array.isArray(payload.venues)) return body
-    payload.events=payload.events.map(normalizeCustomerEventTaxonomy)
+    payload.events=payload.events.map(normalizeCustomerEventTaxonomy).map(applyGoodTimesEventIntelligence)
     payload.venues=payload.venues.map(customerVenueMedia)
     const serviceDate=payload?.local_clock?.service_date||cityClock(city).serviceDate
     if(vibes.length){
@@ -168,10 +177,21 @@ function personalizeBody(body,vibes,city) {
         .map(({item})=>item)
       payload.venues=[...payload.venues].map((item,index)=>({item,index,score:venueScore(item,index,vibes)})).sort((a,b)=>b.score-a.score).map(({item})=>item)
       payload.personalized=true
-      payload.personalization={vibes,service_date:serviceDate,ordering:'service-date-then-nightlife-then-taste'}
+      payload.personalization={vibes,service_date:serviceDate,ordering:'quality-first-then-intent'}
+    }else{
+      payload.venues=[...payload.venues].sort((a,b)=>Number(b?.intelligence_score||0)-Number(a?.intelligence_score||0))
     }
     payload.events=diversifyEventsByVenue(payload.events)
-    payload.curation={...(payload.curation||{}),venue_diversity:true,venue_media_guard:true,ordering:'date-then-one-strong-move-per-venue-before-repeats'}
+    payload.curation={
+      ...(payload.curation||{}),
+      venue_diversity:true,
+      venue_media_guard:true,
+      intelligence_model:'culture-first-v2',
+      seo_weight:0,
+      proximity_max_weight:5,
+      visual_selection:'independent-candidate-scoring',
+      ordering:vibes.length?'quality-first-then-intent':'quality-first',
+    }
     return JSON.stringify(payload)
   } catch { return body }
 }
@@ -229,9 +249,9 @@ export default async function handler(request, response) {
     const stale = cache.get(key)
     if (stale && Date.now() - stale.at < STALE_TTL_MS && !response.headersSent && request.method !== 'HEAD') {
       response.statusCode = 200
-      response.setHeader('Content-Type', 'application/json; charset=utf-8')
-      response.setHeader('Cache-Control', 'private, max-age=0, s-maxage=30, stale-while-revalidate=600')
-      response.setHeader('X-Good-Times-Cache', 'STALE')
+      response.setHeader('Content-Type','application/json; charset=utf-8')
+      response.setHeader('Cache-Control','private, max-age=0, s-maxage=30, stale-while-revalidate=600')
+      response.setHeader('X-Good-Times-Cache','STALE')
       if(vibes.length)response.setHeader('X-Good-Times-Personalized','true')
       response.end(stale.body)
       return

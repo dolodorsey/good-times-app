@@ -4,7 +4,9 @@ on:
   pull_request:
     paths:
       - 'src/**'
+      - 'api/**'
       - 'scripts/**'
+      - 'skills/**'
       - 'public/**'
       - 'android/**'
       - 'package.json'
@@ -40,6 +42,13 @@ jobs:
           ! grep -q 'toISOString().split' src/App.jsx
           grep -q 'localTodayISO()' src/App.jsx
           grep -q 'Math.min(Number(rating)||0,5)' src/App.jsx
+      - name: Verify intelligence contract cannot regress
+        run: |
+          grep -q "proximity: 5" api/good-times-intelligence.js
+          grep -q "seo_weight:0" api/data-fast.js
+          ! grep -q "google_rating||0).*20" api/data-fast.js
+          ! grep -q "APPROVED_VENUE_MEDIA).*180" api/data-fast.js
+          grep -q "Curator imagery is a candidate, not a default" AGENTS.md
       - name: Verify committed PWA icon dimensions
         run: |
           python3 - <<'PY'
@@ -55,8 +64,13 @@ jobs:
                   raise SystemExit(f'{path} is {(width, height)}, expected {(size, size)}')
               print(path, width, height)
           PY
-      - name: Run regression tests
-        run: node --test scripts/gt-auth-session.test.mjs scripts/direct-request-validation.test.mjs
+      - name: Run regression and intelligence tests
+        run: >-
+          node --test
+          scripts/gt-auth-session.test.mjs
+          scripts/direct-request-validation.test.mjs
+          scripts/app-intelligence.test.mjs
+          scripts/visual-curation.test.mjs
       - name: Build web application
         run: npm run build
       - name: Synchronize Android web assets

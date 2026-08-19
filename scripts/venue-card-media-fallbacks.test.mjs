@@ -21,5 +21,8 @@ test('brittle restaurant media becomes approved-style dining category art',()=>{
 test('approved GOOD TIMES venue photography is never replaced',()=>{
   const url='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics/LOCATION_IMAGES/REVEL.webp'
   const venue={name:'Revel Atlanta',category_key:'nightclub',hero_image:url}
-  assert.equal(customerVenueMedia(venue),venue)
+  const enriched=customerVenueMedia(venue)
+  assert.equal(enriched.hero_image,url)
+  assert.notEqual(enriched.image_source,'good_times_category_fallback')
+  assert.equal(enriched.image_changed_by_visual_director,false)
 })
