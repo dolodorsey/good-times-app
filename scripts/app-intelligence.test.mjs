@@ -6,6 +6,7 @@ import {
   scoreMediaCandidate,
   selectBestMedia,
 } from '../api/good-times-intelligence.js'
+import { customerVenueMedia } from '../api/data-fast.js'
 
 test('Good Times intelligence weights total 100 and caps proximity at five percent',()=>{
   assert.equal(Object.values(GOOD_TIMES_WEIGHTS).reduce((sum,value)=>sum+value,0),100)
@@ -65,4 +66,19 @@ test('real official/editorial photography outranks stock, logos, and generic fal
   },'venue')
   assert.ok(official > stock)
   assert.ok(official > logo)
+})
+
+test('category fallback images receive zero visual contribution in the final intelligence score',()=>{
+  const venue={
+    name:'Fallback Test Venue',is_verified:true,quality_score:70,culture_score:80,
+    culture_tier:2,is_culture_pick:true,website:'https://venue.example',venue_category_key:'bar',
+    hero_image:'https://images.example/venue-photo.jpg?fit=pad&w=1200',
+  }
+  const before=scoreGoodTimesVenue(venue)
+  const after=customerVenueMedia(venue)
+  const expected=Number((before.total-(before.components.visual_quality*0.1)).toFixed(2))
+  assert.equal(after.image_is_category_fallback,true)
+  assert.equal(after.visual_quality_score,0)
+  assert.equal(after.intelligence_components.visual_quality,0)
+  assert.equal(after.intelligence_score,expected)
 })
