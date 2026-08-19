@@ -112,12 +112,16 @@ export function customerVenueMedia(item){
   if(!brittleVenueImage(enriched?.hero_image))return enriched
   const key=String(enriched?.venue_category_key||enriched?.category_key||'').toLowerCase()
   const fallback=VENUE_CATEGORY_MEDIA[key]||'gt-cat-nightlife.webp'
+  const priorVisual=Number(enriched?.intelligence_components?.visual_quality||0)
+  const adjustedIntelligence=Math.max(0,Number(enriched?.intelligence_score||0)-(priorVisual*0.1))
   return{
     ...enriched,
     hero_image:`${CATEGORY_MEDIA_BASE}/${fallback}`,
     image_source:'good_times_category_fallback',
     image_is_category_fallback:true,
     visual_quality_score:0,
+    intelligence_score:Number(adjustedIntelligence.toFixed(2)),
+    intelligence_components:{...(enriched?.intelligence_components||{}),visual_quality:0},
   }
 }
 function venueScore(item,index,vibes) {
