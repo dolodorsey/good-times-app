@@ -1,0 +1,164 @@
+/* Owner polish — August 2026.
+   Presentation only: recommendation weights, ranking, taxonomy, planner logic and
+   data formulas stay untouched. This file intentionally loads last. */
+
+:root{
+  --gt-owner-gold:#efbd55;
+  --gt-owner-panel:#050b12;
+}
+
+/* The homescreen opens on motion, not a headline pasted across the motion.
+   The app's cinematic creative layer remains visible through this transparent
+   hero, while the event copy is staged below it as a compact information rail. */
+.gt2-hero{
+  background-image:none!important;
+  background-color:transparent!important;
+}
+.gt2-hero:before{display:none!important}
+.gt2-hero-veil{background:linear-gradient(180deg,rgba(3,9,16,.02),rgba(3,9,16,.12) 72%,rgba(3,9,16,.72))!important}
+
+/* Cards should read like a premium guide, not oversized poster tiles. */
+.gt2-event-card,.gt2-venue-card{
+  border-radius:15px!important;
+}
+.gt2-event-copy,.gt2-venue-copy{
+  padding:12px 13px 14px!important;
+}
+.gt2-event-copy h3,.gt2-venue-copy h3{
+  font-size:18px!important;
+  line-height:1.04!important;
+}
+.gt2-event-copy p,.gt2-venue-copy p{
+  font-size:7.5px!important;
+}
+.gt2-save{
+  width:34px!important;
+  height:34px!important;
+  border-radius:10px!important;
+}
+
+/* Any data item that has to fall back to GOOD TIMES atmosphere art should look
+   intentional rather than like a failed image request. */
+.gt2-image-fallback{
+  background:radial-gradient(circle at 48% 30%,rgba(239,189,85,.22),transparent 26%),linear-gradient(150deg,#15212c,#070b10 68%)!important;
+}
+.gt2-image-fallback span{
+  font-size:26px!important;
+  letter-spacing:.08em!important;
+}
+
+@media (min-width:900px){
+  .gt2-topbar{
+    min-height:74px!important;
+    padding:10px 32px!important;
+  }
+  .gt2-mark{width:48px!important;height:48px!important}
+  .gt2-brand strong{font-size:20px!important}
+
+  .gt2-hero{
+    height:380px!important;
+    min-height:380px!important;
+    margin-bottom:174px!important;
+    overflow:visible!important;
+  }
+  .gt2-hero-veil{border-bottom:1px solid rgba(239,189,85,.19)!important}
+  .gt2-hero-copy{
+    top:calc(100% + 22px)!important;
+    bottom:auto!important;
+    left:52px!important;
+    right:52px!important;
+    width:auto!important;
+    max-width:760px!important;
+    padding:0!important;
+  }
+  .gt2-hero-copy h1{
+    max-width:700px!important;
+    margin:8px 0 8px!important;
+    font-size:clamp(36px,3.2vw,50px)!important;
+    line-height:.94!important;
+    letter-spacing:-.035em!important;
+  }
+  .gt2-hero-copy p{font-size:11px!important;max-width:560px!important}
+  .gt2-hero-copy>div{margin-top:12px!important}
+  .gt2-hero-copy button{min-height:42px!important}
+  .gt2-hero-index{
+    top:24px!important;
+    right:30px!important;
+    width:74px!important;
+    height:74px!important;
+  }
+  .gt2-hero-index strong{font-size:23px!important}
+
+  .gt2-section{padding:34px 0 16px!important}
+  .gt2-section-title{margin-bottom:14px!important}
+  .gt2-section-title h2{font-size:30px!important}
+
+  .gt2-horizontal,
+  .gt2-event-grid,
+  .gt2-venue-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:12px!important;
+  }
+  .gt2-event-card.compact .gt2-event-image,
+  .gt2-venue-card.compact .gt2-venue-image,
+  .gt2-event-grid .gt2-event-image,
+  .gt2-venue-grid .gt2-venue-image{
+    height:156px!important;
+  }
+  .gt2-screen-heading h1{
+    font-size:clamp(38px,4vw,50px)!important;
+    line-height:.94!important;
+  }
+  .gt2-category-grid>button{
+    min-height:150px!important;
+  }
+  .gt2-category-grid strong{font-size:22px!important}
+
+  .gt2-explore-browser .gt2-category-grid,
+  .gt2-explore-browser .gt2-venue-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:12px!important;
+  }
+  .gt2-explore-browser .gt2-category-grid>button{min-height:150px!important}
+  .gt2-explore-browser .gt2-venue-grid .gt2-venue-image{height:156px!important}
+}
+
+@media (min-width:900px) and (max-width:1120px){
+  .gt2-horizontal,.gt2-event-grid,.gt2-venue-grid,
+  .gt2-explore-browser .gt2-category-grid,.gt2-explore-browser .gt2-venue-grid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+
+@media (max-width:899px){
+  .gt2-hero{
+    height:300px!important;
+    min-height:300px!important;
+    margin-bottom:172px!important;
+    overflow:visible!important;
+  }
+  .gt2-hero-copy{
+    top:calc(100% + 18px)!important;
+    bottom:auto!important;
+    left:16px!important;
+    right:16px!important;
+  }
+  .gt2-hero-copy h1{
+    margin:7px 0!important;
+    font-size:clamp(30px,8.5vw,40px)!important;
+    line-height:.95!important;
+  }
+  .gt2-hero-copy p{font-size:9px!important}
+  .gt2-hero-copy>div{margin-top:10px!important}
+  .gt2-hero-copy button{min-height:40px!important}
+  .gt2-hero-index{width:62px!important;height:62px!important;top:15px!important;right:15px!important}
+}
+
+@media (max-width:599px){
+  .gt2-venue-grid .gt2-venue-image,.gt2-event-grid .gt2-event-image{height:172px!important}
+  .gt2-event-copy h3,.gt2-venue-copy h3{font-size:17px!important}
+}
+
+@media (prefers-reduced-motion:reduce){
+  .gt2-event-card,.gt2-venue-card{transition:none!important}
+}
