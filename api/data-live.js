@@ -6,6 +6,7 @@ import {
   inferCustomerTaxonomy,
   getEventFreshness,
 } from './data.js'
+import { scoreGoodTimesEvent } from './good-times-intelligence.js'
 
 const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
@@ -83,6 +84,22 @@ function nightlifePriority(item,serviceDate){
   if(party)return 3
   return 6
 }
+function intelligenceEventScore(item){
+  const taxonomy=inferCustomerTaxonomy(item)
+  return scoreGoodTimesEvent({
+    ...item,
+    title:item.event_name,
+    event_date:item.show_date,
+    event_time:item.show_time,
+    raw_type:item.event_type,
+    raw_category:item.genre,
+    category_key:taxonomy.category,
+    subcategory_key:taxonomy.subcategory,
+    source_name:item.source,
+    image_url:safeImage(item.image_url),
+    is_verified:item.status==='confirmed',
+  }).total
+}
 function rankEvents(rows,clock){
   return [...rows].sort((a,b)=>{
     const date=String(a.show_date||'').localeCompare(String(b.show_date||''))
@@ -93,7 +110,7 @@ function rankEvents(rows,clock){
       const time=eventMinutes(b.show_time)-eventMinutes(a.show_time)
       if(time)return time
     }
-    return Number(b.good_times_score||0)-Number(a.good_times_score||0)||Number(a.display_priority||99)-Number(b.display_priority||99)
+    return intelligenceEventScore(b)-intelligenceEventScore(a)||Number(a.display_priority||99)-Number(b.display_priority||99)
   })
 }
 function isStaleServiceDayEvent(item,clock){
