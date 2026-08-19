@@ -20,11 +20,14 @@ import './features/experience/good-times-reference-update.css'
 // App Review-specific device geometry loads last so older phone-shell rules
 // cannot re-narrow the iPad or guest experience.
 import './features/experience/good-times-app-review.css'
+// Owner polish is the final visual authority for card density and homescreen motion.
+import './features/experience/good-times-owner-polish.css'
 import GoodTimesShellControl from './features/experience/GoodTimesShellControl.jsx'
 import BuildMyNightRouteHost from './features/experience/BuildMyNightRouteHost.jsx'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
+import { installMediaIntegrityGuard } from './media-integrity.js'
 import { isNative } from './native.js'
 
 const LazyLiveApp = lazy(() => import('./features/experience/GoodTimesLiveApp.jsx'))
@@ -93,6 +96,7 @@ function installDataRequestGuard(){
 
 installRecoveryRedirect()
 installDataRequestGuard()
+installMediaIntegrityGuard()
 installGrowthTracking()
 
 class RuntimeBoundary extends Component {
