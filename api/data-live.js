@@ -114,7 +114,8 @@ function customerReadyEvent(item,clock){
 function mapEvents(rows){return rows.map((item,index)=>{const taxonomy=inferCustomerTaxonomy(item);return{
   event_key:`show:${item.id}`,source_table:'gt_shows',source_id:item.id,city_key:item.city_key,
   title:decode(item.event_name),event_date:item.show_date,event_time:item.show_time,venue_name:decode(item.venue_name),
-  raw_type:item.event_type,raw_category:item.genre,ticket_url:item.ticket_url,image_url:safeImage(item.image_url),organizer:decode(item.organizer),
+  raw_type:item.event_type,raw_category:item.genre,description:decode(item.description),ticket_url:item.ticket_url,image_url:safeImage(item.image_url),organizer:decode(item.organizer),
+  source_name:item.source,source_url:item.source_url,is_verified:item.status==='confirmed',quality_score:item.quality_score,freshness_tier:item.freshness_tier,updated_at:item.updated_at,
   display_priority:item.display_priority,good_times_score:item.good_times_score,category_key:taxonomy.category,subcategory_key:taxonomy.subcategory,
   is_featured:item.is_featured,is_curated:item.is_curated,rank_order:index+1,
 }})}
@@ -132,7 +133,7 @@ function send(response,status,payload,cache='MISS'){
   response.statusCode=status
   response.setHeader('Content-Type','application/json; charset=utf-8')
   response.setHeader('Cache-Control',status===200?'public, s-maxage=60, stale-while-revalidate=600':'no-store')
-  response.setHeader('X-Good-Times-Live-Gateway','v6')
+  response.setHeader('X-Good-Times-Live-Gateway','v7')
   response.setHeader('X-Good-Times-Cache',cache)
   response.end(JSON.stringify(payload))
 }
@@ -171,6 +172,6 @@ export default async function handler(request,response){
     counts:{events:events.length,venues:venues.length},events,venues,
   }
   CACHE.set(cacheKey,{at:Date.now(),payload})
-  if(request.method==='HEAD'){response.statusCode=200;response.setHeader('X-Good-Times-Events',String(events.length));response.setHeader('X-Good-Times-Venues',String(venues.length));response.setHeader('X-Good-Times-Degraded',String(degraded));response.setHeader('X-Good-Times-Service-Date',clock.serviceDate);response.setHeader('X-Good-Times-Live-Gateway','v6');return response.end()}
+  if(request.method==='HEAD'){response.statusCode=200;response.setHeader('X-Good-Times-Events',String(events.length));response.setHeader('X-Good-Times-Venues',String(venues.length));response.setHeader('X-Good-Times-Degraded',String(degraded));response.setHeader('X-Good-Times-Service-Date',clock.serviceDate);response.setHeader('X-Good-Times-Live-Gateway','v7');return response.end()}
   return send(response,200,payload)
 }
