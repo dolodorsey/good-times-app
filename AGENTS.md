@@ -14,8 +14,18 @@ This file is the current source of truth for coding agents and operating agents 
 8. **Do not use loose venue matching.** Allowed automatic matches are reviewed aliases or one unique full normalized address. Street-number-only and ambiguous fuzzy matching are prohibited.
 9. **Do not discard valid business inventory.** Career fairs, professional networking, mixers, real-estate events, finance events, classes, and community programs are valid taxonomy lanes. Noise filtering is limited to virtual-only spam, MLM/pyramid offers, timeshares, and obvious make-money schemes.
 10. **Never commit credentials.** Supabase `credentials` is the credential source of truth. Applications and agents receive credential references, never raw values.
-11. **The following providers are removed and may not be reintroduced:** Perplexity, Google Place Details, Apify, and ScrapeGraph.
+11. **The following GOOD TIMES providers are removed and may not be reintroduced:** Perplexity, Google Place Details, Apify, and ScrapeGraph.
 12. **One app, one repository, one Vercel project.** GOOD TIMES work stays in `dolodorsey/good-times-app` and deploys through the `good-times-app` Vercel project.
+13. **Rank the experience before the image.** Media quality may contribute only through the explicit visual-quality component; an image path, uploader, curator submission, or stock fallback may never inflate the underlying venue/event quality.
+14. **Nearby is not the same as good.** Proximity contributes at most 5% to the canonical GOOD TIMES score. SEO/search rank contributes 0%. Google/Yelp/review-platform popularity may be retained as secondary evidence but is not a primary ranking authority.
+15. **Curator imagery is a candidate, not a default.** The Visual Research Director must compare eligible truthful alternatives. Stock photography must never impersonate a real venue/event when verified real media can be sourced.
+16. **Sourcing agents never publish directly.** Discovery → evidence → identity resolution → verification → domain score → visual research → editorial/quality gate → publication → monitoring are separate stages.
+17. **Do not revive the retired `khg_managed_agents` GOOD TIMES scheduler.** The legacy nine-agent scheduler was retired August 18, 2026 when enterprise BOH autonomy became canonical. Current intelligence roles live in `khg_agents` and the skills below.
+
+## Canonical skills
+
+- `skills/app-intelligence-director/SKILL.md` — enterprise app routing and shared reliability rules.
+- `skills/good-times-intelligence/SKILL.md` — GOOD TIMES-specific source, taste, ranking, visual, freshness, and release contract.
 
 ## Product acceptance checks
 
@@ -39,7 +49,7 @@ npm install --legacy-peer-deps
 npm run build
 ```
 
-Then verify the production routes and inspect Vercel runtime errors.
+Then verify the production routes, Supabase security/performance checks, and Vercel runtime errors.
 
 ## Current architecture
 
@@ -57,69 +67,104 @@ src/features/intelligence/client.js
   ├─ loadExploreDirectory()
   └─ concierge / profile / save APIs
 
+api/good-times-intelligence.js             culture/source/media scoring contract
+api/data-live.js                           source-backed live inventory gateway
+api/data-fast.js                           quality-first + intent personalization
+
 src/App.jsx                                legacy experience only
 ```
 
-## GOOD TIMES Agent Operating System
+## GOOD TIMES Intelligence Director v2
 
-The old independent cron pile has been replaced by nine named deterministic agents registered in `khg_managed_agents`:
+The current canonical intelligence fleet is registered in `khg_agents` under `entity_scope = ['good_times']`:
 
 | Agent | Responsibility |
 |---|---|
-| `GT__SUPERVISOR` | Own queues, priorities, SLAs, deduplication, and escalation. |
-| `GT__SOURCE_SCOUT` | Maintain official/direct sources and replace broken calendars. |
-| `GT__EVENT_STOCKER` | Close event inventory gaps across 25 categories and 141 subcategories. |
-| `GT__VENUE_REGISTRAR` | Verify and onboard legitimate missing venues. |
-| `GT__VENUE_RESOLVER` | Maintain aliases and canonical venue links. |
-| `GT__DATA_STEWARD` | Complete contacts, images, hours, booking links, and evidence. |
-| `GT__QA_AUDITOR` | Audit duplicates, taxonomy, city accuracy, freshness, and regressions. |
-| `GT__PUBLISHER` | Promote verified records and rank the public feed incrementally. |
-| `GT__RELIABILITY` | Recover stuck work and monitor Supabase, GitHub, Vercel, and crons. |
+| `gt_intelligence_director` | Route discovery, source trust, verification, visuals, editorial quality, freshness, and release protection. |
+| `gt_culture_editor` | Judge actual cultural/experience value and reject popular-but-mediocre inventory. |
+| `gt_tastemaker_scout` | Find direct, emerging, authoritative, creator, cultural, ticketing, arts, sports, chef, DJ, university, Greek, and promoter signals before generic search results. |
+| `gt_source_authority` | Tier sources by directness, independence, historical accuracy, and freshness. |
+| `gt_fact_verifier` | Cross-check critical facts and quarantine conflicts rather than guessing. |
+| `gt_visual_research` | Compare truthful image candidates and select the strongest verified visual independently from curator/default imagery. |
+| `gt_feed_diversity` | Prevent repetitive venue/category/promoter/neighborhood feeds without lowering quality. |
+| `gt_freshness_sentinel` | Recheck volatile data and surface stale/zero-yield sources. |
+| `gt_release_guardian` | Block releases that fail build, data, security, runtime, or core journey gates. |
 
-Agent state and work:
-
-```sql
-select * from v_gt_agent_command_center order by agent_name;
-select * from gt_agent_work_items
-where status in ('queued','waiting','failed')
-order by priority, created_at;
-```
-
-Run an agent manually only for testing or incident recovery:
+Current fleet inspection:
 
 ```sql
-select gt_run_agent('GT__SUPERVISOR','manual');
-select gt_run_agent('GT__PUBLISHER','promotion');
-select gt_run_agent('GT__PUBLISHER','ranking');
+select agent_key,display_name,role,department_id,platform_key,tools_forbidden,status
+from khg_agents
+where 'good_times'=any(entity_scope)
+order by agent_key;
 ```
 
-Promotion and ranking are intentionally separate phases. Do not combine them into one transaction.
+The legacy `GT__SUPERVISOR`, `GT__SOURCE_SCOUT`, `GT__EVENT_STOCKER`, `GT__VENUE_REGISTRAR`, `GT__VENUE_RESOLVER`, `GT__DATA_STEWARD`, `GT__QA_AUDITOR`, `GT__PUBLISHER`, and `GT__RELIABILITY` rows in `khg_managed_agents` are historical/retired scheduler records. Do not call `gt_run_agent()` as an operating path unless explicitly performing legacy incident forensics.
+
+## Canonical GOOD TIMES score
+
+```text
+Cultural relevance   25%
+Experience quality   20%
+Source authority     15%
+Current momentum     15%
+Visual quality       10%
+Uniqueness           10%
+Proximity              5%
+------------------------
+Total                100%
+```
+
+- SEO/search result position: **0%**.
+- Review-platform popularity: metadata/evidence only, not primary authority.
+- Personalization is an overlay after base quality; it may reorder qualified results but must not rescue weak inventory.
+- Unknown distance is neutral; never fabricate distance.
+
+## Visual research workflow
+
+```text
+verified entity/event
+    ↓
+collect media candidates
+    ├─ official / venue / artist / organizer media
+    ├─ licensed or permitted editorial / press media
+    ├─ verified ticketing media
+    ├─ verified creator / photographer media
+    ├─ curator submission
+    └─ branded category fallback only when necessary
+    ↓
+identity + rights + resolution + crop + recency + composition QA
+    ↓
+visual score
+    ↓
+best truthful candidate
+    ↓
+publish/review gate
+```
+
+Candidate evidence lives in `gt_media_candidates`; `v_gt_media_candidates_scored` and `v_gt_best_media_candidate` expose the internal scored selection path. These resources are internal and are not anonymous/public tables.
 
 ## Data workflow
 
 ```text
-official/direct sources + exact Eventbrite feeds
+direct/official + approved public sources
     ↓
-gt_sourced_events
-    ↓  GT__PUBLISHER / promotion
-gt_shows
-    ↓  verified taxonomy precedence
-v_gt_effective_* / ranked internal feed
-    ↓  GT__PUBLISHER / ranking
+evidence / sourced inventory
+    ↓
+identity resolution + source authority + fact verification
+    ↓
+canonical gt_shows / gt_venues
+    ↓
+GOOD TIMES domain score
+    ↓
+independent visual research
+    ↓
+editorial + diversity + freshness gates
+    ↓
 public GOOD TIMES feed
 ```
 
-Venue workflow:
-
-```text
-unmatched event venue text
-    ↓
-gt_venue_normalization_queue
-    ├─ reviewed alias → GT__VENUE_RESOLVER
-    ├─ legitimate missing venue → GT__VENUE_REGISTRAR
-    ├─ profile completion → GT__DATA_STEWARD
-    └─ generic/junk text → quarantine
-```
+`gt_public_live_inventory()` supplies the live candidate pool. Its ordering must not use Google rating, SEO/search rank, or a preferred hero-image path as a quality boost.
 
 ## Safe data changes
 
@@ -128,31 +173,36 @@ gt_venue_normalization_queue
 - Preserve manually curated fields such as `is_khg`, `is_culture_pick`, `culture_tier`, and `khg_brand_key`.
 - Never silently lower inventory or quality targets to make a scorecard appear complete.
 - Never delete evidence when repairing or merging a record.
+- Rejected media stays as evidence with a rejection reason; it does not silently return to the candidate pool.
 
 ## Session start
 
 ```sql
-select * from v_gt_agent_command_center order by health, agent_name;
+select agent_key,display_name,role,status
+from khg_agents
+where 'good_times'=any(entity_scope)
+order by agent_key;
+
 select * from v_gt_atlanta_subcategory_coverage order by inventory_gap desc;
 select * from gt_venue_normalization_queue
 where status='open'
 order by upcoming_show_count desc;
-select jobname, status, return_message, start_time
-from cron.job_run_details d
-join cron.job j using(jobid)
-where j.jobname like 'gt-agent-%'
-order by start_time desc
-limit 30;
+
+select status,source_type,count(*)
+from gt_media_candidates
+group by status,source_type
+order by status,count(*) desc;
 ```
 
 Fix critical health failures before feature expansion.
 
 ## Session end
 
-- Build the app.
+- Build and test the app.
 - Confirm Vercel deployment is READY.
-- Check runtime errors.
-- Record the work in the normal handoff/task system.
-- Leave queue ownership with the named agent responsible for the lane.
+- Check production runtime errors.
+- Check Supabase security/performance advisories after persistent schema changes.
+- Record the work in the normal enterprise handoff/task system.
+- Leave unresolved work with the canonical app-specific agent responsible for the lane.
 
-**Last updated: August 6, 2026 — GOOD TIMES Command Experience + Agent Operating System v1.**
+**Last updated: August 19, 2026 — GOOD TIMES App Intelligence Director + Culture-First Ranking + Visual Research v2.**
