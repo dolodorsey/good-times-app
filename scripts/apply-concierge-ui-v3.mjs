@@ -3,7 +3,6 @@ const file='src/App.jsx';
 let src=fs.readFileSync(file,'utf8');
 const once=(from,to,label)=>{if(!src.includes(from)) throw new Error(`apply-concierge-ui-v3: missing ${label}`);src=src.replace(from,to)};
 
-// 1) Discover becomes editorial/ranked instead of a taxonomy count wall.
 once(
 `          <div style={{textAlign:"center",marginBottom:24}}>
             <div style={{fontSize:12,letterSpacing:4,color:C.gold,fontWeight:700,marginBottom:8}}>EXPLORE</div>
@@ -36,29 +35,25 @@ once(
 'explore hero'
 );
 
-// De-emphasize category inventory language.
 src=src.replaceAll('>{cat.subs.length} types<','>Explore<');
 src=src.replaceAll('>{exploreSheet.subs.length} categories in {city.name}<','>Good Times picks in {city.name}<');
 
-// 2) Build My Night results become complete plans with swappable individual stops.
 once(
 `                            {stop.why&&<div style={{fontSize:13,color:C.textSec,fontStyle:"italic",marginTop:3}}>"{stop.why}"</div>}
                           </div>`,
 `                            {stop.why&&<div style={{fontSize:12,color:C.textSec,fontStyle:"italic",marginTop:3}}>{stop.why}</div>}
-                            <button onClick={()=>{const pool=[...cityEvents].filter(e=>e.id!==stop.event.id&&!plan.stops.some(s=>s.event?.id===e.id));if(!pool.length)return;const replacement=pool[Math.floor(Math.random()*pool.length)];setPlanResult(prev=>prev.map((p,pidx)=>pidx!==pi?p:{...p,stops:p.stops.map((s,sidx)=>sidx===si?{...s,event:replacement,why:"Swapped by Good Times"}:s)}));showToast("Stop swapped ✦")}} style={{marginTop:7,background:"transparent",border:`1px solid ${C.gold}35`,color:C.gold,borderRadius:8,padding:"5px 9px",fontSize:10,fontWeight:700,cursor:"pointer"}}>Swap this stop</button>
+                            <button onClick={()=>{const pool=[...cityEvents].filter(e=>e.id!==stop.event.id&&!plan.stops.some(s=>s.event?.id===e.id));if(!pool.length)return;const replacement=pool[Math.floor(Math.random()*pool.length)];setPlanResult(prev=>prev.map((p,pidx)=>pidx!==pi?p:{...p,stops:p.stops.map((s,sidx)=>sidx===si?{...s,event:replacement,why:"Swapped by Good Times"}:s)}));showToast("Stop swapped ✦")}} style={{marginTop:7,background:"transparent",border:"1px solid rgba(212,168,83,.25)",color:C.gold,borderRadius:8,padding:"5px 9px",fontSize:10,fontWeight:700,cursor:"pointer"}}>Swap this stop</button>
                           </div>`,
 'plan stop swap'
 );
 src=src.replace('Pick one. Lock it. Go.','Three complete nights. Swap any stop.');
 src=src.replace('Lock This Plan','Use This Night');
 
-// 3) Reduce persistent chrome / party-board footprint and overall mobile density.
 src=src.replace('paddingBottom:"calc(104px + env(safe-area-inset-bottom, 0px))"','paddingBottom:"calc(88px + env(safe-area-inset-bottom, 0px))"');
 src=src.replaceAll('marginBottom:24','marginBottom:18');
 src=src.replaceAll('padding:"20px"','padding:"16px"');
 src=src.replaceAll('height:160,position:"relative"','height:140,position:"relative"');
 
-// Runtime CSS catches current/legacy Party Board implementations without depending on one component name.
 once(
 `        .gt-screen-host{isolation:isolate;}`,
 `        .gt-screen-host{isolation:isolate;}
