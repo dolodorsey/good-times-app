@@ -16,15 +16,16 @@ import './features/experience/good-times-reference-update.css'
 import './features/experience/good-times-app-review.css'
 import './features/experience/good-times-owner-polish.css'
 import './features/experience/good-times-v2.css'
-// Final authority: app-width geometry, monetization inventory and V2 controls.
 import './features/experience/good-times-v2-hardening.css'
+// Final consumer authority: V3 density, taxonomy drilldown, Radar + Vault navigation.
+import './features/experience/good-times-v3.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
 import { installMediaIntegrityGuard } from './media-integrity.js'
 import { isNative } from './native.js'
 
-const LazyCommandApp = lazy(() => import('./features/experience/GoodTimesCommandAppV2.jsx'))
+const LazyCommandApp = lazy(() => import('./features/experience/GoodTimesCommandAppV3.jsx'))
 const LazyLegacyApp = lazy(() => import('./App.jsx'))
 const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
 const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
@@ -160,11 +161,11 @@ async function bootstrap(){
   else if(legacyRoute){route=<LazyLegacyApp/>;loadingLabel='Opening legacy GOOD TIMES'}
   else {route=<LazyCommandApp/>;loadingLabel=commandRoute?'Opening command interface':'Opening GOOD TIMES'}
 
-  const launchMemberV2=hasSession&&!requestType&&!recoverySession&&!legacyRoute
+  const launchMemberV3=hasSession&&!requestType&&!recoverySession&&!legacyRoute
   ReactDOM.createRoot(rootElement).render(
     <RuntimeBoundary>
       <Suspense fallback={<RouteLoading label={loadingLabel}/> }>
-        <PremiumRoot launch={launchMemberV2}>
+        <PremiumRoot launch={launchMemberV3}>
           {isNative?<LazyNativeBridge/>:null}
           {route}
         </PremiumRoot>
