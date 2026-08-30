@@ -143,7 +143,7 @@ function mapVenues(rows){
     category_key:row.venue_category_key||'venue',
     subcategory:row.venue_subcategory||row.subcategory||null,
     hero_image:safeImage(row.hero_image),
-  })).filter(row=>row.hero_image)
+  }))
   return dedupeCustomerVenues(normalized)
 }
 function send(response,status,payload,cache='MISS'){
