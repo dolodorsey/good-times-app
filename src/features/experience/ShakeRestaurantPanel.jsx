@@ -1,12 +1,25 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
 import { loadShakeRestaurants, recordProductEvent, recordTasteSignal } from '../intelligence/client.js'
+import { detectShakePlatform, shakeImpulse, shakeThreshold, shouldTriggerShake } from './shake-motion.js'
+import { loadTasteDimensions, tasteGraphBoost } from './shake-personalization.js'
 
 const CUISINES = ['steakhouse','seafood','italian','mexican','caribbean','sushi','asian','soul food','vegan','brunch','coffee']
 const VIBES = ['date night','upscale','casual','romantic','rooftop','late night','groups','hidden gem','live music']
 
 function haystack(venue) {
   return [venue.subcategory, venue.short_desc, ...(venue.vibe_tags || []), ...(venue.best_for || []), ...(venue.search_tags || []), ...(venue.culture_tags || []), ...(venue.shake_tags || []), ...(venue.amenity_tags || []), ...(venue.dietary_tags || []), ...(venue.ownership_tags || [])].filter(Boolean).join(' ').toLowerCase()
+}
+
+function tasteMetadata(venue, filters = {}) {
+  return {
+    surface: 'shake',
+    cuisine: venue?.subcategory || filters.cuisine || null,
+    price: venue?.price_range || filters.price || null,
+    vibe: filters.vibe || null,
+    vibes: [...new Set([...(venue?.vibe_tags || []), ...(venue?.shake_tags || [])])].slice(0, 12),
+    neighborhood: venue?.neighborhood || null,
+  }
 }
 
 function distanceMiles(a, b) {
@@ -20,13 +33,14 @@ function distanceMiles(a, b) {
   return 3958.8 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
 }
 
-function weightedPick(rows) {
+function weightedPick(rows, tasteDimensions = []) {
   if (!rows.length) return null
   const weighted = rows.map(row => {
     const quality = Math.max(0.3, Number(row.quality_score || 50) / 100)
     const culture = Math.max(0.4, Number(row.culture_score || 50) / 100)
     const editorial = Math.max(0.25, Number(row.shake_weight || 1))
-    return { row, weight: quality * 0.55 + culture * 0.25 + editorial * 0.2 }
+    const personalization = tasteGraphBoost(row, tasteDimensions)
+    return { row, weight: Math.max(0.05, quality * 0.55 + culture * 0.25 + editorial * 0.2 + personalization) }
   })
   const total = weighted.reduce((sum, item) => sum + item.weight, 0)
   let cursor = Math.random() * total
@@ -39,6 +53,7 @@ function weightedPick(rows) {
 
 export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }) {
   const [rows, setRows] = useState([])
+  const [tasteDimensions, setTasteDimensions] = useState([])
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [rolling, setRolling] = useState(false)
@@ -54,6 +69,9 @@ export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }
   const [status, setStatus] = useState('Shake your phone or tap Pick for me.')
   const historyRef = useRef([])
   const lastShakeRef = useRef(0)
+  const pickRef = useRef(null)
+  const platform = useMemo(() => detectShakePlatform(globalThis.navigator?.userAgent || ''), [])
+  const threshold = useMemo(() => shakeThreshold(platform), [platform])
 
   useEffect(() => {
     let active = true
@@ -65,6 +83,14 @@ export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }
     }).finally(() => active && setLoading(false))
     return () => { active = false }
   }, [city])
+
+  useEffect(() => {
+    let active = true
+    loadTasteDimensions(session).then(data => {
+      if (active) setTasteDimensions(data || [])
+    }).catch(() => {})
+    return () => { active = false }
+  }, [session?.access_token, session?.user?.id])
 
   const filtered = useMemo(() => rows.filter(venue => {
     const text = haystack(venue)
@@ -90,24 +116,45 @@ export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }
       return
     }
     setRolling(true)
-    setStatus('GOOD TIMES is choosing…')
+    setStatus(tasteDimensions.length ? 'GOOD TIMES is choosing for you…' : 'GOOD TIMES is choosing…')
     try { await Haptics.impact({ style: ImpactStyle.Medium }) } catch {}
     window.setTimeout(async () => {
-      const chosen = weightedPick(pool)
+      const chosen = weightedPick(pool, tasteDimensions)
       historyRef.current = [...historyRef.current, chosen.id].slice(-12)
       setResult(chosen)
       setRolling(false)
-      setStatus('This is the move.')
+      setStatus(tasteDimensions.length ? 'Taste Graph says this is the move.' : 'This is the move.')
       try { await Haptics.impact({ style: ImpactStyle.Heavy }) } catch {}
-      recordProductEvent({ eventName: 'shake_restaurant_result', surface: 'shake', objectType: 'venue', objectId: chosen.id, city, properties: { source, cuisine, price, vibe, black_owned: blackOwned, reservations, distance_miles: distance || null, candidate_count: pool.length } }, session)
-      recordTasteSignal({ entityType: 'venue', entityId: chosen.id, signalType: 'shake_result', city, metadata: { cuisine, price, vibe } }, session)
+      const metadata = tasteMetadata(chosen, { cuisine, price, vibe })
+      recordProductEvent({
+        eventName: 'shake_restaurant_result',
+        surface: 'shake',
+        objectType: 'venue',
+        objectId: chosen.id,
+        city,
+        properties: {
+          source,
+          cuisine,
+          price,
+          vibe,
+          black_owned: blackOwned,
+          reservations,
+          distance_miles: distance || null,
+          candidate_count: pool.length,
+          taste_graph_dimensions: tasteDimensions.length,
+          platform,
+        },
+      }, session)
+      recordTasteSignal({ entityType: 'venue', entityId: chosen.id, signalType: 'shake_result', city, metadata }, session)
     }, 650)
   }
+  pickRef.current = pick
 
   const enableMotion = async () => {
     try {
       if (typeof DeviceMotionEvent === 'undefined') {
         setStatus('Motion sensing is unavailable here. Tap Pick for me instead.')
+        recordProductEvent({ eventName: 'shake_motion_unavailable', surface: 'shake', city, properties: { platform } }, session)
         return
       }
       if (typeof DeviceMotionEvent.requestPermission === 'function') {
@@ -116,39 +163,57 @@ export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }
       }
       setMotionReady(true)
       setStatus('Shake is on. Give your phone a shake.')
+      recordProductEvent({ eventName: 'shake_motion_enabled', surface: 'shake', city, properties: { platform, impulse_threshold: threshold, cooldown_ms: 1400 } }, session)
     } catch {
       setStatus('Motion permission was not enabled. Tap Pick for me anytime.')
+      recordProductEvent({ eventName: 'shake_motion_permission_denied', surface: 'shake', city, properties: { platform } }, session)
     }
   }
 
   useEffect(() => {
     if (!motionReady) return undefined
     const listener = event => {
-      const acc = event.accelerationIncludingGravity || event.acceleration
-      if (!acc) return
-      const magnitude = Math.sqrt((acc.x || 0) ** 2 + (acc.y || 0) ** 2 + (acc.z || 0) ** 2)
+      const impulse = shakeImpulse(event)
       const now = Date.now()
-      if (magnitude > 22 && now - lastShakeRef.current > 1400) {
+      if (shouldTriggerShake({ impulse, threshold, now, lastShakeAt: lastShakeRef.current })) {
         lastShakeRef.current = now
-        pick('motion')
+        recordProductEvent({
+          eventName: 'shake_motion_detected',
+          surface: 'shake',
+          city,
+          properties: { platform, impulse: Number(impulse.toFixed(2)), impulse_threshold: threshold },
+        }, session)
+        pickRef.current?.('motion')
       }
     }
     window.addEventListener('devicemotion', listener)
     return () => window.removeEventListener('devicemotion', listener)
-  })
+  }, [motionReady, threshold, platform, city, session?.access_token])
 
   const requestLocation = () => {
     if (!navigator.geolocation) return setStatus('Location is unavailable on this device.')
     navigator.geolocation.getCurrentPosition(position => {
       setLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude })
       setStatus('Distance filtering is ready.')
-    }, () => setStatus('Location was not enabled. You can keep using city-wide picks.'), { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 })
+      recordProductEvent({ eventName: 'shake_location_enabled', surface: 'shake', city, properties: { platform } }, session)
+    }, () => {
+      setStatus('Location was not enabled. You can keep using city-wide picks.')
+      recordProductEvent({ eventName: 'shake_location_denied', surface: 'shake', city, properties: { platform } }, session)
+    }, { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 })
   }
 
   const reject = () => {
     if (!result) return
-    recordTasteSignal({ entityType: 'venue', entityId: result.id, signalType: 'shake_reject', city, metadata: { surface: 'shake' } }, session)
+    recordTasteSignal({ entityType: 'venue', entityId: result.id, signalType: 'shake_reject', city, metadata: tasteMetadata(result, { cuisine, price, vibe }) }, session)
+    recordProductEvent({ eventName: 'shake_restaurant_reject', surface: 'shake', objectType: 'venue', objectId: result.id, city, properties: { platform } }, session)
     pick('reject')
+  }
+
+  const accept = () => {
+    if (!result) return
+    recordTasteSignal({ entityType: 'venue', entityId: result.id, signalType: 'shake_accept', city, metadata: tasteMetadata(result, { cuisine, price, vibe }) }, session)
+    recordProductEvent({ eventName: 'shake_restaurant_accept', surface: 'shake', objectType: 'venue', objectId: result.id, city, properties: { platform } }, session)
+    onOpen(result)
   }
 
   return <section className="gt-shake" aria-label="Shake restaurant picker">
@@ -171,17 +236,17 @@ export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }
       {distance && !location && <button type="button" className="gt-shake__location" onClick={requestLocation}>Use my location</button>}
       <label className="gt-shake__check"><input type="checkbox" checked={blackOwned} onChange={event => setBlackOwned(event.target.checked)}/>Black-owned</label>
       <label className="gt-shake__check"><input type="checkbox" checked={reservations} onChange={event => setReservations(event.target.checked)}/>Reservations / booking</label>
-      <small>{filtered.length} eligible picks</small>
+      <small>{filtered.length} eligible picks{tasteDimensions.length ? ` · Taste Graph ${tasteDimensions.length}` : ''}</small>
     </div>}
 
     {result && <article className="gt-shake__result">
-      <div className="gt-shake__image">{result.hero_image ? <img src={result.hero_image} alt=""/> : <div>GT</div>}<span>GOOD TIMES PICK</span></div>
+      <div className="gt-shake__image">{result.hero_image ? <img src={result.hero_image} alt=""/> : <div>GT</div>}<span>{tasteDimensions.length ? 'FOR YOU' : 'GOOD TIMES PICK'}</span></div>
       <div className="gt-shake__copy">
         <small>{result.subcategory || 'Restaurant'}{result.price_range ? ` · ${result.price_range}` : ''}</small>
         <h3>{result.name}</h3>
-        <p>{result.short_desc || `${result.name} is your random GOOD TIMES pick in ${result.neighborhood || cityName}.`}</p>
+        <p>{result.short_desc || `${result.name} is your GOOD TIMES pick in ${result.neighborhood || cityName}.`}</p>
         <div className="gt-shake__facts"><span>{result.neighborhood || cityName}</span>{result.google_rating ? <span>★ {Number(result.google_rating).toFixed(1)}</span> : null}{result.is_black_owned ? <span>Black-owned</span> : null}</div>
-        <div className="gt-shake__result-actions"><button type="button" className="gt-shake__primary" onClick={() => { recordTasteSignal({ entityType: 'venue', entityId: result.id, signalType: 'shake_accept', city, metadata: { surface: 'shake' } }, session); onOpen(result) }}>Let’s go</button><button type="button" onClick={() => pick('reshake')}>Shake again</button><button type="button" onClick={reject}>Nah</button></div>
+        <div className="gt-shake__result-actions"><button type="button" className="gt-shake__primary" onClick={accept}>Let’s go</button><button type="button" onClick={() => pick('reshake')}>Shake again</button><button type="button" onClick={reject}>Nah</button></div>
       </div>
     </article>}
   </section>
