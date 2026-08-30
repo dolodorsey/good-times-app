@@ -4,25 +4,35 @@ import fs from 'node:fs'
 
 const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 const main = read('src/main.jsx')
-const app = read('src/features/experience/GoodTimesCommandAppV2.jsx')
+const app = read('src/features/experience/GoodTimesCommandAppV3.jsx')
 const auth = read('src/features/auth/client.js')
 const intelligence = read('src/features/intelligence/client.js')
 const radar = read('src/features/experience/good-times-radar.js')
 const hardening = read('src/features/experience/good-times-v2-hardening.css')
+const v3css = read('src/features/experience/good-times-v3.css')
+const taxonomyBrowser = read('src/features/experience/ExploreTaxonomyBrowser.jsx')
 const privacy = read('public/privacy.html')
 const support = read('public/support.html')
 const recommendationMigration = read('supabase/auth-migrations/20260808_capture_ai_itinerary_recommendation_sessions.sql')
 
 const mustContain = (text, markers) => markers.forEach(marker => assert.ok(text.includes(marker), `missing contract marker: ${marker}`))
 
-test('authenticated bootstrap routes members into the integrated GOOD TIMES V2 app', () => {
-  mustContain(main, ['GoodTimesCommandAppV2.jsx','LazyOnboarding','readSession()','launchMemberV2'])
+test('authenticated bootstrap routes members into the integrated GOOD TIMES V3 app', () => {
+  mustContain(main, ['GoodTimesCommandAppV3.jsx','LazyOnboarding','readSession()','launchMemberV3'])
   assert.doesNotMatch(main,/LazyLiveApp/)
   assert.doesNotMatch(main,/LazyAccountCenter/)
 })
 
-test('signed-in navigation uses the five primary customer surfaces', () => {
-  mustContain(app, ["['home','⌂','Now']","['discover','◇','Discover']","['concierge','✦','Concierge']","['plans','≋','Plans']","['saved','♡','Saved']"])
+test('signed-in navigation uses five distinct customer jobs', () => {
+  mustContain(app, ["['home','⌂','Now']","['discover','◇','Discover']","['concierge','✦','Concierge']","['radar','◉','Radar']","['vault','▣','Vault']"])
+  assert.doesNotMatch(app,/\['plans'[^\n]*'Plans'/)
+  assert.doesNotMatch(app,/\['saved'[^\n]*'Saved'/)
+  mustContain(app,['gt4-vault-tabs',"vaultView==='plans'","vaultView==='saved'"])
+})
+
+test('Discover preserves real category and subcategory traversal', () => {
+  mustContain(app,['ExploreTaxonomyBrowser','selectedCategory','selectedSubcategory','onCategory={setSelectedCategory}','onSubcategory={setSelectedSubcategory}'])
+  mustContain(taxonomyBrowser,['SUBCATEGORIES','loadExploreDirectory','onSubcategory?.(subcategory.subcategory_key)','All categories'])
 })
 
 test('city switching persists and reloads canonical inventory', () => {
@@ -40,7 +50,7 @@ test('event and venue learning signals remain persisted', () => {
 
 test('Radar follows, alert preferences and alert queue are integrated', () => {
   mustContain(radar,['loadRadarState','followEntity','unfollowEntity','saveRadarPreferences','enqueueRadarAlert'])
-  mustContain(app,['Follow + alerts','Never Miss','Just announced','Presales','Selling fast','RADAR WATCHLIST'])
+  mustContain(app,['Follow + alerts','Never Miss','Just announced','Presales','Selling fast','WATCHLIST'])
 })
 
 test('persisted AI itineraries create auditable recommendation sessions', () => {
@@ -53,15 +63,17 @@ test('account deletion API and customer privacy/support endpoints remain availab
   mustContain(support, ['Support & Privacy Choices', 'Delete your GOOD TIMES account', 'Delete account permanently', '/privacy.html'])
 })
 
-test('desktop browser is intentionally presented as app mode instead of a stretched website', () => {
-  mustContain(hardening,['body.gt-app-mode #root','max-width:460px!important','height:min(920px,calc(100dvh - 28px))!important','.gt3-desktop-nav{display:none!important}'])
+test('desktop browser remains app mode and V3 stays inside that shell', () => {
+  mustContain(hardening,['body.gt-app-mode #root','max-width:460px!important','height:min(920px,calc(100dvh - 28px))!important'])
+  mustContain(v3css,['.gt4-app{width:100%;height:100%','.gt4-main{position:relative;flex:1 1 auto','.gt4-nav{position:absolute'])
 })
 
-test('legacy bridge controls are not mounted around the V2 product', () => {
+test('legacy bridge controls are not mounted and V3 destroys legacy floating controls', () => {
   for(const marker of ['GoodTimesShellControl','BuildMyNightRouteHost','LazyUtilityMenu','LazyPaymentsLauncher','LazyConnectHub','LazyAccountCenter','LazyPartyPulse','LazyCreativeLayer']) assert.equal(main.includes(marker),false,`legacy overlay mounted: ${marker}`)
+  mustContain(app,['MutationObserver','gt-mobile-utilities','gt-connect-fab'])
 })
 
-test('current launch media is mounted and the V2 hardening layer loads last', () => {
-  mustContain(main, ['GT_CURRENT_LOGO','GT_CURRENT_HOME','GT_CURRENT_ANIMATION','good-times-v2-hardening.css'])
-  assert.ok(main.indexOf('good-times-v2-hardening.css')>main.indexOf('good-times-v2.css'))
+test('current launch media remains mounted and V3 CSS loads last', () => {
+  mustContain(main, ['GT_CURRENT_LOGO','GT_CURRENT_HOME','GT_CURRENT_ANIMATION','good-times-v2-hardening.css','good-times-v3.css'])
+  assert.ok(main.indexOf('good-times-v3.css')>main.indexOf('good-times-v2-hardening.css'))
 })
