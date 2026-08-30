@@ -9,43 +9,27 @@ import './features/experience/good-times-scenes.css'
 import './features/experience/good-times-connect.css'
 import './features/experience/good-times-profile.css'
 import './current-media.css'
-// Phase 1/2 shell consolidation — the canonical shell owns geometry.
 import './features/experience/good-times-shell.css'
-// Owner-approved rich experience loads after shell geometry so presentation can
-// be cinematic without reintroducing the old layout collisions.
 import './features/experience/good-times-rich.css'
-// Final viewport contract owns fixed-control placement and safe-area spacing.
 import './features/experience/good-times-responsive-contract.css'
 import './features/experience/good-times-reference-update.css'
-// App Review-specific device geometry loads last so older phone-shell rules
-// cannot re-narrow the iPad or guest experience.
 import './features/experience/good-times-app-review.css'
-// Owner polish is the final visual authority for card density and homescreen motion.
 import './features/experience/good-times-owner-polish.css'
-// GOOD TIMES 2.0 is intentionally isolated behind gt3-* classes and loads last.
 import './features/experience/good-times-v2.css'
-import GoodTimesShellControl from './features/experience/GoodTimesShellControl.jsx'
-import BuildMyNightRouteHost from './features/experience/BuildMyNightRouteHost.jsx'
+// Final authority: app-width geometry, monetization inventory and V2 controls.
+import './features/experience/good-times-v2-hardening.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
 import { installMediaIntegrityGuard } from './media-integrity.js'
 import { isNative } from './native.js'
 
-const LazyLiveApp = lazy(() => import('./features/experience/GoodTimesLiveApp.jsx'))
 const LazyCommandApp = lazy(() => import('./features/experience/GoodTimesCommandAppV2.jsx'))
 const LazyLegacyApp = lazy(() => import('./App.jsx'))
 const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
 const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
 const LazyOnboarding = lazy(() => import('./features/onboarding/GoodTimesOnboarding.jsx'))
-const LazyCompletionBridge = lazy(() => import('./features/experience/GoodTimesCompletionBridge.jsx'))
 const LazyNativeBridge = lazy(() => import('./features/experience/GoodTimesNativeBridge.jsx'))
-const LazyPaymentsLauncher = lazy(() => import('./features/experience/GoodTimesPaymentsBridge.jsx'))
-const LazyConnectHub = lazy(() => import('./features/experience/GoodTimesConnectHub.jsx'))
-const LazyAccountCenter = lazy(() => import('./features/experience/GoodTimesAccountCenter.jsx'))
-const LazyUtilityMenu = lazy(() => import('./features/experience/GoodTimesUtilityMenu.jsx'))
-const LazyCreativeLayer = lazy(() => import('./features/experience/GoodTimesCreativeLayer.jsx'))
-const LazyPartyPulse = lazy(() => import('./features/experience/GoodTimesPartyPulse.jsx'))
 
 const pathname = window.location.pathname.replace(/\/$/, '') || '/'
 const buildId = import.meta.env.VITE_VERCEL_GIT_COMMIT_SHA || 'local-development'
@@ -119,31 +103,19 @@ function PremiumRoot({children,launch=false}){
   if(showLaunch)return <div className="gt-launch" role="status" aria-label="Opening GOOD TIMES"><video className="gt-current-launch-video" autoPlay muted loop playsInline preload="metadata" poster={GT_CURRENT_HOME} src={GT_CURRENT_ANIMATION}/><div className="gt-launch__scene"/><div className="gt-launch__content"><img className="gt-launch__logo" src={GT_CURRENT_LOGO} alt="GOOD TIMES"/><div className="gt-launch__eyebrow">Worldwide experience concierge</div><div className="gt-launch__title">Your next move starts here.</div><div className="gt-launch__line"/></div></div>
   return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}</div>
 }
-function ProviderOpportunityLink(){
-  return <a href="/provider" style={{position:'fixed',left:'50%',bottom:'max(16px,env(safe-area-inset-bottom))',transform:'translateX(-50%)',zIndex:80,padding:'10px 16px',borderRadius:999,border:'1px solid rgba(212,168,83,.45)',background:'rgba(6,6,12,.86)',backdropFilter:'blur(14px)',color:'#D4A853',fontSize:11,fontWeight:800,letterSpacing:'.08em',textTransform:'uppercase',textDecoration:'none',whiteSpace:'nowrap'}}>Work with GOOD TIMES · Provider onboarding ↗</a>
-}
 
 function GuestAccessBar({onAuth}){
   return <>
     <div className="gt-guest-access" role="status">
-      <div><strong>Browsing as guest</strong><span>Events, nightlife and local discovery are open without an account.</span></div>
-      <button type="button" onClick={onAuth}>Sign in / Create account</button>
+      <div><strong>Guest mode</strong><span>Browse freely. Sign in to save, follow, get Radar alerts and use personalized Concierge.</span></div>
+      <button type="button" onClick={onAuth}>Sign in</button>
     </div>
     <style>{`
-      .gt-guest-mode .gt2-nav button[data-gt-tab="concierge"],
-      .gt-guest-mode .gt2-nav button[data-gt-tab="plans"],
-      .gt-guest-mode .gt2-nav button[data-gt-tab="vault"],
-      .gt-guest-mode .gt2-save,
-      .gt-guest-mode .gt2-command-launch,
-      .gt-guest-mode .gt2-detail-actions button{display:none!important}
-      .gt-guest-mode .gt2-city{pointer-events:none!important;cursor:default!important;opacity:.85!important}
-      .gt-guest-access{position:fixed;right:12px;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:9500;display:flex;align-items:center;gap:10px;max-width:min(430px,calc(100vw - 24px));padding:10px 10px 10px 13px;border:1px solid rgba(245,204,117,.28);border-radius:16px;background:rgba(7,7,12,.94);backdrop-filter:blur(18px);box-shadow:0 14px 40px rgba(0,0,0,.42);color:#fffaf4;font-family:'DM Sans',system-ui,sans-serif}
-      .gt-guest-access div{display:grid;gap:2px;min-width:0}
-      .gt-guest-access strong{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#f5cc75}
-      .gt-guest-access span{font-size:9px;line-height:1.35;color:rgba(255,255,255,.58)}
-      .gt-guest-access button{flex:0 0 auto;min-height:40px;padding:0 12px;border-radius:11px;border:1px solid rgba(245,204,117,.36);background:#f5cc75;color:#09090d;font-size:10px;font-weight:900;white-space:nowrap}
-      .gt-guest-back{position:fixed;left:14px;top:calc(14px + env(safe-area-inset-top,0px));z-index:9700;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid rgba(245,204,117,.34);background:rgba(7,7,12,.92);color:#f5cc75;font:800 10px/1 'DM Sans',system-ui,sans-serif;letter-spacing:.05em}
-      @media(max-width:600px){.gt-guest-access span{display:none}.gt-guest-access{left:12px;right:12px;justify-content:space-between}.gt-guest-access div{display:block}.gt-guest-access strong{font-size:9px}}
+      .gt-guest-access{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:145;display:flex;align-items:center;gap:10px;width:min(436px,calc(100vw - 24px));padding:9px 9px 9px 12px;border:1px solid rgba(245,204,117,.24);border-radius:14px;background:rgba(7,7,12,.93);backdrop-filter:blur(18px);box-shadow:0 14px 40px rgba(0,0,0,.38);color:#fffaf4;font-family:'DM Sans',system-ui,sans-serif}
+      .gt-guest-access div{display:grid;gap:2px;min-width:0;flex:1}.gt-guest-access strong{font-size:8px;letter-spacing:.09em;text-transform:uppercase;color:#f5cc75}.gt-guest-access span{font-size:8px;line-height:1.35;color:rgba(255,255,255,.53)}
+      .gt-guest-access button{flex:0 0 auto;min-height:36px;padding:0 11px;border-radius:10px;border:0;background:#f5cc75;color:#09090d;font-size:9px;font-weight:900;white-space:nowrap}
+      .gt-guest-back{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:170;width:min(436px,calc(100vw - 24px));min-height:40px;padding:0 13px;border-radius:999px;border:1px solid rgba(245,204,117,.34);background:rgba(7,7,12,.92);color:#f5cc75;font:800 9px/1 'DM Sans',system-ui,sans-serif;letter-spacing:.05em;text-align:left}
+      @media(max-width:600px){.gt-guest-access span{display:none}.gt-guest-access{justify-content:space-between}}
     `}</style>
   </>
 }
@@ -157,12 +129,9 @@ function SignedOutGuestExperience(){
   if(showAuth)return <>
     <LazyOnboarding onComplete={complete}/>
     <button type="button" className="gt-guest-back" onClick={()=>setShowAuth(false)}>← Continue as guest</button>
-    <style>{`.gt-guest-back{position:fixed;left:14px;top:calc(14px + env(safe-area-inset-top,0px));zIndex:9700;min-height:42px;padding:0 14px;border-radius:999px;border:1px solid rgba(245,204,117,.34);background:rgba(7,7,12,.92);color:#f5cc75;font:800 10px/1 'DM Sans',system-ui,sans-serif;letter-spacing:.05em}`}</style>
   </>
   return <div className="gt-guest-mode">
-    <LazyCreativeLayer/>
     <LazyCommandApp/>
-    <LazyPartyPulse/>
     <GuestAccessBar onAuth={()=>setShowAuth(true)}/>
   </div>
 }
@@ -184,27 +153,20 @@ async function bootstrap(){
   if(!requestType&&!recoverySession)sessionStorage.setItem('gt_splash_shown','1')
 
   let route
-  let loadingLabel='Opening GOOD TIMES Live'
+  let loadingLabel='Opening GOOD TIMES'
   if(recoverySession){route=<LazyPasswordRecovery recoverySession={recoverySession}/>;loadingLabel='Securing your account'}
   else if(requestType){route=<LazyDirectRequest requestType={requestType}/>;loadingLabel='Opening your concierge request'}
   else if(!hasSession){route=<SignedOutGuestExperience/>;loadingLabel='Opening GOOD TIMES guest access'}
   else if(legacyRoute){route=<LazyLegacyApp/>;loadingLabel='Opening legacy GOOD TIMES'}
-  else if(commandRoute){route=<LazyCommandApp/>;loadingLabel='Opening command interface'}
-  else route=<><LazyCreativeLayer/><LazyCommandApp/><LazyPartyPulse/></>
+  else {route=<LazyCommandApp/>;loadingLabel=commandRoute?'Opening command interface':'Opening GOOD TIMES'}
 
-  const showMemberTools=hasSession&&!requestType&&!recoverySession&&!legacyRoute&&!commandRoute
-  const showShellControl=hasSession&&!requestType&&!recoverySession&&!legacyRoute
-  const showProviderOpportunity=false
+  const launchMemberV2=hasSession&&!requestType&&!recoverySession&&!legacyRoute
   ReactDOM.createRoot(rootElement).render(
     <RuntimeBoundary>
       <Suspense fallback={<RouteLoading label={loadingLabel}/> }>
-        <PremiumRoot launch={showMemberTools}>
+        <PremiumRoot launch={launchMemberV2}>
           {isNative?<LazyNativeBridge/>:null}
-          {showMemberTools?<><LazyCompletionBridge/><LazyAccountCenter/><LazyUtilityMenu/><BuildMyNightRouteHost/></>:null}
           {route}
-          {showProviderOpportunity?<ProviderOpportunityLink/>:null}
-          {showShellControl?<GoodTimesShellControl/>:null}
-          {showMemberTools?<><LazyConnectHub/><LazyPaymentsLauncher/></>:null}
         </PremiumRoot>
       </Suspense>
     </RuntimeBoundary>
