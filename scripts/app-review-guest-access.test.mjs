@@ -21,7 +21,7 @@ test('guest mode uses the consolidated V2 surfaces instead of legacy GT2 gating'
     assert.match(v2, new RegExp(`\\['${id}'`))
   }
   assert.match(v2, /Sign in to save and personalize\./)
-  assert.match(v2, /Browse freely\. Sign in when you want to save and personalize\./)
+  assert.match(v2, /Browse freely\. Sign in when you want to save, follow and personalize\./)
   assert.doesNotMatch(main, /\.gt-guest-mode \.gt2-save/)
   assert.doesNotMatch(main, /\.gt-guest-mode \.gt2-detail-actions/)
 })
