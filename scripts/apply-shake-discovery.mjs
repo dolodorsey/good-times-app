@@ -26,12 +26,13 @@ app = replaceOnce(
 fs.writeFileSync(appPath, app)
 
 let client = fs.readFileSync(clientPath, 'utf8')
+const diningCategories = 'restaurant,brunch,food,food_and_dining,food_hall,food_truck,coffee'
 const shakeLoader = `export async function loadShakeRestaurants(city = 'atlanta', { limit = 240 } = {}) {
   const normalizedCity = normalizeCity(city)
   const safeLimit = Math.min(300, Math.max(20, Number(limit) || 240))
   const fields = 'id,name,slug,city_key,neighborhood,category_key,subcategory,address,latitude,longitude,phone,website,instagram_handle,short_desc,vibe_tags,best_for,price_range,reservation_req,hours_summary,status,is_verified,quality_score,hero_image,booking_link,google_rating,culture_score,culture_tags,is_black_owned,search_tags,shake_enabled,shake_weight,shake_tags,amenity_tags,dietary_tags,ownership_tags'
   return fetchJson(
-    \`\${KHG_SUPABASE_URL}/rest/v1/gt_venues?select=\${fields}&city_key=eq.\${encodeURIComponent(normalizedCity)}&status=eq.active&is_verified=eq.true&shake_enabled=eq.true&category_key=in.(restaurant,brunch,food_hall,food_truck,coffee)&order=quality_score.desc.nullslast,culture_score.desc.nullslast&limit=\${safeLimit}\`,
+    \`\${KHG_SUPABASE_URL}/rest/v1/gt_venues?select=\${fields}&city_key=eq.\${encodeURIComponent(normalizedCity)}&status=eq.active&is_verified=eq.true&shake_enabled=eq.true&category_key=in.(${diningCategories})&order=quality_score.desc.nullslast,culture_score.desc.nullslast&limit=\${safeLimit}\`,
     { headers: gatewayHeaders },
   )
 }
@@ -39,8 +40,10 @@ const shakeLoader = `export async function loadShakeRestaurants(city = 'atlanta'
 `
 if (!client.includes('export async function loadShakeRestaurants')) {
   client = replaceOnce(client, 'export function cityLabel(city) {', `${shakeLoader}export function cityLabel(city) {`, 'client export anchor')
-  fs.writeFileSync(clientPath, client)
+} else {
+  client = client.replace('category_key=in.(restaurant,brunch,food_hall,food_truck,coffee)', `category_key=in.(${diningCategories})`)
 }
+fs.writeFileSync(clientPath, client)
 
 let main = fs.readFileSync(mainPath, 'utf8')
 main = replaceOnce(
