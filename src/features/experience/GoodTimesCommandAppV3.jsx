@@ -65,7 +65,7 @@ export default function GoodTimesCommandAppV3(){
 
   useEffect(()=>{
     document.body.classList.add('gt-app-mode')
-    const removeLegacy=()=>document.querySelectorAll('.gt-mobile-utilities,.gt-connect-fab,.gt-account-fab,.gt-party-pulse,.gt-utility-fab,[aria-label="Open GOOD TIMES utilities"],[aria-label="Close GOOD TIMES utilities"],[data-gt-legacy-utility]').forEach(node=>node.remove())
+    const removeLegacy=()=>document.querySelectorAll('.gt-mobile-utilities,.gt-connect-fab,.gt-account-fab,.gt-party-pulse,.gt-utility-fab,[aria-label="Open GOOD TIMES utilities"],[aria-label="Close GOOD TIMES utilities"],[data-gt-legacy-utility],vercel-live-feedback').forEach(node=>node.remove())
     removeLegacy();const observer=new MutationObserver(removeLegacy);observer.observe(document.body,{childList:true,subtree:true})
     return()=>{observer.disconnect();document.body.classList.remove('gt-app-mode')}
   },[])

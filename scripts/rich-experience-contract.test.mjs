@@ -106,5 +106,6 @@ test('legacy floating utilities cannot survive V3', () => {
   const css = read('src/features/experience/good-times-v3.css')
   assert.match(source, /MutationObserver/)
   assert.match(source, /gt-mobile-utilities/)
+  assert.match(source, /vercel-live-feedback/)
   assert.match(css, /pointer-events:none!important/)
 })
