@@ -1,0 +1,274 @@
+/* GOOD TIMES 2.0 — final shell authority.
+   This file MUST remain last. The browser should present the product as an app,
+   not stretch it into a website whenever a desktop viewport is available. */
+
+html:has(body.gt-app-mode),body.gt-app-mode{
+  width:100%!important;
+  min-height:100%!important;
+  background:#020307!important;
+}
+body.gt-app-mode{
+  margin:0!important;
+  min-height:100dvh!important;
+  height:100dvh!important;
+  overflow:hidden!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:
+    radial-gradient(circle at 50% 5%,rgba(242,201,104,.10),transparent 36%),
+    radial-gradient(circle at 15% 85%,rgba(67,49,92,.22),transparent 38%),
+    #020307!important;
+}
+body.gt-app-mode #root{
+  width:min(100vw,460px)!important;
+  max-width:460px!important;
+  height:100dvh!important;
+  min-height:0!important;
+  margin:0 auto!important;
+  overflow:hidden!important;
+  position:relative!important;
+  isolation:isolate!important;
+  background:#07090d!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+}
+body.gt-app-mode .gt-premium-experience{
+  width:100%!important;
+  max-width:460px!important;
+  height:100%!important;
+  min-height:0!important;
+  overflow:hidden!important;
+  margin:0!important;
+  background:#07090d!important;
+}
+
+.gt3-app{
+  width:100%!important;
+  max-width:460px!important;
+  height:100%!important;
+  min-height:0!important;
+  margin:0!important;
+  position:relative!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  background:#08090d!important;
+}
+.gt3-topbar{
+  position:relative!important;
+  inset:auto!important;
+  flex:0 0 68px!important;
+  width:100%!important;
+  height:68px!important;
+  min-height:68px!important;
+  padding:0 12px!important;
+  gap:8px!important;
+  z-index:90!important;
+}
+.gt3-brand{min-width:0!important;gap:9px!important}
+.gt3-brand .gt3-mark{width:42px!important;height:42px!important;min-width:42px!important;font-size:13px!important}
+.gt3-brand strong{font-size:14px!important;letter-spacing:.18em!important;white-space:nowrap!important}
+.gt3-brand small{font-size:6px!important;letter-spacing:.16em!important;white-space:nowrap!important}
+.gt3-top-actions{gap:5px!important;margin-left:auto!important}
+.gt3-city{height:38px!important;padding:0 10px!important;font-size:9px!important;white-space:nowrap!important}
+.gt3-account{width:38px!important;height:38px!important;min-width:38px!important}
+.gt3-desktop-nav{display:none!important}
+
+.gt3-radar{
+  position:relative!important;
+  inset:auto!important;
+  flex:0 0 auto!important;
+  z-index:84!important;
+  width:100%!important;
+}
+.gt3-radar>button{
+  width:100%!important;
+  min-height:48px!important;
+  padding:7px 12px!important;
+  grid-template-columns:88px minmax(0,1fr) auto!important;
+  gap:7px!important;
+}
+.gt3-radar>button>span{font-size:7px!important;white-space:nowrap!important}
+.gt3-radar>button>strong{font-size:9px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+.gt3-radar>button>em{font-size:7px!important;white-space:nowrap!important}
+.gt3-radar-drawer{
+  position:absolute!important;
+  top:100%!important;
+  left:8px!important;
+  right:8px!important;
+  width:auto!important;
+  max-height:min(620px,70vh)!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  border-radius:18px!important;
+  z-index:110!important;
+}
+.gt3-radar-drawer>header{
+  display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+  padding:16px;border-bottom:1px solid rgba(255,255,255,.07)
+}
+.gt3-radar-drawer>header>div{display:grid;gap:4px;min-width:0}
+.gt3-radar-drawer>header small,.gt3-radar-alert small{font:900 7px/1.2 'DM Sans',sans-serif;letter-spacing:.16em;color:#f2c968;text-transform:uppercase}
+.gt3-radar-drawer>header strong{font:600 13px/1.3 'DM Sans',sans-serif;color:#fffaf1}
+.gt3-radar-drawer>header>span{font:800 8px/1 'DM Sans',sans-serif;color:rgba(255,255,255,.5);white-space:nowrap}
+.gt3-radar-alert{display:grid;gap:4px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.gt3-radar-alert strong{font-size:12px;color:#fffaf1}
+.gt3-radar-alert span{font-size:9px;line-height:1.45;color:rgba(255,255,255,.55)}
+.gt3-radar-settings{display:grid;gap:12px;padding:16px;background:rgba(242,201,104,.035)}
+.gt3-radar-settings>label:not(.switch){display:grid;gap:7px;font:900 7px/1 'DM Sans',sans-serif;letter-spacing:.14em;color:#f2c968}
+.gt3-radar-settings select{width:100%;height:40px;border:1px solid rgba(242,201,104,.18);border-radius:10px;background:#0d0e13;color:#fff;padding:0 10px}
+.gt3-radar-settings .switch{display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:10px;color:#eee7dc}
+.gt3-radar-settings .switch input{width:18px;height:18px;accent-color:#e9bc57}
+
+.gt3-main{
+  position:relative!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  width:100%!important;
+  overflow-y:auto!important;
+  overflow-x:hidden!important;
+  -webkit-overflow-scrolling:touch!important;
+  overscroll-behavior-y:contain!important;
+  padding-bottom:calc(86px + env(safe-area-inset-bottom,0px))!important;
+  scroll-padding-bottom:100px!important;
+}
+.gt3-mobile-nav{
+  display:grid!important;
+  position:absolute!important;
+  left:0!important;
+  right:0!important;
+  bottom:0!important;
+  transform:none!important;
+  width:100%!important;
+  max-width:none!important;
+  min-height:72px!important;
+  padding-bottom:env(safe-area-inset-bottom,0px)!important;
+  z-index:100!important;
+}
+.gt3-mobile-nav button{min-width:0!important}
+
+.gt3-home-intro{
+  min-height:0!important;
+  grid-template-columns:1fr!important;
+  gap:20px!important;
+  padding:24px 16px 22px!important;
+}
+.gt3-home-intro h1,.gt3-screen-head h1,.gt3-concierge-hero h1{font-size:42px!important;line-height:.93!important;letter-spacing:-.035em!important}
+.gt3-home-intro p,.gt3-screen-head p,.gt3-concierge-hero p{max-width:100%!important;font-size:11px!important;line-height:1.55!important}
+.gt3-ask{width:100%!important;min-width:0!important}
+.gt3-ask>div:first-of-type{grid-template-columns:minmax(0,1fr) auto!important}
+.gt3-ask input{min-width:0!important}
+
+.gt3-the5,.gt3-section,.gt3-screen{padding-left:16px!important;padding-right:16px!important}
+.gt3-the5{padding-top:22px!important;padding-bottom:22px!important}
+.gt3-the5>header{align-items:flex-end!important;gap:12px!important}
+.gt3-the5>header p{max-width:170px!important;font-size:9px!important}
+.gt3-five-grid{
+  grid-template-columns:none!important;
+  grid-auto-flow:column!important;
+  grid-auto-columns:78%!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  scroll-snap-type:x proximity!important;
+  scrollbar-width:none!important;
+  padding-bottom:2px!important;
+}
+.gt3-five-grid>button{scroll-snap-align:start!important;min-width:0!important}
+.gt3-section{padding-top:22px!important;padding-bottom:22px!important}
+.gt3-section>header h2{font-size:26px!important}
+.gt3-rail{gap:10px!important}
+.gt3-card.compact{min-width:244px!important;max-width:244px!important}
+.gt3-card:not(.compact){min-width:0!important}
+.gt3-media{min-height:150px!important}
+.gt3-fallback,.gt3-detail-fallback{
+  min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;
+  background:radial-gradient(circle at 50% 20%,rgba(242,201,104,.14),transparent 45%),linear-gradient(145deg,#15131a,#08090d 70%);
+  color:#f2c968
+}
+.gt3-fallback span{display:grid;place-items:center;width:46px;height:46px;border:1px solid rgba(242,201,104,.4);border-radius:999px;font:800 12px 'DM Sans',sans-serif}
+.gt3-fallback small{font:900 7px 'DM Sans',sans-serif;letter-spacing:.12em;text-transform:uppercase;opacity:.7}
+.gt3-detail-fallback{height:210px}
+
+.gt3-screen{padding-top:24px!important;padding-bottom:30px!important}
+.gt3-search{position:relative!important;top:auto!important;grid-template-columns:auto minmax(0,1fr) auto!important}
+.gt3-intents{overflow-x:auto!important;flex-wrap:nowrap!important;padding-bottom:3px!important}
+.gt3-intents button{white-space:nowrap!important}
+.gt3-discover-split{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.gt3-category-index>div{grid-template-columns:1fr 1fr!important}
+.gt3-category-index button{min-width:0!important;padding:14px 12px!important}
+.gt3-category-index strong{font-size:10px!important;line-height:1.25!important}
+.gt3-map{grid-template-columns:1fr!important;min-height:0!important;height:auto!important}
+.gt3-map iframe{height:280px!important}
+
+.gt3-concierge-hero{grid-template-columns:minmax(0,1fr) auto!important;padding:22px 0!important;gap:10px!important}
+.gt3-concierge-hero>.gt3-mark{width:54px!important;height:54px!important;min-width:54px!important}
+.gt3-concierge-box textarea{min-height:118px!important}
+.gt3-shake>div{grid-template-columns:1fr 1fr!important}
+.gt3-shake button{min-width:0!important}
+.gt3-plans>article{border-radius:18px!important}
+.gt3-plans article>div>section{grid-template-columns:34px minmax(0,1fr)!important;gap:10px!important}
+.gt3-plans article>div>section>a{grid-column:2!important;width:max-content!important}
+.gt3-following{display:grid;gap:8px;margin-top:20px;padding:16px;border:1px solid rgba(242,201,104,.12);border-radius:16px;background:rgba(255,255,255,.02)}
+.gt3-following>span{font:900 8px 'DM Sans',sans-serif;letter-spacing:.16em;color:#f2c968}
+.gt3-following>div{display:grid;gap:2px;padding:10px 0;border-top:1px solid rgba(255,255,255,.05)}
+.gt3-following strong{font-size:11px;color:#fffaf1}.gt3-following small{font-size:8px;color:rgba(255,255,255,.48)}
+
+.gt3-modal-bg{position:absolute!important;inset:0!important;z-index:150!important}
+.gt3-detail,.gt3-profile{max-width:100%!important;max-height:92%!important}
+.gt3-detail-actions{display:flex!important;gap:7px!important;flex-wrap:wrap!important}
+.gt3-detail-actions button,.gt3-detail-actions a{min-height:42px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:1 1 44%!important}
+.gt3-detail-actions button.followed{border-color:rgba(242,201,104,.55)!important;background:rgba(242,201,104,.13)!important;color:#f2c968!important}
+
+/* Revenue inventory is deliberate, visible and native to the product. Empty slots
+   stay visible as house inventory so monetization zones can never silently disappear. */
+.gt3-ad{
+  margin:16px!important;
+  min-height:104px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-areas:'label label' 'copy action'!important;
+  align-items:center!important;
+  gap:8px 12px!important;
+  padding:14px!important;
+  border:1px dashed rgba(242,201,104,.32)!important;
+  border-radius:16px!important;
+  background:linear-gradient(135deg,rgba(242,201,104,.07),rgba(255,255,255,.018) 55%,rgba(32,27,46,.22))!important;
+  overflow:hidden!important;
+}
+.gt3-ad>span{grid-area:label;font:900 7px/1 'DM Sans',sans-serif;letter-spacing:.16em;color:#f2c968;text-transform:uppercase}
+.gt3-ad>div{grid-area:copy;display:grid;gap:4px;min-width:0}
+.gt3-ad>div strong{font:700 12px/1.25 'DM Sans',sans-serif;color:#fffaf1}
+.gt3-ad>div p{font:500 9px/1.4 'DM Sans',sans-serif;color:rgba(255,255,255,.52)}
+.gt3-ad>a{grid-area:action;white-space:nowrap;text-decoration:none;font:900 8px/1 'DM Sans',sans-serif;letter-spacing:.08em;color:#090a0d;background:#f2c968;border-radius:999px;padding:10px 11px}
+.gt3-ad>img{grid-column:1/-1;width:100%;max-height:132px;object-fit:cover;border-radius:11px}
+.gt3-ad:has(>img){grid-template-areas:'label label' 'image image' 'copy action'!important}
+.gt3-ad:has(>img)>img{grid-area:image}
+
+@media(max-width:380px){
+  .gt3-brand small{display:none!important}
+  .gt3-brand strong{font-size:12px!important}
+  .gt3-city{font-size:8px!important;padding:0 8px!important}
+  .gt3-home-intro h1,.gt3-screen-head h1,.gt3-concierge-hero h1{font-size:37px!important}
+  .gt3-card.compact{min-width:228px!important;max-width:228px!important}
+  .gt3-five-grid{grid-auto-columns:84%!important}
+  .gt3-ad{grid-template-columns:1fr!important;grid-template-areas:'label' 'copy' 'action'!important}
+  .gt3-ad:has(>img){grid-template-areas:'label' 'image' 'copy' 'action'!important}
+  .gt3-ad>a{width:max-content!important}
+}
+
+@media(min-width:700px){
+  body.gt-app-mode #root{
+    height:min(920px,calc(100dvh - 28px))!important;
+    border-radius:27px!important;
+    border:1px solid rgba(242,201,104,.22)!important;
+    box-shadow:0 32px 130px rgba(0,0,0,.72)!important;
+  }
+  body.gt-app-mode .gt-premium-experience,.gt3-app{border-radius:27px!important}
+}
+
+@media(max-width:480px){
+  body.gt-app-mode{align-items:stretch!important}
+  body.gt-app-mode #root{width:100vw!important;max-width:none!important;height:100dvh!important}
+  body.gt-app-mode .gt-premium-experience,.gt3-app{max-width:none!important}
+}
