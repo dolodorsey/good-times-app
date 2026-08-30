@@ -9,16 +9,16 @@ import {
 } from '../auth/client.js'
 import { AGE_OPTIONS, CITY_OPTIONS, VIBE_OPTIONS } from './options.js'
 
-const BG_BASE = 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics'
-const CURRENT_LOGO = `${BG_BASE}/GOOD_TIMES_logo.png`
-const CURRENT_HOME = `${BG_BASE}/GOODTIMES_HOMESCREEN.png`
-const CURRENT_ANIMATION = `${BG_BASE}/GOOD_TIMES_ANIMATION.mp4`
+const MEDIA_BASE = 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics'
+const CURRENT_LOGO = `${MEDIA_BASE}/good_times/graphics/GOOD_TIMES_logo.png`
+const CURRENT_HOME = `${MEDIA_BASE}/motion/goodtimes.jpg`
+const CURRENT_ANIMATION = `${MEDIA_BASE}/kollective/animations/GOODTIMES.mp4`
 const GOLD = '#D4A853'
 const FONT = "'DM Sans', sans-serif"
 const SERIF = "'Cormorant Garamond', 'Playfair Display', Georgia, serif"
 
 const shell = {
-  minHeight: '100dvh',
+  width:'100%', height:'100%', minHeight:0,
   color: '#fff',
   background: '#06060C',
   fontFamily: FONT,
@@ -157,7 +157,7 @@ export default function GoodTimesOnboarding({ onComplete }) {
   </div>
 
   const step = screen === 'city' ? 0 : screen === 'vibes' ? 1 : 2
-  return <div style={{ ...shell, padding: '52px 24px 32px', display: 'flex', flexDirection: 'column' }}>
+  return <div style={{ ...shell, padding: '52px 24px 32px', display: 'flex', flexDirection: 'column', overflowY:'auto' }}>
     <Progress step={step} />
     <div style={{ textAlign: 'center', marginBottom: 24 }}>
       <div style={{ color: GOLD, fontSize: 11, letterSpacing: '.2em', fontWeight: 800 }}>STEP {step + 1} OF 3</div>
