@@ -105,22 +105,6 @@ function PremiumRoot({children,launch=false}){
   return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}</div>
 }
 
-function GuestAccessBar({onAuth}){
-  return <>
-    <div className="gt-guest-access" role="status">
-      <div><strong>Guest mode</strong><span>Browse freely. Sign in to save, follow, get Radar alerts and use personalized Concierge.</span></div>
-      <button type="button" onClick={onAuth}>Sign in</button>
-    </div>
-    <style>{`
-      .gt-guest-access{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:145;display:flex;align-items:center;gap:10px;width:min(436px,calc(100vw - 24px));padding:9px 9px 9px 12px;border:1px solid rgba(245,204,117,.24);border-radius:14px;background:rgba(7,7,12,.93);backdrop-filter:blur(18px);box-shadow:0 14px 40px rgba(0,0,0,.38);color:#fffaf4;font-family:'DM Sans',system-ui,sans-serif}
-      .gt-guest-access div{display:grid;gap:2px;min-width:0;flex:1}.gt-guest-access strong{font-size:8px;letter-spacing:.09em;text-transform:uppercase;color:#f5cc75}.gt-guest-access span{font-size:8px;line-height:1.35;color:rgba(255,255,255,.53)}
-      .gt-guest-access button{flex:0 0 auto;min-height:36px;padding:0 11px;border-radius:10px;border:0;background:#f5cc75;color:#09090d;font-size:9px;font-weight:900;white-space:nowrap}
-      .gt-guest-back{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:170;width:min(436px,calc(100vw - 24px));min-height:40px;padding:0 13px;border-radius:999px;border:1px solid rgba(245,204,117,.34);background:rgba(7,7,12,.92);color:#f5cc75;font:800 9px/1 'DM Sans',system-ui,sans-serif;letter-spacing:.05em;text-align:left}
-      @media(max-width:600px){.gt-guest-access span{display:none}.gt-guest-access{justify-content:space-between}}
-    `}</style>
-  </>
-}
-
 function SignedOutGuestExperience(){
   const[showAuth,setShowAuth]=useState(false)
   const complete=(nextSession,prefs)=>{
@@ -132,8 +116,7 @@ function SignedOutGuestExperience(){
     <button type="button" className="gt-guest-back" onClick={()=>setShowAuth(false)}>← Continue as guest</button>
   </>
   return <div className="gt-guest-mode">
-    <LazyCommandApp/>
-    <GuestAccessBar onAuth={()=>setShowAuth(true)}/>
+    <LazyCommandApp onAuth={()=>setShowAuth(true)}/>
   </div>
 }
 

@@ -49,7 +49,7 @@
 .gt-premium-experience:has(.gt4-app) .gt-utility-fab,
 body:has(.gt4-app)>.gt-mobile-utilities,
 body:has(.gt4-app)>.gt-connect-fab{display:none!important;visibility:hidden!important;pointer-events:none!important}
-.gt-premium-experience:has(.gt4-app) .gt-guest-access{top:67px!important;right:8px!important;left:auto!important;bottom:auto!important;width:auto!important;max-width:none!important;padding:5px!important;border-radius:999px!important}.gt-premium-experience:has(.gt4-app) .gt-guest-access div{display:none!important}.gt-premium-experience:has(.gt4-app) .gt-guest-access button{min-height:31px!important;padding:0 10px!important;border-radius:999px!important;font-size:7px!important}
+.gt4-profile-auth{width:100%;margin-top:13px}
 
 @media(max-width:380px){.gt4-brand small{display:none}.gt4-brand strong{font-size:13px}.gt4-city{max-width:98px;font-size:8px}.gt4-hero h1,.gt4-head h1{font-size:35px}.gt4-card{grid-template-columns:96px minmax(0,1fr)}.gt4-thumb{width:96px}.gt4-discover .gt2-category-grid,.gt4-discover .gt2-subcategory-grid{grid-template-columns:1fr}.gt4-shake>div,.gt4-radar-settings>div{grid-template-columns:1fr}}
 
