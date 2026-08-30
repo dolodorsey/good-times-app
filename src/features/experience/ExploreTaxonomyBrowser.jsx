@@ -47,6 +47,8 @@ export default function ExploreTaxonomyBrowser({
   selectedSubcategory,
   onCategory,
   onSubcategory,
+  directoryOpen: controlledDirectoryOpen,
+  onDirectoryOpen,
   mapMode,
   onMapMode,
   renderVenue,
@@ -56,7 +58,9 @@ export default function ExploreTaxonomyBrowser({
   const [categoryDirectory,setCategoryDirectory]=useState([])
   const [categoryLoading,setCategoryLoading]=useState(false)
   const [categoryError,setCategoryError]=useState('')
-  const [directoryOpen,setDirectoryOpen]=useState(false)
+  const [localDirectoryOpen,setLocalDirectoryOpen]=useState(false)
+  const directoryOpen=controlledDirectoryOpen??localDirectoryOpen
+  const setDirectoryOpen=value=>{setLocalDirectoryOpen(value);onDirectoryOpen?.(value)}
 
   useEffect(()=>{
     let alive=true
@@ -90,6 +94,8 @@ export default function ExploreTaxonomyBrowser({
 
   useEffect(()=>{
     setDirectoryOpen(false)
+  // The parent callbacks are stable React setters in V3; category is the stage boundary.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   },[selectedCategory])
 
   const normalizedTaxonomy = useMemo(() => (taxonomy || []).map(category => ({

@@ -43,6 +43,25 @@ test('Discover restores category to subcategory to directory drilldown', () => {
   assert.match(browser, /loadExploreDirectory/)
   assert.match(browser, /onSubcategory/)
   assert.match(browser, /All categories/)
+  assert.match(source, /directoryOpen=/)
+  assert.match(browser, /onDirectoryOpen/)
+})
+
+test('every non-home and nested V3 state has a usable Back path', () => {
+  const source = read('src/features/experience/GoodTimesCommandAppV3.jsx')
+  assert.match(source, /const goBack=/)
+  assert.match(source, /Back to subcategories/)
+  assert.match(source, /Back to categories/)
+  assert.match(source, /Back to Now/)
+  assert.match(source, /className="gt4-detail-back"/)
+})
+
+test('Discover keeps two-column mobile density and scan-safe subcategory type', () => {
+  const css = read('src/features/experience/good-times-v3.css')
+  assert.match(css, /\.gt4-discover \.gt2-category-grid,\.gt4-discover \.gt2-subcategory-grid\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/)
+  assert.match(css, /\.gt4-discover \.gt2-venue-grid,\.gt4-discover \.gt4-live-results>div\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/)
+  assert.match(css, /\.gt4-discover \.gt2-subcategory-grid>button>strong\{[^}]*var\(--gt4-sans\)!important/)
+  assert.match(css, /word-break:normal!important/)
 })
 
 test('V3 cards are vertical app-width results rather than clipped horizontal rails', () => {
