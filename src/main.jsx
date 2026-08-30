@@ -22,6 +22,8 @@ import './features/experience/good-times-reference-update.css'
 import './features/experience/good-times-app-review.css'
 // Owner polish is the final visual authority for card density and homescreen motion.
 import './features/experience/good-times-owner-polish.css'
+// GOOD TIMES 2.0 is intentionally isolated behind gt3-* classes and loads last.
+import './features/experience/good-times-v2.css'
 import GoodTimesShellControl from './features/experience/GoodTimesShellControl.jsx'
 import BuildMyNightRouteHost from './features/experience/BuildMyNightRouteHost.jsx'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
@@ -31,7 +33,7 @@ import { installMediaIntegrityGuard } from './media-integrity.js'
 import { isNative } from './native.js'
 
 const LazyLiveApp = lazy(() => import('./features/experience/GoodTimesLiveApp.jsx'))
-const LazyCommandApp = lazy(() => import('./features/experience/GoodTimesCommandApp.jsx'))
+const LazyCommandApp = lazy(() => import('./features/experience/GoodTimesCommandAppV2.jsx'))
 const LazyLegacyApp = lazy(() => import('./App.jsx'))
 const LazyDirectRequest = lazy(() => import('./DirectRequest.jsx'))
 const LazyPasswordRecovery = lazy(() => import('./PasswordRecovery.jsx'))
