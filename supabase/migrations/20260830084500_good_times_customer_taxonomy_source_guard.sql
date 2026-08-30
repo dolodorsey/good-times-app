@@ -15,7 +15,7 @@ begin
   end if;
 
   if t ~ '\m(book club|author reading|book discussion|literary club)\M' then
-    new.event_type := 'community';
+    new.event_type := 'special_event';
     new.category_key_v2 := 'community_civic';
     new.subcategory_key_v2 := null;
     return new;
@@ -47,10 +47,10 @@ on public.gt_shows
 for each row execute function public.gt_customer_taxonomy_source_guard();
 
 update public.gt_shows
-set updated_at = updated_at
+set event_type = event_type
 where show_date >= current_date
   and lower(coalesce(event_name,'') || ' ' || coalesce(description,'') || ' ' || coalesce(genre,'') || ' ' || coalesce(venue_name,''))
-      ~ '\m(watch party|book club|author reading|book discussion|literary club|matchmaking|one-on-one date|speed dating|singles mixer|talent slam|talent showcase|talent show)\M';
+      ~ '(watch party|book club|author reading|book discussion|literary club|matchmaking|one-on-one date|speed dating|singles mixer|talent slam|talent showcase|talent show)';
 
 comment on function public.gt_customer_taxonomy_source_guard() is
 'Narrow source-of-truth taxonomy guard for recurring GOOD TIMES misclassification patterns before customer APIs rank records.';
