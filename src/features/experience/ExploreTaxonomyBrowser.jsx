@@ -199,12 +199,13 @@ export default function ExploreTaxonomyBrowser({
         {subcategoryRows.map(subcategory => {
           const exact=exactCount(countRows,activeCategory.id,subcategory.subcategory_key)
           const fallback=new Set(activeDirectory.filter(row => row.category_key===activeCategory.id&&row.subcategory_key === subcategory.subcategory_key).map(row => row.id)).size
-          const count=exact||fallback
+          const loadedCategoryIsAuthoritative=Boolean(selectedCategory&&!categoryLoading&&!categoryError)
+          const count=loadedCategoryIsAuthoritative?fallback:exact||fallback
           return <button key={subcategory.subcategory_key} className={selectedSubcategory === subcategory.subcategory_key ? 'active' : ''} onClick={() => { onSubcategory?.(subcategory.subcategory_key);setDirectoryOpen(true) }}><span>Explore</span><strong>{subcategory.subcategory_name}</strong><small>{count ? verifiedPlacesLabel(count) : 'Open directory'}</small><em>›</em></button>
         })}
       </div></>}
 
-      {directoryOpen && <><div className="gt2-taxonomy-heading compact"><span>{selectedSubcategoryLabel || activeCategory.name}</span><small>{categoryLoading ? 'Loading complete verified directory…' : `${filteredRows.length} loaded · ${selectedSubcategory ? exactCount(countRows,activeCategory.id,selectedSubcategory)||filteredRows.length : activeTotal} verified places`}</small></div>
+      {directoryOpen && <><div className="gt2-taxonomy-heading compact"><span>{selectedSubcategoryLabel || activeCategory.name}</span><small>{categoryLoading ? 'Loading complete verified directory…' : `${filteredRows.length} loaded · ${filteredRows.length} verified places`}</small></div>
 
       {categoryLoading && !categoryDirectory.length ? <div className="gt2-empty"><span>✦</span><h2>Loading verified places</h2><p>Pulling the complete {activeCategory.name} directory for {cityName}.</p></div>
       : categoryError && !filteredRows.length ? <div className="gt2-empty"><span>!</span><h2>Directory temporarily unavailable</h2><p>{categoryError}</p></div>

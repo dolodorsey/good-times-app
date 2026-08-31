@@ -33,12 +33,15 @@ test('Explore retains all product taxonomy even when live counts fail', () => {
 
 test('Explore counts come from the indexed count cache and cannot take taxonomy down', () => {
   const catalog = read('api/catalog.js')
+  const explore = read('src/features/experience/ExploreTaxonomyBrowser.jsx')
   assert.match(catalog, /gt_venue_taxonomy_count_cache/)
   assert.match(catalog, /Promise\.allSettled/)
   assert.match(catalog, /counts_live/)
   assert.match(catalog, /countsResult\.status==='fulfilled'/)
   assert.doesNotMatch(catalog, /v_gt_venue_taxonomy_directory_counts/)
   assert.doesNotMatch(catalog, /limit=10000/)
+  assert.match(explore, /loadedCategoryIsAuthoritative\?fallback:exact\|\|fallback/)
+  assert.match(explore, /`\$\{filteredRows\.length\} loaded · \$\{filteredRows\.length\} verified places`/)
 })
 
 test('customer inventory dedupes canonical venues and duplicate events', () => {
