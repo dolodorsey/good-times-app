@@ -87,57 +87,6 @@
   cursor: pointer;
 }
 
-/* GOOD TIMES V3 tablet authority.
-   The older premium shell intentionally caps phone/desktop app surfaces at
-   460px, but that contract was also constraining iPad guest mode and leaving
-   the absolutely positioned V3 navigation at the bottom of a multi-thousand
-   pixel document. On tablet-class viewports V3 owns the full device canvas,
-   keeps the shell exactly one viewport tall, and lets .gt4-main be the only
-   vertical scroller. Desktop and phone contracts remain unchanged. */
-@media (min-width: 768px) and (max-width: 1199px) {
-  body.gt-app-mode {
-    height: 100dvh !important;
-    overflow: hidden !important;
-  }
-
-  body.gt-app-mode #root,
-  body.gt-app-mode .gt-premium-experience {
-    width: 100% !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    overflow: hidden !important;
-  }
-
-  body.gt-app-mode .gt-premium-experience > .gt-guest-mode:has(.gt4-app),
-  body.gt-app-mode .gt-premium-experience > .gt4-app {
-    width: 100% !important;
-    max-width: none !important;
-    height: 100dvh !important;
-    min-height: 100dvh !important;
-    margin: 0 !important;
-    position: relative !important;
-    left: auto !important;
-    right: auto !important;
-    transform: none !important;
-    overflow: hidden !important;
-    box-shadow: none !important;
-  }
-
-  body.gt-app-mode .gt-premium-experience > .gt-guest-mode:has(.gt4-app) > .gt4-app,
-  body.gt-app-mode .gt-premium-experience > .gt4-app {
-    width: 100% !important;
-    max-width: none !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    position: relative !important;
-    left: auto !important;
-    right: auto !important;
-    transform: none !important;
-    overflow: hidden !important;
-  }
-}
-
 @keyframes gt-runtime-scan {
   from { transform: translateX(-110%); }
   to { transform: translateX(210%); }
