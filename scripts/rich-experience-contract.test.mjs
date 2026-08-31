@@ -57,6 +57,7 @@ test('every non-home and nested V3 state has a usable Back path', () => {
 })
 
 test('Discover uses dense readable taxonomy and directory grids across phone and wide app modes', () => {
+  const explore = read('src/features/experience/ExploreTaxonomyBrowser.jsx')
   const css = read('src/features/experience/good-times-v3.css')
   assert.match(css, /V5 complete-product authority/)
   assert.match(css, /\.gt4-discover \.gt2-category-grid\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/)
@@ -64,6 +65,8 @@ test('Discover uses dense readable taxonomy and directory grids across phone and
   assert.match(css, /grid-template-columns:repeat\(6,minmax\(0,1fr\)\)!important/)
   assert.match(css, /\.gt4-discover \.gt2-subcategory-grid>button>strong\{[^}]*var\(--gt4-sans\)!important/)
   assert.match(css, /overflow-wrap:anywhere!important/)
+  assert.match(explore, /subcategory:selectedSubcategory\|\|null/)
+  assert.match(explore, /\[cityName,selectedCategory,selectedSubcategory\]/)
 })
 
 test('Build My Night keeps the full visual planner and renders an editable source-backed route', () => {

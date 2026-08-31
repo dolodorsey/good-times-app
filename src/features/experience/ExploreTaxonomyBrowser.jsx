@@ -84,13 +84,14 @@ export default function ExploreTaxonomyBrowser({
       setCategoryLoading(false)
       return()=>{alive=false}
     }
+    setCategoryDirectory([])
     setCategoryLoading(true)
-    loadExploreDirectory(cityName,{category:selectedCategory,limit:2500})
+    loadExploreDirectory(cityName,{category:selectedCategory,subcategory:selectedSubcategory||null,limit:2500})
       .then(rows=>{if(alive)setCategoryDirectory(Array.isArray(rows)?rows:[])})
       .catch(error=>{if(alive){setCategoryDirectory([]);setCategoryError(error?.message||'This category could not be loaded.')}})
       .finally(()=>{if(alive)setCategoryLoading(false)})
     return()=>{alive=false}
-  },[cityName,selectedCategory])
+  },[cityName,selectedCategory,selectedSubcategory])
 
   useEffect(()=>{
     setDirectoryOpen(false)
