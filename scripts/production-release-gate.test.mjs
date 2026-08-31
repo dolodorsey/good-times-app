@@ -34,6 +34,7 @@ test('Explore retains all product taxonomy even when live counts fail', () => {
 test('Explore counts come from the indexed count cache and cannot take taxonomy down', () => {
   const catalog = read('api/catalog.js')
   const explore = read('src/features/experience/ExploreTaxonomyBrowser.jsx')
+  const styles = read('src/features/experience/good-times-v3.css')
   assert.match(catalog, /gt_venue_taxonomy_count_cache/)
   assert.match(catalog, /Promise\.allSettled/)
   assert.match(catalog, /counts_live/)
@@ -43,6 +44,7 @@ test('Explore counts come from the indexed count cache and cannot take taxonomy 
   assert.match(explore, /loadedCategoryIsAuthoritative\?fallback:exact\|\|fallback/)
   assert.match(explore, /`\$\{filteredRows\.length\} loaded · \$\{filteredRows\.length\} verified places`/)
   assert.match(explore, /Festival activations are verified as dated experiences, not filed as permanent places/)
+  assert.match(styles, /\.gt4-discover \.gt2-empty h2\{max-width:24ch[^}]*var\(--gt4-sans\)/)
 })
 
 test('customer inventory dedupes canonical venues and duplicate events', () => {
