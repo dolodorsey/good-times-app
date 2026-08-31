@@ -44,7 +44,7 @@ test('Explore counts come from the indexed count cache and cannot take taxonomy 
   assert.match(explore, /loadedCategoryIsAuthoritative\?fallback:exact\|\|fallback/)
   assert.match(explore, /`\$\{filteredRows\.length\} loaded · \$\{filteredRows\.length\} verified places`/)
   assert.match(explore, /Festival activations are verified as dated experiences, not filed as permanent places/)
-  assert.match(styles, /\.gt4-discover \.gt2-empty h2\{max-width:24ch[^}]*var\(--gt4-sans\)/)
+  assert.match(styles, /\.gt4-discover \.gt2-empty h2\{max-width:24ch[^}]*font-family:var\(--gt4-sans\)!important/)
 })
 
 test('customer inventory dedupes canonical venues and duplicate events', () => {
