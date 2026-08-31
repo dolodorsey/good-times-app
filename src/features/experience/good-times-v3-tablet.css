@@ -1,0 +1,69 @@
+/* GOOD TIMES V3 tablet shell authority.
+   Loaded after V2 hardening and immediately before V3. V2 deliberately caps
+   the product to a phone-width, vertically centered frame on >=700px screens.
+   That is correct for desktop, but on iPad it leaves most of the device unused
+   and places the absolute V3 nav below the visible viewport. Tablet V3 owns the
+   device canvas; phone and desktop behavior remain unchanged. */
+@media (min-width: 768px) and (max-width: 1199px) {
+  html:has(body.gt-app-mode),
+  body.gt-app-mode {
+    width: 100% !important;
+    min-height: 100% !important;
+  }
+
+  body.gt-app-mode {
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    overflow: hidden !important;
+  }
+
+  body.gt-app-mode #root {
+    width: 100vw !important;
+    max-width: none !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+  }
+
+  body.gt-app-mode .gt-premium-experience {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    overflow: hidden !important;
+  }
+
+  body.gt-app-mode .gt-premium-experience > .gt-guest-mode:has(.gt4-app),
+  body.gt-app-mode .gt-premium-experience > .gt4-app {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    position: relative !important;
+    overflow: hidden !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  body.gt-app-mode .gt-premium-experience > .gt-guest-mode:has(.gt4-app) > .gt4-app,
+  body.gt-app-mode .gt-premium-experience > .gt4-app {
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    position: relative !important;
+    inset: auto !important;
+    transform: none !important;
+    overflow: hidden !important;
+  }
+}
