@@ -42,6 +42,7 @@ test('Explore counts come from the indexed count cache and cannot take taxonomy 
   assert.doesNotMatch(catalog, /limit=10000/)
   assert.match(explore, /loadedCategoryIsAuthoritative\?fallback:exact\|\|fallback/)
   assert.match(explore, /`\$\{filteredRows\.length\} loaded · \$\{filteredRows\.length\} verified places`/)
+  assert.match(explore, /Festival activations are verified as dated experiences, not filed as permanent places/)
 })
 
 test('customer inventory dedupes canonical venues and duplicate events', () => {

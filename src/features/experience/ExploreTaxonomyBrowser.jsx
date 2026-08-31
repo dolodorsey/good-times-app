@@ -138,6 +138,7 @@ export default function ExploreTaxonomyBrowser({
   }, [activeDirectory, needle, selectedCategory, selectedSubcategory])
 
   const selectedSubcategoryLabel = subcategoryRows.find(row => row.subcategory_key === selectedSubcategory)?.subcategory_name
+  const eventOnlyDirectory=selectedCategory==='festivals_major_activations'
   const activeTotal=activeCategory ? (exactCount(countRows,activeCategory.id)||new Set(activeDirectory.filter(row=>row.category_key===activeCategory.id).map(row=>row.id)).size) : 0
   const totalSubcategories=normalizedTaxonomy.reduce((sum, category) => sum + (category.subcategoryRows?.length || 0), 0)
   const placeHighlights = useMemo(() => uniqueVenues((directory || [])
@@ -212,7 +213,7 @@ export default function ExploreTaxonomyBrowser({
       : mapMode ? <div className="gt2-map-view">
         <div className="gt2-map-frame"><iframe title={`${cityName} map`} src="https://www.openstreetmap.org/export/embed.html?bbox=-84.62%2C33.60%2C-84.15%2C34.02&layer=mapnik"/><div className="gt2-map-veil"/><div className="gt2-map-count">⌖ {filteredRows.filter(venue => venue.latitude != null && venue.longitude != null).length} map-ready places</div></div>
         <div className="gt2-horizontal">{filteredRows.slice(0, 20).map(venue => renderVenue?.(venue, true))}</div>
-      </div> : filteredRows.length ? <div className="gt2-venue-grid">{filteredRows.map(venue => renderVenue?.(venue, false))}</div> : <div className="gt2-empty"><span>⌕</span><h2>No verified matches yet</h2><p>Try another subcategory or clear the search. We’ll keep checking this lane as new places are verified.</p></div>}</>}
+      </div> : filteredRows.length ? <div className="gt2-venue-grid">{filteredRows.map(venue => renderVenue?.(venue, false))}</div> : <div className="gt2-empty"><span>⌕</span><h2>{eventOnlyDirectory?'Festival inventory is date-specific':'No verified matches yet'}</h2><p>{eventOnlyDirectory?'Festival activations are verified as dated experiences, not filed as permanent places. Current listings appear in live experience results.':'Try another subcategory or clear the search. We’ll keep checking this lane as new places are verified.'}</p></div>}</>}
     </>}
   </section>
 }
