@@ -34,10 +34,16 @@ function customerReadyDirectoryVenue(row) {
   if (Number(row.quality_score || 0) < 55) return false
   return [row.address,row.website,row.phone,row.booking_link,row.instagram_handle].some(hasValue)
 }
-function isStandingPlaceInEventOnlyLane(row) {
-  return row?.category_key === 'festivals_major_activations'
+const NON_NIGHTCLUB_IDENTITY = /\b(diner|restaurant|draft\s*house|gastropub|food\s*hall|food\s*truck|coffee|cafe|bakery)\b/i
+function isCategoryIdentityMismatch(row) {
+  if (row?.category_key === 'festivals_major_activations'
     && row?.subcategory_key === 'food_festivals'
-    && ['food_truck','food_hall'].includes(row?.venue_category_key)
+    && ['food_truck','food_hall'].includes(row?.venue_category_key)) return true
+  if (row?.category_key === 'nightlife' && row?.subcategory_key === 'nightclubs') {
+    const identityText=[row?.name,row?.subcategory,row?.venue_subcategory,row?.short_desc].filter(Boolean).join(' ')
+    return Number(row?.taxonomy_confidence || 0) < 95 || NON_NIGHTCLUB_IDENTITY.test(identityText)
+  }
+  return false
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 async function fetchRows(path, label) {
@@ -109,7 +115,7 @@ export default async function handler(request,response) {
       const seen=new Set()
       const venues=rows
         .filter(customerReadyDirectoryVenue)
-        .filter(row=>!isStandingPlaceInEventOnlyLane(row))
+        .filter(row=>!isCategoryIdentityMismatch(row))
         .filter(row=>{if(seen.has(row.id))return false;seen.add(row.id);return true})
         .slice(0,limit)
         .map(row=>({...row,hero_image:safePublicImage(row.hero_image)}))
