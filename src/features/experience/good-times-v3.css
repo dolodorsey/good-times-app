@@ -393,7 +393,7 @@ body.gt-app-mode .gt-premium-experience:has(.gt4-app) .gt4-app{width:100%!import
 .gt4-detail-fallback .gt4-fallback{min-height:180px}.gt4-detail-fallback .gt4-fallback>strong{font-size:32px}.gt4-detail>div{padding:18px}.gt4-detail>div>span{font-size:8px}.gt4-detail h2{font-size:25px!important}.gt4-detail p{font-size:10.5px}.gt4-detail section strong{font-size:8px}.gt4-detail-actions button,.gt4-detail-actions a{min-height:43px;font-size:9.5px}.gt4-detail-back{min-height:36px;font-size:10px}
 .gt4-ad{min-height:32px!important;margin-block:12px!important;padding:7px 10px!important}.gt4-ad.house{opacity:.42!important;border-style:dashed!important;background:transparent!important}.gt4-ad>span{font-size:6px!important}.gt4-ad>strong,.gt4-ad>div strong{font-size:8px!important}.gt4-ad>a{font-size:7.5px!important}
 
-@media(min-width:420px){
+@media(min-width:380px){
   .gt4-discover .gt2-category-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
   .gt4-discover .gt2-subcategory-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
   .gt4-discover .gt2-venue-grid,.gt4-discover .gt4-live-results>div{grid-template-columns:repeat(3,minmax(0,1fr))!important}
