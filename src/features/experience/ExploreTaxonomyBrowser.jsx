@@ -136,6 +136,12 @@ export default function ExploreTaxonomyBrowser({
   const selectedSubcategoryLabel = subcategoryRows.find(row => row.subcategory_key === selectedSubcategory)?.subcategory_name
   const activeTotal=activeCategory ? (exactCount(countRows,activeCategory.id)||new Set(activeDirectory.filter(row=>row.category_key===activeCategory.id).map(row=>row.id)).size) : 0
   const totalSubcategories=normalizedTaxonomy.reduce((sum, category) => sum + (category.subcategoryRows?.length || 0), 0)
+  const placeHighlights = useMemo(() => uniqueVenues((directory || [])
+    .filter(row => !needle || [row.name,row.neighborhood,row.category_key,row.subcategory,row.short_desc,...(row.vibe_tags||[])].filter(Boolean).join(' ').toLowerCase().includes(needle))
+    .sort((a,b) => Number(b.is_culture_pick||false)-Number(a.is_culture_pick||false)
+      || Number(b.google_rating||0)-Number(a.google_rating||0)
+      || Number(b.quality_score||0)-Number(a.quality_score||0))
+    .slice(0,6)), [directory,needle])
 
   return <section className="gt2-explore-browser">
     <div className="gt2-screen-heading">
@@ -155,6 +161,10 @@ export default function ExploreTaxonomyBrowser({
     </div>
 
     {!activeCategory && <>
+      {placeHighlights.length > 0 && <section className="gt2-place-highlights">
+        <div className="gt2-taxonomy-heading"><span>PLACES WORTH KNOWING</span><small>Verified places—not just events—ready for tonight and later.</small></div>
+        <div className="gt2-venue-grid">{placeHighlights.map(venue => renderVenue?.(venue,false))}</div>
+      </section>}
       <div className="gt2-taxonomy-heading"><span>DISCOVER BY CATEGORY</span><small>Choose a lane to open its complete subcategory list.</small></div>
       <div className="gt2-category-grid" data-creative-mode="supabase-category-art">
         {categoryRows.map((category,index) => <button

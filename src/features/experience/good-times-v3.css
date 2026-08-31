@@ -247,3 +247,66 @@ body.gt-app-mode .gt-premium-experience:has(.gt4-app) .gt4-app{width:100%!import
   .gt4-section .gt4-stack{grid-template-columns:1fr}
   .gt4-discover .gt2-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 }
+
+
+/* V6 product correction: readable density, live route-building, place-first Discover and sports Radar. */
+.gt4-app{--gt4-body:11px;--gt4-meta:8.5px;--gt4-label:7.5px}
+.gt4-brand strong{font-size:15px}.gt4-brand small{font-size:7px}
+.gt4-city{font-size:10px}.gt4-radar-strip>span{font-size:8px}.gt4-radar-strip strong{font-size:10px}
+.gt4-nav small{font-size:8.5px}.gt4-nav span{font-size:16px}
+.gt4-backbar button{min-height:32px;padding-inline:12px;font-size:9.5px}
+.gt4-head h1,.gt4-concierge-screen .gt4-head h1{font-size:26px!important;max-width:25ch;line-height:1.04!important}
+.gt4-head p,.gt4-hero>p{font-size:10.5px;line-height:1.5}
+.gt4-hero>span,.gt4-shortlist header span,.gt4-section header span,.gt4-head>span,.gt4-live-results>header span,.gt4-alerts>span,.gt4-watchlist header span{font-size:7.5px}
+.gt4-section h2{font-size:20px}.gt4-section .gt4-card-copy h3{font-size:11.5px}.gt4-section .gt4-card-copy p{font-size:8.5px}.gt4-section .gt4-card-copy>em{font-size:8px}
+.gt4-ad{opacity:.56!important;min-height:34px!important}.gt4-ad>span{font-size:5px}.gt4-ad>strong,.gt4-ad>div strong{font-size:7px}.gt4-ad>a{font-size:6px}
+
+.gt4-discover .gt2-place-highlights{margin-bottom:8px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.055)}
+.gt4-discover .gt2-place-highlights .gt2-taxonomy-heading{display:flex;align-items:end;justify-content:space-between;gap:12px}
+.gt4-discover .gt2-place-highlights .gt2-taxonomy-heading small{max-width:38ch;text-align:right}
+.gt4-discover .gt2-screen-heading h1{font-size:24px!important}
+.gt4-discover .gt2-screen-heading p,.gt4-discover .gt2-taxonomy-heading small{font-size:8.5px}
+.gt4-discover .gt2-search input{font-size:11px}
+.gt4-discover .gt2-category-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+.gt4-discover .gt2-category-grid>button{min-height:88px!important}
+.gt4-discover .gt2-category-grid strong{font-size:10px!important;line-height:1.16!important;-webkit-line-clamp:3!important}
+.gt4-discover .gt2-category-grid small{font-size:6.5px!important}
+.gt4-discover .gt2-subcategory-grid>button{min-height:62px!important}
+.gt4-discover .gt2-subcategory-grid>button>strong{font-size:11px!important;line-height:1.18!important;-webkit-line-clamp:3!important;overflow-wrap:break-word!important}
+.gt4-discover .gt2-subcategory-grid>button>small{font-size:7.5px!important}
+.gt4-discover .gt2-venue-grid,.gt4-discover .gt4-live-results>div{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+.gt4-discover .gt4-card{min-height:148px!important}.gt4-discover .gt4-thumb,.gt4-discover .gt4-thumb>img,.gt4-discover .gt4-fallback{height:68px!important;min-height:68px!important}
+.gt4-discover .gt4-card-copy{min-height:78px!important;padding:7px 24px 7px 7px!important}
+.gt4-discover .gt4-card-copy>small{font-size:6px}.gt4-discover .gt4-card-copy h3{font-size:10.5px!important;line-height:1.17!important}.gt4-discover .gt4-card-copy p{font-size:7.5px!important}.gt4-discover .gt4-card-copy>em{font-size:7px!important}
+.gt4-discover .gt4-save{width:23px;height:23px;font-size:11px}
+
+/* Planner is a responsive decision surface, not a form. */
+.gt4-concierge-screen .gt2-builder-live{padding:12px!important;background:radial-gradient(circle at 85% 0,rgba(241,200,102,.08),transparent 34%),#0e1015}
+.gt2-builder-live .gt2-builder-head h2{font-size:22px!important}.gt2-builder-live .gt2-builder-head p{font-size:9.5px!important}
+.gt2-builder-live .gt2-builder-progress{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin:10px 0 12px}
+.gt2-builder-live .gt2-builder-progress button{min-height:36px;padding:5px 3px;display:flex;align-items:center;justify-content:center;gap:4px;border:1px solid rgba(255,255,255,.08);border-radius:9px;background:#0a0c10;color:rgba(255,255,255,.48)}
+.gt2-builder-live .gt2-builder-progress button b{width:17px;height:17px;display:grid;place-items:center;border-radius:50%;background:rgba(255,255,255,.06);font-size:7px}.gt2-builder-live .gt2-builder-progress button span{font-size:7px;font-weight:800}
+.gt2-builder-live .gt2-builder-progress button.active{border-color:rgba(241,200,102,.52);background:rgba(241,200,102,.11);color:var(--gt4-gold)}.gt2-builder-live .gt2-builder-progress button.done{color:rgba(241,200,102,.78)}
+.gt2-builder-live .gt2-builder-stage-title{margin:0 0 9px!important;display:flex;align-items:end;justify-content:space-between;gap:12px}.gt2-builder-live .gt2-builder-stage-title span{font-size:7px}.gt2-builder-live .gt2-builder-stage-title h3{margin:4px 0 0!important;font-size:18px!important;line-height:1.06!important}.gt2-builder-live .gt2-builder-stage-title small{max-width:42ch;font-size:7.5px!important;line-height:1.35;text-align:right}
+.gt2-builder-live .gt2-builder-vibes.visual>div{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}.gt2-builder-live .gt2-builder-vibes.visual button{min-height:70px!important}
+.gt2-builder-anchors{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.gt2-builder-anchors>button{position:relative;min-width:0;min-height:62px;padding:5px;display:grid;grid-template-columns:50px minmax(0,1fr) 18px;gap:7px;align-items:center;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:#0a0c10;color:#fff;text-align:left}.gt2-builder-anchors>button.active{border-color:rgba(241,200,102,.65);background:rgba(241,200,102,.075)}.gt2-builder-anchors img,.gt2-builder-anchors>button>i{width:50px;height:50px;object-fit:cover;display:grid;place-items:center;border-radius:8px;background:#171921;color:var(--gt4-gold);font:900 9px/1 var(--gt4-sans);font-style:normal}.gt2-builder-anchors>button>span{min-width:0;display:grid;gap:3px}.gt2-builder-anchors small{font-size:6px;color:var(--gt4-gold);letter-spacing:.1em}.gt2-builder-anchors strong{font-size:9px;line-height:1.15;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.gt2-builder-anchors em{font-size:6.5px;font-style:normal;color:var(--gt4-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gt2-builder-anchors>button>b{color:var(--gt4-gold);font-size:10px}
+.gt2-builder-pickers{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.gt2-builder-pickers label{min-width:0;display:grid;gap:5px}.gt2-builder-pickers label.wide{grid-column:1/-1}.gt2-builder-pickers label>span{font-size:7px;font-weight:900;letter-spacing:.12em;color:var(--gt4-gold)}.gt2-builder-pickers label>div{display:flex;gap:4px;flex-wrap:wrap}.gt2-builder-pickers button{min-height:28px;padding:0 8px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:#0a0c10;color:rgba(255,255,255,.68);font-size:7.5px}.gt2-builder-pickers button.active{border-color:rgba(241,200,102,.48);background:rgba(241,200,102,.12);color:var(--gt4-gold)}.gt2-builder-stepper{display:grid!important;grid-template-columns:30px 38px 30px;align-items:center}.gt2-builder-stepper strong{text-align:center;font-size:13px}
+.gt2-builder-live-route{display:grid;gap:6px}.gt2-builder-live-route article{min-width:0;min-height:58px;padding:5px;display:grid;grid-template-columns:22px 48px minmax(0,1fr);gap:7px;align-items:center;border:1px solid rgba(255,255,255,.075);border-radius:10px;background:#0a0c10}.gt2-builder-live-route article>b{color:var(--gt4-gold);font-size:10px}.gt2-builder-live-route img,.gt2-builder-live-route article>i{width:48px;height:48px;object-fit:cover;display:grid;place-items:center;border-radius:7px;background:#171921;color:var(--gt4-gold);font:900 8px/1 var(--gt4-sans);font-style:normal}.gt2-builder-live-route article>span{min-width:0;display:grid;gap:2px}.gt2-builder-live-route small{color:var(--gt4-gold);font-size:6px}.gt2-builder-live-route strong{font-size:9.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gt2-builder-live-route em{font-size:7px;font-style:normal;color:var(--gt4-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gt2-builder-swap{width:100%;min-height:34px;margin-top:7px;border:1px dashed rgba(241,200,102,.35);border-radius:9px;background:rgba(241,200,102,.04);color:var(--gt4-gold);font-size:8px;font-weight:800}
+.gt2-builder-live .gt2-builder-actions{display:grid;grid-template-columns:78px minmax(0,1fr);gap:6px;margin-top:10px}.gt2-builder-live .gt2-builder-actions button{min-height:38px;border-radius:9px;font-size:8px}.gt2-builder-live>small{display:block;margin-top:7px;color:var(--gt4-muted);font-size:6.5px;line-height:1.4}
+
+/* Radar combines urgency with every supported city's professional schedule. */
+.gt4-sports{margin-bottom:10px;padding:10px;border:1px solid var(--gt4-line);border-radius:13px;background:linear-gradient(150deg,rgba(241,200,102,.055),#0e1015 38%)}
+.gt4-sports>header{display:flex;justify-content:space-between;gap:10px;align-items:start}.gt4-sports>header span{font-size:7px;font-weight:900;letter-spacing:.14em;color:var(--gt4-gold)}.gt4-sports>header h2{margin:4px 0 2px;font-size:19px;line-height:1.05}.gt4-sports>header p{margin:0;color:var(--gt4-muted);font-size:7px}.gt4-sports>header>b{padding:5px 7px;border-radius:999px;background:#1c704b;color:#caffdf;font-size:7px}
+.gt4-sports-teams{display:flex;gap:4px;overflow-x:auto;margin:9px 0 7px;scrollbar-width:none}.gt4-sports-teams span{display:flex;gap:4px;white-space:nowrap;padding:5px 7px;border:1px solid rgba(255,255,255,.07);border-radius:999px;color:rgba(255,255,255,.68);font-size:7px}.gt4-sports-teams b{color:var(--gt4-gold)}
+.gt4-sports>nav{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:6px}.gt4-sports>nav button{min-height:30px;border:1px solid rgba(255,255,255,.07);border-radius:8px;background:#0a0c10;color:var(--gt4-muted);font-size:7.5px}.gt4-sports>nav button.active{border-color:rgba(241,200,102,.42);background:rgba(241,200,102,.1);color:var(--gt4-gold)}
+.gt4-sports-list{display:grid;gap:5px}.gt4-sports-list>a{min-width:0;padding:7px;display:grid;grid-template-columns:1fr 1fr;gap:4px 7px;border:1px solid rgba(255,255,255,.065);border-radius:9px;background:#0a0c10;color:#fff;text-decoration:none}.gt4-sports-league{grid-column:1/-1;display:flex;justify-content:space-between;color:var(--gt4-gold);font-size:6.5px;font-weight:900}.gt4-sports-league b{color:var(--gt4-muted)}.gt4-sports-league b.live{color:#66e5a7}.gt4-sports-match{min-width:0;display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:5px;align-items:center}.gt4-sports-match i{width:20px;height:20px;display:grid;place-items:center;font-size:5px;font-style:normal}.gt4-sports-match img{width:18px;height:18px;object-fit:contain}.gt4-sports-match strong{font-size:7.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gt4-sports-match>b{font-size:10px}.gt4-sports-list>a>small{grid-column:1/-1;color:var(--gt4-muted);font-size:6.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gt4-sports-empty{padding:14px;text-align:center;color:var(--gt4-muted);font-size:8px}
+
+@media(min-width:420px){
+  .gt4-discover .gt2-category-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .gt4-discover .gt2-subcategory-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .gt4-discover .gt2-venue-grid,.gt4-discover .gt4-live-results>div{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+}
+@media(min-width:600px){
+  .gt2-builder-anchors{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .gt4-sports-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

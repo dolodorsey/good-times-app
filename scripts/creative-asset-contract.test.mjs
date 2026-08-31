@@ -33,11 +33,13 @@ test('Explore taxonomy controls use approved category-specific art instead of ar
 })
 
 test('Build My Night keeps the complete click-through planner and source-backed route request',()=>{
-  assert.match(builder,/INTERACTIVE CLICK-THROUGH PLANNER/)
-  assert.match(builder,/STEPS = \['Vibe','Basics','Preferences','Review'\]/)
-  assert.match(builder,/Pick up to four vibes/)
-  assert.match(builder,/gt2-builder-review/)
-  assert.match(builder,/current source-backed events and verified venues/)
+  assert.match(builder,/LIVE ROUTE BUILDER/)
+  assert.match(builder,/STEPS = \['Mood','Anchor','Details','Route'\]/)
+  assert.match(builder,/What should the night feel like\?/)
+  assert.match(builder,/gt2-builder-anchors/)
+  assert.match(builder,/gt2-builder-pickers/)
+  assert.match(builder,/gt2-builder-live-route/)
+  assert.match(builder,/current source-backed events and verified places/)
   assert.match(builder,/--gt-vibe-art/)
 })
 

@@ -25,13 +25,15 @@ test('Explore category controls use approved taxonomy art and preserve exact inv
 })
 
 test('Build My Night exposes a dense working click-through instead of a stripped form',()=>{
-  assert.match(builder,/INTERACTIVE CLICK-THROUGH PLANNER/)
+  assert.match(builder,/LIVE ROUTE BUILDER/)
   assert.match(builder,/gt2-builder-progress/)
-  assert.match(builder,/Pick up to four vibes/)
-  assert.match(builder,/When/)
-  assert.match(builder,/Group size/)
-  assert.match(builder,/Budget/)
-  assert.match(builder,/Review your night/)
+  assert.match(builder,/gt2-builder-anchors/)
+  assert.match(builder,/gt2-builder-pickers/)
+  assert.match(builder,/gt2-builder-live-route/)
+  assert.match(builder,/DATES\.map/)
+  assert.match(builder,/setPeople/)
+  assert.match(builder,/BUDGETS\.map/)
+  assert.match(builder,/Your night, assembled live/)
   assert.match(builder,/Build My Night/)
 })
 

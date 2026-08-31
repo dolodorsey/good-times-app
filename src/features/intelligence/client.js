@@ -86,7 +86,7 @@ async function loadSameOriginData(city) {
 
 async function loadVenuesDirect(normalizedCity, limit) {
   return fetchJson(
-    `${KHG_SUPABASE_URL}/rest/v1/gt_venues?select=id,name,slug,city_key,neighborhood,side_of_town,category_key,subcategory,address,latitude,longitude,phone,website,instagram_handle,short_desc,vibe_tags,best_for,best_time,price_range,dress_code,reservation_req,hours_summary,insider_tip,status,is_featured,is_verified,quality_score,hero_image,booking_link,booking_platform,google_rating,google_reviews,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_score,source_count,culture_tags&status=eq.active&city_key=eq.${encodeURIComponent(normalizedCity)}&hero_image=not.is.null&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast,quality_score.desc.nullslast&limit=${limit}`,
+    `${KHG_SUPABASE_URL}/rest/v1/gt_venues?select=id,name,slug,city_key,neighborhood,side_of_town,category_key,subcategory,address,latitude,longitude,phone,website,instagram_handle,short_desc,vibe_tags,best_for,best_time,price_range,dress_code,reservation_req,hours_summary,insider_tip,status,is_featured,is_verified,quality_score,hero_image,booking_link,booking_platform,google_rating,google_reviews,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_score,source_count,culture_tags&status=eq.active&city_key=eq.${encodeURIComponent(normalizedCity)}&is_verified=eq.true&quality_score=gte.55&order=culture_tier.asc,culture_score.desc.nullslast,google_rating.desc.nullslast,quality_score.desc.nullslast&limit=${limit}`,
     { headers: gatewayHeaders },
   )
 }
@@ -119,20 +119,24 @@ export async function loadExploreTaxonomy() {
 
 export async function loadExploreCounts(city = 'atlanta') {
   const normalizedCity = normalizeCity(city)
-  return fetchJson(
-    `${KHG_SUPABASE_URL}/rest/v1/v_gt_venue_taxonomy_counts?select=category_key,subcategory_key,place_count&city_key=eq.${encodeURIComponent(normalizedCity)}`,
-    { headers: gatewayHeaders },
-  )
+  const payload = await fetchJson(`/api/catalog?city=${encodeURIComponent(normalizedCity)}`)
+  return (payload?.categories || []).flatMap(category => [
+    { category_key:category.id, subcategory_key:null, place_count:Number(category.count || 0) },
+    ...(category.subcategories || []).map(subcategory => ({
+      category_key:category.id,
+      subcategory_key:subcategory.id,
+      place_count:Number(subcategory.count || 0),
+    })),
+  ])
 }
 
 export async function loadExploreDirectory(city = 'atlanta', { limit = 2500, category = null, subcategory = null } = {}) {
   const normalizedCity = normalizeCity(city)
-  const categoryFilter = category ? `&category_key=eq.${encodeURIComponent(category)}` : ''
-  const subcategoryFilter = subcategory ? `&subcategory_key=eq.${encodeURIComponent(subcategory)}` : ''
-  return fetchJson(
-    `${KHG_SUPABASE_URL}/rest/v1/v_gt_venue_taxonomy_directory?select=id,city_key,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,category_key,category_name,subcategory,subcategory_key,venue_category_key,venue_subcategory,tab_tags,search_tags,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,instagram_handle,sourced_from,website,phone,booking_link,status,taxonomy_confidence,latitude,longitude&city_key=eq.${encodeURIComponent(normalizedCity)}${categoryFilter}${subcategoryFilter}&order=taxonomy_confidence.desc,quality_score.desc.nullslast,google_rating.desc.nullslast&limit=${limit}`,
-    { headers: gatewayHeaders },
-  )
+  const params = new URLSearchParams({ city:normalizedCity, mode:'directory', limit:String(limit) })
+  if (category) params.set('category', category)
+  if (subcategory) params.set('subcategory', subcategory)
+  const payload = await fetchJson(`/api/catalog?${params}`)
+  return Array.isArray(payload?.venues) ? payload.venues : []
 }
 
 export async function loadGoodTimesProfile(session = readSession()) {
@@ -165,6 +169,11 @@ export async function loadCanonicalVenues(city = 'atlanta', { limit = 400 } = {}
     console.warn('[GOOD TIMES live data] Same-origin venue gateway failed; using direct verified venue feed.', gatewayError)
     return loadVenuesDirect(normalizedCity, limit)
   }
+}
+
+export async function loadCitySports(city = 'atlanta') {
+  const normalizedCity = normalizeCity(city)
+  return fetchJson(`/api/sports?city=${encodeURIComponent(normalizedCity)}`)
 }
 
 export async function checkGoodTimesLiveData(city = 'atlanta') {

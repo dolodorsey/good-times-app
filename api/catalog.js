@@ -1,6 +1,6 @@
 const CONTENT_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
-const MAX_DIRECTORY_ROWS = 240
+const MAX_DIRECTORY_ROWS = 2500
 const CACHE = 'gt_venue_taxonomy_directory_cache'
 const COUNT_CACHE = 'gt_venue_taxonomy_count_cache'
 const RESPONSE_CACHE = globalThis.__GOOD_TIMES_CATALOG_CACHE__ || (globalThis.__GOOD_TIMES_CATALOG_CACHE__ = new Map())
@@ -31,9 +31,13 @@ function safePublicImage(value) {
 function hasValue(value) { return value !== null && value !== undefined && String(value).trim() !== '' }
 function customerReadyDirectoryVenue(row) {
   if (!row?.id || !hasValue(row.name) || row.status !== 'active') return false
-  if (Number(row.quality_score || 0) < 60) return false
-  if (!safePublicImage(row.hero_image)) return false
+  if (Number(row.quality_score || 0) < 55) return false
   return [row.address,row.website,row.phone,row.booking_link,row.instagram_handle].some(hasValue)
+}
+function isStandingPlaceInEventOnlyLane(row) {
+  return row?.category_key === 'festivals_major_activations'
+    && row?.subcategory_key === 'food_festivals'
+    && ['food_truck','food_hall'].includes(row?.venue_category_key)
 }
 const wait = ms => new Promise(resolve => setTimeout(resolve, ms))
 async function fetchRows(path, label) {
@@ -95,8 +99,7 @@ export default async function handler(request,response) {
         `${CACHE}?select=${DIRECTORY_SELECT}`,
         `city_key=eq.${encodeURIComponent(city)}`,
         'status=eq.active',
-        'quality_score=gte.60',
-        'hero_image=not.is.null',
+        'quality_score=gte.55',
         category?`category_key=eq.${encodeURIComponent(category)}`:'',
         subcategory?`subcategory_key=eq.${encodeURIComponent(subcategory)}`:'',
         'order=taxonomy_confidence.desc,quality_score.desc.nullslast,google_rating.desc.nullslast',
@@ -106,6 +109,7 @@ export default async function handler(request,response) {
       const seen=new Set()
       const venues=rows
         .filter(customerReadyDirectoryVenue)
+        .filter(row=>!isStandingPlaceInEventOnlyLane(row))
         .filter(row=>{if(seen.has(row.id))return false;seen.add(row.id);return true})
         .slice(0,limit)
         .map(row=>({...row,hero_image:safePublicImage(row.hero_image)}))
