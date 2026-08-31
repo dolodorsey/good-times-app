@@ -33,19 +33,19 @@ try{
     const context=await browser.newContext({viewport:{width:target.width,height:target.height},deviceScaleFactor:target.scale})
     const page=await context.newPage()
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
-    await page.waitForSelector('.gt2-app',{timeout:20000})
-    await page.waitForSelector('.gt2-hero',{timeout:20000})
+    await page.waitForSelector('.gt4-app',{timeout:25000})
+    await page.waitForSelector('.gt4-main',{timeout:25000})
     await capture(page,target,'01-home')
 
-    const dates=page.locator('.gt2-nav button').filter({hasText:'Dates'}).first()
-    await dates.click()
-    await page.waitForSelector('.gt2-screen',{timeout:10000})
-    await capture(page,target,'02-dates')
+    const discover=page.locator('.gt4-nav button').filter({hasText:'Discover'}).first()
+    await discover.click()
+    await page.waitForSelector('.gt4-discover',{timeout:10000})
+    await capture(page,target,'02-discover')
 
-    const explore=page.locator('.gt2-nav button').filter({hasText:'Explore'}).first()
-    await explore.click()
-    await page.waitForSelector('.gt2-explore-browser',{timeout:10000})
-    await capture(page,target,'03-explore')
+    const radar=page.locator('.gt4-nav button').filter({hasText:'Radar'}).first()
+    await radar.click()
+    await page.waitForSelector('.gt4-radar-settings',{timeout:10000})
+    await capture(page,target,'03-radar')
 
     await context.close()
   }
@@ -53,4 +53,4 @@ try{
   await browser.close()
 }
 
-console.log('App Store screenshots captured at Apple-accepted pixel dimensions.')
+console.log('App Store screenshots captured from GOOD TIMES V3 at Apple-accepted pixel dimensions.')
