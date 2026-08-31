@@ -9,11 +9,14 @@
   body.gt-app-mode {
     width: 100% !important;
     min-height: 100% !important;
+    padding: 0 !important;
   }
 
   body.gt-app-mode {
     height: 100dvh !important;
     min-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
     align-items: stretch !important;
     justify-content: stretch !important;
     overflow: hidden !important;
@@ -25,6 +28,7 @@
     height: 100dvh !important;
     min-height: 0 !important;
     margin: 0 !important;
+    padding: 0 !important;
     border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
@@ -37,6 +41,8 @@
     height: 100% !important;
     min-height: 0 !important;
     margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
     border-radius: 0 !important;
     overflow: hidden !important;
   }
@@ -48,8 +54,12 @@
     height: 100% !important;
     min-height: 0 !important;
     margin: 0 !important;
+    padding: 0 !important;
     position: relative !important;
+    inset: auto !important;
+    transform: none !important;
     overflow: hidden !important;
+    border: 0 !important;
     border-radius: 0 !important;
     box-shadow: none !important;
   }
@@ -61,6 +71,7 @@
     height: 100% !important;
     min-height: 0 !important;
     margin: 0 !important;
+    padding: 0 !important;
     position: relative !important;
     inset: auto !important;
     transform: none !important;
