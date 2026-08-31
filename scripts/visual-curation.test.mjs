@@ -16,21 +16,21 @@ test('same-night curation shows one venue each before repeating a venue',()=>{
   assert.deepEqual(curated.slice(4).map(item=>item.event_key),['u2','u3'])
 })
 
-test('Explore category cards are image-backed and still preserve exact inventory counts',()=>{
-  assert.match(explore,/manifestAssetForCategory/)
-  assert.match(explore,/data-has-art/)
-  assert.match(explore,/--gt-cat-image/)
+test('Explore category controls avoid misleading venue photos and preserve exact inventory counts',()=>{
+  assert.match(explore,/data-creative-mode="taxonomy-icons"/)
+  assert.match(explore,/categoryHue/)
+  assert.doesNotMatch(explore,/--gt-cat-image/)
   assert.match(explore,/category\.count/)
-  assert.match(refresh,/var\(--gt-cat-image\)/)
 })
 
-test('Build My Night exposes visual moods and a live three-stop preview',()=>{
-  assert.match(builder,/Pick up to four vibes/)
-  assert.match(builder,/gt2-builder-preview-art/)
-  assert.match(builder,/START/)
-  assert.match(builder,/MAIN MOVE/)
-  assert.match(builder,/LATE/)
-  assert.match(refresh,/gt-bg-nightlife-district\.webp/)
+test('Build My Night exposes a dense working brief instead of decorative preview art',()=>{
+  assert.match(builder,/Four choices\. One complete route\./)
+  assert.match(builder,/gt4-night-fields/)
+  assert.match(builder,/When/)
+  assert.match(builder,/People/)
+  assert.match(builder,/Vibe/)
+  assert.match(builder,/Budget/)
+  assert.match(builder,/Update route/)
 })
 
 test('toolbar uses six image-backed navigation controls from the Supabase pack',()=>{

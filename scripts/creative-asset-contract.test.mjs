@@ -23,27 +23,21 @@ test('creative layer reads only approved active Supabase manifest rows across ap
   assert.match(layer,/data-creative-source="gt_asset_manifest"/)
 })
 
-test('Explore renders approved category-specific Supabase art instead of repeated retired collages',()=>{
+test('Explore taxonomy controls use neutral icon tiles instead of venue-like photography',()=>{
   assert.match(responsive,/@import '\.\/good-times-creative-refresh\.css'/)
-  assert.match(explore,/loadGoodTimesAssetManifest/)
-  assert.match(explore,/manifestAssetForCategory/)
-  assert.match(explore,/data-creative-mode="supabase-category-art"/)
-  assert.match(explore,/--gt-cat-image/)
-  assert.match(refresh,/var\(--gt-cat-image\)/)
-  assert.match(refresh,/good-times-backgrounds/)
+  assert.match(explore,/data-creative-mode="taxonomy-icons"/)
+  assert.match(explore,/categoryHue/)
+  assert.doesNotMatch(explore,/manifestAssetForCategory/)
+  assert.doesNotMatch(explore,/--gt-cat-image/)
   assert.doesNotMatch(layer,/ChatGPT_Image_Feb_10_2026/)
 })
 
-test('Build My Night is a visual planner using approved mood art and a three-stop preview',()=>{
-  assert.match(builder,/VIBE_CONFIG/)
-  assert.match(builder,/gt-cat-mood-bougie\.webp/)
-  assert.match(builder,/gt-cat-mood-turnt\.webp/)
-  assert.match(builder,/gt2-builder-preview/)
-  assert.match(builder,/gt2-builder-route/)
-  assert.match(builder,/--gt-vibe-art/)
-  assert.match(refresh,/gt-bg-nightlife-district\.webp/)
-  assert.match(refresh,/\.gt2-builder-preview/)
-  assert.match(refresh,/\.gt2-builder-vibes\.visual/)
+test('Build My Night uses a compact editable brief and source-backed route request',()=>{
+  assert.match(builder,/Four choices\. One complete route\./)
+  assert.match(builder,/gt4-night-fields/)
+  assert.match(builder,/Update route/)
+  assert.match(builder,/source-backed route/)
+  assert.doesNotMatch(builder,/--gt-vibe-art/)
 })
 
 test('GOOD TIMES toolbar uses the actual Supabase navigation artwork',()=>{

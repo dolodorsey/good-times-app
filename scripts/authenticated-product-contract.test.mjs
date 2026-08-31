@@ -31,7 +31,7 @@ test('signed-in navigation uses five distinct customer jobs', () => {
 })
 
 test('Discover preserves real category and subcategory traversal', () => {
-  mustContain(app,['ExploreTaxonomyBrowser','selectedCategory','selectedSubcategory','onCategory={setSelectedCategory}','onSubcategory={setSelectedSubcategory}'])
+  mustContain(app,['ExploreTaxonomyBrowser','selectedCategory','selectedSubcategory','onCategory={value=>','onSubcategory={value=>','resetScroll()'])
   mustContain(taxonomyBrowser,['SUBCATEGORIES','loadExploreDirectory','onSubcategory?.(subcategory.subcategory_key)','All categories'])
 })
 

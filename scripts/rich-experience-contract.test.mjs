@@ -56,12 +56,26 @@ test('every non-home and nested V3 state has a usable Back path', () => {
   assert.match(source, /className="gt4-detail-back"/)
 })
 
-test('Discover keeps two-column mobile density and scan-safe subcategory type', () => {
+test('Discover uses four-across taxonomy and three-across mobile directory density', () => {
   const css = read('src/features/experience/good-times-v3.css')
-  assert.match(css, /\.gt4-discover \.gt2-category-grid,\.gt4-discover \.gt2-subcategory-grid\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/)
-  assert.match(css, /\.gt4-discover \.gt2-venue-grid,\.gt4-discover \.gt4-live-results>div\{[^}]*grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/)
+  assert.match(css, /\.gt4-discover \.gt2-category-grid\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)!important/)
+  assert.match(css, /\.gt4-discover \.gt2-venue-grid,\.gt4-discover \.gt4-live-results>div\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/)
+  assert.match(css, /@media\(min-width:700px\)[^{]*\{[^}]*#root:has\(\.gt4-app\)/)
+  assert.match(css, /grid-template-columns:repeat\(8,minmax\(0,1fr\)\)!important/)
+  assert.match(css, /grid-template-columns:repeat\(6,minmax\(0,1fr\)\)!important/)
   assert.match(css, /\.gt4-discover \.gt2-subcategory-grid>button>strong\{[^}]*var\(--gt4-sans\)!important/)
   assert.match(css, /word-break:normal!important/)
+})
+
+test('Build My Night leads with a compact brief and renders an editable source-backed route', () => {
+  const source = read('src/features/experience/GoodTimesCommandAppV3.jsx')
+  const builder = read('src/features/experience/BuildMyNightPanel.jsx')
+  assert.match(builder, /Four choices\. One complete route\./)
+  assert.match(source, /function ItineraryRoute/)
+  assert.match(source, /localPreviewRoute/)
+  assert.match(source, /Sign in to save/)
+  assert.match(source, /Adjust the brief/)
+  assert.match(source, /session\?\.user\?\.id/)
 })
 
 test('V3 cards are vertical app-width results rather than clipped horizontal rails', () => {
