@@ -87,3 +87,163 @@ body:has(.gt4-app) [aria-label="Open GOOD TIMES utilities"],body:has(.gt4-app) [
 .gt4-hero h1,.gt4-shortlist h2,.gt4-concierge-screen .gt4-head h1,.gt4-night-brief h2,.gt4-route>header h2,.gt4-shake header h2{font-family:var(--gt4-sans)!important;font-weight:800!important;letter-spacing:-.04em!important}.gt4-hero h1{font-size:28px!important}.gt4-shortlist h2{font-size:18px!important}.gt4-shake header h2{font-size:22px!important}.gt4-night-brief h2{font-size:18px!important}.gt4-route>header h2{font-size:22px!important}
 
 @media(min-width:700px){body.gt-app-mode #root:has(.gt4-app){width:calc(100vw - 40px)!important;max-width:1240px!important}body.gt-app-mode .gt-premium-experience:has(.gt4-app){width:100%!important;max-width:none!important}}
+
+/* V5 complete-product authority: denser without deleting product surfaces. */
+body.gt-app-mode .gt-premium-experience:has(.gt4-app)>.gt-guest-mode{width:100%!important;height:100%!important;min-height:0!important;overflow:hidden!important}
+body.gt-app-mode .gt-premium-experience:has(.gt4-app) .gt4-app{width:100%!important;height:100%!important;min-height:0!important}
+.gt-premium-experience .gt4-app :where(.gt4-hero h1,.gt4-shortlist h2,.gt4-section h2,.gt4-head h1,.gt4-detail h2,.gt4-profile h2,.gt4-plans h2,.gt4-empty h2,.gt4-alerts strong,.gt4-shake h2,.gt4-route h2,.gt2-builder h2,.gt2-builder h3){font-family:var(--gt4-sans)!important;font-weight:800!important}
+.gt-premium-experience .gt4-app .gt4-detail h2{font-size:22px!important;line-height:1.04!important;letter-spacing:-.03em!important}
+.gt4-topbar{height:56px;min-height:56px;flex-basis:56px;padding-inline:12px}
+.gt4-mark{width:36px;height:36px;min-width:36px;font-size:11px}
+.gt4-brand strong{font-size:13px}.gt4-brand small{font-size:5.5px}
+.gt4-city{height:33px;font-size:8px}
+.gt4-radar-strip{min-height:36px;flex-basis:36px;grid-template-columns:80px minmax(0,1fr) 10px;padding-inline:12px}
+.gt4-radar-strip strong{font-family:var(--gt4-sans);font-size:8.5px;font-weight:700}
+.gt4-main{padding-bottom:calc(62px + env(safe-area-inset-bottom,0px));scroll-padding-bottom:72px}
+.gt4-nav{min-height:58px;padding:4px 4px env(safe-area-inset-bottom,0px)}
+.gt4-nav button{border-radius:10px;gap:2px}.gt4-nav span{font-size:15px}.gt4-nav small{font-size:6px}
+.gt4-backbar{min-height:36px;padding:4px 12px}
+.gt4-backbar button{min-height:28px;font-size:7px}
+
+.gt4-hero{padding:15px 12px 11px}
+.gt4-hero h1{margin:5px 0!important;font:800 27px/1.02 var(--gt4-sans)!important;letter-spacing:-.04em!important}
+.gt4-hero>p{max-width:58ch;font-size:10px;line-height:1.45}
+.gt4-ask{margin-top:10px;padding:4px}.gt4-ask input,.gt4-ask button{height:36px}.gt4-ask input{font-size:9px}
+.gt4-quick button{padding:6px 8px;font-size:7px}
+.gt4-shortlist{padding:11px 12px 8px}.gt4-shortlist h2{font-size:17px!important}
+.gt4-shortlist>header{margin-bottom:4px}.gt4-shortlist>div>button{min-height:48px;padding:6px 2px;grid-template-columns:25px minmax(0,1fr) 10px;gap:7px}
+.gt4-shortlist b{font-size:14px}.gt4-shortlist strong{font:800 10px/1.15 var(--gt4-sans)}.gt4-shortlist em{font-size:6.5px}
+
+.gt4-section{padding:14px 12px}.gt4-section>header{margin-bottom:8px}.gt4-section h2{font:800 19px/1.05 var(--gt4-sans);letter-spacing:-.025em}
+.gt4-section .gt4-stack{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.gt4-section .gt4-card{min-height:164px;display:flex;flex-direction:column;border-radius:12px}
+.gt4-section .gt4-thumb{width:100%;height:76px;min-height:76px}
+.gt4-section .gt4-thumb>img,.gt4-section .gt4-fallback{height:76px;min-height:76px}
+.gt4-section .gt4-fallback .gt4-mark{width:28px;height:28px;min-width:28px;font-size:8px}
+.gt4-section .gt4-fallback small{font-size:5px}
+.gt4-section .gt4-card-copy{min-height:86px;padding:8px 25px 8px 8px}
+.gt4-section .gt4-card-copy>small{font-size:6px}.gt4-section .gt4-card-copy h3{margin:4px 0;font:800 10.5px/1.14 var(--gt4-sans)}
+.gt4-section .gt4-card-copy p{font-size:8px;line-height:1.25;-webkit-line-clamp:1}.gt4-section .gt4-card-copy>em{font-size:7px}
+.gt4-section .gt4-card-copy>b{right:6px;bottom:6px;font-size:5px}.gt4-section .gt4-save{right:5px;top:5px;width:24px;height:24px;font-size:11px}
+
+.gt4-ad{min-height:38px;margin:5px 12px;padding:6px 8px;border-radius:10px;opacity:.62}
+.gt4-ad>span{font-size:4.5px}.gt4-ad>strong,.gt4-ad>div strong{font-size:7px}.gt4-ad>a{padding:6px 7px;font-size:5.5px}
+.gt4-ad>img{max-height:56px}
+
+.gt4-screen,.gt4-discover{padding:13px 12px 18px}
+.gt4-head{margin-bottom:11px}.gt4-head h1,.gt4-concierge-screen .gt4-head h1{max-width:28ch;margin:5px 0!important;font:800 28px/1.02 var(--gt4-sans)!important;letter-spacing:-.04em!important;text-wrap:balance}
+.gt4-head p{max-width:62ch;font-size:10px;line-height:1.45}
+
+.gt4-discover .gt2-screen-heading{padding:2px 0 8px}
+.gt4-discover .gt2-screen-heading h1{font-size:25px!important}
+.gt4-discover .gt2-search{height:40px;margin-bottom:8px}
+.gt4-discover .gt2-taxonomy-heading{padding:7px 0 6px}
+.gt4-discover .gt2-category-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}
+.gt4-discover .gt2-category-grid>button{min-height:86px!important;padding:7px!important;gap:4px!important;background-image:linear-gradient(180deg,rgba(5,6,9,.08),rgba(5,6,9,.82)),var(--gt-cat-image,none),linear-gradient(145deg,#151820,#0d0f14)!important;background-size:cover!important;background-position:center!important}
+.gt4-discover .gt2-category-mark{width:24px;height:24px;font-size:10px}
+.gt4-discover .gt2-category-grid strong{font:800 9px/1.13 var(--gt4-sans)!important;text-shadow:0 2px 8px rgba(0,0,0,.9)!important;-webkit-line-clamp:3!important}
+.gt4-discover .gt2-category-grid small{font:700 6.2px/1.2 var(--gt4-sans)!important;color:rgba(255,255,255,.82)!important;text-shadow:0 1px 7px rgba(0,0,0,.95)!important}
+.gt4-discover .gt2-subcategory-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+.gt4-discover .gt2-subcategory-grid>button{min-height:58px!important;padding:8px 22px 7px 8px!important}
+.gt4-discover .gt2-subcategory-grid>button>strong{font:800 9.5px/1.16 var(--gt4-sans)!important;overflow-wrap:anywhere!important}
+.gt4-discover .gt2-subcategory-grid>button>small{font-size:7px!important}
+.gt4-discover .gt2-venue-grid,.gt4-discover .gt4-live-results>div{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+.gt4-discover .gt4-card{min-height:156px!important}.gt4-discover .gt4-thumb{height:72px!important;min-height:72px!important}
+.gt4-discover .gt4-thumb>img,.gt4-discover .gt4-fallback{height:72px!important;min-height:72px!important}
+.gt4-discover .gt4-card-copy{min-height:82px!important}.gt4-discover .gt4-card-copy h3{font-size:9.5px!important}
+.gt4-discover .gt4-card-copy p{display:-webkit-box!important;font-size:7.5px!important;line-height:1.25!important;-webkit-line-clamp:1}
+
+/* The full click-through planner stays visual, but compact enough to scan. */
+.gt4-concierge-screen{padding:12px 12px 18px}
+.gt4-concierge-screen .gt2-builder{width:100%!important;min-height:0!important;margin:0!important;padding:12px!important;border-radius:15px!important}
+.gt4-concierge-screen .gt2-builder-head h2{margin:5px 0 4px!important;font:800 20px/1.05 var(--gt4-sans)!important;letter-spacing:-.025em!important}
+.gt4-concierge-screen .gt2-builder-head p{max-width:64ch!important;font-size:9px!important;line-height:1.4!important}
+.gt4-concierge-screen .gt2-builder-preview{grid-template-columns:minmax(100px,.72fr) 1.28fr!important;gap:6px!important;margin:10px 0 7px!important;padding:6px!important;border-radius:11px!important}
+.gt4-concierge-screen .gt2-builder-preview-art{min-height:102px!important;padding:10px!important;border-radius:9px!important}
+.gt4-concierge-screen .gt2-builder-preview-art strong{font:800 16px/1 var(--gt4-sans)!important}
+.gt4-concierge-screen .gt2-builder-route{gap:4px!important}
+.gt4-concierge-screen .gt2-builder-route>div{min-height:31px!important;padding:4px 6px!important;grid-template-columns:20px minmax(0,1fr)!important;gap:5px!important;border-radius:8px!important}
+.gt4-concierge-screen .gt2-builder-route>div>span{display:grid!important;width:19px!important;height:19px!important;font-size:5px!important}
+.gt4-concierge-screen .gt2-builder-route strong{font:800 8px/1.1 var(--gt4-sans)!important}
+.gt4-concierge-screen .gt2-builder-progress{gap:4px!important;margin:8px 0 10px!important}
+.gt4-concierge-screen .gt2-builder-progress button{min-height:30px!important;padding:0 3px!important;border-radius:8px!important;font-size:5.5px!important}
+.gt4-concierge-screen .gt2-builder-stage-title{margin:2px 0 8px!important}
+.gt4-concierge-screen .gt2-builder-stage-title h3{font:800 16px/1.05 var(--gt4-sans)!important}
+.gt4-concierge-screen .gt2-builder-stage-title small{font-size:6px!important}
+.gt4-concierge-screen .gt2-builder-vibes.visual>div{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important}
+.gt4-concierge-screen .gt2-builder-vibes.visual button{min-height:66px!important;padding:7px!important;border-radius:9px!important}
+.gt4-concierge-screen .gt2-builder-vibes.visual button strong{font:800 8px/1.1 var(--gt4-sans)!important}
+.gt4-concierge-screen .gt2-builder-vibes.visual button em{width:17px;height:17px;right:5px;top:5px;font-size:6px}
+.gt4-concierge-screen .gt2-builder-grid{gap:6px!important;margin-top:8px!important}
+.gt4-concierge-screen .gt2-builder-grid label{gap:4px!important}
+.gt4-concierge-screen .gt2-builder-grid label>span{font-size:6px!important}
+.gt4-concierge-screen .gt2-builder-grid input,.gt4-concierge-screen .gt2-builder-grid select{height:36px!important;padding-inline:8px!important;border-radius:8px!important;font-size:7.5px!important}
+.gt4-concierge-screen .gt2-builder-review{gap:5px!important}.gt4-concierge-screen .gt2-builder-review>div{padding:8px!important;border-radius:8px!important}
+.gt4-concierge-screen .gt2-builder-review span{font-size:5.5px!important}.gt4-concierge-screen .gt2-builder-review strong{font-size:7.5px!important}
+.gt4-concierge-screen .gt2-builder-actions{margin-top:9px!important;gap:5px!important}.gt4-concierge-screen .gt2-builder-actions button{min-height:38px!important;border-radius:9px!important;font-size:7px!important}
+.gt4-concierge-screen .gt2-builder-search-note{margin-top:7px!important;padding:7px 8px!important;font-size:6px!important}
+.gt4-concierge-screen .gt2-builder>small{margin-top:6px!important;font-size:5.5px!important}
+.gt4-concierge{margin-top:8px;padding:8px}.gt4-concierge textarea{min-height:62px;font-size:8px}
+.gt4-shake{margin-top:10px}.gt4-shake header h2{font-size:18px!important}.gt4-shake>div{grid-template-columns:repeat(2,minmax(0,1fr))}
+.gt4-shake button{min-height:68px;padding:8px}.gt4-shake strong{font-size:8px}.gt4-shake small{font-size:5.5px}
+
+.gt4-radar-settings{padding:9px;border-radius:11px}.gt4-radar-settings select{height:34px;font-size:7.5px}
+.gt4-radar-settings>div{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:6px}
+.gt4-radar-settings>div label{min-height:32px;padding-inline:7px;font-size:7px}
+.gt4-alerts,.gt4-watchlist{margin-top:10px;padding:9px;border-radius:11px}
+
+.gt4-vault-tabs{min-height:42px}.gt4-vault-tabs button{min-height:34px;font-size:8px}
+.gt4-empty{min-height:138px!important;padding:14px!important;border-radius:12px!important}
+.gt4-empty .gt4-mark{width:32px;height:32px;min-width:32px;font-size:9px}
+.gt4-empty h2{margin:7px 0 3px!important;font-size:17px!important;line-height:1.05!important}
+.gt4-empty p{max-width:48ch;font-size:7.5px!important;line-height:1.4!important}
+.gt4-empty button{min-height:36px!important;margin-top:8px!important}
+.gt4-vault-routes{display:grid;gap:8px}
+.gt4-route{padding:10px;border-radius:12px}.gt4-route>header h2{font-size:18px!important}.gt4-route>header p{font-size:7px}
+.gt4-route-stop{min-height:64px;grid-template-columns:20px 54px minmax(0,1fr) 10px;padding:5px}
+.gt4-route-media{width:54px;height:52px}.gt4-route-copy strong{font-size:9px}.gt4-route-copy p{font-size:6px}
+.gt4-route-gap{height:19px}.gt4-route-actions button{height:35px}
+.gt4-route-vault .gt4-route-stops{margin-top:8px}
+.gt4-route-vault .gt4-route-truth{display:none}
+
+@media(min-width:480px){
+  .gt4-discover .gt2-subcategory-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .gt4-discover .gt2-venue-grid,.gt4-discover .gt4-live-results>div{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .gt4-concierge-screen .gt2-builder-vibes.visual>div{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .gt4-radar-settings{display:grid;grid-template-columns:150px minmax(0,1fr);gap:7px;align-items:end}
+  .gt4-radar-settings>div{grid-template-columns:repeat(4,minmax(0,1fr));margin-top:0}
+}
+
+@media(min-width:700px){
+  body.gt-app-mode{align-items:stretch!important;padding:0!important}
+  body.gt-app-mode #root:has(.gt4-app){height:100dvh!important;min-height:0!important;max-height:none!important;margin:0 auto!important;overflow:hidden!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:#07090d!important}
+  body.gt-app-mode .gt-premium-experience:has(.gt4-app){display:block!important;height:100%!important;min-height:0!important;max-height:none!important;overflow:hidden!important;border-radius:0!important}
+  body.gt-app-mode .gt-premium-experience:has(.gt4-app)>.gt-guest-mode,
+  body.gt-app-mode .gt-premium-experience:has(.gt4-app) .gt4-app{height:100%!important;min-height:0!important;max-height:none!important}
+  .gt4-main>*:not(.gt4-hero):not(.gt4-shortlist):not(.gt4-ad){max-width:1120px}
+  .gt4-hero,.gt4-shortlist{padding-left:max(24px,calc((100vw - 1120px)/2));padding-right:max(24px,calc((100vw - 1120px)/2))}
+  .gt4-section .gt4-stack{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .gt4-section .gt4-card-copy>small{font-size:7px}
+  .gt4-section .gt4-card-copy h3{font-size:12px}
+  .gt4-section .gt4-card-copy p{font-size:9px;-webkit-line-clamp:2}
+  .gt4-section .gt4-card-copy>em{font-size:8px}
+  .gt4-section .gt4-card-copy>b{font-size:6px}
+  .gt4-discover .gt2-category-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}
+  .gt4-discover .gt2-category-grid>button{min-height:104px!important}
+  .gt4-discover .gt2-category-grid strong{font-size:11px!important}
+  .gt4-discover .gt2-category-grid small{font-size:7px!important}
+  .gt4-discover .gt2-subcategory-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .gt4-discover .gt2-subcategory-grid>button>strong{font-size:11px!important}
+  .gt4-discover .gt2-subcategory-grid>button>small{font-size:8px!important}
+  .gt4-discover .gt2-venue-grid,.gt4-discover .gt4-live-results>div{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .gt4-discover .gt4-card-copy h3{font-size:11px!important}
+  .gt4-discover .gt4-card-copy p{font-size:8.5px!important}
+  .gt4-discover .gt4-card-copy>em{font-size:7.5px!important}
+  .gt4-concierge-screen{max-width:880px!important}
+  .gt4-vault-routes{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media(max-width:340px){
+  .gt4-section .gt4-stack{grid-template-columns:1fr}
+  .gt4-discover .gt2-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}

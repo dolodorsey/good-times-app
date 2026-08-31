@@ -23,21 +23,22 @@ test('creative layer reads only approved active Supabase manifest rows across ap
   assert.match(layer,/data-creative-source="gt_asset_manifest"/)
 })
 
-test('Explore taxonomy controls use neutral icon tiles instead of venue-like photography',()=>{
+test('Explore taxonomy controls use approved category-specific art instead of arbitrary venue photography',()=>{
   assert.match(responsive,/@import '\.\/good-times-creative-refresh\.css'/)
-  assert.match(explore,/data-creative-mode="taxonomy-icons"/)
+  assert.match(explore,/data-creative-mode="supabase-category-art"/)
   assert.match(explore,/categoryHue/)
-  assert.doesNotMatch(explore,/manifestAssetForCategory/)
-  assert.doesNotMatch(explore,/--gt-cat-image/)
+  assert.match(explore,/manifestAssetForCategory/)
+  assert.match(explore,/--gt-cat-image/)
   assert.doesNotMatch(layer,/ChatGPT_Image_Feb_10_2026/)
 })
 
-test('Build My Night uses a compact editable brief and source-backed route request',()=>{
-  assert.match(builder,/Four choices\. One complete route\./)
-  assert.match(builder,/gt4-night-fields/)
-  assert.match(builder,/Update route/)
-  assert.match(builder,/source-backed route/)
-  assert.doesNotMatch(builder,/--gt-vibe-art/)
+test('Build My Night keeps the complete click-through planner and source-backed route request',()=>{
+  assert.match(builder,/INTERACTIVE CLICK-THROUGH PLANNER/)
+  assert.match(builder,/STEPS = \['Vibe','Basics','Preferences','Review'\]/)
+  assert.match(builder,/Pick up to four vibes/)
+  assert.match(builder,/gt2-builder-review/)
+  assert.match(builder,/current source-backed events and verified venues/)
+  assert.match(builder,/--gt-vibe-art/)
 })
 
 test('GOOD TIMES toolbar uses the actual Supabase navigation artwork',()=>{

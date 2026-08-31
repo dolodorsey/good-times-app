@@ -56,21 +56,23 @@ test('every non-home and nested V3 state has a usable Back path', () => {
   assert.match(source, /className="gt4-detail-back"/)
 })
 
-test('Discover uses four-across taxonomy and three-across mobile directory density', () => {
+test('Discover uses dense readable taxonomy and directory grids across phone and wide app modes', () => {
   const css = read('src/features/experience/good-times-v3.css')
-  assert.match(css, /\.gt4-discover \.gt2-category-grid\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)!important/)
-  assert.match(css, /\.gt4-discover \.gt2-venue-grid,\.gt4-discover \.gt4-live-results>div\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/)
-  assert.match(css, /@media\(min-width:700px\)[^{]*\{[^}]*#root:has\(\.gt4-app\)/)
-  assert.match(css, /grid-template-columns:repeat\(8,minmax\(0,1fr\)\)!important/)
+  assert.match(css, /V5 complete-product authority/)
+  assert.match(css, /\.gt4-discover \.gt2-category-grid\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)!important/)
+  assert.match(css, /\.gt4-discover \.gt2-venue-grid,\.gt4-discover \.gt4-live-results>div\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)!important/)
   assert.match(css, /grid-template-columns:repeat\(6,minmax\(0,1fr\)\)!important/)
   assert.match(css, /\.gt4-discover \.gt2-subcategory-grid>button>strong\{[^}]*var\(--gt4-sans\)!important/)
-  assert.match(css, /word-break:normal!important/)
+  assert.match(css, /overflow-wrap:anywhere!important/)
 })
 
-test('Build My Night leads with a compact brief and renders an editable source-backed route', () => {
+test('Build My Night keeps the full visual planner and renders an editable source-backed route', () => {
   const source = read('src/features/experience/GoodTimesCommandAppV3.jsx')
   const builder = read('src/features/experience/BuildMyNightPanel.jsx')
-  assert.match(builder, /Four choices\. One complete route\./)
+  assert.match(builder, /INTERACTIVE CLICK-THROUGH PLANNER/)
+  assert.match(builder, /Pick up to four vibes/)
+  assert.match(builder, /STEP THREE/)
+  assert.match(builder, /Review your night/)
   assert.match(source, /function ItineraryRoute/)
   assert.match(source, /localPreviewRoute/)
   assert.match(source, /Sign in to save/)
@@ -113,6 +115,8 @@ test('the premium product retains source-backed action surfaces and hard media r
   assert.match(source, /Plan a night here ✦/)
   assert.match(source, /hardenRecommendationResult/)
   assert.match(source, /GENERIC_MEDIA/)
+  assert.match(source, /BRAND_FIRST_EVENT_MEDIA/)
+  assert.match(source, /safeMedia\(event\.image_url,event\.title\)/)
 })
 
 test('legacy floating utilities cannot survive V3', () => {

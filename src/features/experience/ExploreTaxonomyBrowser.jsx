@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { loadExploreCounts, loadExploreDirectory } from '../intelligence/client.js'
+import { loadGoodTimesAssetManifest, manifestAssetForCategory } from './good-times-assets.js'
 
 function uniqueVenues(rows) {
   const seen = new Set()
@@ -53,6 +54,7 @@ export default function ExploreTaxonomyBrowser({
   renderVenue,
 }) {
   const [countRows,setCountRows]=useState([])
+  const [creativeAssets,setCreativeAssets]=useState([])
   const [categoryDirectory,setCategoryDirectory]=useState([])
   const [categoryLoading,setCategoryLoading]=useState(false)
   const [categoryError,setCategoryError]=useState('')
@@ -63,9 +65,13 @@ export default function ExploreTaxonomyBrowser({
   useEffect(()=>{
     let alive=true
     setCountRows([])
-    loadExploreCounts(cityName).catch(()=>[]).then(counts=>{
+    Promise.all([
+      loadExploreCounts(cityName).catch(()=>[]),
+      loadGoodTimesAssetManifest().catch(()=>[]),
+    ]).then(([counts,assets])=>{
       if(!alive)return
       setCountRows(Array.isArray(counts)?counts:[])
+      setCreativeAssets(Array.isArray(assets)?assets:[])
     })
     return()=>{alive=false}
   },[cityName])
@@ -100,8 +106,9 @@ export default function ExploreTaxonomyBrowser({
   const categoryRows = useMemo(() => normalizedTaxonomy.map(category => {
     const exact=exactCount(countRows,category.id)
     const fallback=new Set(directory.filter(row => row.category_key === category.id).map(row => row.id)).size
-    return {...category,count:exact||fallback}
-  }), [countRows,directory,normalizedTaxonomy])
+    const art=manifestAssetForCategory(creativeAssets,'explore_category',category.id)
+    return {...category,count:exact||fallback,art}
+  }), [countRows,creativeAssets,directory,normalizedTaxonomy])
 
   const activeCategory = normalizedTaxonomy.find(category => category.id === selectedCategory) || null
   const subcategoryRows = activeCategory?.subcategoryRows || []
@@ -149,12 +156,13 @@ export default function ExploreTaxonomyBrowser({
 
     {!activeCategory && <>
       <div className="gt2-taxonomy-heading"><span>DISCOVER BY CATEGORY</span><small>Choose a lane to open its complete subcategory list.</small></div>
-      <div className="gt2-category-grid" data-creative-mode="taxonomy-icons">
+      <div className="gt2-category-grid" data-creative-mode="supabase-category-art">
         {categoryRows.map((category,index) => <button
           key={category.id}
           type="button"
           data-gt-category={category.id}
-          style={{ '--gt-cat-hue': categoryHue(category.id,index), '--gt-cat-order': index }}
+          data-has-art={category.art?'true':'false'}
+          style={{ '--gt-cat-hue': categoryHue(category.id,index), '--gt-cat-order': index, '--gt-cat-image': category.art ? `url("${category.art}")` : 'none' }}
           onClick={() => { onCategory?.(category.id);onSubcategory?.(null) }}
         >
           <span className="gt2-category-mark">{category.icon || '✦'}</span>
@@ -171,8 +179,8 @@ export default function ExploreTaxonomyBrowser({
         <div className="gt2-explore-toggle"><button className={!mapMode ? 'active' : ''} onClick={() => onMapMode?.(false)}>Directory</button><button className={mapMode ? 'active' : ''} onClick={() => onMapMode?.(true)}>Map</button></div>
       </div>
 
-      <div className="gt2-taxonomy-heading compact"><span>SUBCATEGORIES</span><small>{subcategoryRows.length} ways to narrow {activeCategory.name}. Choose one or view everything.</small></div>
-      <div className="gt2-subcategory-grid" data-gt-subcategories={activeCategory.id} data-gt-explore-stage={directoryOpen?'directory':'subcategories'}>
+      {!directoryOpen&&<><div className="gt2-taxonomy-heading compact"><span>SUBCATEGORIES</span><small>{subcategoryRows.length} ways to narrow {activeCategory.name}. Choose one or view everything.</small></div>
+      <div className="gt2-subcategory-grid" data-gt-subcategories={activeCategory.id} data-gt-explore-stage="subcategories">
         <button className={directoryOpen && !selectedSubcategory ? 'active' : ''} onClick={() => { onSubcategory?.(null);setDirectoryOpen(true) }}><span>All</span><strong>All {activeCategory.name}</strong><small>{activeTotal} verified places</small><em>›</em></button>
         {subcategoryRows.map(subcategory => {
           const exact=exactCount(countRows,activeCategory.id,subcategory.subcategory_key)
@@ -180,7 +188,7 @@ export default function ExploreTaxonomyBrowser({
           const count=exact||fallback
           return <button key={subcategory.subcategory_key} className={selectedSubcategory === subcategory.subcategory_key ? 'active' : ''} onClick={() => { onSubcategory?.(subcategory.subcategory_key);setDirectoryOpen(true) }}><span>Explore</span><strong>{subcategory.subcategory_name}</strong><small>{count} verified places</small><em>›</em></button>
         })}
-      </div>
+      </div></>}
 
       {directoryOpen && <><div className="gt2-taxonomy-heading compact"><span>{selectedSubcategoryLabel || activeCategory.name}</span><small>{categoryLoading ? 'Loading complete verified directory…' : `${filteredRows.length} loaded · ${selectedSubcategory ? exactCount(countRows,activeCategory.id,selectedSubcategory)||filteredRows.length : activeTotal} verified places`}</small></div>
 
