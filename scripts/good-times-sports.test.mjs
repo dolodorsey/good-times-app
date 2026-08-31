@@ -29,8 +29,8 @@ test('Atlanta Radar loads every configured professional team and caches the sche
           status:{type:{state:'pre',shortDetail:'Sep 1 - 7:00 PM'}},
           venue:{fullName:'City Stadium'},
           competitors:[
-            {homeAway:'home',score:null,team:{displayName:`Home ${id}`,abbreviation:'HME'}},
-            {homeAway:'away',score:null,team:{displayName:'Visitors',abbreviation:'VIS'}},
+            {homeAway:'home',score:{value:101,displayValue:'101'},team:{displayName:`Home ${id}`,abbreviation:'HME'}},
+            {homeAway:'away',score:{value:99,displayValue:'99'},team:{displayName:'Visitors',abbreviation:'VIS'}},
           ],
         }],
       }]}}
@@ -44,6 +44,8 @@ test('Atlanta Radar loads every configured professional team and caches the sche
     assert.equal(firstBody.counts.teams,5)
     assert.deepEqual(firstBody.teams.map(team=>team.name),['Falcons','Hawks','Dream','Braves','Atlanta United'])
     assert.equal(firstBody.upcoming.length,5)
+    assert.equal(firstBody.upcoming[0].home.score,'101')
+    assert.equal(firstBody.upcoming[0].away.score,'99')
     assert.equal(calls,5)
 
     const second=responseRecorder()

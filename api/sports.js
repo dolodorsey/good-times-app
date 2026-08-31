@@ -29,7 +29,9 @@ function scheduleUrl(team,now){
 }
 function competitor(row,homeAway){
   const item=(row?.competitors||[]).find(value=>value.homeAway===homeAway)||{}
-  return{team:item.team?.displayName||'TBA',abbr:item.team?.abbreviation||'',logo:item.team?.logo||null,score:item.score??null,winner:Boolean(item.winner)}
+  const rawScore=item.score
+  const score=rawScore==null?null:typeof rawScore==='object'?(rawScore.displayValue??rawScore.value??null):rawScore
+  return{team:item.team?.displayName||'TBA',abbr:item.team?.abbreviation||'',logo:item.team?.logo||null,score,winner:Boolean(item.winner)}
 }
 function mapEvent(event,team){
   const competition=event?.competitions?.[0]||{}
@@ -81,4 +83,3 @@ export default async function handler(request,response){
     return send(response,503,{ok:false,city,error:'City sports schedules are temporarily unavailable.',detail:error?.message||String(error)})
   }
 }
-
