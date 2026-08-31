@@ -23,6 +23,9 @@ function exactCount(rows,categoryKey,subcategoryKey=null) {
   return Number(match?.place_count||0)
 }
 
+const placesLabel=count=>`${count} ${count===1?'place':'places'}`
+const verifiedPlacesLabel=count=>`${count} verified ${count===1?'place':'places'}`
+
 function normalizeSubcategories(category) {
   if (Array.isArray(category?.subcategoryRows)) return category.subcategoryRows
   if (Array.isArray(category?.subcategories)) {
@@ -149,7 +152,7 @@ export default function ExploreTaxonomyBrowser({
       <span>EXPLORE</span>
       <h1>{activeCategory ? activeCategory.name : `Explore ${cityName}.`}</h1>
       <p>{activeCategory
-        ? activeTotal ? `${activeTotal} verified places in ${cityName}.` : `${subcategoryRows.length} subcategories · open any lane to check its verified directory.`
+        ? activeTotal ? `${verifiedPlacesLabel(activeTotal)} in ${cityName}.` : `${subcategoryRows.length} subcategories · open any lane to check its verified directory.`
         : categoryRows.length
           ? `${categoryRows.length} categories · ${totalSubcategories} subcategories · verified places and current events.`
           : 'Catalog unavailable right now — check your connection and pull to refresh.'}</p>
@@ -178,7 +181,7 @@ export default function ExploreTaxonomyBrowser({
         >
           <span className="gt2-category-mark">{category.icon || '✦'}</span>
           <strong>{category.name}</strong>
-          <small>{category.count ? `${category.subcategoryRows?.length || 0} subcategories · ${category.count} places` : `${category.subcategoryRows?.length || 0} subcategories`}</small>
+          <small>{category.count ? `${category.subcategoryRows?.length || 0} subcategories · ${placesLabel(category.count)}` : `${category.subcategoryRows?.length || 0} subcategories`}</small>
           <em>›</em>
         </button>)}
       </div>
@@ -192,12 +195,12 @@ export default function ExploreTaxonomyBrowser({
 
       {!directoryOpen&&<><div className="gt2-taxonomy-heading compact"><span>SUBCATEGORIES</span><small>{subcategoryRows.length} ways to narrow {activeCategory.name}. Choose one or view everything.</small></div>
       <div className="gt2-subcategory-grid" data-gt-subcategories={activeCategory.id} data-gt-explore-stage="subcategories">
-        <button className={directoryOpen && !selectedSubcategory ? 'active' : ''} onClick={() => { onSubcategory?.(null);setDirectoryOpen(true) }}><span>All</span><strong>All {activeCategory.name}</strong><small>{activeTotal ? `${activeTotal} verified places` : 'Open directory'}</small><em>›</em></button>
+        <button className={directoryOpen && !selectedSubcategory ? 'active' : ''} onClick={() => { onSubcategory?.(null);setDirectoryOpen(true) }}><span>All</span><strong>All {activeCategory.name}</strong><small>{activeTotal ? verifiedPlacesLabel(activeTotal) : 'Open directory'}</small><em>›</em></button>
         {subcategoryRows.map(subcategory => {
           const exact=exactCount(countRows,activeCategory.id,subcategory.subcategory_key)
           const fallback=new Set(activeDirectory.filter(row => row.category_key===activeCategory.id&&row.subcategory_key === subcategory.subcategory_key).map(row => row.id)).size
           const count=exact||fallback
-          return <button key={subcategory.subcategory_key} className={selectedSubcategory === subcategory.subcategory_key ? 'active' : ''} onClick={() => { onSubcategory?.(subcategory.subcategory_key);setDirectoryOpen(true) }}><span>Explore</span><strong>{subcategory.subcategory_name}</strong><small>{count ? `${count} verified places` : 'Open directory'}</small><em>›</em></button>
+          return <button key={subcategory.subcategory_key} className={selectedSubcategory === subcategory.subcategory_key ? 'active' : ''} onClick={() => { onSubcategory?.(subcategory.subcategory_key);setDirectoryOpen(true) }}><span>Explore</span><strong>{subcategory.subcategory_name}</strong><small>{count ? verifiedPlacesLabel(count) : 'Open directory'}</small><em>›</em></button>
         })}
       </div></>}
 

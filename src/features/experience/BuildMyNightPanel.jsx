@@ -2,10 +2,10 @@ import React, { useMemo, useState } from 'react'
 import { gtAssetUrl } from './good-times-assets.js'
 
 const VIBES = [
-  ['Grown & sexy','gt-cat-mood-bougie.webp'],['High energy','gt-cat-nightlife.webp'],
+  ['Grown & sexy','gt-cat-mood-bougie.webp'],['High energy','event-2000s-party.jpg'],
   ['Date night','gt-cat-mood-date.webp'],['Live music','gt-cat-music.webp'],
-  ['Black-owned','gt-cat-culture.webp'],['Rooftop','gt-bg-rooftop-lounge.webp'],
-  ['Food first','gt-cat-dining.webp'],['Something different','gt-cat-adventure.webp'],
+  ['Black-owned','gt-bg-social-scene.webp'],['Rooftop','gt-bg-rooftop-lounge.webp'],
+  ['Food first','gt-cat-dining.webp'],['Something different','mood-explore.jpg'],
 ]
 const STEPS = ['Mood','Anchor','Details','Route']
 const DATES = ['Tonight','Tomorrow','Friday','Saturday','This weekend']
