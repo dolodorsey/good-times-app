@@ -147,11 +147,11 @@ export default function ExploreTaxonomyBrowser({
   return <section className="gt2-explore-browser">
     <div className="gt2-screen-heading">
       <span>EXPLORE</span>
-      <h1>{activeCategory ? activeCategory.name : 'Know the city.'}</h1>
+      <h1>{activeCategory ? activeCategory.name : `Explore ${cityName}.`}</h1>
       <p>{activeCategory
-        ? `${activeTotal} verified places in ${cityName}.`
+        ? activeTotal ? `${activeTotal} verified places in ${cityName}.` : `${subcategoryRows.length} subcategories · open any lane to check its verified directory.`
         : categoryRows.length
-          ? `${categoryRows.length} categories and ${totalSubcategories} subcategories.`
+          ? `${categoryRows.length} categories · ${totalSubcategories} subcategories · verified places and current events.`
           : 'Catalog unavailable right now — check your connection and pull to refresh.'}</p>
     </div>
 
@@ -163,10 +163,10 @@ export default function ExploreTaxonomyBrowser({
 
     {!activeCategory && <>
       {placeHighlights.length > 0 && <section className="gt2-place-highlights">
-        <div className="gt2-taxonomy-heading"><span>PLACES WORTH KNOWING</span><small>Verified places—not just events—ready for tonight and later.</small></div>
+        <div className="gt2-taxonomy-heading"><span>CITY ESSENTIALS</span><small>Real Atlanta places, source-checked for tonight and later.</small></div>
         <div className="gt2-venue-grid">{placeHighlights.map(venue => renderVenue?.(venue,false))}</div>
       </section>}
-      <div className="gt2-taxonomy-heading"><span>DISCOVER BY CATEGORY</span><small>Choose a lane to open its complete subcategory list.</small></div>
+      <div className="gt2-taxonomy-heading"><span>BROWSE EVERY LANE</span><small>Open a category, then narrow it by subcategory.</small></div>
       <div className="gt2-category-grid" data-creative-mode="supabase-category-art">
         {categoryRows.map((category,index) => <button
           key={category.id}
@@ -178,7 +178,7 @@ export default function ExploreTaxonomyBrowser({
         >
           <span className="gt2-category-mark">{category.icon || '✦'}</span>
           <strong>{category.name}</strong>
-          <small>{category.subcategoryRows?.length || 0} subcategories · {category.count} places</small>
+          <small>{category.count ? `${category.subcategoryRows?.length || 0} subcategories · ${category.count} places` : `${category.subcategoryRows?.length || 0} subcategories`}</small>
           <em>›</em>
         </button>)}
       </div>
@@ -192,12 +192,12 @@ export default function ExploreTaxonomyBrowser({
 
       {!directoryOpen&&<><div className="gt2-taxonomy-heading compact"><span>SUBCATEGORIES</span><small>{subcategoryRows.length} ways to narrow {activeCategory.name}. Choose one or view everything.</small></div>
       <div className="gt2-subcategory-grid" data-gt-subcategories={activeCategory.id} data-gt-explore-stage="subcategories">
-        <button className={directoryOpen && !selectedSubcategory ? 'active' : ''} onClick={() => { onSubcategory?.(null);setDirectoryOpen(true) }}><span>All</span><strong>All {activeCategory.name}</strong><small>{activeTotal} verified places</small><em>›</em></button>
+        <button className={directoryOpen && !selectedSubcategory ? 'active' : ''} onClick={() => { onSubcategory?.(null);setDirectoryOpen(true) }}><span>All</span><strong>All {activeCategory.name}</strong><small>{activeTotal ? `${activeTotal} verified places` : 'Open directory'}</small><em>›</em></button>
         {subcategoryRows.map(subcategory => {
           const exact=exactCount(countRows,activeCategory.id,subcategory.subcategory_key)
           const fallback=new Set(activeDirectory.filter(row => row.category_key===activeCategory.id&&row.subcategory_key === subcategory.subcategory_key).map(row => row.id)).size
           const count=exact||fallback
-          return <button key={subcategory.subcategory_key} className={selectedSubcategory === subcategory.subcategory_key ? 'active' : ''} onClick={() => { onSubcategory?.(subcategory.subcategory_key);setDirectoryOpen(true) }}><span>Explore</span><strong>{subcategory.subcategory_name}</strong><small>{count} verified places</small><em>›</em></button>
+          return <button key={subcategory.subcategory_key} className={selectedSubcategory === subcategory.subcategory_key ? 'active' : ''} onClick={() => { onSubcategory?.(subcategory.subcategory_key);setDirectoryOpen(true) }}><span>Explore</span><strong>{subcategory.subcategory_name}</strong><small>{count ? `${count} verified places` : 'Open directory'}</small><em>›</em></button>
         })}
       </div></>}
 
@@ -208,7 +208,7 @@ export default function ExploreTaxonomyBrowser({
       : mapMode ? <div className="gt2-map-view">
         <div className="gt2-map-frame"><iframe title={`${cityName} map`} src="https://www.openstreetmap.org/export/embed.html?bbox=-84.62%2C33.60%2C-84.15%2C34.02&layer=mapnik"/><div className="gt2-map-veil"/><div className="gt2-map-count">⌖ {filteredRows.filter(venue => venue.latitude != null && venue.longitude != null).length} map-ready places</div></div>
         <div className="gt2-horizontal">{filteredRows.slice(0, 20).map(venue => renderVenue?.(venue, true))}</div>
-      </div> : filteredRows.length ? <div className="gt2-venue-grid">{filteredRows.map(venue => renderVenue?.(venue, false))}</div> : <div className="gt2-empty"><span>⌕</span><h2>No verified matches yet</h2><p>Try another subcategory or clear the search. This lane remains visible while its sourcing agent fills it.</p></div>}</>}
+      </div> : filteredRows.length ? <div className="gt2-venue-grid">{filteredRows.map(venue => renderVenue?.(venue, false))}</div> : <div className="gt2-empty"><span>⌕</span><h2>No verified matches yet</h2><p>Try another subcategory or clear the search. We’ll keep checking this lane as new places are verified.</p></div>}</>}
     </>}
   </section>
 }

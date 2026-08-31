@@ -310,3 +310,101 @@ body.gt-app-mode .gt-premium-experience:has(.gt4-app) .gt4-app{width:100%!import
   .gt2-builder-anchors{grid-template-columns:repeat(4,minmax(0,1fr))}
   .gt4-sports-list{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* V7 editorial product system — final visual authority. */
+.gt4-app{
+  --gt4-gold:#efc86c;
+  --gt4-cream:#f7f2e8;
+  --gt4-muted:rgba(247,242,232,.62);
+  --gt4-line:rgba(239,200,108,.18);
+  --gt4-line-soft:rgba(255,255,255,.1);
+  font-size:12px;
+  background:radial-gradient(circle at 82% -8%,rgba(161,108,34,.11),transparent 28%),#08090c;
+}
+.gt4-app :where(button,a,input,textarea,select,[role="button"]):focus-visible{outline:2px solid var(--gt4-gold);outline-offset:2px}
+.gt4-topbar{height:58px;min-height:58px;flex-basis:58px;padding-inline:14px}
+.gt4-brand strong{font-size:15px;letter-spacing:.17em}.gt4-brand small{font-size:7.5px;letter-spacing:.12em}
+.gt4-city{min-height:38px;padding-inline:12px;font-size:11px}
+.gt4-main{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px));scroll-padding-bottom:76px}
+.gt4-nav{min-height:64px;padding:5px 5px env(safe-area-inset-bottom,0px)}
+.gt4-nav button{min-height:52px;border-radius:11px}.gt4-nav span{font-size:16px}.gt4-nav small{font-size:9.5px;font-weight:750;letter-spacing:.01em}
+.gt4-nav button.active{background:linear-gradient(180deg,rgba(239,200,108,.13),rgba(239,200,108,.045));box-shadow:inset 0 2px 0 rgba(239,200,108,.65)}
+.gt4-radar-strip{min-height:40px!important;padding-inline:14px!important}.gt4-radar-strip>span{font-size:8px}.gt4-radar-strip strong{font-size:10.5px}.gt4-radar-strip em{font-size:15px}
+.gt4-backbar{min-height:42px;padding:5px 12px}.gt4-backbar button{min-height:32px;padding-inline:11px;font-size:10px}
+
+.gt4-screen,.gt4-discover{padding:15px 12px 20px}
+.gt4-head{margin-bottom:14px}.gt4-head h1,.gt4-concierge-screen .gt4-head h1{max-width:24ch;margin:6px 0!important;font:800 29px/1.02 var(--gt4-sans)!important;letter-spacing:-.04em!important}
+.gt4-head p,.gt4-hero>p{font-size:11.5px;line-height:1.5}
+.gt4-hero{padding:16px 14px 13px}.gt4-hero h1{margin:6px 0!important;font-size:30px!important;line-height:1!important}.gt4-hero>p{max-width:52ch}
+.gt4-hero>span,.gt4-shortlist header span,.gt4-section header span,.gt4-head>span,.gt4-live-results>header span,.gt4-alerts>span,.gt4-watchlist header span{font-size:8px;letter-spacing:.16em}
+.gt4-ask{margin-top:12px;padding:5px;border-radius:12px}.gt4-ask input,.gt4-ask button{height:42px}.gt4-ask input{font-size:12px}.gt4-ask button{font-size:10px;padding-inline:15px}
+.gt4-quick{gap:7px;margin-top:8px}.gt4-quick button{min-height:32px;padding:0 11px;font-size:9.5px}
+
+.gt4-shortlist{padding:14px 14px 10px}.gt4-shortlist h2{font-size:20px!important}.gt4-shortlist>div>button{min-height:56px;padding:7px 2px;grid-template-columns:28px minmax(0,1fr) 11px;gap:8px}
+.gt4-shortlist b{font-size:15px}.gt4-shortlist small{font-size:7px}.gt4-shortlist strong{font:800 12px/1.18 var(--gt4-sans)}.gt4-shortlist em{font-size:8.5px}.gt4-shortlist header button,.gt4-section>header>button{font-size:9.5px}
+.gt4-section{padding:16px 12px}.gt4-section>header{margin-bottom:9px}.gt4-section h2{font:800 22px/1.05 var(--gt4-sans);letter-spacing:-.03em}
+.gt4-section .gt4-stack{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.gt4-section .gt4-card{min-height:176px;border-radius:13px}.gt4-section .gt4-thumb{height:82px;min-height:82px}.gt4-section .gt4-thumb>img,.gt4-section .gt4-fallback{height:82px;min-height:82px}
+.gt4-section .gt4-card-copy{min-height:92px;padding:9px 26px 9px 9px}.gt4-section .gt4-card-copy>small{font-size:7px}.gt4-section .gt4-card-copy h3{margin:5px 0 4px;font-family:var(--gt4-sans)!important;font-size:12.5px!important;font-weight:800!important;line-height:1.18!important;letter-spacing:-.015em}.gt4-section .gt4-card-copy p{font-size:9px;line-height:1.3}.gt4-section .gt4-card-copy>em{font-size:8.5px}.gt4-section .gt4-card-copy>b{font-size:6px}
+.gt4-section .gt4-save{width:27px;height:27px;font-size:13px}
+.gt4-fallback{position:relative;isolation:isolate;background:linear-gradient(145deg,#171920,#0b0d12)}
+.gt4-fallback:before{content:"";position:absolute;inset:0;z-index:-1;opacity:.65;background:linear-gradient(135deg,transparent 0 46%,rgba(239,200,108,.08) 46% 54%,transparent 54%),radial-gradient(circle at 76% 18%,rgba(239,200,108,.14),transparent 28%)}
+.gt4-fallback>strong{font:800 24px/1 var(--gt4-sans);letter-spacing:-.06em;color:var(--gt4-gold)}.gt4-fallback>small{font-size:7px!important;letter-spacing:.1em}
+.gt4-card-copy h3,.gt4-card-copy strong{overflow-wrap:normal;word-break:normal;hyphens:none}
+
+/* Discover: high density, but readable and image-led. */
+.gt4-intents{gap:7px;padding-bottom:12px}.gt4-intents button{min-height:34px;padding:0 11px;font-size:9.5px}
+.gt4-discover .gt2-explore-browser{padding-top:5px}.gt4-discover .gt2-screen-heading{padding:3px 0 9px}.gt4-discover .gt2-screen-heading h1{margin:5px 0!important;font-size:28px!important}.gt4-discover .gt2-screen-heading p{max-width:55ch;font-size:10.5px;line-height:1.45}
+.gt4-discover .gt2-search{height:46px;margin:5px 0 13px;border-radius:12px}.gt4-discover .gt2-search input{font-size:12px}
+.gt4-discover .gt2-taxonomy-heading{padding:9px 0 7px}.gt4-discover .gt2-taxonomy-heading>span{font-size:8px}.gt4-discover .gt2-taxonomy-heading small{font-size:9.5px;line-height:1.4}
+.gt4-discover .gt2-place-highlights{margin-bottom:10px;padding-bottom:13px}
+.gt4-discover .gt2-category-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+.gt4-discover .gt2-category-grid>button{min-height:106px!important;padding:8px!important;border-radius:12px!important;gap:5px!important;background-image:linear-gradient(180deg,rgba(5,6,9,.04),rgba(5,6,9,.88)),var(--gt-cat-image,none),linear-gradient(145deg,#151820,#0d0f14)!important}
+.gt4-discover .gt2-category-mark{width:27px;height:27px;font-size:11px}.gt4-discover .gt2-category-grid strong{font-size:11px!important;line-height:1.17!important;text-shadow:0 2px 8px rgba(0,0,0,.95)!important}.gt4-discover .gt2-category-grid small{font-size:7.5px!important;line-height:1.25!important}.gt4-discover .gt2-category-grid em{font-size:14px}
+.gt4-discover .gt2-subcategory-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}.gt4-discover .gt2-subcategory-grid>button{min-height:76px!important;padding:10px 26px 9px 10px!important;border-radius:11px!important}.gt4-discover .gt2-subcategory-grid>button>span{font-size:7px!important}.gt4-discover .gt2-subcategory-grid>button>strong{font-size:12px!important;line-height:1.2!important;-webkit-line-clamp:3!important;overflow-wrap:normal!important}.gt4-discover .gt2-subcategory-grid>button>small{font-size:8.5px!important}
+.gt4-discover .gt2-explore-actions>button,.gt4-discover .gt2-explore-toggle button{font-size:9px}.gt4-discover .gt2-explore-actions>button{height:38px}.gt4-discover .gt2-explore-toggle button{height:32px}
+.gt4-discover .gt2-venue-grid,.gt4-discover .gt4-live-results>div{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+.gt4-discover .gt4-card{min-height:168px!important;border-radius:12px!important}.gt4-discover .gt4-thumb,.gt4-discover .gt4-thumb>img,.gt4-discover .gt4-fallback{height:76px!important;min-height:76px!important}.gt4-discover .gt4-card-copy{min-height:90px!important;padding:8px 25px 8px 8px!important}.gt4-discover .gt4-card-copy>small{font-size:6.5px}.gt4-discover .gt4-card-copy h3{font-family:var(--gt4-sans)!important;font-size:12px!important;font-weight:800!important;line-height:1.18!important;letter-spacing:-.015em}.gt4-discover .gt4-card-copy p{display:-webkit-box!important;font-size:8.5px!important;-webkit-line-clamp:1}.gt4-discover .gt4-card-copy>em{font-size:8px!important}.gt4-discover .gt4-card-copy>b{font-size:5.5px}.gt4-discover .gt4-save{width:25px;height:25px}.gt4-discover .gt4-fallback>strong{font-size:20px}
+.gt4-live-results{padding:10px}.gt4-live-results>header strong{font-size:9px}
+
+/* Build My Night: one interactive decision surface. */
+.gt4-concierge-screen{padding:14px 12px 20px}.gt4-concierge-screen .gt2-builder-live{padding:14px!important;border-radius:14px!important;border-color:rgba(239,200,108,.28)!important;background:radial-gradient(circle at 88% -5%,rgba(239,200,108,.1),transparent 31%),#0d0f13!important}
+.gt2-builder-live .gt2-builder-head h2{font-size:25px!important;letter-spacing:-.035em}.gt2-builder-live .gt2-builder-head p{font-size:10.5px!important;line-height:1.45}
+.gt2-builder-live .gt2-builder-progress{gap:6px;margin:12px 0 14px}.gt2-builder-live .gt2-builder-progress button{min-height:40px;padding:5px;border-radius:9px}.gt2-builder-live .gt2-builder-progress button b{width:19px;height:19px;font-size:8px}.gt2-builder-live .gt2-builder-progress button span{font-size:8.5px}
+.gt2-builder-live .gt2-builder-stage-title{margin-bottom:11px!important}.gt2-builder-live .gt2-builder-stage-title span{font-size:7.5px}.gt2-builder-live .gt2-builder-stage-title h3{font-size:21px!important}.gt2-builder-live .gt2-builder-stage-title small{font-size:8.5px!important}
+.gt2-builder-live .gt2-builder-vibes.visual button{min-height:84px!important;border-radius:11px!important}.gt2-builder-live .gt2-builder-vibes.visual button strong{font-size:11.5px!important}
+.gt2-builder-anchors{gap:7px}.gt2-builder-anchors>button{min-height:76px;padding:7px;grid-template-columns:58px minmax(0,1fr) 18px}.gt2-builder-anchors img,.gt2-builder-anchors>button>i{width:58px;height:58px;font-size:12px}.gt2-builder-anchors small{font-size:7px}.gt2-builder-anchors strong{font-size:11px}.gt2-builder-anchors em{font-size:8px}
+.gt2-builder-pickers{gap:11px 8px}.gt2-builder-pickers label>span{font-size:8px}.gt2-builder-pickers label>div{gap:6px}.gt2-builder-pickers button{min-height:34px;padding:0 10px;font-size:9.5px}.gt2-builder-stepper{grid-template-columns:34px 42px 34px}.gt2-builder-stepper strong{font-size:14px}
+.gt2-builder-route-meta{display:flex;gap:5px;flex-wrap:wrap;margin:0 0 9px}.gt2-builder-route-meta span{padding:5px 7px;border:1px solid rgba(255,255,255,.08);border-radius:999px;background:#0a0c10;color:rgba(255,255,255,.67);font-size:8px}
+.gt2-builder-live-route{gap:7px}.gt2-builder-live-route article{min-height:72px;padding:7px;grid-template-columns:24px 54px minmax(0,1fr)}.gt2-builder-live-route img,.gt2-builder-live-route article>i{width:54px;height:54px;font-size:11px}.gt2-builder-live-route small{font-size:7px}.gt2-builder-live-route strong{font-size:11.5px}.gt2-builder-live-route em{font-size:8.5px}.gt2-builder-swap{min-height:38px;font-size:9.5px}
+.gt2-builder-live .gt2-builder-actions{grid-template-columns:84px minmax(0,1fr);gap:7px}.gt2-builder-live .gt2-builder-actions button{min-height:44px;font-size:10px}.gt2-builder-live>small{font-size:7.5px}
+.gt4-concierge{padding:10px}.gt4-concierge textarea{min-height:76px;font-size:10.5px}.gt4-concierge button{font-size:9.5px}.gt4-shake header h2{font-size:21px!important}.gt4-shake button{min-height:82px;padding:10px}.gt4-shake strong{font-size:10px}.gt4-shake small{font-size:8px}
+
+/* Radar: an actual city scoreboard and watch surface. */
+.gt4-sports{padding:12px;border-radius:13px}.gt4-sports>header span{font-size:8px}.gt4-sports>header h2{font:800 22px/1.05 var(--gt4-sans);letter-spacing:-.03em}.gt4-sports>header p{font-size:9px}.gt4-sports>header>b{font-size:8px}
+.gt4-sports-teams{gap:6px;margin:11px 0 8px}.gt4-sports-teams button{display:flex;gap:5px;white-space:nowrap;min-height:31px;padding:0 9px;border:1px solid rgba(255,255,255,.09);border-radius:999px;background:#0a0c10;color:rgba(255,255,255,.68);font-size:9px}.gt4-sports-teams button b{color:var(--gt4-gold)}.gt4-sports-teams button.active{border-color:rgba(239,200,108,.5);background:rgba(239,200,108,.12);color:#fff}
+.gt4-sports>nav{gap:6px}.gt4-sports>nav button{min-height:34px;font-size:9.5px}.gt4-sports-list{gap:7px}.gt4-sports-list>a{min-height:79px;padding:9px;gap:6px 8px}.gt4-sports-league{font-size:7.5px}.gt4-sports-match{grid-template-columns:25px minmax(0,1fr) auto}.gt4-sports-match i{width:25px;height:25px;font-size:7px}.gt4-sports-match img{width:23px;height:23px}.gt4-sports-match strong{font-size:10px}.gt4-sports-match>b{font-size:14px}.gt4-sports-list>a>small{font-size:8.5px}.gt4-sports-empty{font-size:9.5px}
+.gt4-radar-settings{padding:11px}.gt4-radar-settings>label{font-size:8px}.gt4-radar-settings select{font-size:10px}.gt4-radar-settings>div label{min-height:38px;font-size:9.5px}.gt4-watchlist>header strong{font-size:9.5px}.gt4-watchlist>p{font-size:10px}
+
+/* Vault and partner inventory: useful content first. */
+.gt4-vault-tabs{min-height:48px}.gt4-vault-tabs button{min-height:40px;font-size:11px}.gt4-vault-tabs b{display:inline-grid;place-items:center;min-width:18px;height:18px;border-radius:999px;background:rgba(255,255,255,.06);font-size:8px}
+.gt4-empty{min-height:180px!important;padding:18px!important}.gt4-empty h2{font-size:20px!important}.gt4-empty p{font-size:10.5px!important}.gt4-empty button{font-size:10px!important}
+.gt4-section .gt4-stack>.gt4-empty:only-child{grid-column:1/-1}
+.gt4-detail-fallback .gt4-fallback{min-height:180px}.gt4-detail-fallback .gt4-fallback>strong{font-size:32px}.gt4-detail>div{padding:18px}.gt4-detail>div>span{font-size:8px}.gt4-detail h2{font-size:25px!important}.gt4-detail p{font-size:10.5px}.gt4-detail section strong{font-size:8px}.gt4-detail-actions button,.gt4-detail-actions a{min-height:43px;font-size:9.5px}.gt4-detail-back{min-height:36px;font-size:10px}
+.gt4-ad{min-height:32px!important;margin-block:12px!important;padding:7px 10px!important}.gt4-ad.house{opacity:.42!important;border-style:dashed!important;background:transparent!important}.gt4-ad>span{font-size:6px!important}.gt4-ad>strong,.gt4-ad>div strong{font-size:8px!important}.gt4-ad>a{font-size:7.5px!important}
+
+@media(min-width:420px){
+  .gt4-discover .gt2-category-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .gt4-discover .gt2-subcategory-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .gt4-discover .gt2-venue-grid,.gt4-discover .gt4-live-results>div{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .gt4-discover .gt4-card-copy p{display:none!important}
+  .gt4-discover .gt4-card-copy h3{font-size:11.5px!important}
+}
+@media(max-width:359px){
+  .gt4-brand small{display:none}.gt4-city{font-size:9.5px}
+  .gt4-section .gt4-stack{grid-template-columns:1fr}
+  .gt4-discover .gt2-category-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .gt4-discover .gt2-subcategory-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .gt4-discover .gt2-venue-grid,.gt4-discover .gt4-live-results>div{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .gt2-builder-live .gt2-builder-stage-title{display:block}.gt2-builder-live .gt2-builder-stage-title small{display:block;margin-top:5px;text-align:left}
+}
