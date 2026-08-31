@@ -45,6 +45,13 @@ function mapEvent(event,team){
     source_url:event.links?.[0]?.href||null,updated_at:new Date().toISOString(),
   }
 }
+function diversifyByTeam(rows,limit){
+  const first=[],rest=[],seen=new Set()
+  for(const row of rows){
+    if(!seen.has(row.city_team)){seen.add(row.city_team);first.push(row)}else rest.push(row)
+  }
+  return[...first,...rest].slice(0,limit)
+}
 async function loadTeam(team,now){
   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),6500)
   try{
@@ -72,9 +79,9 @@ export default async function handler(request,response){
     const settled=await Promise.allSettled(teams.map(team=>loadTeam(team,now)))
     const games=[...new Map(settled.flatMap(result=>result.status==='fulfilled'?result.value:[]).map(game=>[game.id,game])).values()]
       .sort((a,b)=>new Date(a.date)-new Date(b.date))
-    const live=games.filter(game=>game.status==='in')
-    const upcoming=games.filter(game=>game.status==='pre'&&new Date(game.date)>=new Date(now.getTime()-3_600_000)).slice(0,30)
-    const recent=games.filter(game=>game.status==='post').slice(-12).reverse()
+    const live=diversifyByTeam(games.filter(game=>game.status==='in'),30)
+    const upcoming=diversifyByTeam(games.filter(game=>game.status==='pre'&&new Date(game.date)>=new Date(now.getTime()-3_600_000)),30)
+    const recent=diversifyByTeam(games.filter(game=>game.status==='post').reverse(),12)
     const payload={ok:true,city,teams:teams.map(team=>({name:team.name,league:LEAGUE_LABELS[team.league]})),live,upcoming,recent,counts:{teams:teams.length,live:live.length,upcoming:upcoming.length,recent:recent.length},refreshed_at:now.toISOString(),source:'ESPN team schedules',partial:settled.some(result=>result.status==='rejected')}
     CACHE.set(city,{at:Date.now(),payload})
     return send(response,200,payload)
