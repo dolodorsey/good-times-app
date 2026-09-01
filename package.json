@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "npm run test && vite build",
     "test": "node --test scripts/*.test.mjs",
-    "verify": "npm run build && npm audit --omit=dev --audit-level=critical",
+    "verify": "npm run build && npm audit --audit-level=high",
     "preview": "vite preview",
     "ios:build": "npm run build && npx cap sync ios && node scripts/strip-native-admin.mjs",
     "ios:open": "npx cap open ios",
