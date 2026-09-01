@@ -17,11 +17,19 @@
 }
 .gt-guest-back{z-index:9700!important}
 
-/* The live V3 app owns its scroll region. Its parents must therefore have a
-   resolved height; otherwise the absolute bottom navigation falls to document
-   content height instead of the visible device frame. */
-html body.gt-app-mode #root .gt-premium-experience>.gt-guest-mode,
+/* The live V3 app owns its scroll region. Every wrapper between #root and V3
+   must have a resolved height; otherwise guest mode expands to document height
+   and the absolute bottom navigation falls thousands of pixels below viewport. */
+html body.gt-app-mode #root .gt-premium-experience>.gt-guest-mode{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+html body.gt-app-mode #root .gt-premium-experience>.gt-guest-mode>.gt4-app,
 html body.gt-app-mode #root .gt-premium-experience>.gt4-app{
+  width:100%!important;
+  height:100%!important;
   min-height:0!important;
   overflow:hidden!important;
 }
