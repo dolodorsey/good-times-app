@@ -56,6 +56,18 @@
       body{padding:16px 0;display:flex;justify-content:center;align-items:flex-start;min-height:100dvh;overflow:hidden}
       #root{width:min(460px,calc(100vw - 32px));max-width:460px;height:calc(100dvh - 32px);max-height:920px;min-height:0;margin:0 auto;border:1px solid rgba(190,154,92,.24);border-radius:28px;box-shadow:0 24px 80px rgba(0,0,0,.58),0 0 0 1px rgba(255,255,255,.02);overflow:hidden;background:#06060C}
     }
+
+    /* V3 tablet authority. V2's phone-shell hardening intentionally remains for
+       phones and large desktop previews, but iPad-class widths must use the
+       available canvas and keep app navigation inside the viewport. */
+    @media(min-width:600px) and (max-width:1366px){
+      html body.gt-app-mode{padding:0!important}
+      html body.gt-app-mode #root#root{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:none!important;min-height:0!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+      html body.gt-app-mode #root#root .gt-premium-experience{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;overflow:hidden!important}
+      html body.gt-app-mode #root#root .gt-premium-experience>.gt-guest-mode,
+      html body.gt-app-mode #root#root .gt-premium-experience>.gt4-app,
+      html body.gt-app-mode #root#root .gt-premium-experience .gt-guest-mode>.gt4-app{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;margin:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important}
+    }
   </style>
 
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Good Times","description":"A supervised city intelligence and personal concierge for nightlife, events, dining, and culture, launched market-by-market with curated coverage.","url":"https://thegoodtimesworldwide.com","applicationCategory":"LifestyleApplication","operatingSystem":"iOS, Android, Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Organization","name":"Good Times Worldwide"},"featureList":"Supervised Recommendations, Taste Learning, Night Planning, Curated Venues, Live Event Discovery, Market-by-Market Coverage","softwareVersion":"1.2.0","datePublished":"2026-03-30","dateModified":"2026-08-30","inLanguage":"en","contentRating":"Mature 17+"}</script>
