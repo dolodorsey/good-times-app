@@ -18,7 +18,7 @@ function pngSize(buffer){
 }
 
 async function capture(page,target,label){
-  await page.waitForTimeout(500)
+  await page.waitForTimeout(700)
   const buffer=await page.screenshot({type:'png',fullPage:false})
   const size=pngSize(buffer)
   if(size[0]!==target.expected[0]||size[1]!==target.expected[1])throw new Error(`${target.name} ${label} produced ${size.join('x')}, expected ${target.expected.join('x')}`)
@@ -27,25 +27,29 @@ async function capture(page,target,label){
   fs.writeFileSync(path.join(dir,`${label}.png`),buffer)
 }
 
+async function openTab(page,label){
+  const button=page.locator('.gt4-nav button').filter({hasText:label}).first()
+  await button.waitFor({state:'visible',timeout:10000})
+  await button.click()
+  await page.waitForTimeout(600)
+}
+
 const browser=await chromium.launch({headless:true,executablePath:CHROME||undefined,args:['--no-sandbox']})
 try{
   for(const target of targets){
     const context=await browser.newContext({viewport:{width:target.width,height:target.height},deviceScaleFactor:target.scale})
     const page=await context.newPage()
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
-    await page.waitForSelector('.gt2-app',{timeout:20000})
-    await page.waitForSelector('.gt2-hero',{timeout:20000})
+    await page.waitForSelector('.gt4-app',{timeout:20000})
+    await page.waitForSelector('.gt4-nav',{timeout:20000})
+    await page.waitForTimeout(900)
     await capture(page,target,'01-home')
 
-    const dates=page.locator('.gt2-nav button').filter({hasText:'Dates'}).first()
-    await dates.click()
-    await page.waitForSelector('.gt2-screen',{timeout:10000})
-    await capture(page,target,'02-dates')
+    await openTab(page,'Discover')
+    await capture(page,target,'02-discover')
 
-    const explore=page.locator('.gt2-nav button').filter({hasText:'Explore'}).first()
-    await explore.click()
-    await page.waitForSelector('.gt2-explore-browser',{timeout:10000})
-    await capture(page,target,'03-explore')
+    await openTab(page,'Radar')
+    await capture(page,target,'03-radar')
 
     await context.close()
   }
@@ -53,4 +57,4 @@ try{
   await browser.close()
 }
 
-console.log('App Store screenshots captured at Apple-accepted pixel dimensions.')
+console.log('App Store screenshots captured from GOOD TIMES V3 at Apple-accepted pixel dimensions.')
