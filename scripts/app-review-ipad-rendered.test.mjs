@@ -26,17 +26,19 @@ for(const vp of viewports){
     page.on('pageerror',error=>errors.push(String(error?.message||error)))
     try{
       await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:20000})
-      await page.waitForSelector('.gt2-app',{timeout:15000})
+      await page.waitForSelector('[data-app="good-times"] .gt4-app',{timeout:15000})
       await page.waitForTimeout(900)
       const geometry=await page.evaluate(()=>{
-        const app=document.querySelector('.gt2-app')?.getBoundingClientRect()
-        const nav=document.querySelector('.gt2-nav')?.getBoundingClientRect()
-        const guest=document.querySelector('.gt-guest-access')?.getBoundingClientRect()
+        const app=document.querySelector('[data-app="good-times"] .gt4-app')?.getBoundingClientRect()
+        const nav=document.querySelector('.gt4-nav')?.getBoundingClientRect()
+        const topbar=document.querySelector('.gt4-topbar')?.getBoundingClientRect()
+        const guest=document.querySelector('.gt-guest-mode')?.getBoundingClientRect()
         const doc=document.scrollingElement||document.documentElement
         return {
           app:app&&{left:app.left,right:app.right,width:app.width},
           nav:nav&&{top:nav.top,bottom:nav.bottom,width:nav.width},
-          guest:guest&&{top:guest.top,bottom:guest.bottom,width:guest.width},
+          topbar:topbar&&{top:topbar.top,bottom:topbar.bottom,width:topbar.width},
+          guest:guest&&{left:guest.left,right:guest.right,width:guest.width},
           vw:innerWidth,vh:innerHeight,hOverflow:doc.scrollWidth-innerWidth,
           text:String(document.body.innerText||''),
         }
@@ -45,11 +47,12 @@ for(const vp of viewports){
       await page.screenshot({path:path.join(OUT,`${vp.name}__guest.png`),fullPage:false})
       const minCanvas=vp.width<900?vp.width*.9:Math.min(1000,vp.width*.82)
       assert.ok(geometry.app?.width>=minCanvas,`app canvas ${geometry.app?.width}px is too narrow for ${vp.width}px iPad; geometry=${JSON.stringify(geometry)}`)
+      assert.ok(geometry.guest?.width>=minCanvas,`guest canvas ${geometry.guest?.width}px is too narrow for ${vp.width}px iPad; geometry=${JSON.stringify(geometry)}`)
+      assert.ok(geometry.topbar&&geometry.topbar.top>=-2&&geometry.topbar.bottom<=geometry.vh+2,`top bar is outside the iPad viewport; geometry=${JSON.stringify(geometry)}`)
       assert.ok(geometry.nav&&geometry.nav.top>=-2&&geometry.nav.bottom<=geometry.vh+2,`navigation is outside the iPad viewport; geometry=${JSON.stringify(geometry)}`)
-      assert.ok(geometry.guest&&geometry.guest.top>=-2&&geometry.guest.bottom<=geometry.vh+2,`guest sign-in control is outside the iPad viewport; geometry=${JSON.stringify(geometry)}`)
       assert.ok(geometry.hOverflow<=1,`horizontal overflow ${geometry.hOverflow}px; geometry=${JSON.stringify(geometry)}`)
-      assert.match(geometry.text,/Browsing as guest/i)
-      assert.match(geometry.text,/Explore/i)
+      assert.match(geometry.text,/GOOD TIMES/i)
+      assert.match(geometry.text,/Discover/i)
       assert.deepEqual(errors,[])
     }finally{
       await context.close();await browser.close()
