@@ -19,6 +19,8 @@ import './features/experience/good-times-v2.css'
 import './features/experience/good-times-v2-hardening.css'
 // Final consumer authority: V3 density, taxonomy drilldown, Radar + Vault navigation.
 import './features/experience/good-times-v3.css'
+// Tablet exception loads after V3 so universal iPad support uses the full viewport.
+import './features/experience/good-times-v3-tablet.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
