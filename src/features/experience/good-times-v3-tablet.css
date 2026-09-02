@@ -1,0 +1,99 @@
+/* GOOD TIMES V3 tablet authority.
+   Phones retain the native app shell. True desktop can retain the contained app
+   presentation. iPad/tablet viewports must use the full viewport so universal
+   iOS support is a real product experience rather than a phone window on a tablet. */
+
+@media (min-width:768px) and (max-width:1194px){
+  html:has(body.gt-app-mode),
+  html:has(body.gt-app-mode) body,
+  body.gt-app-mode{
+    width:100%!important;
+    min-width:0!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    max-height:none!important;
+    margin:0!important;
+    padding:0!important;
+    display:block!important;
+    overflow:hidden!important;
+    background:#06060c!important;
+  }
+
+  body.gt-app-mode #root{
+    position:fixed!important;
+    inset:0!important;
+    left:0!important;
+    right:0!important;
+    top:0!important;
+    bottom:0!important;
+    width:100vw!important;
+    max-width:none!important;
+    height:100dvh!important;
+    max-height:none!important;
+    min-height:0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    overflow:hidden!important;
+    transform:none!important;
+    background:#06060c!important;
+  }
+
+  body.gt-app-mode #root > .gt-premium-experience{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    max-height:none!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    border-radius:0!important;
+    overflow:hidden!important;
+    transform:none!important;
+  }
+
+  body.gt-app-mode #root > .gt-premium-experience > .gt-guest-mode,
+  body.gt-app-mode #root > .gt-premium-experience > .gt4-app{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    max-height:none!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    transform:none!important;
+  }
+
+  body.gt-app-mode #root > .gt-premium-experience > .gt-guest-mode > .gt4-app{
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    overflow:hidden!important;
+    transform:none!important;
+  }
+
+  body.gt-app-mode .gt4-main{
+    min-width:0!important;
+    min-height:0!important;
+  }
+
+  body.gt-app-mode .gt4-nav{
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    max-width:none!important;
+    transform:none!important;
+  }
+}
