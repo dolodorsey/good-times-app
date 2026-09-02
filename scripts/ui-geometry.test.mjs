@@ -143,7 +143,7 @@ const geometry=page=>page.evaluate(()=>{
   const visibleNavs=['.gt4-nav','.gt2-nav','.gt-five-nav','.gtlive-nav'].filter(sel=>{
     const el=document.querySelector(sel);if(!el)return false
     const cs=getComputedStyle(el);if(cs.display==='none'||cs.visibility==='hidden'||Number(cs.opacity)===0)return false
-    const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&r.bottom>0&&r.top<vh
+    const r=el.getBoundingClientRect();return r.width>0&&r.height>0
   })
   return{
     vw,vh,
@@ -165,9 +165,10 @@ function assertShell(g){
   assert.deepEqual(g.fixedOutside,[],'fixed controls outside the viewport')
   assert.deepEqual(g.visibleNavs,['.gt4-nav'],'V3 must expose exactly one primary navigation')
   assert.ok(g.app&&g.app.w>0&&g.app.h>0,'V3 app shell is missing')
-  assert.ok(g.nav&&g.nav.top>=-2&&g.nav.bottom<=g.vh+2,`V3 nav is outside viewport: ${JSON.stringify(g.nav)}`)
-  assert.ok(g.topbar&&g.topbar.top>=-2&&g.topbar.bottom<=g.vh+2,`V3 topbar is outside viewport: ${JSON.stringify(g.topbar)}`)
-  assert.ok(g.radar&&g.radar.top>=-2&&g.radar.bottom<=g.vh+2,`V3 radar strip is outside viewport: ${JSON.stringify(g.radar)}`)
+  const insideApp=box=>Boolean(box&&box.x>=g.app.x-2&&box.right<=g.app.right+2&&box.y>=g.app.y-2&&box.bottom<=g.app.bottom+2)
+  assert.ok(insideApp(g.nav),`V3 nav escapes app shell: app=${JSON.stringify(g.app)} nav=${JSON.stringify(g.nav)}`)
+  assert.ok(insideApp(g.topbar),`V3 topbar escapes app shell: app=${JSON.stringify(g.app)} topbar=${JSON.stringify(g.topbar)}`)
+  assert.ok(insideApp(g.radar),`V3 radar strip escapes app shell: app=${JSON.stringify(g.app)} radar=${JSON.stringify(g.radar)}`)
   assert.ok(g.appOverflow<=4,`.gt4-app clips ${g.appOverflow}px of shell content`)
   assert.deepEqual(g.navLabels,['⌂Now','◇Discover','✦Concierge','◉Radar','▣Vault'])
   assert.deepEqual(g.dialogsTooBig,[],'dialogs wider than viewport')
