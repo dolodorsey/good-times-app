@@ -55,21 +55,17 @@ body:has(.gt4-app) .gt4-app {
     box-shadow: 0 32px 130px rgba(0, 0, 0, .72) !important;
   }
 
-  body:has(.gt4-app) .gt-premium-experience {
-    width: 100% !important;
-    max-width: none !important;
-    height: 100% !important;
-    max-height: 100% !important;
-    margin: 0 !important;
-    border-radius: 27px !important;
-  }
-
+  /* The root is a bordered box. Use the viewport-derived content height here
+     rather than a percentage so legacy 100dvh/min-height declarations cannot
+     make the guest wrapper or V3 app 48px taller than its tablet frame. */
+  body:has(.gt4-app) .gt-premium-experience,
   body:has(.gt4-app) .gt-premium-experience > .gt-guest-mode,
   body:has(.gt4-app) .gt4-app {
     width: 100% !important;
     max-width: none !important;
-    height: 100% !important;
-    max-height: 100% !important;
+    height: calc(100dvh - 50px) !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 50px) !important;
     margin: 0 !important;
     border-radius: 27px !important;
   }
