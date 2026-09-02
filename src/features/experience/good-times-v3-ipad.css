@@ -3,21 +3,21 @@
    V3 keeps phone behavior, but iPad-class viewports must use the tablet canvas
    and the app/navigation/modal stack must be bounded to the visible viewport. */
 
-body.gt-app-mode:has(.gt4-app) #root {
+body:has(.gt4-app) #root {
   height: 100dvh !important;
   max-height: 100dvh !important;
   min-height: 0 !important;
   overflow: hidden !important;
 }
 
-body.gt-app-mode:has(.gt4-app) .gt-premium-experience {
+body:has(.gt4-app) .gt-premium-experience {
   height: 100dvh !important;
   max-height: 100dvh !important;
   min-height: 0 !important;
   overflow: hidden !important;
 }
 
-body.gt-app-mode:has(.gt4-app) .gt-premium-experience > .gt4-app {
+body:has(.gt4-app) .gt-premium-experience > .gt4-app {
   width: 100% !important;
   max-width: none !important;
   height: 100dvh !important;
@@ -28,7 +28,7 @@ body.gt-app-mode:has(.gt4-app) .gt-premium-experience > .gt4-app {
 }
 
 @media (min-width: 700px) and (max-width: 1199px) {
-  body.gt-app-mode:has(.gt4-app) #root {
+  body:has(.gt4-app) #root {
     width: calc(100vw - 48px) !important;
     max-width: 1180px !important;
     height: calc(100dvh - 48px) !important;
@@ -38,8 +38,8 @@ body.gt-app-mode:has(.gt4-app) .gt-premium-experience > .gt4-app {
     box-shadow: 0 32px 130px rgba(0, 0, 0, .72) !important;
   }
 
-  body.gt-app-mode:has(.gt4-app) .gt-premium-experience,
-  body.gt-app-mode:has(.gt4-app) .gt-premium-experience > .gt4-app {
+  body:has(.gt4-app) .gt-premium-experience,
+  body:has(.gt4-app) .gt-premium-experience > .gt4-app {
     height: calc(100dvh - 48px) !important;
     max-height: calc(100dvh - 48px) !important;
     max-width: none !important;
