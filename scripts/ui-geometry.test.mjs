@@ -43,7 +43,7 @@ const SUBCATEGORIES=[
   {category_key:'nightlife',subcategory_key:'lounges',subcategory_name:'Lounges',sort_order:2,minimum_upcoming_inventory:0},
   {category_key:'day_parties_brunch',subcategory_key:'day_parties',subcategory_name:'Day Parties',sort_order:1,minimum_upcoming_inventory:0},
 ]
-const DIRECTORY=VENUES.map((venue,index)=>({...venue,category_name:index?'Nightlife':'Nightlife',subcategory_key:index?'nightclubs':'lounges',taxonomy_confidence:.99}))
+const DIRECTORY=VENUES.map((venue,index)=>({...venue,category_name:'Nightlife',subcategory_key:index?'nightclubs':'lounges',taxonomy_confidence:.99}))
 const json=value=>({status:200,contentType:'application/json',body:JSON.stringify(value)})
 
 async function installFixtureRoutes(ctx){
@@ -113,10 +113,10 @@ const geometry=page=>page.evaluate(()=>{
 })
 
 function assertCore(g){
-  assert.ok(g.app&&g.app.w>=300&&g.app.h>=300,`V3 app frame collapsed: ${JSON.stringify(g.app)}`)
-  assert.ok(g.topbar&&g.topbar.top>=-2&&g.topbar.bottom<=g.vh+2,`topbar escaped viewport: ${JSON.stringify(g.topbar)}`)
-  assert.ok(g.nav&&g.nav.top>=-2&&g.nav.bottom<=g.vh+2,`V3 navigation escaped viewport: ${JSON.stringify(g.nav)}`)
-  assert.ok(g.main&&g.main.w>0&&g.main.h>0,`V3 main surface collapsed: ${JSON.stringify(g.main)}`)
+  assert.ok(g.app&&g.app.x>=-2&&g.app.right<=g.vw+2&&g.app.w>=300&&g.app.h>=300,`V3 app frame escaped/collapsed: ${JSON.stringify(g.app)}`)
+  assert.ok(g.topbar&&g.topbar.x>=-2&&g.topbar.right<=g.vw+2&&g.topbar.y>=-2&&g.topbar.bottom<=g.vh+2,`topbar escaped viewport: ${JSON.stringify(g.topbar)}`)
+  assert.ok(g.nav&&g.nav.x>=-2&&g.nav.right<=g.vw+2&&g.nav.y>=-2&&g.nav.bottom<=g.vh+2,`V3 navigation escaped viewport: ${JSON.stringify(g.nav)}`)
+  assert.ok(g.main&&g.main.x>=-2&&g.main.right<=g.vw+2&&g.main.w>0&&g.main.h>0,`V3 main surface escaped/collapsed: ${JSON.stringify(g.main)}`)
   assert.ok(g.hero&&g.hero.h>120,`V3 hero collapsed: ${JSON.stringify(g.hero)}`)
   assert.ok(g.hOverflow<=1,`horizontal overflow of ${g.hOverflow}px`)
   assert.ok(g.appOverflow<=4,`.gt4-app clips ${g.appOverflow}px of its own content`)
