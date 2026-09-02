@@ -29,6 +29,11 @@ for(const vp of viewports){
       await page.waitForSelector('.gt4-app',{timeout:15000})
       await page.waitForTimeout(900)
       const geometry=await page.evaluate(()=>{
+        const describe=(selector,element=document.querySelector(selector))=>{
+          if(!element)return null
+          const rect=element.getBoundingClientRect();const style=getComputedStyle(element)
+          return {selector,left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom,width:rect.width,height:rect.height,cssWidth:style.width,maxWidth:style.maxWidth,cssHeight:style.height,minHeight:style.minHeight,position:style.position,display:style.display,overflow:style.overflow,transform:style.transform,marginLeft:style.marginLeft,marginRight:style.marginRight,paddingLeft:style.paddingLeft,paddingRight:style.paddingRight}
+        }
         const app=document.querySelector('.gt4-app')?.getBoundingClientRect()
         const nav=document.querySelector('.gt4-nav')?.getBoundingClientRect()
         const guest=document.querySelector('.gt-guest-mode')?.getBoundingClientRect()
@@ -37,6 +42,7 @@ for(const vp of viewports){
           app:app&&{left:app.left,right:app.right,width:app.width},
           nav:nav&&{top:nav.top,bottom:nav.bottom,width:nav.width},
           guest:guest&&{left:guest.left,right:guest.right,width:guest.width},
+          chain:{html:describe('html',document.documentElement),body:describe('body',document.body),root:describe('#root'),premium:describe('.gt-premium-experience'),guest:describe('.gt-guest-mode'),app:describe('.gt4-app'),nav:describe('.gt4-nav')},
           vw:innerWidth,vh:innerHeight,hOverflow:doc.scrollWidth-innerWidth,
           text:String(document.body.innerText||''),
         }
