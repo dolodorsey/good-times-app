@@ -58,6 +58,20 @@
     }
   </style>
 
+  <!-- V3 tablet contract: iPads are first-class app canvases, not phone-width
+       windows floating inside a tablet. High-specificity !important rules are
+       intentional because later legacy shell styles still target desktop breakpoints. -->
+  <style id="gt-v3-tablet-shell-contract">
+    @media (min-width:768px) and (max-width:1194px){
+      html body{padding:0!important;display:block!important;min-height:100dvh!important;overflow:hidden!important;background:#06060C!important}
+      html body #root{width:100%!important;max-width:none!important;height:100dvh!important;max-height:none!important;min-height:100dvh!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:hidden!important;transform:none!important}
+      html body #root>.gt-premium-experience{width:100%!important;max-width:none!important;height:100dvh!important;min-height:100dvh!important;margin:0!important;display:block!important;overflow:hidden!important;transform:none!important}
+      html body #root>.gt-premium-experience>.gt-guest-mode,
+      html body #root>.gt-premium-experience>.gt4-app{width:100%!important;max-width:none!important;height:100dvh!important;min-height:0!important;margin:0!important;overflow:hidden!important;transform:none!important;box-shadow:none!important;border-radius:0!important}
+      html body #root>.gt-premium-experience>.gt-guest-mode>.gt4-app{width:100%!important;max-width:none!important;height:100%!important;min-height:0!important;margin:0!important;overflow:hidden!important;transform:none!important}
+    }
+  </style>
+
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Good Times","description":"A supervised city intelligence and personal concierge for nightlife, events, dining, and culture, launched market-by-market with curated coverage.","url":"https://thegoodtimesworldwide.com","applicationCategory":"LifestyleApplication","operatingSystem":"iOS, Android, Web","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Organization","name":"Good Times Worldwide"},"featureList":"Supervised Recommendations, Taste Learning, Night Planning, Curated Venues, Live Event Discovery, Market-by-Market Coverage","softwareVersion":"1.2.0","datePublished":"2026-03-30","dateModified":"2026-08-30","inLanguage":"en","contentRating":"Mature 17+"}</script>
   <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[{"@type":"Question","name":"What is Good Times?","acceptedAnswer":{"@type":"Answer","text":"Good Times is a free mobile and web concierge that helps you discover nightlife, restaurants, bars, events, and experiences through supervised recommendations and personalized planning."}},{"@type":"Question","name":"What cities does Good Times cover?","acceptedAnswer":{"@type":"Answer","text":"Atlanta is the primary active GOOD TIMES market. Additional cities are activated selectively as their curated venue, event, and experience inventory is approved."}},{"@type":"Question","name":"Is Good Times free?","acceptedAnswer":{"@type":"Answer","text":"Yes. Good Times is free to access and use."}},{"@type":"Question","name":"How does the concierge work?","acceptedAnswer":{"@type":"Answer","text":"Choose your mood, budget, group size, and preferred time. Good Times ranks current venues and events, explains the recommendations, and can assemble a time-ordered night plan."}}]}</script>
 </head>
