@@ -5,12 +5,14 @@
 
 body.gt-app-mode:has(.gt4-app) #root {
   height: 100dvh !important;
+  max-height: 100dvh !important;
   min-height: 0 !important;
   overflow: hidden !important;
 }
 
 body.gt-app-mode:has(.gt4-app) .gt-premium-experience {
-  height: 100% !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
   min-height: 0 !important;
   overflow: hidden !important;
 }
@@ -18,7 +20,8 @@ body.gt-app-mode:has(.gt4-app) .gt-premium-experience {
 body.gt-app-mode:has(.gt4-app) .gt-premium-experience > .gt4-app {
   width: 100% !important;
   max-width: none !important;
-  height: 100% !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
   min-height: 0 !important;
   margin: 0 !important;
   overflow: hidden !important;
@@ -28,14 +31,17 @@ body.gt-app-mode:has(.gt4-app) .gt-premium-experience > .gt4-app {
   body.gt-app-mode:has(.gt4-app) #root {
     width: calc(100vw - 48px) !important;
     max-width: 1180px !important;
-    height: calc(100dvh - 28px) !important;
+    height: calc(100dvh - 48px) !important;
+    max-height: calc(100dvh - 48px) !important;
     border: 1px solid rgba(242, 201, 104, .22) !important;
     border-radius: 27px !important;
     box-shadow: 0 32px 130px rgba(0, 0, 0, .72) !important;
   }
 
   body.gt-app-mode:has(.gt4-app) .gt-premium-experience,
-  body.gt-app-mode:has(.gt4-app) .gt4-app {
+  body.gt-app-mode:has(.gt4-app) .gt-premium-experience > .gt4-app {
+    height: calc(100dvh - 48px) !important;
+    max-height: calc(100dvh - 48px) !important;
     max-width: none !important;
     border-radius: 27px !important;
   }
