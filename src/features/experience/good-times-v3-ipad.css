@@ -1,7 +1,7 @@
-/* GOOD TIMES V3 iPad/runtime geometry.
-   V3 keeps the phone experience compact, while iPad-class viewports use the
-   available tablet canvas. Both signed-in and guest wrappers are bounded to
-   the visible app frame so navigation and sheets cannot fall below the viewport. */
+/* GOOD TIMES V3 viewport geometry.
+   Phone and desktop retain the premium app-width shell; iPad-class viewports
+   intentionally expand to the tablet canvas. Guest and member V3 must share
+   the same bounded containing block so navigation and sheets cannot escape. */
 
 body:has(.gt4-app) #root,
 body:has(.gt4-app) .gt-premium-experience {
@@ -11,18 +11,18 @@ body:has(.gt4-app) .gt-premium-experience {
   overflow: hidden !important;
 }
 
-/* premium-experience.css intentionally gives every direct application child a
-   legacy 460px/100dvh shell. Guest V3 is one wrapper deeper than member V3, so
-   override that exact child instead of letting the phone shell become the
-   containing block for an iPad-sized app. */
+/* Keep the default V3 frame bounded on phones and desktop. The guest route is
+   one wrapper deeper than the member route, so it must explicitly inherit the
+   same 460px premium frame instead of starting at the frame's left edge and
+   then expanding toward the viewport edge. */
 body:has(.gt4-app) .gt-premium-experience > .gt-guest-mode {
   width: 100% !important;
   min-width: 0 !important;
-  max-width: none !important;
+  max-width: 460px !important;
   height: 100% !important;
   min-height: 0 !important;
   max-height: 100% !important;
-  margin: 0 !important;
+  margin: 0 auto !important;
   position: relative !important;
   inset: auto !important;
   transform: none !important;
@@ -32,11 +32,11 @@ body:has(.gt4-app) .gt-premium-experience > .gt-guest-mode {
 body:has(.gt4-app) .gt4-app {
   width: 100% !important;
   min-width: 0 !important;
-  max-width: none !important;
+  max-width: 460px !important;
   height: 100% !important;
   max-height: 100% !important;
   min-height: 0 !important;
-  margin: 0 !important;
+  margin: 0 auto !important;
   position: relative !important;
   inset: auto !important;
   transform: none !important;
@@ -55,9 +55,9 @@ body:has(.gt4-app) .gt4-app {
     box-shadow: 0 32px 130px rgba(0, 0, 0, .72) !important;
   }
 
-  /* The root is a bordered box. Use the viewport-derived content height here
-     rather than a percentage so legacy 100dvh/min-height declarations cannot
-     make the guest wrapper or V3 app 48px taller than its tablet frame. */
+  /* The root is a bordered box. Use viewport-derived content height so legacy
+     100dvh/min-height declarations cannot make the V3 shell taller than its
+     tablet frame. */
   body:has(.gt4-app) .gt-premium-experience,
   body:has(.gt4-app) .gt-premium-experience > .gt-guest-mode,
   body:has(.gt4-app) .gt4-app {
