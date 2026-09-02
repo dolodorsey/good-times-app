@@ -17,6 +17,7 @@ import './features/experience/good-times-app-review.css'
 import './features/experience/good-times-owner-polish.css'
 import './features/experience/good-times-v2.css'
 import './features/experience/good-times-v2-hardening.css'
+import './features/experience/good-times-v3-ipad.css'
 // Final consumer authority: V3 density, taxonomy drilldown, Radar + Vault navigation.
 import './features/experience/good-times-v3.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'

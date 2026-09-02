@@ -1,0 +1,72 @@
+/* GOOD TIMES V3 iPad/runtime geometry.
+   V3 keeps the phone experience compact, while iPad-class viewports use the
+   available tablet canvas. Both signed-in and guest wrappers are bounded to
+   the visible app frame so navigation and sheets cannot fall below the viewport. */
+
+body:has(.gt4-app) #root,
+body:has(.gt4-app) .gt-premium-experience {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* premium-experience.css intentionally gives every direct application child a
+   legacy 460px/100dvh shell. Guest V3 is one wrapper deeper than member V3, so
+   override that exact child instead of letting the phone shell become the
+   containing block for an iPad-sized app. */
+body:has(.gt4-app) .gt-premium-experience > .gt-guest-mode {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  position: relative !important;
+  inset: auto !important;
+  transform: none !important;
+  overflow: hidden !important;
+}
+
+body:has(.gt4-app) .gt4-app {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  position: relative !important;
+  inset: auto !important;
+  transform: none !important;
+  overflow: hidden !important;
+}
+
+@media (min-width: 700px) and (max-width: 1199px) {
+  body:has(.gt4-app) #root {
+    width: calc(100vw - 48px) !important;
+    max-width: 1180px !important;
+    height: calc(100dvh - 48px) !important;
+    max-height: calc(100dvh - 48px) !important;
+    margin: 0 auto !important;
+    border: 1px solid rgba(242, 201, 104, .22) !important;
+    border-radius: 27px !important;
+    box-shadow: 0 32px 130px rgba(0, 0, 0, .72) !important;
+  }
+
+  /* The root is a bordered box. Use the viewport-derived content height here
+     rather than a percentage so legacy 100dvh/min-height declarations cannot
+     make the guest wrapper or V3 app 48px taller than its tablet frame. */
+  body:has(.gt4-app) .gt-premium-experience,
+  body:has(.gt4-app) .gt-premium-experience > .gt-guest-mode,
+  body:has(.gt4-app) .gt4-app {
+    width: 100% !important;
+    max-width: none !important;
+    height: calc(100dvh - 50px) !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 50px) !important;
+    margin: 0 !important;
+    border-radius: 27px !important;
+  }
+}
