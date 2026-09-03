@@ -1,0 +1,202 @@
+name: GOOD TIMES dependency candidate
+
+on:
+  push:
+    branches:
+      - chore/good-times-dependency-remediation-2026-08-02
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/good-times-dependency-candidate.yml'
+      - '.github/workflows/good-times-audit.yml'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'capacitor.config.json'
+      - 'android/**'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  generate-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Generate conservative secure package set
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = 'package.json';
+          const pkg = JSON.parse(fs.readFileSync(path, 'utf8'));
+          const dependencies = {
+            '@capacitor/android': '7.6.1',
+            '@capacitor/browser': '7.0.2',
+            '@capacitor/cli': '7.6.1',
+            '@capacitor/core': '7.6.1',
+            '@capacitor/haptics': '7.0.2',
+            '@capacitor/ios': '7.6.1',
+            '@capacitor/push-notifications': '7.0.3',
+            '@capacitor/share': '7.0.2',
+            '@capacitor/splash-screen': '7.0.3',
+            '@capacitor/status-bar': '7.0.3',
+          };
+          for (const [name, version] of Object.entries(dependencies)) {
+            if (!(name in pkg.dependencies)) {
+              throw new Error(`Expected existing dependency ${name}`);
+            }
+            pkg.dependencies[name] = version;
+          }
+          if (!pkg.devDependencies?.vite) throw new Error('Expected existing Vite dev dependency');
+          pkg.devDependencies.vite = '7.3.1';
+          fs.writeFileSync(path, `${JSON.stringify(pkg, null, 2)}\n`);
+          NODE
+          npm install --ignore-scripts=false
+
+      - name: Verify aligned JavaScript package versions
+        run: |
+          node - <<'NODE'
+          const pkg = require('./package.json');
+          const expected = {
+            '@capacitor/android': '7.6.1',
+            '@capacitor/browser': '7.0.2',
+            '@capacitor/cli': '7.6.1',
+            '@capacitor/core': '7.6.1',
+            '@capacitor/haptics': '7.0.2',
+            '@capacitor/ios': '7.6.1',
+            '@capacitor/push-notifications': '7.0.3',
+            '@capacitor/share': '7.0.2',
+            '@capacitor/splash-screen': '7.0.3',
+            '@capacitor/status-bar': '7.0.3',
+          };
+          for (const [name, version] of Object.entries(expected)) {
+            if (pkg.dependencies[name] !== version) {
+              throw new Error(`${name}: expected ${version}, got ${pkg.dependencies[name]}`);
+            }
+          }
+          if (pkg.devDependencies.vite !== '7.3.1') throw new Error('Vite is not 7.3.1');
+          NODE
+          npm ls --depth=0
+
+      - name: Apply Capacitor 7 Android migration
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_exact(path, old, new, expected=1):
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != expected:
+                  raise SystemExit(f'{path}: expected {expected} occurrence(s) of {old!r}, found {count}')
+              file.write_text(text.replace(old, new))
+              print(f'updated {path}: {old!r} -> {new!r}')
+
+          replace_exact('android/variables.gradle', "minSdkVersion = 22", "minSdkVersion = 23")
+          replace_exact('android/variables.gradle', "androidxActivityVersion = '1.9.2'", "androidxActivityVersion = '1.10.1'")
+          replace_exact('android/variables.gradle', "androidxFragmentVersion = '1.8.4'", "androidxFragmentVersion = '1.8.6'")
+          replace_exact('android/build.gradle', "classpath 'com.android.tools.build:gradle:8.2.1'", "classpath 'com.android.tools.build:gradle:8.7.2'")
+          replace_exact('android/build.gradle', "classpath 'com.google.gms:google-services:4.4.0'", "classpath 'com.google.gms:google-services:4.4.2'")
+          replace_exact(
+              'android/gradle/wrapper/gradle-wrapper.properties',
+              'distributionUrl=https\\://services.gradle.org/distributions/gradle-8.2.1-all.zip',
+              'distributionUrl=https\\://services.gradle.org/distributions/gradle-8.11.1-all.zip',
+          )
+
+          manifest = Path('android/app/src/main/AndroidManifest.xml')
+          text = manifest.read_text()
+          old = 'android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode"'
+          new = 'android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation"'
+          if new not in text:
+              if text.count(old) != 1:
+                  raise SystemExit('AndroidManifest.xml: expected one Capacitor activity configChanges attribute')
+              manifest.write_text(text.replace(old, new))
+              print('added navigation to Android activity configChanges')
+          PY
+
+      - name: Verify migrated Android toolchain values
+        run: |
+          grep -Fq 'minSdkVersion = 23' android/variables.gradle
+          grep -Fq "androidxActivityVersion = '1.10.1'" android/variables.gradle
+          grep -Fq "androidxFragmentVersion = '1.8.6'" android/variables.gradle
+          grep -Fq "com.android.tools.build:gradle:8.7.2" android/build.gradle
+          grep -Fq "com.google.gms:google-services:4.4.2" android/build.gradle
+          grep -Fq 'gradle-8.11.1-all.zip' android/gradle/wrapper/gradle-wrapper.properties
+          grep -Fq 'uiMode|navigation' android/app/src/main/AndroidManifest.xml
+          java -version
+
+      - name: Run regression tests
+        run: node --test scripts/gt-auth-session.test.mjs scripts/direct-request-validation.test.mjs
+
+      - name: Build web application
+        run: npm run build
+
+      - name: Synchronize Android platform
+        run: |
+          npx cap sync android
+          chmod +x android/gradlew
+
+      - name: Verify generated Capacitor Android configuration
+        run: |
+          grep -Fq 'JavaVersion.VERSION_21' android/app/capacitor.build.gradle
+          grep -Fq 'navigation' android/app/src/main/AndroidManifest.xml
+
+      - name: Build Android debug APK
+        working-directory: android
+        run: ./gradlew assembleDebug --no-daemon
+
+      - name: Capture and enforce dependency audit
+        run: |
+          npm audit --json > npm-audit-upgraded.json || true
+          node - <<'NODE'
+          const fs = require('fs');
+          const audit = JSON.parse(fs.readFileSync('npm-audit-upgraded.json', 'utf8'));
+          const vulnerabilities = audit.metadata?.vulnerabilities ?? {};
+          console.log('Upgraded audit:', vulnerabilities);
+          if ((vulnerabilities.critical ?? 0) > 0 || (vulnerabilities.high ?? 0) > 0) {
+            process.exitCode = 1;
+          }
+          NODE
+
+      - name: Create reviewable upgrade patch
+        run: |
+          git diff --binary -- package.json package-lock.json capacitor.config.json android > dependency-upgrade.patch
+          test -s dependency-upgrade.patch
+
+      - name: Upload verified candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: good-times-dependency-candidate
+          path: |
+            package.json
+            package-lock.json
+            capacitor.config.json
+            dependency-upgrade.patch
+            npm-audit-upgraded.json
+          retention-days: 7
+
+      - name: Commit verified candidate to branch
+        if: github.event_name == 'push'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add package.json package-lock.json capacitor.config.json android
+          git diff --cached --quiet && exit 1
+          git commit -m 'chore: apply tested Capacitor 7 and Vite 7 upgrade'
+          git push origin HEAD:chore/good-times-dependency-remediation-2026-08-02
