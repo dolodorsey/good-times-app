@@ -44,7 +44,8 @@ async function installRoutes(ctx){
   await ctx.route('**/rest/v1/gt_follows**',route=>route.fulfill(json([])))
   await ctx.route('**/rest/v1/gt_radar_preferences**',route=>route.fulfill(json([])))
   await ctx.route('**/rest/v1/gt_radar_alerts**',route=>route.fulfill(json([])))
-  await ctx.route('**/rest/v1/gt_ad_inventory**',route=>route.fulfill(json([])))
+  await ctx.route('**/rest/v1/v_gt_active_ads**',route=>route.fulfill(json([])))
+  await ctx.route('**/rest/v1/gt_ad_events**',route=>route.fulfill({status:201,contentType:'application/json',body:'[]'}))
   await ctx.route('**/functions/v1/**',route=>route.fulfill(json({ok:true,message:'Interaction fixture ready.',events:EVENTS,venues:VENUES,thread_id:'interaction-thread'})))
 }
 
