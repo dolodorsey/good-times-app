@@ -17,8 +17,8 @@ function jsonResponse(payload, ok = true, status = ok ? 200 : 503) {
 
 test('GOOD TIMES health requires both exact service planes', async () => {
   const calls = []
-  const health = await getGoodTimesHealth(async (url) => {
-    calls.push(String(url))
+  const health = await getGoodTimesHealth(async (url, options = {}) => {
+    calls.push({ url: String(url), options })
     return jsonResponse([{ id: 'fixture' }])
   })
 
@@ -27,8 +27,10 @@ test('GOOD TIMES health requires both exact service planes', async () => {
   assert.equal(health.customer_ready, true)
   assert.equal(health.content_ready, true)
   assert.equal(calls.length, 2)
-  assert.match(calls[0], /^https:\/\/czocqfaovfpjweayniuw\.supabase\.co\/rest\/v1\/gt_formula_versions\?select=id&limit=1$/)
-  assert.match(calls[1], /^https:\/\/dzlmtvodpyhetvektfuo\.supabase\.co\/rest\/v1\/gt_venues\?select=id&status=eq\.active&limit=1$/)
+  assert.match(calls[0].url, /^https:\/\/czocqfaovfpjweayniuw\.supabase\.co\/rest\/v1\/gt_formula_versions\?select=id&limit=1$/)
+  assert.match(calls[1].url, /^https:\/\/dzlmtvodpyhetvektfuo\.supabase\.co\/rest\/v1\/gt_venues\?select=id&status=eq\.active&limit=1$/)
+  assert.match(String(calls[1].options?.headers?.apikey || ''), /^sb_publishable_/)
+  assert.equal(calls[1].options?.headers?.Authorization, `Bearer ${calls[1].options?.headers?.apikey}`)
 })
 
 test('GOOD TIMES health fails closed when either required plane is unavailable', async () => {
@@ -63,6 +65,8 @@ test('GOOD TIMES runtime cannot mount before the service gate resolves', async (
   assert.match(guard, /\/privacy\.html/)
   assert.match(guard, /CLIENT_TIMEOUT_MS = 5000/)
   assert.match(healthApi, /HEALTH_TIMEOUT_MS = 4500/)
+  assert.match(healthApi, /CONTENT_PUBLISHABLE_KEY/)
+  assert.doesNotMatch(healthApi, /const CONTENT_ANON_KEY = 'eyJ/)
   assert.match(healthApi, /Retry-After', '30'/)
   assert.doesNotMatch(guard, /S\.O\.S\.|ON CALL|MISSION 365|INFINITY WATER|PRONTO|XXX VODKA|HALLOWEEN/i)
 })
