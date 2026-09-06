@@ -3,7 +3,9 @@ const CONTENT_PROJECT_REF = 'dzlmtvodpyhetvektfuo'
 const GT_URL = `https://${GT_PROJECT_REF}.supabase.co`
 const CONTENT_URL = `https://${CONTENT_PROJECT_REF}.supabase.co`
 const GT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImN6b2NxZmFvdmZwandlYXluaXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNzEzODAsImV4cCI6MjA4Mzk0NzM4MH0.6-3rmA9tZXHLVg5N6a_82rKA9Kvrj4gRrUUiSczovho'
-const CONTENT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1ODQ4NjQsImV4cCI6MjA4NTE2MDg2NH0.qmnWB4aWdb7U8Iod9Hv8PQAOJO3AG0vYEGnPS--kfAo'
+// Keep the content-plane probe aligned with the publishable key used by the live GOOD TIMES catalog.
+// The previous legacy JWT key is no longer authorized by the active content project and caused false 401 health failures.
+const CONTENT_PUBLISHABLE_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 
 const HEALTH_TIMEOUT_MS = 4500
 
@@ -33,7 +35,7 @@ async function probe(url, key, query, fetchImpl) {
 export async function getGoodTimesHealth(fetchImpl = globalThis.fetch) {
   const [customerReady, contentReady] = await Promise.all([
     probe(GT_URL, GT_ANON_KEY, 'gt_formula_versions?select=id&limit=1', fetchImpl),
-    probe(CONTENT_URL, CONTENT_ANON_KEY, 'gt_venues?select=id&status=eq.active&limit=1', fetchImpl),
+    probe(CONTENT_URL, CONTENT_PUBLISHABLE_KEY, 'gt_venues?select=id&status=eq.active&limit=1', fetchImpl),
   ])
   return {
     ok: customerReady && contentReady,
