@@ -1,0 +1,72 @@
+/* GOOD TIMES V3 viewport geometry.
+   Phone and desktop retain the premium app-width shell; iPad-class viewports
+   intentionally expand to the tablet canvas. Guest and member V3 must share
+   the same bounded containing block so navigation and sheets cannot escape. */
+
+body:has(.gt4-app) #root,
+body:has(.gt4-app) .gt-premium-experience {
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Keep the default V3 frame bounded on phones and desktop. The guest route is
+   one wrapper deeper than the member route, so it must explicitly inherit the
+   same 460px premium frame instead of starting at the frame's left edge and
+   then expanding toward the viewport edge. */
+body:has(.gt4-app) .gt-premium-experience > .gt-guest-mode {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 460px !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  margin: 0 auto !important;
+  position: relative !important;
+  inset: auto !important;
+  transform: none !important;
+  overflow: hidden !important;
+}
+
+body:has(.gt4-app) .gt4-app {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 460px !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 auto !important;
+  position: relative !important;
+  inset: auto !important;
+  transform: none !important;
+  overflow: hidden !important;
+}
+
+@media (min-width: 700px) and (max-width: 1199px) {
+  body:has(.gt4-app) #root {
+    width: calc(100vw - 48px) !important;
+    max-width: 1180px !important;
+    height: calc(100dvh - 48px) !important;
+    max-height: calc(100dvh - 48px) !important;
+    margin: 0 auto !important;
+    border: 1px solid rgba(242, 201, 104, .22) !important;
+    border-radius: 27px !important;
+    box-shadow: 0 32px 130px rgba(0, 0, 0, .72) !important;
+  }
+
+  /* The root is a bordered box. Use viewport-derived content height so legacy
+     100dvh/min-height declarations cannot make the V3 shell taller than its
+     tablet frame. */
+  body:has(.gt4-app) .gt-premium-experience,
+  body:has(.gt4-app) .gt-premium-experience > .gt-guest-mode,
+  body:has(.gt4-app) .gt4-app {
+    width: 100% !important;
+    max-width: none !important;
+    height: calc(100dvh - 50px) !important;
+    min-height: 0 !important;
+    max-height: calc(100dvh - 50px) !important;
+    margin: 0 !important;
+    border-radius: 27px !important;
+  }
+}
