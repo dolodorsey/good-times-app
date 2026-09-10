@@ -38,7 +38,7 @@ jobs:
 
       - name: Serve the build
         run: |
-          node scripts/serve-dist.mjs &
+          GT_UI_HEALTH_FIXTURE=healthy node scripts/serve-dist.mjs &
           for i in $(seq 1 30); do
             if curl -sf -o /dev/null http://localhost:4180/; then
               echo "server up"

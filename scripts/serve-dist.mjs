@@ -3,6 +3,7 @@
  *
  *   - real files out of dist/ first (so /assets/*, /gt-stabilizer.js resolve)
  *   - /api/* proxied to production (there is no local serverless runtime)
+ *   - an explicit GT_UI_HEALTH_FIXTURE=healthy can satisfy only /api/health in CI
  *   - everything else falls back to index.html (the SPA rewrite)
  *
  * `vercel dev` cannot be used for this: the "/(.*)" -> /index.html rewrite in
@@ -20,6 +21,7 @@ import { fileURLToPath } from 'node:url'
 const ROOT = process.env.ROOT || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist')
 const PORT = Number(process.env.PORT || 4180)
 const API_ORIGIN = process.env.API_ORIGIN || 'https://thegoodtimesworldwide.com'
+const UI_HEALTH_FIXTURE = process.env.GT_UI_HEALTH_FIXTURE === 'healthy'
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
@@ -32,6 +34,21 @@ const TYPES = {
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`)
+
+  if (url.pathname === '/api/health' && UI_HEALTH_FIXTURE) {
+    res.writeHead(200, {
+      'content-type': 'application/json; charset=utf-8',
+      'cache-control': 'no-store',
+      'x-good-times-health': 'ready-fixture',
+    })
+    return res.end(JSON.stringify({
+      ok: true,
+      service: 'good-times',
+      customer_ready: true,
+      content_ready: true,
+      fixture: true,
+    }))
+  }
 
   if (url.pathname.startsWith('/api/')) {
     try {
@@ -59,4 +76,4 @@ const server = http.createServer(async (req, res) => {
   fs.createReadStream(filePath).pipe(res)
 })
 
-server.listen(PORT, () => console.log(`gt static+api server on http://localhost:${PORT} (api -> ${API_ORIGIN})`))
+server.listen(PORT, () => console.log(`gt static+api server on http://localhost:${PORT} (api -> ${API_ORIGIN}; health fixture=${UI_HEALTH_FIXTURE})`))
