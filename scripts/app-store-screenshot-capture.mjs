@@ -27,25 +27,27 @@ async function capture(page,target,label){
   fs.writeFileSync(path.join(dir,`${label}.png`),buffer)
 }
 
+async function openTab(page,label,selector){
+  const tab=page.locator('.gt4-nav button').filter({hasText:label}).first()
+  await tab.click()
+  await page.waitForSelector(selector,{state:'visible',timeout:10000})
+}
+
 const browser=await chromium.launch({headless:true,executablePath:CHROME||undefined,args:['--no-sandbox']})
 try{
   for(const target of targets){
     const context=await browser.newContext({viewport:{width:target.width,height:target.height},deviceScaleFactor:target.scale})
     const page=await context.newPage()
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
-    await page.waitForSelector('.gt2-app',{timeout:20000})
-    await page.waitForSelector('.gt2-hero',{timeout:20000})
-    await capture(page,target,'01-home')
+    await page.waitForSelector('.gt4-app',{state:'visible',timeout:20000})
+    await page.waitForSelector('.gt4-hero',{state:'visible',timeout:20000})
+    await capture(page,target,'01-now')
 
-    const dates=page.locator('.gt2-nav button').filter({hasText:'Dates'}).first()
-    await dates.click()
-    await page.waitForSelector('.gt2-screen',{timeout:10000})
-    await capture(page,target,'02-dates')
+    await openTab(page,'Discover','.gt4-discover')
+    await capture(page,target,'02-discover')
 
-    const explore=page.locator('.gt2-nav button').filter({hasText:'Explore'}).first()
-    await explore.click()
-    await page.waitForSelector('.gt2-explore-browser',{timeout:10000})
-    await capture(page,target,'03-explore')
+    await openTab(page,'Concierge','.gt4-concierge')
+    await capture(page,target,'03-concierge')
 
     await context.close()
   }
@@ -53,4 +55,4 @@ try{
   await browser.close()
 }
 
-console.log('App Store screenshots captured at Apple-accepted pixel dimensions.')
+console.log('Current GOOD TIMES V3 App Store screenshots captured at Apple-accepted pixel dimensions.')

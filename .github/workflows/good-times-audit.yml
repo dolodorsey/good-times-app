@@ -80,9 +80,10 @@ jobs:
       - name: Build Android debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
-      - name: Capture dependency audit
-        run: npm audit --json > npm-audit.json || true
+      - name: Require zero high or critical dependency findings
+        run: npm audit --json --audit-level=high > npm-audit.json
       - name: Upload dependency diagnosis
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: good-times-dependency-diagnosis
