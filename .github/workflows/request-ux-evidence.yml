@@ -1,0 +1,136 @@
+name: GOOD TIMES request UX evidence
+on:
+  pull_request:
+    branches: [main]
+    paths: ['src/**', 'api/**', 'scripts/**', 'package*.json', '.github/workflows/request-ux-evidence.yml']
+permissions:
+  contents: read
+concurrency:
+  group: good-times-request-evidence-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Record source
+        run: mkdir -p quality-evidence && git rev-parse HEAD > quality-evidence/source-sha.txt
+      - name: Locked install
+        id: install
+        run: set -o pipefail; npm ci 2>&1 | tee quality-evidence/install.log
+      - name: Full unit and contract suite
+        if: always() && steps.install.outcome == 'success'
+        run: set -o pipefail; npm test 2>&1 | tee quality-evidence/tests.log
+      - name: Production build
+        id: build
+        if: always() && steps.install.outcome == 'success'
+        run: set -o pipefail; npm run build 2>&1 | tee quality-evidence/build.log
+      - name: Production dependency audit
+        if: always() && steps.install.outcome == 'success'
+        run: set -o pipefail; npm audit --omit=dev --audit-level=high 2>&1 | tee quality-evidence/audit.log
+      - name: Browser prerequisites
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Start exact built source
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          GT_UI_HEALTH_FIXTURE=healthy node scripts/serve-dist.mjs > quality-evidence/server.log 2>&1 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:4180/ >/dev/null && exit 0; sleep 1; done
+          exit 1
+      - name: Existing rendered navigation regression
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          export GT_UI_BASE=http://127.0.0.1:4180
+          export GT_UI_ARTIFACTS=quality-evidence/navigation
+          export GT_UI_CHROME_PATH=$(python -c 'from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()')
+          set -o pipefail
+          node --test scripts/ui-geometry.test.mjs 2>&1 | tee quality-evidence/browser-navigation.log
+      - name: Request screens and controlled form journeys
+        if: always() && steps.build.outcome == 'success'
+        run: |
+          python - <<'PY'
+          import json,re,pathlib,datetime
+          from playwright.sync_api import sync_playwright
+          out=pathlib.Path('quality-evidence'); results=[]; failures=[]
+          base='http://127.0.0.1:4180'
+          routes=['/','/join','/concierge-request','/trip','/group']
+          def guard(route):
+            if route.request.method not in ('GET','HEAD','OPTIONS'):
+              route.fulfill(status=503,content_type='application/json',body='{"error":"read_only_browser_audit"}')
+            else: route.continue_()
+          def snap(page,name):
+            page.screenshot(path=str(out/(name+'.png')),full_page=True,animations='disabled',timeout=20000)
+          with sync_playwright() as p:
+            browser=p.chromium.launch()
+            for width,height in [(320,844),(390,844),(768,1024),(1440,900)]:
+              ctx=browser.new_context(viewport={'width':width,'height':height},reduced_motion='reduce',service_workers='block')
+              ctx.route('**/*',guard)
+              for path in routes:
+                page=ctx.new_page(); errors=[]
+                page.on('pageerror',lambda e:errors.append(str(e)))
+                try:
+                  r=page.goto(base+path,wait_until='domcontentloaded',timeout=30000)
+                  page.wait_for_timeout(1600)
+                  text=page.locator('body').inner_text()
+                  overflow=page.evaluate('Math.max(0,document.documentElement.scrollWidth-innerWidth)')
+                  snap(page,str(width)+'-'+(path.strip('/') or 'home'))
+                  row={'route':path,'viewport':width,'status':r.status,'text_length':len(text),'horizontal_overflow':overflow,'page_errors':errors}
+                  results.append(row)
+                  if r.status>=400 or len(text)<50 or overflow>2 or errors: failures.append(row)
+                except Exception as e: failures.append({'route':path,'viewport':width,'error':str(e)})
+                finally: page.close()
+              ctx.close()
+            ctx=browser.new_context(viewport={'width':390,'height':844},service_workers='block')
+            ctx.route('**/*',guard)
+            page=ctx.new_page(); page.goto(base+'/join',wait_until='domcontentloaded')
+            try:
+              submit=page.get_by_role('button',name='Request membership access')
+              assert submit.is_enabled(),'Incomplete forms must allow validation feedback'
+              submit.click()
+              assert page.locator('input').first.evaluate('(e)=>e===document.activeElement'),'Native invalid control receives focus'
+              page.get_by_label('Full name',exact=True).fill('Quality Audit')
+              page.get_by_label('Email',exact=True).fill('qa@example.invalid')
+              page.get_by_label('City',exact=True).fill('Atlanta')
+              page.get_by_label(re.compile('Interests and vibe')).fill('Dining and culture')
+              page.get_by_label(re.compile('Mobile phone')).fill('123')
+              submit.click(); page.get_by_role('alert').wait_for()
+              assert 'mobile' in page.get_by_role('alert').inner_text().lower()
+              snap(page,'390-membership-custom-validation')
+              page.get_by_label(re.compile('Mobile phone')).fill('')
+              deliveries=[]
+              def response(route):
+                deliveries.append(route.request.post_data_json)
+                if len(deliveries)==1: route.fulfill(status=503,content_type='application/json',body='{"message":"QA controlled failure"}')
+                else: route.fulfill(status=201,body='')
+              page.route('**/rest/v1/good_times_consumer_requests*',response)
+              submit.click(); page.get_by_text('QA controlled failure',exact=True).wait_for()
+              assert page.get_by_label('Full name',exact=True).input_value()=='Quality Audit'
+              assert submit.is_enabled(),'Retry must remain available after failure'
+              snap(page,'390-membership-retry')
+              submit.click(); page.get_by_role('heading',name='Request received',exact=True).wait_for()
+              assert len(deliveries)==2
+              assert deliveries[-1]['request_type']=='join' and deliveries[-1]['sms_consent'] is False
+              snap(page,'390-membership-success-fixture')
+              results.append({'journey':'membership validation -> controlled API failure -> retry -> confirmation','passed':True,'fixture':True,'real_submissions':0})
+            except Exception as e: failures.append({'journey':'membership feedback','error':str(e)})
+            ctx.close(); browser.close()
+          (out/'browser-results.json').write_text(json.dumps({'app':'GOOD TIMES','source':'exact local production build','health_fixture':True,'real_submissions':0,'results':results,'failures':failures},indent=2))
+          print(json.dumps({'screens':len(results),'failures':failures},indent=2))
+          if failures: raise SystemExit(1)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: good-times-ux-evidence-${{ github.event.pull_request.head.sha }}
+          path: quality-evidence/
+          retention-days: 14
