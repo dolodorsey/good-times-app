@@ -72,6 +72,77 @@ jobs:
         with:
           ref: ${{ needs.release-gate.outputs.release-sha }}
 
+      - name: Preflight Apple developer agreement and provisioning access
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$TEAM_ID" ] || missing+=(APPLE_TEAM_ID)
+          [ -n "$ASC_KEY_ID" ] || missing+=(APP_STORE_CONNECT_KEY_ID)
+          [ -n "$ASC_ISSUER_ID" ] || missing+=(APP_STORE_CONNECT_ISSUER_ID)
+          [ -n "$ASC_PRIVATE_KEY" ] || missing+=(APP_STORE_CONNECT_PRIVATE_KEY)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error title=GOOD TIMES Apple portal preflight blocked::Missing required Apple portal secrets: ${missing[*]}"
+            exit 1
+          fi
+
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          printf '%s' "$ASC_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          key_path = Path.home()/".appstoreconnect"/"private_keys"/f"AuthKey_{os.environ['ASC_KEY_ID']}.p8"
+          out = Path(os.environ['RUNNER_TEMP'])/'good-times-apple-preflight-api-key.json'
+          out.write_text(json.dumps({
+              'key_id': os.environ['ASC_KEY_ID'],
+              'issuer_id': os.environ['ASC_ISSUER_ID'],
+              'key': key_path.read_text(),
+              'in_house': False,
+          }))
+          PY
+
+          if ! command -v fastlane >/dev/null 2>&1; then
+            gem install fastlane --no-document
+          fi
+
+          set +e
+          set -o pipefail
+          pushd "$RUNNER_TEMP" >/dev/null
+          fastlane sigh \
+            --app_identifier "com.kollective.goodtimes" \
+            --team_id "$TEAM_ID" \
+            --api_key_path "$RUNNER_TEMP/good-times-apple-preflight-api-key.json" \
+            --filename "good-times-preflight.mobileprovision" \
+            --skip_install true \
+            --readonly \
+            --skip_certificate_verification \
+            2>&1 | tee "$RUNNER_TEMP/good-times-apple-preflight.log"
+          STATUS=${PIPESTATUS[0]}
+          popd >/dev/null
+          set -e
+
+          if grep -Eqi 'required agreement|agreement[^[:alnum:]]+(is )?(missing|expired)|license agreement|program agreement|terms.*(accept|agreement)' "$RUNNER_TEMP/good-times-apple-preflight.log"; then
+            echo "::error title=Apple agreement required::GOOD TIMES iOS release is blocked by an unsigned or expired Apple Developer/App Store agreement. Accept the outstanding agreement in the Apple Developer/App Store account, then rerun this workflow."
+            exit 1
+          fi
+          if [ "$STATUS" -ne 0 ]; then
+            tail -80 "$RUNNER_TEMP/good-times-apple-preflight.log" | while IFS= read -r line; do
+              SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
+              echo "::error title=GOOD TIMES Apple portal preflight::$SAFE"
+            done
+            exit "$STATUS"
+          fi
+
+          echo "Apple portal agreement and provisioning access preflight passed."
+          rm -f "$RUNNER_TEMP/good-times-preflight.mobileprovision" "$RUNNER_TEMP/good-times-apple-preflight-api-key.json" "$RUNNER_TEMP/good-times-apple-preflight.log"
+          rm -rf "$HOME/.appstoreconnect/private_keys"
+
       - name: Verify Xcode 26 toolchain
         run: |
           set -euo pipefail
