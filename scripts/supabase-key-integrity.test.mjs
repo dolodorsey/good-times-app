@@ -10,34 +10,47 @@ import fs from 'node:fs'
 // fallbacks are what actually ship, so they are what must be asserted here.
 
 const SOURCE = fs.readFileSync(new URL('../src/lib/supabase.js', import.meta.url), 'utf8')
+const HEALTH_SOURCE = fs.readFileSync(new URL('../api/health.js', import.meta.url), 'utf8')
 
 const CONSTANTS = [
   { name: 'CANONICAL_GT_ANON_KEY', ref: 'czocqfaovfpjweayniuw' },
   { name: 'CANONICAL_KHG_ANON_KEY', ref: 'dzlmtvodpyhetvektfuo' },
 ]
 
-function claimsOf(name) {
-  const match = SOURCE.match(new RegExp('const ' + name + " = '([^']*)'"))
-  assert.ok(match, name + ' is missing from src/lib/supabase.js')
+function claimsFrom(source, name) {
+  const match = source.match(new RegExp('const ' + name + " = '([^']*)'"))
+  assert.ok(match, name + ' is missing')
   const parts = match[1].split('.')
   assert.equal(parts.length, 3, name + ' is not a well-formed JWT')
   return JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'))
 }
 
+function claimsOf(name) {
+  return claimsFrom(SOURCE, name)
+}
+
+function assertValidAnonClaims(claims, name, ref) {
+  assert.equal(claims.iss, 'supabase',
+    name + ' has iss "' + claims.iss + '" — the signature will not verify and requests will 401')
+  assert.equal(claims.ref, ref,
+    name + ' points at project "' + claims.ref + '" instead of ' + ref)
+  assert.equal(claims.role, 'anon',
+    name + ' carries role "' + claims.role + '" — never ship a non-anon key to the browser or health probe')
+  assert.ok(claims.exp * 1000 > Date.now(),
+    name + ' expired ' + new Date(claims.exp * 1000).toISOString())
+}
+
 for (const { name, ref } of CONSTANTS) {
   test(name + ' is a valid, unexpired anon key for its own project', () => {
-    const claims = claimsOf(name)
-    assert.equal(claims.iss, 'supabase',
-      name + ' has iss "' + claims.iss + '" — the signature will not verify and every request 401s')
-    assert.equal(claims.ref, ref,
-      name + ' points at project "' + claims.ref + '" instead of ' + ref)
-    assert.equal(claims.role, 'anon',
-      name + ' carries role "' + claims.role + '" — never ship a non-anon key to the browser')
-    assert.ok(claims.exp * 1000 > Date.now(),
-      name + ' expired ' + new Date(claims.exp * 1000).toISOString())
+    assertValidAnonClaims(claimsOf(name), name, ref)
   })
 }
 
 test('the two canonical keys address different projects', () => {
   assert.notEqual(claimsOf('CANONICAL_GT_ANON_KEY').ref, claimsOf('CANONICAL_KHG_ANON_KEY').ref)
+})
+
+test('GOOD TIMES health probe carries a valid anon key for the GOOD TIMES project', () => {
+  const claims = claimsFrom(HEALTH_SOURCE, 'GT_ANON_KEY')
+  assertValidAnonClaims(claims, 'GT_ANON_KEY', 'czocqfaovfpjweayniuw')
 })
