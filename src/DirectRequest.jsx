@@ -62,6 +62,7 @@ export default function DirectRequest({ requestType }) {
 
   const submit = async (event) => {
     event.preventDefault();
+    if (status === 'submitting') return;
     if (!canSubmit) {
       setStatus('error');
       setMessage(Object.values(validation.errors)[0] || 'Review the request details and try again.');
@@ -160,7 +161,7 @@ export default function DirectRequest({ requestType }) {
           </label>
 
           {status === 'error' && <div role="alert" style={styles.error}>{message}</div>}
-          <button type="submit" disabled={!canSubmit} style={{ ...styles.button, opacity: canSubmit ? 1 : 0.4 }}>
+          <button type="submit" disabled={status === 'submitting'} aria-busy={status === 'submitting'} style={{ ...styles.button, opacity: status === 'submitting' ? 0.4 : 1 }}>
             {status === 'submitting' ? 'Submitting…' : meta.submit}
           </button>
         </form>
@@ -191,7 +192,7 @@ const styles = {
   heroCopy: { maxWidth: 680, margin: '0 0 28px', color: 'rgba(245,240,232,.66)', fontSize: 16, lineHeight: 1.65 },
   card: { padding: 'clamp(22px,5vw,40px)', border: '1px solid rgba(255,255,255,.11)', borderRadius: 22, background: 'rgba(12,12,20,.92)', boxShadow: '0 30px 90px rgba(0,0,0,.4)' },
   brand: { color: '#D4A853', fontSize: 11, fontWeight: 800, letterSpacing: '.25em', textAlign: 'center' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(230px,1fr))', gap: 15 },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(230px,100%),1fr))', gap: 15 },
   field: { display: 'block', marginBottom: 16 },
   label: { display: 'block', marginBottom: 7, color: 'rgba(245,240,232,.86)', fontSize: 10, fontWeight: 800, letterSpacing: '.1em', textTransform: 'uppercase' },
   input: { width: '100%', boxSizing: 'border-box', padding: '13px 14px', border: '1px solid rgba(255,255,255,.13)', borderRadius: 10, background: '#15151E', color: '#fff', font: 'inherit', fontSize: 16 },
