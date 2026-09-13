@@ -1,0 +1,131 @@
+name: GOOD TIMES Apple Agreement Preflight Remediation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/ios-apple-agreement-preflight-remediate.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: good-times-apple-preflight-remediation
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Insert Apple portal agreement preflight before the expensive iOS build
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('.github/workflows/ios-build.yml')
+          text = path.read_text()
+          marker = "      - name: Verify Xcode 26 toolchain\n"
+          if 'Preflight Apple developer agreement and provisioning access' in text:
+              raise SystemExit('Apple preflight already installed; refusing duplicate patch.')
+          if marker not in text:
+              raise SystemExit('Expected iOS workflow insertion point not found.')
+
+          preflight = r'''      - name: Preflight Apple developer agreement and provisioning access
+        env:
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$TEAM_ID" ] || missing+=(APPLE_TEAM_ID)
+          [ -n "$ASC_KEY_ID" ] || missing+=(APP_STORE_CONNECT_KEY_ID)
+          [ -n "$ASC_ISSUER_ID" ] || missing+=(APP_STORE_CONNECT_ISSUER_ID)
+          [ -n "$ASC_PRIVATE_KEY" ] || missing+=(APP_STORE_CONNECT_PRIVATE_KEY)
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error title=GOOD TIMES Apple portal preflight blocked::Missing required Apple portal secrets: ${missing[*]}"
+            exit 1
+          fi
+
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          printf '%s' "$ASC_PRIVATE_KEY" > "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          chmod 600 "$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8"
+          python3 - <<'PY'
+          import json, os
+          from pathlib import Path
+          key_path = Path.home()/".appstoreconnect"/"private_keys"/f"AuthKey_{os.environ['ASC_KEY_ID']}.p8"
+          out = Path(os.environ['RUNNER_TEMP'])/'good-times-apple-preflight-api-key.json'
+          out.write_text(json.dumps({
+              'key_id': os.environ['ASC_KEY_ID'],
+              'issuer_id': os.environ['ASC_ISSUER_ID'],
+              'key': key_path.read_text(),
+              'in_house': False,
+          }))
+          PY
+
+          if ! command -v fastlane >/dev/null 2>&1; then
+            gem install fastlane --no-document
+          fi
+
+          set +e
+          set -o pipefail
+          fastlane sigh \
+            --app_identifier "com.kollective.goodtimes" \
+            --team_id "$TEAM_ID" \
+            --api_key_path "$RUNNER_TEMP/good-times-apple-preflight-api-key.json" \
+            --filename "good-times-preflight.mobileprovision" \
+            --skip_install true \
+            --readonly \
+            --skip_certificate_verification \
+            2>&1 | tee "$RUNNER_TEMP/good-times-apple-preflight.log"
+          STATUS=${PIPESTATUS[0]}
+          set -e
+
+          if grep -Eqi 'required agreement|agreement[^[:alnum:]]+(is )?(missing|expired)|license agreement|program agreement|terms.*(accept|agreement)' "$RUNNER_TEMP/good-times-apple-preflight.log"; then
+            echo "::error title=Apple agreement required::GOOD TIMES iOS release is blocked by an unsigned or expired Apple Developer/App Store agreement. Accept the outstanding agreement in the Apple developer/App Store account, then rerun this workflow."
+            exit 1
+          fi
+          if [ "$STATUS" -ne 0 ]; then
+            tail -80 "$RUNNER_TEMP/good-times-apple-preflight.log" | while IFS= read -r line; do
+              SAFE=${line//'%'/'%25'}; SAFE=${SAFE//$'\r'/'%0D'}; SAFE=${SAFE//$'\n'/'%0A'}
+              echo "::error title=GOOD TIMES Apple portal preflight::$SAFE"
+            done
+            exit "$STATUS"
+          fi
+
+          echo "Apple portal agreement and provisioning access preflight passed."
+          rm -f "$RUNNER_TEMP/good-times-preflight.mobileprovision" "$RUNNER_TEMP/good-times-apple-preflight-api-key.json"
+          rm -rf "$HOME/.appstoreconnect/private_keys"
+
+'''
+          path.write_text(text.replace(marker, preflight + marker, 1))
+
+      - name: Verify patch landed exactly once
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(grep -c 'Preflight Apple developer agreement and provisioning access' .github/workflows/ios-build.yml)" -eq 1
+          grep -q 'Apple agreement required' .github/workflows/ios-build.yml
+          grep -q -- '--readonly' .github/workflows/ios-build.yml
+          grep -q 'Create or download App Store provisioning profile' .github/workflows/ios-build.yml
+
+      - name: Commit patched release workflow and remove one-time remediator
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/ios-apple-agreement-preflight-remediate.yml
+          git add .github/workflows/ios-build.yml .github/workflows/ios-apple-agreement-preflight-remediate.yml
+          git diff --cached --quiet && { echo "No patch produced."; exit 1; }
+          git commit -m "Fail GOOD TIMES iOS releases early on Apple agreement gates"
+          git push origin HEAD:main
