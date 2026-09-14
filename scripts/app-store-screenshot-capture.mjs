@@ -16,9 +16,8 @@ function pngSize(buffer){
   if(buffer.length<24||buffer.toString('ascii',1,4)!=='PNG')throw new Error('Expected PNG screenshot')
   return [buffer.readUInt32BE(16),buffer.readUInt32BE(20)]
 }
-
 async function capture(page,target,label){
-  await page.waitForTimeout(500)
+  await page.waitForTimeout(650)
   const buffer=await page.screenshot({type:'png',fullPage:false})
   const size=pngSize(buffer)
   if(size[0]!==target.expected[0]||size[1]!==target.expected[1])throw new Error(`${target.name} ${label} produced ${size.join('x')}, expected ${target.expected.join('x')}`)
@@ -26,9 +25,8 @@ async function capture(page,target,label){
   fs.mkdirSync(dir,{recursive:true})
   fs.writeFileSync(path.join(dir,`${label}.png`),buffer)
 }
-
 async function openTab(page,label,selector){
-  const tab=page.locator('.gt4-nav button').filter({hasText:label}).first()
+  const tab=page.locator('.gt5-nav button').filter({hasText:label}).first()
   await tab.click()
   await page.waitForSelector(selector,{state:'visible',timeout:10000})
 }
@@ -39,15 +37,21 @@ try{
     const context=await browser.newContext({viewport:{width:target.width,height:target.height},deviceScaleFactor:target.scale})
     const page=await context.newPage()
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
-    await page.waitForSelector('.gt4-app',{state:'visible',timeout:20000})
-    await page.waitForSelector('.gt4-hero',{state:'visible',timeout:20000})
-    await capture(page,target,'01-now')
+    await page.waitForSelector('.gt5-app',{state:'visible',timeout:20000})
+    await page.waitForSelector('.gt5-home-hero',{state:'visible',timeout:20000})
+    await capture(page,target,'01-home')
 
-    await openTab(page,'Discover','.gt4-discover')
+    await openTab(page,'Discover','.gt5-discover')
     await capture(page,target,'02-discover')
 
-    await openTab(page,'Concierge','.gt4-concierge')
-    await capture(page,target,'03-concierge')
+    await openTab(page,'Plan','.gt5-plan')
+    await capture(page,target,'03-plan')
+
+    await openTab(page,'Saved','.gt5-saved')
+    await capture(page,target,'04-saved')
+
+    await openTab(page,'Profile','.gt5-profile')
+    await capture(page,target,'05-profile')
 
     await context.close()
   }
@@ -55,4 +59,4 @@ try{
   await browser.close()
 }
 
-console.log('Current GOOD TIMES V3 App Store screenshots captured at Apple-accepted pixel dimensions.')
+console.log('GOOD TIMES V4 App Store screenshots captured at Apple-accepted pixel dimensions.')

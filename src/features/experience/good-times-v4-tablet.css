@@ -1,0 +1,128 @@
+/* GOOD TIMES V4 — iPad/App Review geometry authority.
+   Keeps the approved phone composition on phones while using the actual tablet canvas
+   on iPad-class logical viewports. This file loads after V4. */
+
+html body.gt-app-mode #root .gt-premium-experience>.gt-guest-mode>.gt5-app,
+html body.gt-app-mode #root .gt-premium-experience>.gt5-app{
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  overflow:hidden!important;
+}
+
+@media (min-width:600px) and (max-width:899px){
+  html body.gt-app-mode #root{
+    width:100vw!important;
+    max-width:none!important;
+    height:100dvh!important;
+    min-height:0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    transform:none!important;
+    overflow:hidden!important;
+  }
+  html body.gt-app-mode #root .gt-premium-experience,
+  html body.gt-app-mode #root .gt-premium-experience>.gt-guest-mode{
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
+  html body.gt-app-mode #root .gt5-app,
+  html body.gt-app-mode #root .gt5-loading{
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+  }
+  html body.gt-app-mode #root .gt5-nav{
+    width:100%!important;
+    max-width:none!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    transform:none!important;
+  }
+  .gt5-home-hero{min-height:560px}
+  .gt5-home-hero .gt5-hero-copy{min-height:560px;max-width:76%;padding-left:40px;padding-right:40px}
+  .gt5-compact-hero .gt5-hero-copy{max-width:72%;padding-left:40px;padding-right:40px}
+  .gt5-section{padding-left:32px;padding-right:32px}
+  .gt5-trending-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .gt5-lanes{grid-template-columns:repeat(2,minmax(0,1fr));padding-left:32px;padding-right:32px}
+  .gt5-lanes button{min-height:180px}
+  .gt5-discover-search,.gt5-plan-mode,.gt5-plan-builder,.gt5-radar-settings,.gt5-segments,.gt5-profile-city,.gt5-member,.gt5-profile-menu,.gt5-support,.gt5-watch,.gt5-alert-list,.gt5-plan-list,.gt5-taxonomy{margin-left:32px!important;margin-right:32px!important}
+  .gt5-plan-intents{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .gt5-plan-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+@media (min-width:900px) and (max-width:1366px){
+  html body.gt-app-mode{
+    padding:20px!important;
+    display:flex!important;
+    justify-content:center!important;
+    align-items:flex-start!important;
+    overflow:hidden!important;
+  }
+  html body.gt-app-mode #root{
+    width:calc(100vw - 40px)!important;
+    max-width:1326px!important;
+    height:calc(100dvh - 40px)!important;
+    min-height:0!important;
+    margin:0 auto!important;
+    border:1px solid rgba(248,212,106,.18)!important;
+    border-radius:27px!important;
+    overflow:hidden!important;
+    transform:none!important;
+    box-shadow:0 24px 80px rgba(0,0,0,.58)!important;
+  }
+  html body.gt-app-mode #root .gt-premium-experience,
+  html body.gt-app-mode #root .gt-premium-experience>.gt-guest-mode{
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    overflow:hidden!important;
+    border-radius:27px!important;
+    box-shadow:none!important;
+  }
+  html body.gt-app-mode #root .gt5-app,
+  html body.gt-app-mode #root .gt5-loading{
+    width:100%!important;
+    max-width:none!important;
+    height:100%!important;
+    min-height:0!important;
+    margin:0!important;
+    border-radius:27px!important;
+    box-shadow:none!important;
+  }
+  html body.gt-app-mode #root .gt5-nav{
+    width:100%!important;
+    max-width:none!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    transform:none!important;
+  }
+  .gt5-topbar,.gt5-radar-strip{padding-left:40px;padding-right:40px}
+  .gt5-home-hero .gt5-hero-copy{max-width:65%;padding-left:48px;padding-right:48px}
+  .gt5-compact-hero .gt5-hero-copy{max-width:62%;padding-left:48px;padding-right:48px}
+  .gt5-section{padding-left:40px;padding-right:40px}
+  .gt5-trending-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .gt5-lanes{grid-template-columns:repeat(2,minmax(0,1fr));padding-left:40px;padding-right:40px}
+  .gt5-lanes button{min-height:190px}
+  .gt5-discover-search,.gt5-plan-mode,.gt5-plan-builder,.gt5-radar-settings,.gt5-segments,.gt5-profile-city,.gt5-member,.gt5-profile-menu,.gt5-support,.gt5-watch,.gt5-alert-list,.gt5-plan-list,.gt5-taxonomy{margin-left:40px!important;margin-right:40px!important}
+  .gt5-plan-intents{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .gt5-plan-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}

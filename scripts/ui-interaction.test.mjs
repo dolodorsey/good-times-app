@@ -17,11 +17,7 @@ const DIRECTORY=[{...VENUES[0],category_name:'Nightlife',subcategory_key:'nightc
 const json=value=>({status:200,contentType:'application/json',body:JSON.stringify(value)})
 
 let browser
-if(!skip){
-  browser=process.env.GT_UI_CHROME_PATH
-    ?await chromium.launch({executablePath:process.env.GT_UI_CHROME_PATH,headless:true,args:['--no-sandbox']})
-    :await chromium.launch({channel:process.env.GT_UI_CHANNEL||'chrome',headless:true})
-}
+if(!skip){browser=process.env.GT_UI_CHROME_PATH?await chromium.launch({executablePath:process.env.GT_UI_CHROME_PATH,headless:true,args:['--no-sandbox']}):await chromium.launch({channel:process.env.GT_UI_CHANNEL||'chrome',headless:true})}
 
 async function routes(ctx){
   await ctx.route('**/api/data**',route=>route.fulfill(json({ok:true,connected:true,degraded:false,city:'atlanta',counts:{events:1,venues:1},events:EVENTS,venues:VENUES})))
@@ -29,10 +25,7 @@ async function routes(ctx){
   await ctx.route('**/rest/v1/gt_taxonomy_subcategories**',route=>route.fulfill(json(SUBCATEGORIES)))
   await ctx.route('**/rest/v1/v_gt_venue_taxonomy_counts**',route=>route.fulfill(json([{category_key:'nightlife',subcategory_key:null,place_count:1}])))
   await ctx.route('**/rest/v1/v_gt_venue_taxonomy_directory**',route=>route.fulfill(json(DIRECTORY)))
-  await ctx.route('**/rest/v1/gt_user_profiles**',route=>{
-    if(route.request().method()==='PATCH')return route.fulfill({status:204,body:''})
-    return route.fulfill(json([{id:'interaction-profile',auth_id:SESSION.user.id,full_name:'Interaction QA',home_city:'atlanta',last_city:'atlanta'}]))
-  })
+  await ctx.route('**/rest/v1/gt_user_profiles**',route=>{if(route.request().method()==='PATCH')return route.fulfill({status:204,body:''});return route.fulfill(json([{id:'interaction-profile',auth_id:SESSION.user.id,full_name:'Interaction QA',home_city:'atlanta',last_city:'atlanta'}]))})
   await ctx.route('**/rest/v1/gt_saved_items**',route=>route.fulfill(json([])))
   await ctx.route('**/rest/v1/itineraries**',route=>route.fulfill(json([])))
   await ctx.route('**/rest/v1/gt_radar_follows**',route=>route.fulfill(json([])))
@@ -45,18 +38,12 @@ async function routes(ctx){
 
 async function open(width,height,mobile=false){
   const ctx=await browser.newContext({viewport:{width,height},isMobile:mobile,hasTouch:mobile})
-  await ctx.addInitScript(s=>{
-    localStorage.setItem('gt_session',JSON.stringify(s))
-    localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['grown','nightlife'],age:'25-34'}))
-    sessionStorage.setItem('gt_premium_launch','1')
-    sessionStorage.setItem('gt_splash_shown','1')
-  },SESSION)
+  await ctx.addInitScript(s=>{localStorage.setItem('gt_session',JSON.stringify(s));localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['grown','nightlife'],age:'25-34'}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},SESSION)
   await routes(ctx)
-  const page=await ctx.newPage()
-  const errors=[]
+  const page=await ctx.newPage(),errors=[]
   page.on('pageerror',error=>errors.push(String(error)))
   await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
-  await page.waitForSelector('.gt4-app',{state:'visible',timeout:30000})
+  await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
   await page.waitForTimeout(900)
   return{ctx,page,errors}
 }
@@ -65,44 +52,47 @@ async function assertOnscreen(page,selector){
   const result=await page.locator(selector).first().evaluate(el=>{const r=el.getBoundingClientRect();return{left:r.left,top:r.top,right:r.right,bottom:r.bottom,vw:innerWidth,vh:innerHeight}})
   assert.ok(result.left>=-2&&result.right<=result.vw+2&&result.top>=-2&&result.bottom<=result.vh+2,`${selector} escaped viewport: ${JSON.stringify(result)}`)
 }
+async function assertProfileScrollable(page){
+  const result=await page.evaluate(()=>{const p=document.querySelector('.gt5-profile'),m=document.querySelector('.gt5-main');if(!p||!m)return null;const pr=p.getBoundingClientRect(),mr=m.getBoundingClientRect();return{profileLeft:pr.left,profileRight:pr.right,mainLeft:mr.left,mainRight:mr.right,profileHeight:pr.height,mainHeight:mr.height,scrollHeight:m.scrollHeight,clientHeight:m.clientHeight,overflowY:getComputedStyle(m).overflowY}})
+  assert.ok(result,'Profile/main geometry unavailable')
+  assert.ok(result.profileLeft>=result.mainLeft-2&&result.profileRight<=result.mainRight+2,'Profile escaped the app horizontally')
+  if(result.profileHeight>result.mainHeight+2){assert.ok(result.scrollHeight>result.clientHeight,'Long Profile is clipped');assert.match(result.overflowY,/auto|scroll/)}
+}
+async function openRadar(page){const bell=page.locator('.gt5-bell');if(await bell.isVisible())await bell.click();else await page.locator('.gt5-radar-strip').click();await page.locator('.gt5-radar').waitFor({state:'visible',timeout:5000})}
 
 for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobile',width:390,height:844,mobile:true}]){
-  test(`[${vp.name}] repeated V3 navigation, detail and profile interactions stay stable`,{skip,timeout:90000},async()=>{
+  test(`[${vp.name}] repeated V4 navigation, detail, Radar and Profile interactions stay stable`,{skip,timeout:90000},async()=>{
     const{ctx,page,errors}=await open(vp.width,vp.height,vp.mobile)
     try{
-      const nav=page.locator('.gt4-nav button')
-      assert.equal(await nav.count(),5,'V3 navigation must contain five customer destinations')
-      for(let round=0;round<3;round++)for(let i=0;i<5;i++){
-        await nav.nth(i).click();await page.waitForTimeout(100);await assertOnscreen(page,'.gt4-nav')
+      const nav=page.locator('.gt5-nav button')
+      assert.equal(await nav.count(),5,'V4 navigation must contain five protected destinations')
+      assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Discover','Plan','Saved','Profile'])
+      for(let round=0;round<3;round++)for(let i=0;i<5;i++){await nav.nth(i).click();await page.waitForTimeout(100);await assertOnscreen(page,'.gt5-nav')}
+
+      await nav.filter({hasText:'Home'}).click()
+      for(let i=0;i<3;i++){
+        const card=page.locator('.gt5-event').first();await card.waitFor({state:'visible',timeout:5000});await card.click()
+        await page.locator('.gt5-overlay .gt5-detail').waitFor({state:'visible',timeout:5000})
+        const overlay=await page.locator('.gt5-overlay').boundingBox();assert.ok(overlay&&overlay.width<=vp.width+4&&overlay.height<=vp.height+4,'detail overlay escaped viewport')
+        await page.locator('.gt5-detail-back').click();await page.locator('.gt5-overlay').waitFor({state:'hidden',timeout:5000})
       }
 
-      await nav.filter({hasText:'Now'}).click()
-      for(let i=0;i<5;i++){
-        const card=page.locator('.gt4-event').first();await card.waitFor({state:'visible',timeout:5000});await card.click()
-        await page.locator('.gt4-detail').waitFor({state:'visible',timeout:5000});await assertOnscreen(page,'.gt4-detail')
-        await page.locator('.gt4-detail-back').click();await page.locator('.gt4-detail').waitFor({state:'hidden',timeout:5000})
-      }
+      await openRadar(page);await assertOnscreen(page,'.gt5-nav');await page.locator('.gt5-back').click();await page.waitForTimeout(100)
 
-      for(let i=0;i<5;i++){
-        await page.locator('.gt4-city').click();await page.locator('.gt4-profile').waitFor({state:'visible',timeout:5000});await assertOnscreen(page,'.gt4-profile')
-        await page.locator('.gt4-profile .gt4-detail-back').click();await page.locator('.gt4-profile').waitFor({state:'hidden',timeout:5000})
-      }
+      for(let i=0;i<3;i++){await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000});await assertProfileScrollable(page);await nav.filter({hasText:'Home'}).click()}
 
-      await page.locator('.gt4-city').click();await page.locator('.gt4-profile').waitFor({state:'visible',timeout:5000})
-      const city=page.locator('.gt4-profile select')
+      await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000})
+      const city=page.locator('.gt5-profile-city select')
       await city.selectOption('houston');await page.waitForTimeout(250)
       await city.selectOption('atlanta');await page.waitForTimeout(250)
-      await page.locator('.gt4-profile .gt4-detail-back').click()
+      assert.equal(await city.inputValue(),'atlanta')
 
-      if(vp.mobile){
-        await page.setViewportSize({width:844,height:390});await page.waitForTimeout(250);await assertOnscreen(page,'.gt4-nav');await assertOnscreen(page,'.gt4-topbar')
-        await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250)
-      }
+      if(vp.mobile){await page.setViewportSize({width:844,height:390});await page.waitForTimeout(250);await assertOnscreen(page,'.gt5-nav');await assertOnscreen(page,'.gt5-topbar');await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250)}
 
-      await assertOnscreen(page,'.gt4-topbar');await assertOnscreen(page,'.gt4-nav');await assertOnscreen(page,'.gt4-city')
-      const legacy=await page.evaluate(()=>['.gt2-nav','.gt-five-nav','.gtlive-nav','.gt-connect-fab','.gt-account-fab','.gt-party-pulse','.gt-utility-fab'].filter(selector=>document.querySelector(selector)))
-      assert.deepEqual(legacy,[],'retired navigation or floating utilities remounted during interaction torture')
-      assert.deepEqual(errors,[],'page errors during repeated V3 interactions')
+      await assertOnscreen(page,'.gt5-topbar');await assertOnscreen(page,'.gt5-nav');await assertOnscreen(page,'.gt5-city')
+      const legacy=await page.evaluate(()=>['.gt2-nav','.gt4-nav','.gt-five-nav','.gtlive-nav','.gt-connect-fab','.gt-account-fab','.gt-party-pulse','.gt-utility-fab'].filter(selector=>document.querySelector(selector)))
+      assert.deepEqual(legacy,[],'retired navigation or floating utilities remounted during V4 interaction torture')
+      assert.deepEqual(errors,[],'page errors during repeated V4 interactions')
     }finally{await ctx.close()}
   })
 }
