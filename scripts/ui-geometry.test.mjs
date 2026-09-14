@@ -66,7 +66,7 @@ const geometry=page=>page.evaluate(()=>{
   const visible=selector=>{const el=document.querySelector(selector);if(!el)return false;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity)!==0&&r.width>0&&r.height>0&&r.bottom>0&&r.top<vh}
   const outside=[]
   for(const selector of ['.gt5-app','.gt5-topbar','.gt5-nav','.gt5-city']){const b=box(selector);if(b&&(b.x< -2||b.right>vw+2||b.y< -2||b.bottom>vh+2))outside.push(`${selector} ${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)}`)}
-  const app=document.querySelector('.gt5-app'),main=document.querySelector('.gt5-main'),profile=document.querySelector('.gt5-profile'),doc=document.scrollingElement||document.documentElement
+  const app=document.querySelector('.gt5-app'),main=document.querySelector('.gt5-main'),doc=document.scrollingElement||document.documentElement
   const legacy=['.gt2-nav','.gt4-nav','.gt-five-nav','.gtlive-nav','.gt-mobile-utilities','.gt-connect-fab','.gt-account-fab','.gt-party-pulse','.gt-utility-fab','[aria-label="Open GOOD TIMES utilities"]'].filter(visible)
   const oversizedOverlays=[...document.querySelectorAll('.gt5-overlay,[role="dialog"]')].filter(el=>{const r=el.getBoundingClientRect();return r.width>vw+4||r.height>vh+4}).map(el=>el.className)
   const mainBox=box('.gt5-main'),profileBox=box('.gt5-profile')
@@ -90,13 +90,16 @@ async function assertShell(page,errors,context){
   assert.deepEqual(g.labels,['Home','Discover','Plan','Saved','Profile'],`${context}: protected V4 navigation changed`)
   if(g.profile){
     assert.ok(g.profileHorizontallyContained,`${context}: Profile escaped the app scroll canvas`)
-    if(g.profile.h>g.main.h+2){
-      assert.ok(g.mainScrollHeight>g.mainClientHeight,`${context}: long Profile is clipped instead of scrollable`)
-      assert.match(g.mainOverflowY||'',/auto|scroll/,`${context}: Profile scroll container is not enabled`)
-    }
+    if(g.profile.h>g.main.h+2){assert.ok(g.mainScrollHeight>g.mainClientHeight,`${context}: long Profile is clipped instead of scrollable`);assert.match(g.mainOverflowY||'',/auto|scroll/,`${context}: Profile scroll container is not enabled`)}
   }
   assert.deepEqual(errors,[],`${context}: uncaught page errors`)
   return g
+}
+async function openRadar(page){
+  const bell=page.locator('.gt5-bell')
+  if(await bell.isVisible())await bell.click()
+  else await page.locator('.gt5-radar-strip').click()
+  await page.locator('.gt5-radar').waitFor({state:'visible',timeout:5000})
 }
 
 for(const vp of VIEWPORTS){
@@ -112,7 +115,7 @@ for(const vp of VIEWPORTS){
       await page.screenshot({path:path.join(OUT,`${vp.name}__signed-in-v4-home.png`),fullPage:false})
       const destinations=[['Discover','.gt5-discover'],['Plan','.gt5-plan'],['Saved','.gt5-saved'],['Profile','.gt5-profile'],['Home','.gt5-home-hero']]
       for(const[label,selector]of destinations){await page.locator('.gt5-nav button').filter({hasText:label}).click();await page.locator(selector).waitFor({state:'visible',timeout:10000});await assertShell(page,errors,`${vp.name} ${label}`)}
-      await page.locator('.gt5-bell').click();await page.locator('.gt5-radar').waitFor({state:'visible',timeout:5000});await assertShell(page,errors,`${vp.name} Radar`);await page.locator('.gt5-back').click()
+      await openRadar(page);await assertShell(page,errors,`${vp.name} Radar`);await page.locator('.gt5-back').click()
       const card=page.locator('.gt5-event').first();if(await card.count()){await card.click();await page.locator('.gt5-detail').waitFor({state:'visible',timeout:5000});const detail=await page.locator('.gt5-detail').first().boundingBox();assert.ok(detail&&detail.width<=vp.width+4,`${vp.name}: detail too wide`);await page.locator('.gt5-detail-back').click()}
       await page.locator('.gt5-nav button').filter({hasText:'Profile'}).click();assert.match(await page.locator('.gt5-profile').innerText(),/GOOD TIMES QA/i)
       await assertShell(page,errors,`${vp.name} final`)
