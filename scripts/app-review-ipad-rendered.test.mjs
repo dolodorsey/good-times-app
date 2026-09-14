@@ -58,11 +58,26 @@ for(const vp of viewports){
       await page.click('.gt5-city')
       await page.waitForSelector('.gt5-profile',{state:'visible',timeout:5000})
       const profile=await page.evaluate(()=>{
-        const box=document.querySelector('.gt5-profile')?.getBoundingClientRect()
-        return box&&{top:box.top,bottom:box.bottom,left:box.left,right:box.right,width:box.width,height:box.height,text:String(document.querySelector('.gt5-profile')?.innerText||'')}
+        const profileEl=document.querySelector('.gt5-profile')
+        const mainEl=document.querySelector('.gt5-main')
+        const navEl=document.querySelector('.gt5-nav')
+        const p=profileEl?.getBoundingClientRect(),m=mainEl?.getBoundingClientRect(),n=navEl?.getBoundingClientRect()
+        return p&&m&&n?{
+          profile:{top:p.top,bottom:p.bottom,left:p.left,right:p.right,width:p.width,height:p.height,text:String(profileEl.innerText||'')},
+          main:{top:m.top,bottom:m.bottom,left:m.left,right:m.right,width:m.width,height:m.height,clientHeight:mainEl.clientHeight,scrollHeight:mainEl.scrollHeight,overflowY:getComputedStyle(mainEl).overflowY},
+          nav:{top:n.top,bottom:n.bottom,left:n.left,right:n.right},
+          vw:innerWidth,vh:innerHeight,
+        }:null
       })
-      assert.ok(profile&&profile.top>=-2&&profile.bottom<=vp.height+2&&profile.left>=-2&&profile.right<=vp.width+2,`guest profile surface is outside the iPad viewport; profile=${JSON.stringify(profile)}`)
-      assert.match(profile.text,/Sign in or create account/i)
+      assert.ok(profile,'guest profile geometry is unavailable')
+      assert.ok(profile.profile.left>=profile.main.left-2&&profile.profile.right<=profile.main.right+2,`guest profile escaped the horizontal app canvas; geometry=${JSON.stringify(profile)}`)
+      assert.ok(profile.main.top>=-2&&profile.main.bottom<=profile.vh+2,`main scroll container escaped the viewport; geometry=${JSON.stringify(profile)}`)
+      assert.ok(profile.nav.top>=-2&&profile.nav.bottom<=profile.vh+2,`navigation moved offscreen while Profile was open; geometry=${JSON.stringify(profile)}`)
+      if(profile.profile.height>profile.main.height+2){
+        assert.ok(profile.main.scrollHeight>profile.main.clientHeight,`long Profile must scroll inside the app instead of being clipped; geometry=${JSON.stringify(profile)}`)
+        assert.match(profile.main.overflowY,/auto|scroll/)
+      }
+      assert.match(profile.profile.text,/Sign in or create account/i)
       assert.deepEqual(errors,[])
     }finally{
       await context.close();await browser.close()
