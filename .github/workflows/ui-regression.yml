@@ -75,6 +75,13 @@ jobs:
           GT_UI_ARTIFACTS: ui-artifacts
         run: timeout 120s node --test --test-concurrency=1 scripts/event-clock-rendered.test.mjs
 
+      - name: Prove Home and Discover composition and touch targets
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: timeout 180s node --test --test-concurrency=1 scripts/home-discover-reference-rendered.test.mjs
+
       - name: Capture App Store-ready screenshots
         env:
           GT_UI_BASE: http://localhost:4180
