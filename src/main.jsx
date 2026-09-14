@@ -21,6 +21,7 @@ import './features/experience/good-times-v3.css'
 // Final protected consumer authority: cinematic V4 + permanent Home/Discover/Plan/Saved/Profile contract.
 import './features/experience/good-times-v4.css'
 import './features/experience/good-times-v4-tablet.css'
+import './features/experience/good-times-home-discover.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
