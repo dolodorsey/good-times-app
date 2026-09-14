@@ -58,6 +58,7 @@ async function assertProfileScrollable(page){
   assert.ok(result.profileLeft>=result.mainLeft-2&&result.profileRight<=result.mainRight+2,'Profile escaped the app horizontally')
   if(result.profileHeight>result.mainHeight+2){assert.ok(result.scrollHeight>result.clientHeight,'Long Profile is clipped');assert.match(result.overflowY,/auto|scroll/)}
 }
+async function openRadar(page){const bell=page.locator('.gt5-bell');if(await bell.isVisible())await bell.click();else await page.locator('.gt5-radar-strip').click();await page.locator('.gt5-radar').waitFor({state:'visible',timeout:5000})}
 
 for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobile',width:390,height:844,mobile:true}]){
   test(`[${vp.name}] repeated V4 navigation, detail, Radar and Profile interactions stay stable`,{skip,timeout:90000},async()=>{
@@ -76,7 +77,7 @@ for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobi
         await page.locator('.gt5-detail-back').click();await page.locator('.gt5-overlay').waitFor({state:'hidden',timeout:5000})
       }
 
-      await page.locator('.gt5-bell').click();await page.locator('.gt5-radar').waitFor({state:'visible',timeout:5000});await assertOnscreen(page,'.gt5-nav');await page.locator('.gt5-back').click();await page.waitForTimeout(100)
+      await openRadar(page);await assertOnscreen(page,'.gt5-nav');await page.locator('.gt5-back').click();await page.waitForTimeout(100)
 
       for(let i=0;i<3;i++){await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000});await assertProfileScrollable(page);await nav.filter({hasText:'Home'}).click()}
 
