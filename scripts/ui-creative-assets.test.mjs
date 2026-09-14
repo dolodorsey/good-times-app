@@ -13,7 +13,7 @@ const SESSION={access_token:'creative-fixture-access',refresh_token:'creative-fi
 const TODAY=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})()
 const PHOTO='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics/LOCATION_IMAGES/REVEL.webp'
 const EVENTS=[{event_key:'creative:event',title:'Tonight at Revel',event_date:TODAY,event_time:'22:00',venue_name:'Revel Atlanta',category_key:'nightlife',subcategory_key:'nightclubs',image_url:PHOTO,ticket_url:'https://example.test/tickets',is_curated:true,is_featured:true}]
-const VENUES=[{id:'creative:revel',name:'Revel Atlanta',city_key:'atlanta',neighborhood:'Westside',category_key:'nightclub',subcategory:'Nightclubs',short_desc:'Current nightlife fixture.',hero_image:PHOTO,quality_score:95,latitude:33.8035,longitude:-84.4274,is_culture_pick:true,is_black_owned:true,vibe_tags:['nightlife'],culture_tags:['culture-anchor']}]
+const VENUES=[{id:'creative:revel',name:'Revel Atlanta',city_key:'atlanta',neighborhood:'Westside',category_key:'nightlife',subcategory:'Nightclubs',short_desc:'Current nightlife fixture.',hero_image:PHOTO,quality_score:95,latitude:33.8035,longitude:-84.4274,is_culture_pick:true,is_black_owned:true,vibe_tags:['nightlife'],culture_tags:['culture-anchor']}]
 const CATEGORIES=[
   {category_key:'nightlife',category_name:'Nightlife',description:'Clubs and lounges',sort_order:1},
   {category_key:'day_parties_brunch',category_name:'Brunch & Day Parties',description:'Daytime energy',sort_order:2},
@@ -60,39 +60,33 @@ async function installRoutes(ctx){
 
 async function prove(width,height,name){
   fs.mkdirSync(OUT,{recursive:true})
-  const browser=process.env.GT_UI_CHROME_PATH
-    ? await chromium.launch({executablePath:process.env.GT_UI_CHROME_PATH,headless:true,args:['--no-sandbox']})
-    : await chromium.launch({channel:process.env.GT_UI_CHANNEL||'chrome',headless:true})
+  const browser=process.env.GT_UI_CHROME_PATH?await chromium.launch({executablePath:process.env.GT_UI_CHROME_PATH,headless:true,args:['--no-sandbox']}):await chromium.launch({channel:process.env.GT_UI_CHANNEL||'chrome',headless:true})
   const ctx=await browser.newContext({viewport:{width,height},isMobile:width<600,hasTouch:width<600})
-  await ctx.addInitScript(s=>{
-    localStorage.setItem('gt_session',JSON.stringify(s))
-    localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['nightlife','grown']}))
-    sessionStorage.setItem('gt_premium_launch','1')
-    sessionStorage.setItem('gt_splash_shown','1')
-  },SESSION)
+  await ctx.addInitScript(s=>{localStorage.setItem('gt_session',JSON.stringify(s));localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['nightlife','grown']}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},SESSION)
   await installRoutes(ctx)
-  const page=await ctx.newPage()
-  const errors=[]
+  const page=await ctx.newPage(),errors=[]
   page.on('pageerror',error=>errors.push(String(error)))
-  await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
-  await page.waitForSelector('.gt4-app',{state:'visible',timeout:30000})
-  await page.locator('.gt4-nav button').filter({hasText:'Discover'}).click()
-  await page.waitForSelector('.gt4-discover .gt2-category-grid>button',{timeout:15000})
-  await page.waitForFunction(()=>[...document.querySelectorAll('.gt4-discover .gt2-category-grid>button')].every(card=>card.dataset.hasArt==='true'&&getComputedStyle(card).backgroundImage.includes('good-times-backgrounds')),{timeout:15000})
-  await page.waitForTimeout(1600)
-  const proof=await page.evaluate(()=>[...document.querySelectorAll('.gt4-discover .gt2-category-grid>button')].map(card=>({
-    key:card.dataset.gtCategory,
-    hasArt:card.dataset.hasArt,
-    background:getComputedStyle(card).backgroundImage,
-  })))
-  await page.screenshot({path:path.join(OUT,`${name}__signed-in-discover-creative.png`),fullPage:true})
-  await ctx.close();await browser.close()
-  assert.deepEqual(errors,[],'uncaught page errors')
-  assert.equal(proof.length,3)
-  assert.ok(proof.every(row=>row.hasArt==='true'))
-  assert.equal(new Set(proof.map(row=>row.background)).size,3,'Discover categories must resolve distinct creative')
-  assert.ok(proof.every(row=>row.background.includes('good-times-backgrounds')),'category creative must resolve from approved Supabase bucket')
+  try{
+    await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
+    await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
+    await page.locator('.gt5-nav button').filter({hasText:'Discover'}).click()
+    await page.waitForSelector('.gt5-discover',{state:'visible',timeout:10000})
+    await page.waitForSelector('.gt5-lanes button',{timeout:10000})
+    const lanes=await page.evaluate(()=>[...document.querySelectorAll('.gt5-lanes button')].map(card=>({label:String(card.querySelector('strong')?.textContent||'').trim(),background:getComputedStyle(card,'::before').backgroundImage})))
+    assert.deepEqual(lanes.map(x=>x.label),['Eat Well','Turn Up','Be There','Stay Right','Do More'],'V4 editorial discovery lanes changed')
+    assert.ok(lanes.every(row=>row.background&&row.background!=='none'),'every V4 discovery lane must remain image-backed')
+
+    await page.waitForSelector('.gt5-taxonomy .gt2-category-grid>button',{timeout:15000})
+    await page.waitForFunction(()=>[...document.querySelectorAll('.gt5-taxonomy .gt2-category-grid>button')].every(card=>card.dataset.hasArt==='true'&&getComputedStyle(card).backgroundImage.includes('good-times-backgrounds')),{timeout:15000})
+    const taxonomy=await page.evaluate(()=>[...document.querySelectorAll('.gt5-taxonomy .gt2-category-grid>button')].map(card=>({key:card.dataset.gtCategory,hasArt:card.dataset.hasArt,background:getComputedStyle(card).backgroundImage})))
+    await page.screenshot({path:path.join(OUT,`${name}__signed-in-v4-discover-creative.png`),fullPage:true})
+    assert.equal(taxonomy.length,3)
+    assert.ok(taxonomy.every(row=>row.hasArt==='true'))
+    assert.equal(new Set(taxonomy.map(row=>row.background)).size,3,'deep taxonomy categories must resolve distinct approved creative')
+    assert.ok(taxonomy.every(row=>row.background.includes('good-times-backgrounds')),'taxonomy creative must resolve from approved Supabase bucket')
+    assert.deepEqual(errors,[],'uncaught page errors')
+  }finally{await ctx.close();await browser.close()}
 }
 
-test('desktop Discover renders distinct approved Supabase category artwork',{skip},async()=>prove(1440,900,'1440x900'))
-test('mobile Discover renders distinct approved Supabase category artwork',{skip},async()=>prove(390,844,'390x844'))
+test('desktop V4 Discover keeps cinematic lanes and distinct approved taxonomy artwork',{skip},async()=>prove(1440,900,'1440x900'))
+test('mobile V4 Discover keeps cinematic lanes and distinct approved taxonomy artwork',{skip},async()=>prove(390,844,'390x844'))
