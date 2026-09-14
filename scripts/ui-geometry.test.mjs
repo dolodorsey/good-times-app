@@ -66,20 +66,35 @@ const geometry=page=>page.evaluate(()=>{
   const visible=selector=>{const el=document.querySelector(selector);if(!el)return false;const cs=getComputedStyle(el),r=el.getBoundingClientRect();return cs.display!=='none'&&cs.visibility!=='hidden'&&Number(cs.opacity)!==0&&r.width>0&&r.height>0&&r.bottom>0&&r.top<vh}
   const outside=[]
   for(const selector of ['.gt5-app','.gt5-topbar','.gt5-nav','.gt5-city']){const b=box(selector);if(b&&(b.x< -2||b.right>vw+2||b.y< -2||b.bottom>vh+2))outside.push(`${selector} ${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)}`)}
-  const app=document.querySelector('.gt5-app'),main=document.querySelector('.gt5-main'),doc=document.scrollingElement||document.documentElement
+  const app=document.querySelector('.gt5-app'),main=document.querySelector('.gt5-main'),profile=document.querySelector('.gt5-profile'),doc=document.scrollingElement||document.documentElement
   const legacy=['.gt2-nav','.gt4-nav','.gt-five-nav','.gtlive-nav','.gt-mobile-utilities','.gt-connect-fab','.gt-account-fab','.gt-party-pulse','.gt-utility-fab','[aria-label="Open GOOD TIMES utilities"]'].filter(visible)
-  const oversized=[...document.querySelectorAll('.gt5-overlay,.gt5-profile,[role="dialog"]')].filter(el=>{const r=el.getBoundingClientRect();return r.width>vw+4||r.height>vh+4}).map(el=>el.className)
-  return{vw,vh,hOverflow:doc.scrollWidth-vw,outside,legacy,oversized,app:box('.gt5-app'),topbar:box('.gt5-topbar'),nav:box('.gt5-nav'),main:box('.gt5-main'),hero:box('.gt5-hero'),appOverflow:app?Math.max(0,app.scrollHeight-app.clientHeight):0,mainScrollable:main?main.scrollHeight>=main.clientHeight:false,labels:[...document.querySelectorAll('.gt5-nav button')].map(button=>String(button.textContent||'').replace(/^[^A-Za-z]+/,'').trim())}
+  const oversizedOverlays=[...document.querySelectorAll('.gt5-overlay,[role="dialog"]')].filter(el=>{const r=el.getBoundingClientRect();return r.width>vw+4||r.height>vh+4}).map(el=>el.className)
+  const mainBox=box('.gt5-main'),profileBox=box('.gt5-profile')
+  return{
+    vw,vh,hOverflow:doc.scrollWidth-vw,outside,legacy,oversizedOverlays,
+    app:box('.gt5-app'),topbar:box('.gt5-topbar'),nav:box('.gt5-nav'),main:mainBox,hero:box('.gt5-hero'),profile:profileBox,
+    appOverflow:app?Math.max(0,app.scrollHeight-app.clientHeight):0,
+    mainClientHeight:main?.clientHeight||0,mainScrollHeight:main?.scrollHeight||0,mainOverflowY:main?getComputedStyle(main).overflowY:null,
+    profileHorizontallyContained:!profileBox||!mainBox||(profileBox.x>=mainBox.x-2&&profileBox.right<=mainBox.right+2),
+    labels:[...document.querySelectorAll('.gt5-nav button')].map(button=>String(button.textContent||'').replace(/^[^A-Za-z]+/,'').trim()),
+  }
 })
 async function assertShell(page,errors,context){
   const g=await geometry(page)
   assert.ok(g.hOverflow<=1,`${context}: horizontal overflow ${g.hOverflow}px`)
   assert.deepEqual(g.outside,[],`${context}: shell controls outside viewport`)
   assert.deepEqual(g.legacy,[],`${context}: retired navigation/utilities are visible`)
-  assert.deepEqual(g.oversized,[],`${context}: overlay wider/taller than viewport`)
+  assert.deepEqual(g.oversizedOverlays,[],`${context}: full-screen overlay wider/taller than viewport`)
   assert.ok(g.app&&g.topbar&&g.nav&&g.main,`${context}: V4 shell is incomplete`)
   assert.ok(g.appOverflow<=4,`${context}: app shell clips ${g.appOverflow}px instead of delegating scroll to main`)
   assert.deepEqual(g.labels,['Home','Discover','Plan','Saved','Profile'],`${context}: protected V4 navigation changed`)
+  if(g.profile){
+    assert.ok(g.profileHorizontallyContained,`${context}: Profile escaped the app scroll canvas`)
+    if(g.profile.h>g.main.h+2){
+      assert.ok(g.mainScrollHeight>g.mainClientHeight,`${context}: long Profile is clipped instead of scrollable`)
+      assert.match(g.mainOverflowY||'',/auto|scroll/,`${context}: Profile scroll container is not enabled`)
+    }
+  }
   assert.deepEqual(errors,[],`${context}: uncaught page errors`)
   return g
 }
