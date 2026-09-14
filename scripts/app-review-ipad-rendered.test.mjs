@@ -26,14 +26,14 @@ for(const vp of viewports){
     page.on('pageerror',error=>errors.push(String(error?.message||error)))
     try{
       await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:20000})
-      await page.waitForSelector('.gt4-app',{state:'visible',timeout:15000})
+      await page.waitForSelector('.gt5-app',{state:'visible',timeout:15000})
       await page.waitForTimeout(900)
       const geometry=await page.evaluate(()=>{
         const rect=selector=>document.querySelector(selector)?.getBoundingClientRect()
-        const app=rect('.gt4-app')
-        const topbar=rect('.gt4-topbar')
-        const nav=rect('.gt4-nav')
-        const city=rect('.gt4-city')
+        const app=rect('.gt5-app')
+        const topbar=rect('.gt5-topbar')
+        const nav=rect('.gt5-nav')
+        const city=rect('.gt5-city')
         const doc=document.scrollingElement||document.documentElement
         return {
           app:app&&{left:app.left,right:app.right,width:app.width},
@@ -53,15 +53,15 @@ for(const vp of viewports){
       assert.ok(geometry.city&&geometry.city.top>=-2&&geometry.city.bottom<=geometry.vh+2,`city/profile control is outside the iPad viewport; geometry=${JSON.stringify(geometry)}`)
       assert.ok(geometry.hOverflow<=1,`horizontal overflow ${geometry.hOverflow}px; geometry=${JSON.stringify(geometry)}`)
       assert.match(geometry.text,/GOOD TIMES/i)
-      assert.match(geometry.text,/Discover/i)
+      assert.match(geometry.text,/Home/i)
 
-      await page.click('.gt4-city')
-      await page.waitForSelector('.gt4-profile',{state:'visible',timeout:5000})
+      await page.click('.gt5-city')
+      await page.waitForSelector('.gt5-profile',{state:'visible',timeout:5000})
       const profile=await page.evaluate(()=>{
-        const box=document.querySelector('.gt4-profile')?.getBoundingClientRect()
-        return box&&{top:box.top,bottom:box.bottom,left:box.left,right:box.right,width:box.width,height:box.height,text:String(document.querySelector('.gt4-profile')?.innerText||'')}
+        const box=document.querySelector('.gt5-profile')?.getBoundingClientRect()
+        return box&&{top:box.top,bottom:box.bottom,left:box.left,right:box.right,width:box.width,height:box.height,text:String(document.querySelector('.gt5-profile')?.innerText||'')}
       })
-      assert.ok(profile&&profile.top>=-2&&profile.bottom<=vp.height+2&&profile.left>=-2&&profile.right<=vp.width+2,`guest profile/auth sheet is outside the iPad viewport; profile=${JSON.stringify(profile)}`)
+      assert.ok(profile&&profile.top>=-2&&profile.bottom<=vp.height+2&&profile.left>=-2&&profile.right<=vp.width+2,`guest profile surface is outside the iPad viewport; profile=${JSON.stringify(profile)}`)
       assert.match(profile.text,/Sign in or create account/i)
       assert.deepEqual(errors,[])
     }finally{
