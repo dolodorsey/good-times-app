@@ -126,3 +126,9 @@ html body.gt-app-mode #root .gt-premium-experience>.gt5-app{
   .gt5-plan-intents{grid-template-columns:repeat(3,minmax(0,1fr))}
   .gt5-plan-list{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* The legacy desktop shell in index.html capped #root at 920px.
+   Height must follow the actual iPad canvas, with existing shell insets retained. */
+@media (min-width:600px) and (max-width:1366px){
+  html body.gt-app-mode #root{max-height:none!important}
+}

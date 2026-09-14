@@ -36,7 +36,7 @@ for(const vp of viewports){
         const city=rect('.gt5-city')
         const doc=document.scrollingElement||document.documentElement
         return {
-          app:app&&{left:app.left,right:app.right,width:app.width},
+          app:app&&{left:app.left,right:app.right,width:app.width,top:app.top,bottom:app.bottom,height:app.height},
           topbar:topbar&&{top:topbar.top,bottom:topbar.bottom,width:topbar.width},
           nav:nav&&{top:nav.top,bottom:nav.bottom,width:nav.width},
           city:city&&{top:city.top,bottom:city.bottom,width:city.width},
@@ -48,6 +48,9 @@ for(const vp of viewports){
       await page.screenshot({path:path.join(OUT,`${vp.name}__guest.png`),fullPage:false})
       const minCanvas=vp.width<900?vp.width*.9:Math.min(1000,vp.width*.82)
       assert.ok(geometry.app?.width>=minCanvas,`app canvas ${geometry.app?.width}px is too narrow for ${vp.width}px iPad; geometry=${JSON.stringify(geometry)}`)
+      const allowedInset=vp.width<900?4:44
+      assert.ok(geometry.app?.height>=geometry.vh-allowedInset,`app canvas is clamped below the available tablet height; geometry=${JSON.stringify(geometry)}`)
+      assert.ok(geometry.nav&&Math.abs(geometry.nav.bottom-geometry.app.bottom)<=4,`navigation is detached from the bottom of the app canvas; geometry=${JSON.stringify(geometry)}`)
       assert.ok(geometry.topbar&&geometry.topbar.top>=-2&&geometry.topbar.bottom<=geometry.vh+2,`top bar is outside the iPad viewport; geometry=${JSON.stringify(geometry)}`)
       assert.ok(geometry.nav&&geometry.nav.top>=-2&&geometry.nav.bottom<=geometry.vh+2,`navigation is outside the iPad viewport; geometry=${JSON.stringify(geometry)}`)
       assert.ok(geometry.city&&geometry.city.top>=-2&&geometry.city.bottom<=geometry.vh+2,`city/profile control is outside the iPad viewport; geometry=${JSON.stringify(geometry)}`)
