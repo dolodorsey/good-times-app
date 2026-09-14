@@ -15,15 +15,22 @@ for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,he
  test(`${vp.name}: Tonight and This Weekend render the correct fixture set`,{skip,timeout:45000},async()=>{
   const browser=await chromium.launch({headless:true,executablePath:process.env.GT_UI_CHROME_PATH||undefined,args:['--no-sandbox']})
   const context=await browser.newContext({viewport:{width:vp.width,height:vp.height},timezoneId:'Pacific/Honolulu'})
+  const page=await context.newPage(),errors=[],requests=[]
+  fs.mkdirSync(OUT,{recursive:true})
+  page.on('pageerror',e=>errors.push(String(e)))
+  page.on('response',r=>{if(r.url().includes('/api/'))requests.push({url:r.url(),status:r.status()})})
   try{
    await context.addInitScript(epoch=>{const NativeDate=Date;class FixedDate extends NativeDate{constructor(...args){super(...(args.length?args:[epoch]))}static now(){return epoch}};window.Date=FixedDate;sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},FIXED)
-   // All customer/API traffic is isolated to deterministic fixtures. No real sign-in,
-   // payment, profile writes, outbound messages, or event publishing is performed.
-   await context.route('**/api/**',route=>route.fulfill(json(route.request().url().includes('/api/data')?{ok:true,connected:true,degraded:false,city:'atlanta',events:EVENTS,venues:[],counts:{events:EVENTS.length,venues:0}}:{ok:true,customer_ready:true,content_ready:true})))
+   // All customer/API traffic is isolated to deterministic fixtures. Health must
+   // identify the correct service; do not bypass or change the production guard.
+   await context.route('**/api/**',route=>{
+    const pathname=new URL(route.request().url()).pathname
+    if(pathname==='/api/health')return route.fulfill(json({ok:true,service:'good-times',customer_ready:true,content_ready:true}))
+    if(pathname.startsWith('/api/data'))return route.fulfill(json({ok:true,connected:true,degraded:false,city:'atlanta',events:EVENTS,venues:[],counts:{events:EVENTS.length,venues:0}}))
+    return route.fulfill(json({ok:true}))
+   })
    await context.route('**/rest/v1/**',route=>route.fulfill(json([])))
    await context.route('**/functions/v1/**',route=>route.fulfill(json({ok:true,events:[],venues:[]})))
-   const page=await context.newPage(),errors=[]
-   page.on('pageerror',e=>errors.push(String(e)))
    await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:20000})
    await page.locator('.gt5-app').waitFor({state:'visible',timeout:15000})
    await page.waitForTimeout(600)
@@ -31,7 +38,6 @@ for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,he
    assert.deepEqual((await nav.allTextContents()).map(s=>s.replace(/^[^A-Za-z]+/,'').trim()),['Home','Discover','Plan','Saved','Profile'])
    const morning=page.locator('.gt5-event').filter({hasText:'Morning fixture'}).first()
    assert.equal((await morning.locator('.gt5-status').textContent()).trim(),'TODAY')
-   fs.mkdirSync(OUT,{recursive:true})
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-home.png`)})
    await nav.filter({hasText:'Discover'}).click()
    await page.locator('.gt5-secondary-intents button').filter({hasText:/^Tonight$/}).click()
@@ -41,6 +47,10 @@ for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,he
    assert.deepEqual(await page.locator('.gt5-event h3').allTextContents(),['Friday fixture'])
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-weekend.png`)})
    assert.deepEqual(errors,[])
+  }catch(error){
+   await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-failure.png`)}).catch(()=>{})
+   fs.writeFileSync(path.join(OUT,`time-fixture-${vp.name}-diagnostics.json`),JSON.stringify({errors,requests,body:await page.locator('body').innerText().catch(()=>''),failure:String(error)},null,2))
+   throw error
   }finally{await context.close();await browser.close()}
  })
 }
