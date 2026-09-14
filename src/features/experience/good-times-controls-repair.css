@@ -1,0 +1,14 @@
+/* Scoped V4 control repair. The top Discover search owns the same query state
+   as the legacy taxonomy input; hide only the duplicated legacy control. */
+.gt5-app .gt5-hero-search,.gt5-app .gt5-home-quick{isolation:isolate;position:relative;z-index:3}
+.gt5-app .gt5-hero-search>:is(span,input,button),.gt5-app .gt5-home-quick button{position:relative;z-index:1;visibility:visible;opacity:1}
+.gt5-app .gt5-hero-search input{color:var(--gt5-text);-webkit-text-fill-color:var(--gt5-text);background:transparent;min-width:0;font-size:16px}
+.gt5-app .gt5-hero-search input::placeholder{color:#c6c3bb;-webkit-text-fill-color:#c6c3bb;opacity:1}
+.gt5-app .gt5-hero-search>span{color:var(--gt5-gold2)}
+.gt5-app .gt5-hero-search>button{display:grid;place-items:center;color:#08090b;-webkit-text-fill-color:#08090b;background:var(--gt5-gold2)}
+.gt5-app .gt5-home-quick button{color:var(--gt5-text);-webkit-text-fill-color:var(--gt5-text);background:rgba(6,7,9,.74);border:1px solid var(--gt5-line)}
+.gt5-app .gt5-home-quick button b{color:var(--gt5-gold2);-webkit-text-fill-color:var(--gt5-gold2)}
+.gt5-app .gt5-home-quick button small{color:var(--gt5-text);-webkit-text-fill-color:var(--gt5-text)}
+.gt5-app .gt5-taxonomy{scroll-margin-top:12px}
+.gt5-app .gt5-discover-search input{font-size:16px;color:var(--gt5-text);-webkit-text-fill-color:var(--gt5-text)}
+.gt5-app .gt5-taxonomy .gt2-explore-browser>.gt2-search{display:none}
