@@ -1,0 +1,76 @@
+name: GOOD TIMES Prepare App Store Build
+on:
+  workflow_dispatch:
+    inputs:
+      build:
+        description: Validated build number to attach
+        required: true
+        type: string
+      version:
+        description: Editable App Store version
+        required: true
+        default: '1.1.0'
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: good-times-app-store-preparation
+  cancel-in-progress: false
+jobs:
+  prepare:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+      - name: Attach validated build and verify selection
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          BUILD_NUMBER: ${{ inputs.build }}
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          python3 - <<'PY'
+          import json, os, time
+          from pathlib import Path
+          import jwt, requests
+          base = 'https://api.appstoreconnect.apple.com/v1'
+          token = jwt.encode({'iss': os.environ['ASC_ISSUER_ID'], 'iat': int(time.time()), 'exp': int(time.time()) + 900, 'aud': 'appstoreconnect-v1'}, os.environ['ASC_PRIVATE_KEY'], algorithm='ES256', headers={'kid': os.environ['ASC_KEY_ID'], 'typ': 'JWT'})
+          headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
+          def request(method, path, **kwargs):
+              response = requests.request(method, base + path, headers=headers, timeout=45, **kwargs)
+              response.raise_for_status()
+              return response.json() if response.content else {}
+          def one(items, label):
+              if len(items) != 1: raise RuntimeError(f'Expected exactly one {label}; found {len(items)}')
+              return items[0]
+          app = one(request('GET', '/apps', params={'filter[bundleId]': 'com.kollective.goodtimes'})['data'], 'app')
+          if app['id'] != '6761696777': raise RuntimeError('Unexpected Apple app')
+          versions = request('GET', f"/apps/{app['id']}/appStoreVersions", params={'limit': 200})['data']
+          version = one([v for v in versions if v['attributes']['versionString'] == os.environ['RELEASE_VERSION'] and v['attributes']['platform'] == 'IOS'], 'release version')
+          state = version['attributes'].get('appVersionState') or version['attributes'].get('appStoreState')
+          if state != 'PREPARE_FOR_SUBMISSION': raise RuntimeError(f'Release is not in preparation: {state}')
+          builds = request('GET', '/builds', params={'filter[app]': app['id'], 'filter[version]': os.environ['BUILD_NUMBER'], 'limit': 200})['data']
+          build = one(builds, 'build')
+          attrs = build['attributes']
+          if attrs['processingState'] != 'VALID' or attrs.get('buildAudienceType') != 'APP_STORE_ELIGIBLE' or attrs.get('expired'):
+              raise RuntimeError('Build is not valid, unexpired and App Store eligible')
+          prerelease = request('GET', f"/builds/{build['id']}/preReleaseVersion")['data']['attributes']
+          if prerelease['version'] != os.environ['RELEASE_VERSION'] or prerelease['platform'] != 'IOS': raise RuntimeError('Build version/platform mismatch')
+          path = f"/appStoreVersions/{version['id']}/relationships/build"
+          previous = request('GET', path).get('data')
+          target = {'type': 'builds', 'id': build['id']}
+          if not previous or previous['id'] != build['id']:
+              request('PATCH', path, json={'data': target})
+          selected = request('GET', path)['data']
+          if selected['id'] != build['id']: raise RuntimeError('Build selection readback failed')
+          evidence = {'appId': app['id'], 'version': os.environ['RELEASE_VERSION'], 'versionId': version['id'], 'state': state, 'previousBuild': previous, 'selectedBuild': selected, 'buildNumber': attrs['version'], 'submittedForReview': False}
+          output = Path(os.environ['RUNNER_TEMP']) / 'app-store-build-selection.json'
+          output.write_text(json.dumps(evidence, indent=2))
+          print(json.dumps(evidence, indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GOOD-TIMES-build-selection-${{ github.run_number }}
+          path: ${{ runner.temp }}/app-store-build-selection.json
+          if-no-files-found: error
