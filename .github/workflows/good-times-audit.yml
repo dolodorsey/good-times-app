@@ -15,7 +15,9 @@ on:
       - 'index.html'
       - 'vite.config.*'
       - '.github/workflows/good-times-audit.yml'
+      - '.github/workflows/ios-app-review-remediation.yml'
       - 'supabase/migrations/**'
+      - 'supabase/functions/**'
   workflow_dispatch:
 
 permissions:
@@ -49,6 +51,15 @@ jobs:
           ! grep -q "google_rating||0).*20" api/data-fast.js
           ! grep -q "APPROVED_VENUE_MEDIA).*180" api/data-fast.js
           grep -q "Curator imagery is a candidate, not a default" AGENTS.md
+      - name: Enforce App Store reviewer credential boundary
+        run: |
+          test -f supabase/functions/good-times-app-review-credential-vault/index.ts
+          grep -q 'credential_path_retired' supabase/functions/good-times-app-review-credential-vault/index.ts
+          ! grep -q 'REVIEW_PASSWORD' supabase/functions/good-times-app-review-credential-vault/index.ts
+          ! grep -q 'REVIEW_EMAIL' supabase/functions/good-times-app-review-credential-vault/index.ts
+          ! grep -q 'good-times-app-review-credential-vault' .github/workflows/ios-app-review-remediation.yml
+          grep -q 'secrets.GOOD_TIMES_APP_REVIEW_USERNAME' .github/workflows/ios-app-review-remediation.yml
+          grep -q 'secrets.GOOD_TIMES_APP_REVIEW_PASSWORD' .github/workflows/ios-app-review-remediation.yml
       - name: Verify committed PWA icon dimensions
         run: |
           python3 - <<'PY'

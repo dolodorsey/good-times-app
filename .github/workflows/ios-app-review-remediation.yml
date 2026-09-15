@@ -1,18 +1,13 @@
-# GOOD TIMES App Store remediation — production execution uses the already-passed UI artifact.
+# GOOD TIMES App Store remediation — sensitive App Store changes are manual-only.
 name: GOOD TIMES App Store Review Remediation
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/ios-app-review-remediation.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
   actions: read
   issues: write
-  id-token: write
 
 concurrency:
   group: good-times-app-store-remediation-main
@@ -72,26 +67,24 @@ jobs:
       - name: Install App Store Connect client dependencies
         run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
 
-      - name: Get review credentials from the OIDC-protected GOOD TIMES vault
+      - name: Load review credentials from GitHub Actions encrypted secrets
+        env:
+          REVIEW_USERNAME_SECRET: ${{ secrets.GOOD_TIMES_APP_REVIEW_USERNAME }}
+          REVIEW_PASSWORD_SECRET: ${{ secrets.GOOD_TIMES_APP_REVIEW_PASSWORD }}
         run: |
           set -euo pipefail
-          OIDC_RESPONSE=$(curl --fail --silent --show-error -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=good-times-app-review")
-          OIDC_TOKEN=$(printf '%s' "$OIDC_RESPONSE" | jq -r '.value')
-          test -n "$OIDC_TOKEN" && test "$OIDC_TOKEN" != null
-          CREDS=$(curl --fail --silent --show-error -H "Authorization: Bearer $OIDC_TOKEN" 'https://czocqfaovfpjweayniuw.supabase.co/functions/v1/good-times-app-review-credential-vault')
-          REVIEW_USERNAME=$(printf '%s' "$CREDS" | jq -r '.username')
-          REVIEW_PASSWORD=$(printf '%s' "$CREDS" | jq -r '.password')
-          test -n "$REVIEW_USERNAME" && test "$REVIEW_USERNAME" != null
-          test -n "$REVIEW_PASSWORD" && test "$REVIEW_PASSWORD" != null
-          echo "::add-mask::$REVIEW_PASSWORD"
-          echo "REVIEW_USERNAME=$REVIEW_USERNAME" >> "$GITHUB_ENV"
-          echo "REVIEW_PASSWORD=$REVIEW_PASSWORD" >> "$GITHUB_ENV"
+          test -n "$REVIEW_USERNAME_SECRET"
+          test -n "$REVIEW_PASSWORD_SECRET"
+          echo "::add-mask::$REVIEW_USERNAME_SECRET"
+          echo "::add-mask::$REVIEW_PASSWORD_SECRET"
+          echo "REVIEW_USERNAME=$REVIEW_USERNAME_SECRET" >> "$GITHUB_ENV"
+          echo "REVIEW_PASSWORD=$REVIEW_PASSWORD_SECRET" >> "$GITHUB_ENV"
 
       - name: Mark review credentials verified
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          BODY="App Store remediation milestone: Apple reviewer credentials loaded securely from the OIDC-protected GOOD TIMES Supabase vault."
+          BODY="App Store remediation milestone: Apple reviewer credentials loaded from GitHub Actions encrypted secrets."
           jq -n --arg body "$BODY" '{body:$body}' > "$RUNNER_TEMP/comment.json"
           curl --fail --silent --show-error -X POST -H "Authorization: Bearer $GH_TOKEN" -H 'Accept: application/vnd.github+json' -H 'X-GitHub-Api-Version: 2022-11-28' --data-binary @"$RUNNER_TEMP/comment.json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues/69/comments" >/dev/null
 
