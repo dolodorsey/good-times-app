@@ -8,7 +8,7 @@ import{DEFAULT_ALERT_PREFS,enqueueRadarAlert,followEntity,loadRadarState,saveRad
 import{hardenDisplayInventory,hardenRecommendationResult}from'./good-times-media-uniqueness.js'
 import{screenEditorialMedia,categoryEditorialMedia}from'./good-times-editorial-media.js'
 import GoodTimesIcon from'./GoodTimesIcon.jsx'
-import{eventIsTonight,eventIsThisWeekend,eventDaysAway,eventStatus}from'./good-times-event-clock.js'
+import{eventIsDiscoverable,eventIsTonight,eventIsThisWeekend,eventDaysAway,eventStatus}from'./good-times-event-clock.js'
 
 const NAV=[['home','⌂','Home'],['discover','⌕','Discover'],['plan','＋','Plan'],['saved','▣','Saved'],['profile','◎','Profile']]
 const PRIMARY_TABS=new Set(NAV.map(([id])=>id))
@@ -88,12 +88,13 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
 
   const savedKeys=useMemo(()=>new Set(saved.map(x=>`${x.item_type}:${x.item_id}`)),[saved])
   const followKeys=useMemo(()=>new Set(follows.filter(x=>x.is_active!==false).map(x=>`${x.entity_type}:${x.entity_id}`)),[follows])
-  const today=useMemo(()=>events.filter(e=>eventIsTonight(e,city,clockNow)),[events,city,clockNow])
-  const week=useMemo(()=>events.filter(e=>daysAway(e.event_date,city,clockNow)>=0&&daysAway(e.event_date,city,clockNow)<=7),[events,city,clockNow])
-  const rankedEvents=useMemo(()=>[...events].sort((a,b)=>score(b)-score(a)||daysAway(a.event_date,city,clockNow)-daysAway(b.event_date,city,clockNow)),[events,city,clockNow])
+  const activeEvents=useMemo(()=>events.filter(e=>eventIsDiscoverable(e,city,clockNow)),[events,city,clockNow])
+  const today=useMemo(()=>activeEvents.filter(e=>eventIsTonight(e,city,clockNow)),[activeEvents,city,clockNow])
+  const week=useMemo(()=>activeEvents.filter(e=>daysAway(e.event_date,city,clockNow)>=0&&daysAway(e.event_date,city,clockNow)<=7),[activeEvents,city,clockNow])
+  const rankedEvents=useMemo(()=>[...activeEvents].sort((a,b)=>score(b)-score(a)||daysAway(a.event_date,city,clockNow)-daysAway(b.event_date,city,clockNow)),[activeEvents,city,clockNow])
   const rankedVenues=useMemo(()=>[...venues].sort((a,b)=>score(b)-score(a)||Number(b.google_rating||0)-Number(a.google_rating||0)),[venues])
   const homeVenues=useMemo(()=>rankedVenues.filter(v=>!HOME_EXCLUDED_PLACE_TYPES.test(normalize(`${v.category_key} ${v.subcategory} ${v.venue_subcategory}`))),[rankedVenues])
-  const filteredEvents=useMemo(()=>{const q=normalize(query);return events.filter(item=>(!q||matchText(item).includes(q))&&matchesIntent(item,intent,true,city,clockNow))},[events,intent,query,city,clockNow])
+  const filteredEvents=useMemo(()=>{const q=normalize(query);return activeEvents.filter(item=>(!q||matchText(item).includes(q))&&matchesIntent(item,intent,true,city,clockNow))},[activeEvents,intent,query,city,clockNow])
   const filteredVenues=useMemo(()=>{const q=normalize(query);return rankedVenues.filter(item=>(!q||matchText(item).includes(q))&&matchesIntent(item,intent,false,city,clockNow))},[rankedVenues,intent,query,city,clockNow])
   const radar=useMemo(()=>{const rows=[];const urgent=rankedEvents.find(e=>['SELLING FAST','PRESALE','NEW'].includes(statusFor(e,city,clockNow)));const tonightPick=rankedEvents.find(e=>eventIsTonight(e,city,clockNow));const upcoming=rankedEvents.find(e=>daysAway(e.event_date,city,clockNow)>0&&daysAway(e.event_date,city,clockNow)<=7);if(urgent)rows.push({label:statusFor(urgent,city,clockNow),item:urgent});if(tonightPick&&!rows.some(r=>r.item===tonightPick))rows.push({label:'TONIGHT',item:tonightPick});if(upcoming&&!rows.some(r=>r.item===upcoming))rows.push({label:'THIS WEEK',item:upcoming});return rows.slice(0,5)},[rankedEvents,city,clockNow])
   const heroMedia=useMemo(()=>screenEditorialMedia(city,tab),[city,tab])

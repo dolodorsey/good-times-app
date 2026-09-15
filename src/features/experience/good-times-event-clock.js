@@ -65,6 +65,10 @@ function ended(f) {
   // Do not invent overnight duration for last-calendar-day events without an end.
   return f.day < f.clock.day
 }
+export function eventIsDiscoverable(event,city = event?.city_key,now = Date.now()) {
+  const f = eventFacts(event,city,now)
+  return Boolean(f && !unavailable(event) && !ended(f))
+}
 export function eventIsTonight(event,city = event?.city_key,now = Date.now()) {
   const f = eventFacts(event,city,now)
   if (!f || unavailable(event) || f.start === null || ended(f)) return false
