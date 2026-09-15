@@ -191,12 +191,12 @@ function Page({ children }) {
 
 function Field({ label, fieldKey, error, optional = false, children }) {
   const errorId = `request-${fieldKey}-error`;
-  return <label style={styles.field}>
-    <span style={styles.label}>{label}{optional ? ' · optional' : ''}</span>
-    {React.cloneElement(children, {name: fieldKey, 'aria-invalid': Boolean(error), 'aria-describedby': error ? errorId : undefined,
+  return <div style={styles.field}>
+    <label htmlFor={`request-${fieldKey}`} style={styles.label}>{label}{optional ? ' · optional' : ''}</label>
+    {React.cloneElement(children, {id: `request-${fieldKey}`, name: fieldKey, 'aria-invalid': Boolean(error), 'aria-describedby': error ? errorId : undefined,
       style: {...children.props.style, ...(error ? {borderColor: '#F16060'} : {})}})}
     {error && <span id={errorId} style={styles.fieldError}>{error}</span>}
-  </label>;
+  </div>;
 }
 
 const styles = {
