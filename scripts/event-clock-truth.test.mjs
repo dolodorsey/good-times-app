@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {dateNumber,timeMinutes,selectedCityClock,eventIsTonight,eventIsToday,eventIsThisWeekend,eventDaysAway,eventStatus} from '../src/features/experience/good-times-event-clock.js'
+import {eventIsDiscoverable,dateNumber,timeMinutes,selectedCityClock,eventIsTonight,eventIsToday,eventIsThisWeekend,eventDaysAway,eventStatus} from '../src/features/experience/good-times-event-clock.js'
 const MON='2026-09-14T12:00:00Z'
 const ev=(date='2026-09-14',time='20:00',extra={})=>({city_key:'atlanta',event_date:date,event_time:time,...extra})
 const checks=[
@@ -53,3 +53,13 @@ const checks=[
  ['TODAY includes daytime without calling it an evening event',()=>assert.equal(eventIsToday(ev(undefined,'12:00'),'atlanta',MON),true)],
 ]
 for(const [name,run] of checks)test(name,run)
+
+test('recommendations exclude stale, wrong-city and unavailable inventory',()=>{
+ const items=[ev('2026-09-13'),ev(undefined,'07:00',{end_time:'08:00'}),ev(undefined,'20:00',{city_key:'miami'}),ev(undefined,'20:00',{status:'cancelled'}),ev(undefined,'20:00',{ticket_status:'sold_out'}),ev('2026-09-15')]
+ assert.deepEqual(items.filter(e=>eventIsDiscoverable(e,'atlanta',MON)),[items[5]])
+})
+test('discovery expires at documented end while preserving known overnight events',()=>{
+ const e=ev('2026-09-14','22:00',{end_time:'03:00'})
+ assert.equal(eventIsDiscoverable(e,'atlanta','2026-09-15T06:59:00Z'),true)
+ assert.equal(eventIsDiscoverable(e,'atlanta','2026-09-15T07:00:00Z'),false)
+})

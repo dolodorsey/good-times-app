@@ -1,7 +1,9 @@
 ;(function installGoodTimesServiceGuard(){
   if (window.__GOOD_TIMES_SERVICE_READY__) return
 
-  var HEALTH_URL = '/api/health'
+  // This guard runs before the React/native API bridge is imported.
+  var nativePlatform = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
+  var HEALTH_URL = nativePlatform ? 'https://thegoodtimesworldwide.com/api/health' : '/api/health'
   var CLIENT_TIMEOUT_MS = 5000
   var root = document.getElementById('root')
   var resolveReady
@@ -79,7 +81,8 @@
         window.location.reload()
         return
       }
-      root.innerHTML = ''
+      // Keep the opening screen visible until React replaces it. Clearing here
+      // leaves a blank page while the application chunk and session load.
       resolveReady(state)
       return
     }

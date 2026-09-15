@@ -44,9 +44,13 @@ async function settle(page, budgetMs = 45_000) {
   while (Date.now() - started < budgetMs) {
     const state = await page.evaluate(() => {
       const text = document.body.innerText || ''
-      return { length: text.trim().length, loading: /CURATING/i.test(text) }
+      return {
+        length: text.trim().length,
+        loading: /CURATING/i.test(text),
+        mounted: Boolean(document.querySelector('[data-app="good-times"]')),
+      }
     })
-    if (!state.loading && state.length > MIN_TEXT) return
+    if (state.mounted && !state.loading && state.length > MIN_TEXT) return
     await page.waitForTimeout(750)
   }
 }
@@ -73,6 +77,7 @@ test('the app still renders when the font host is unreachable', { skip }, async 
         return r.width > 8 && r.height > 8 && getComputedStyle(el).visibility !== 'hidden'
       })
       return {
+        appMounted: Boolean(document.querySelector('[data-app="good-times"]')),
         rootChildren: root ? root.childElementCount : 0,
         textLength: (document.body.innerText || '').trim().length,
         interactive: visible.length,
@@ -88,6 +93,8 @@ test('the app still renders when the font host is unreachable', { skip }, async 
       `root children ${mounted.rootChildren}, text ${mounted.textLength} chars, ` +
       `${mounted.interactive} interactive elements. ` +
       `Page errors: ${pageErrors.slice(0, 3).join(' | ') || 'none'}`
+
+    assert.ok(mounted.appMounted, `The consumer app did not mount: ${detail}`)
 
     assert.ok(
       mounted.rootChildren > 0,

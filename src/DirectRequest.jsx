@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { localTodayISO, validateDirectRequest } from './direct-request-validation.js';
 
 const SUPABASE_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co';
@@ -51,6 +51,9 @@ export default function DirectRequest({ requestType }) {
   const [form, setForm] = useState(initial);
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
+  const [attempted, setAttempted] = useState(false);
+  const formRef = useRef(null);
+  const submittingRef = useRef(false);
   const todayISO = useMemo(() => localTodayISO(), []);
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }));
@@ -63,12 +66,16 @@ export default function DirectRequest({ requestType }) {
   const submit = async (event) => {
     event.preventDefault();
     if (status === 'submitting') return;
+    if (submittingRef.current) return;
+    setAttempted(true);
     if (!canSubmit) {
       setStatus('error');
+      formRef.current?.elements.namedItem(Object.keys(validation.errors)[0])?.focus();
       setMessage(Object.values(validation.errors)[0] || 'Review the request details and try again.');
       return;
     }
 
+    submittingRef.current = true;
     setStatus('submitting');
     setMessage('');
 
@@ -113,6 +120,8 @@ export default function DirectRequest({ requestType }) {
     } catch (error) {
       setStatus('error');
       setMessage(error.message || 'Your request could not be submitted.');
+    } finally {
+      submittingRef.current = false;
     }
   };
 
@@ -138,22 +147,23 @@ export default function DirectRequest({ requestType }) {
         <h1 style={styles.heroTitle}>{meta.title}</h1>
         <p style={styles.heroCopy}>{meta.description}</p>
 
-        <form onSubmit={submit} style={styles.card}>
+        <form ref={formRef} onSubmit={submit} onInvalid={() => setAttempted(true)} style={styles.card}>
+          <p style={styles.formHint}>Tell us the essentials. Optional details help us tailor your experience.</p>
           <div style={styles.grid}>
-            <Field label="Full name"><input value={form.full_name} onChange={(event) => update('full_name', event.target.value)} autoComplete="name" required minLength="2" maxLength="120" style={styles.input} /></Field>
-            <Field label="Email"><input type="email" value={form.email} onChange={(event) => update('email', event.target.value)} autoComplete="email" required style={styles.input} /></Field>
-            <Field label="Mobile phone" optional><input type="tel" value={form.phone} onChange={(event) => update('phone', event.target.value)} autoComplete="tel" style={styles.input} /></Field>
-            <Field label={requestType === 'trip' ? 'Destination city' : 'City'}><input value={form.city} onChange={(event) => update('city', event.target.value)} required minLength="2" maxLength="120" style={styles.input} /></Field>
+            <Field fieldKey="full_name" error={attempted ? validation.errors.full_name : null} label="Full name"><input value={form.full_name} onChange={(event) => update('full_name', event.target.value)} autoComplete="name" required minLength="2" maxLength="120" style={styles.input} /></Field>
+            <Field fieldKey="email" error={attempted ? validation.errors.email : null} label="Email"><input type="email" value={form.email} onChange={(event) => update('email', event.target.value)} autoComplete="email" required style={styles.input} /></Field>
+            <Field fieldKey="phone" error={attempted ? validation.errors.phone : null} label="Mobile phone" optional><input type="tel" value={form.phone} onChange={(event) => update('phone', event.target.value)} autoComplete="tel" style={styles.input} /></Field>
+            <Field fieldKey="city" error={attempted ? validation.errors.city : null} label={requestType === 'trip' ? 'Destination city' : 'City'}><input value={form.city} onChange={(event) => update('city', event.target.value)} required minLength="2" maxLength="120" style={styles.input} /></Field>
 
-            {requestType !== 'join' && <Field label={requestType === 'trip' ? 'Trip start' : 'Preferred date'}><input type="date" min={todayISO} value={form.preferred_date} onChange={(event) => update('preferred_date', event.target.value)} required style={styles.input} /></Field>}
-            {requestType === 'trip' && <Field label="Trip end"><input type="date" min={form.preferred_date || todayISO} value={form.end_date} onChange={(event) => update('end_date', event.target.value)} required style={styles.input} /></Field>}
-            {(requestType === 'trip' || requestType === 'group' || requestType === 'concierge-request') && <Field label="Group size" optional={requestType === 'concierge-request'}><input type="number" min="1" max="1000" step="1" value={form.group_size} onChange={(event) => update('group_size', event.target.value)} required={requestType !== 'concierge-request'} style={styles.input} /></Field>}
-            {(requestType === 'trip' || requestType === 'group' || requestType === 'concierge-request') && <Field label="Occasion" optional={requestType !== 'group'}><input value={form.occasion} onChange={(event) => update('occasion', event.target.value)} required={requestType === 'group'} style={styles.input} /></Field>}
-            <Field label="Budget" optional><input value={form.budget} onChange={(event) => update('budget', event.target.value)} placeholder="Example: $1,500 total" style={styles.input} /></Field>
+            {requestType !== 'join' && <Field fieldKey="preferred_date" error={attempted ? validation.errors.preferred_date : null} label={requestType === 'trip' ? 'Trip start' : 'Preferred date'}><input type="date" min={todayISO} value={form.preferred_date} onChange={(event) => update('preferred_date', event.target.value)} required style={styles.input} /></Field>}
+            {requestType === 'trip' && <Field fieldKey="end_date" error={attempted ? validation.errors.end_date : null} label="Trip end"><input type="date" min={form.preferred_date || todayISO} value={form.end_date} onChange={(event) => update('end_date', event.target.value)} required style={styles.input} /></Field>}
+            {(requestType === 'trip' || requestType === 'group' || requestType === 'concierge-request') && <Field fieldKey="group_size" error={attempted ? validation.errors.group_size : null} label="Group size" optional={requestType === 'concierge-request'}><input type="number" min="1" max="1000" step="1" value={form.group_size} onChange={(event) => update('group_size', event.target.value)} required={requestType !== 'concierge-request'} style={styles.input} /></Field>}
+            {(requestType === 'trip' || requestType === 'group' || requestType === 'concierge-request') && <Field fieldKey="occasion" error={attempted ? validation.errors.occasion : null} label="Occasion" optional={requestType !== 'group'}><input value={form.occasion} onChange={(event) => update('occasion', event.target.value)} required={requestType === 'group'} style={styles.input} /></Field>}
+            <Field fieldKey="budget" error={attempted ? validation.errors.budget : null} label="Budget" optional><input value={form.budget} onChange={(event) => update('budget', event.target.value)} placeholder="Example: $1,500 total" style={styles.input} /></Field>
           </div>
 
-          <Field label="Interests and vibe" optional={requestType !== 'join'}><textarea rows="4" value={form.interests} onChange={(event) => update('interests', event.target.value)} required={requestType === 'join'} style={styles.textarea} placeholder="Dining, nightlife, art, sports, wellness, family, VIP…" /></Field>
-          <Field label={requestType === 'concierge-request' ? 'What do you need planned?' : 'Additional details'} optional={requestType !== 'concierge-request'}><textarea rows="5" value={form.notes} onChange={(event) => update('notes', event.target.value)} required={requestType === 'concierge-request'} minLength={requestType === 'concierge-request' ? 10 : undefined} style={styles.textarea} /></Field>
+          <Field fieldKey="interests" error={attempted ? validation.errors.interests : null} label="Interests and vibe" optional={requestType !== 'join'}><textarea rows="4" value={form.interests} onChange={(event) => update('interests', event.target.value)} required={requestType === 'join'} style={styles.textarea} placeholder="Dining, nightlife, art, sports, wellness, family, VIP…" /></Field>
+          <Field fieldKey="notes" error={attempted ? validation.errors.notes : null} label={requestType === 'concierge-request' ? 'What do you need planned?' : 'Additional details'} optional={requestType !== 'concierge-request'}><textarea rows="5" value={form.notes} onChange={(event) => update('notes', event.target.value)} required={requestType === 'concierge-request'} minLength={requestType === 'concierge-request' ? 10 : undefined} style={styles.textarea} /></Field>
 
           <label style={styles.consent}>
             <input type="checkbox" checked={form.sms_consent} onChange={(event) => update('sms_consent', event.target.checked)} style={{ accentColor: '#D4A853' }} />
@@ -173,17 +183,25 @@ export default function DirectRequest({ requestType }) {
 function Page({ children }) {
   return (
     <main style={styles.page}>
-      <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      
       {children}
     </main>
   );
 }
 
-function Field({ label, optional = false, children }) {
-  return <label style={styles.field}><span style={styles.label}>{label}{optional ? ' · optional' : ''}</span>{children}</label>;
+function Field({ label, fieldKey, error, optional = false, children }) {
+  const errorId = `request-${fieldKey}-error`;
+  return <label style={styles.field}>
+    <span style={styles.label}>{label}{optional ? ' · optional' : ''}</span>
+    {React.cloneElement(children, {name: fieldKey, 'aria-invalid': Boolean(error), 'aria-describedby': error ? errorId : undefined,
+      style: {...children.props.style, ...(error ? {borderColor: '#F16060'} : {})}})}
+    {error && <span id={errorId} style={styles.fieldError}>{error}</span>}
+  </label>;
 }
 
 const styles = {
+  formHint: {margin: '0 0 24px', color: '#AAA8A3', fontSize: 13, lineHeight: 1.6},
+  fieldError: {display: 'block', marginTop: 8, color: '#FCA5A5', fontSize: 12, lineHeight: 1.5},
   page: { minHeight: '100vh', padding: '40px 20px 90px', background: 'radial-gradient(circle at 85% 0%, rgba(212,168,83,.18), transparent 35%), #06060C', color: '#F5F0E8', fontFamily: "'DM Sans',sans-serif" },
   shell: { width: 'min(850px,100%)', margin: '0 auto' },
   back: { color: 'rgba(245,240,232,.62)', textDecoration: 'none', fontSize: 13 },
