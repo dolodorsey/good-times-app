@@ -183,7 +183,7 @@ export default function DirectRequest({ requestType }) {
 function Page({ children }) {
   return (
     <main style={styles.page}>
-      
+
       {children}
     </main>
   );
