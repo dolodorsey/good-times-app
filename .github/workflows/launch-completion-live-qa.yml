@@ -1,0 +1,37 @@
+name: Launch completion live canaries
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'scripts/launch-completion-live-qa.mjs'
+      - '.github/workflows/launch-completion-live-qa.yml'
+permissions:
+  contents: read
+concurrency:
+  group: launch-completion-canaries
+  cancel-in-progress: false
+jobs:
+  browser-canaries:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install browser using existing Playwright dependency
+        run: node node_modules/playwright-core/cli.js install --with-deps chromium
+      - name: Test public forms and Atlanta curated feed
+        run: node scripts/launch-completion-live-qa.mjs
+      - name: Save evidence separately by brand
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: launch-completion-live-evidence
+          path: artifacts/launch-completion/
+          retention-days: 14
+          if-no-files-found: error
