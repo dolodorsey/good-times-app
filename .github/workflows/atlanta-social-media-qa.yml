@@ -1,0 +1,50 @@
+name: Atlanta social media QA
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/atlanta-social-media-qa.yml'
+permissions:
+  contents: read
+jobs:
+  verify-owned-media:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Read existing GOOD TIMES assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          curl --fail --location --max-time 30 --max-filesize 25000000 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/kollective/animations/GOODTIMES.mp4' --output evidence/GOODTIMES.mp4
+          curl --fail --location --max-time 30 --max-filesize 5000000 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/motion/goodtimes.jpg' --output evidence/goodtimes.jpg
+      - name: Inspect media and capture three frames
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v ffprobe >/dev/null; then sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg; fi
+          ffprobe -v quiet -show_streams -show_format -of json evidence/GOODTIMES.mp4 > evidence/probe.json
+          python3 - <<'PY'
+          import json, pathlib, hashlib
+          p=json.loads(pathlib.Path('evidence/probe.json').read_text())
+          video=next(x for x in p['streams'] if x['codec_type']=='video')
+          duration=float(p['format']['duration'])
+          assert video['codec_name']=='h264', 'H.264 required'
+          assert 3 <= duration <= 90, 'Clip duration outside initial campaign range'
+          assert video['width']>=540 and video['height']>=540, 'Insufficient resolution'
+          report={'brand':'good_times','asset':'existing approved GOODTIMES.mp4','duration_seconds':duration,'width':video['width'],'height':video['height'],'codec':video['codec_name'],'audio_present':any(s['codec_type']=='audio' for s in p['streams']),'sha256':hashlib.sha256(pathlib.Path('evidence/GOODTIMES.mp4').read_bytes()).hexdigest(),'technical_qa':'passed','visual_qa':'pending human/assistant inspection','publishing_performed':False}
+          pathlib.Path('evidence/media-report.json').write_text(json.dumps(report,indent=2))
+          pathlib.Path('evidence/frame-times.txt').write_text('\n'.join(f'{duration*f:.3f}' for f in (.15,.5,.85)))
+          PY
+          i=0
+          while read -r time || [ -n "$time" ]; do
+            i=$((i+1))
+            ffmpeg -nostdin -v error -ss "$time" -i evidence/GOODTIMES.mp4 -frames:v 1 -vf 'scale=720:-2' evidence/frame-$i.jpg
+          done < evidence/frame-times.txt
+      - name: Save brand-isolated verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: atlanta-social-media-qa
+          path: evidence
+          retention-days: 14
