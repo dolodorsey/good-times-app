@@ -34,15 +34,15 @@ jobs:
           assert video['width']>=540 and video['height']>=540, 'Insufficient resolution'
           report={'brand':'good_times','asset':'existing approved GOODTIMES.mp4','duration_seconds':duration,'width':video['width'],'height':video['height'],'codec':video['codec_name'],'audio_present':any(s['codec_type']=='audio' for s in p['streams']),'sha256':hashlib.sha256(pathlib.Path('evidence/GOODTIMES.mp4').read_bytes()).hexdigest(),'technical_qa':'passed','visual_qa':'pending human/assistant inspection','publishing_performed':False}
           pathlib.Path('evidence/media-report.json').write_text(json.dumps(report,indent=2))
-          pathlib.Path('evidence/frame-times.txt').write_text('\n'.join(str(duration*f) for f in (.15,.5,.85)))
+          pathlib.Path('evidence/frame-times.txt').write_text('\n'.join(f'{duration*f:.3f}' for f in (.15,.5,.85)))
           PY
           i=0
           while read -r time || [ -n "$time" ]; do
             i=$((i+1))
-            ffmpeg -v error -ss "$time" -i evidence/GOODTIMES.mp4 -frames:v 1 -vf 'scale=720:-2' evidence/frame-$i.jpg
+            ffmpeg -nostdin -v error -ss "$time" -i evidence/GOODTIMES.mp4 -frames:v 1 -vf 'scale=720:-2' evidence/frame-$i.jpg
           done < evidence/frame-times.txt
-          rm evidence/GOODTIMES.mp4
       - name: Save brand-isolated verification evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: atlanta-social-media-qa
