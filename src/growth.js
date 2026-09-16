@@ -5,8 +5,25 @@ const ALLOWED_EVENTS = new Set([
 ])
 const TICKET_HOSTS = ['ticketmaster.com','eventbrite.com','axs.com','dice.fm','seatgeek.com','stubhub.com']
 const RESERVATION_HOSTS = ['resy.com','opentable.com','tockhq.com','exploretock.com']
+const ENTERPRISE_CAPTURE='https://wfkohcwxxsrhcxhepfql.supabase.co/functions/v1/marketing-event-capture'
+const ENTERPRISE_BRAND_KEY='good-times'
 
 function clean(value, max=160) { return String(value || '').trim().slice(0,max) }
+function getStored(key){try{return localStorage.getItem(key)}catch{return null}}
+function setStored(key,value){try{localStorage.setItem(key,value)}catch{}}
+function visitorKey(){
+  const existing=getStored('khg_vid')
+  if(existing)return existing
+  const created=crypto.randomUUID()
+  setStored('khg_vid',created)
+  return created
+}
+function enterpriseCode(){
+  const params=new URLSearchParams(location.search)
+  const incoming=clean(params.get('khg_track'),80)
+  if(incoming){setStored(`khg_track:${ENTERPRISE_BRAND_KEY}`,incoming);return incoming}
+  return getStored(`khg_track:${ENTERPRISE_BRAND_KEY}`)||''
+}
 function currentCity() {
   try {
     const stored = JSON.parse(localStorage.getItem('gt_personalization') || '{}')
@@ -32,31 +49,72 @@ function safeMetadata(metadata={}) {
   }
   return out
 }
+function enterpriseEventName(eventName){
+  if(eventName==='landing_view'||eventName==='app_open')return 'page_view'
+  if(eventName==='install_cta')return 'app_install_click'
+  if(eventName==='concierge_request')return 'booking_interest'
+  return 'cta_click'
+}
+async function recordEnterpriseEvent(eventName, metadata={}){
+  const code=enterpriseCode()
+  const { source,campaign }=campaignContext()
+  try{
+    const response=await fetch(ENTERPRISE_CAPTURE,{
+      method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        ...(code?{code}:{brand_key:ENTERPRISE_BRAND_KEY}),
+        event_type:enterpriseEventName(eventName),
+        visitor_key:visitorKey(),
+        metadata:{
+          event_id:crypto.randomUUID(),
+          source,
+          medium:'good_times_app',
+          channel:'app',
+          campaign_key:campaign||undefined,
+          conversion_type:eventName==='concierge_request'?'booking_interest':undefined,
+          app:'good-times',
+          path:clean(`${location.pathname}${location.search}`,300),
+          cta:clean(metadata?.label||eventName,200),
+          platform:navigator.userAgent.includes('wv')?'native_webview':'web',
+        },
+      }),
+    })
+    if(!response.ok)return false
+    const result=await response.json().catch(()=>null)
+    if(result?.tracking_code)setStored(`khg_track:${ENTERPRISE_BRAND_KEY}`,result.tracking_code)
+    return true
+  }catch{return false}
+}
 
 export async function recordGrowthEvent(eventName, metadata={}) {
   if (!ALLOWED_EVENTS.has(eventName)) return false
   const { source, campaign } = campaignContext()
-  try {
-    const response = await fetch(`${KHG_SUPABASE_URL}/rest/v1/gt_growth_events`, {
-      method:'POST',
-      keepalive:true,
-      headers:{
-        apikey:KHG_SUPABASE_ANON_KEY,
-        Authorization:`Bearer ${KHG_SUPABASE_ANON_KEY}`,
-        'Content-Type':'application/json',
-        Prefer:'return=minimal',
-      },
-      body:JSON.stringify({
-        event_name:eventName,
-        city_key:currentCity(),
-        source,
-        path:clean(`${location.pathname}${location.search}`,300),
-        campaign,
-        metadata:safeMetadata({ referrer:document.referrer || '', ...metadata }),
-      }),
-    })
-    return response.ok
-  } catch { return false }
+  const legacyWrite=(async()=>{
+    try {
+      const response = await fetch(`${KHG_SUPABASE_URL}/rest/v1/gt_growth_events`, {
+        method:'POST',
+        keepalive:true,
+        headers:{
+          apikey:KHG_SUPABASE_ANON_KEY,
+          Authorization:`Bearer ${KHG_SUPABASE_ANON_KEY}`,
+          'Content-Type':'application/json',
+          Prefer:'return=minimal',
+        },
+        body:JSON.stringify({
+          event_name:eventName,
+          city_key:currentCity(),
+          source,
+          path:clean(`${location.pathname}${location.search}`,300),
+          campaign,
+          metadata:safeMetadata({ referrer:document.referrer || '', ...metadata }),
+        }),
+      })
+      return response.ok
+    } catch { return false }
+  })()
+  const enterpriseWrite=recordEnterpriseEvent(eventName,metadata)
+  const [legacyOk,enterpriseOk]=await Promise.all([legacyWrite,enterpriseWrite])
+  return legacyOk||enterpriseOk
 }
 
 function classifyClick(target) {
