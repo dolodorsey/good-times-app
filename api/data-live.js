@@ -7,6 +7,7 @@ import {
   getEventFreshness,
 } from './data.js'
 import { scoreGoodTimesEvent } from './good-times-intelligence.js'
+import { eventTimeFields } from './event-time-display.js'
 
 const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
@@ -130,7 +131,7 @@ function customerReadyEvent(item,clock){
 }
 function mapEvents(rows){return rows.map((item,index)=>{const taxonomy=inferCustomerTaxonomy(item);return{
   event_key:`show:${item.id}`,source_table:'gt_shows',source_id:item.id,city_key:item.city_key,
-  title:decode(item.event_name),event_date:item.show_date,event_time:item.show_time,venue_name:decode(item.venue_name),
+  title:decode(item.event_name),event_date:item.show_date,...eventTimeFields(item),venue_name:decode(item.venue_name),
   raw_type:item.event_type,raw_category:item.genre,description:decode(item.description),ticket_url:item.ticket_url,image_url:safeImage(item.image_url),organizer:decode(item.organizer),
   source_name:item.source,source_url:item.source_url,is_verified:item.status==='confirmed',quality_score:item.quality_score,freshness_tier:item.freshness_tier,updated_at:item.updated_at,
   display_priority:item.display_priority,good_times_score:item.good_times_score,category_key:taxonomy.category,subcategory_key:taxonomy.subcategory,
