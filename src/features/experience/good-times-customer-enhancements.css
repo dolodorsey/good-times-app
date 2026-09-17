@@ -174,3 +174,6 @@
 .gt5-app .gt-shake__image:has(>div){min-height:68px;background:linear-gradient(120deg,#254c50,#47375b)}
 .gt5-app .gt-shake__image:has(>div)>div{font-size:16px;opacity:.65}
 .gt5-app .gt5-guided>section>small{font-size:12px;line-height:1.5;display:block}
+.gt5-app .gt5-card .gt5-save{right:auto;left:calc(36% - 48px)}
+.gt5-app[data-screen="home"] .gt5-trending-grid .gt5-save{left:auto;right:4px}
+.gt5-app .gt5-card-copy>small{font-size:10px;padding-right:0}
