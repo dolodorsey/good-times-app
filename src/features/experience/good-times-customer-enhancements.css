@@ -181,3 +181,14 @@
 /* Keep poster lettering separate from the readable event title. */
 .gt5-app .gt5-detail-gradient{max-height:260px}
 .gt5-app .gt5-detail-body{margin-top:0;padding-top:20px}
+/* Give the existing guided planner the full card width on phones. */
+.gt5-app .gt5-guided{margin:14px 16px;padding:12px;background:linear-gradient(135deg,#142b30,#181629)}
+.gt5-app .gt5-guided .gt2-builder{margin:12px 0 0;padding:14px;border-radius:16px;width:100%}
+.gt5-app .gt5-guided .gt2-builder-head h2{font-size:28px}
+.gt5-app .gt5-guided .gt2-builder-head p{font-size:13px;line-height:1.5}
+.gt5-app .gt5-guided .gt2-builder-preview{margin:12px 0;padding:8px}
+.gt5-app .gt5-guided .gt2-builder-preview-art{min-height:100px}
+.gt5-app .gt5-guided .gt2-builder-route strong{font-size:12px;line-height:1.4}
+.gt5-app .gt5-guided .gt2-builder-stage-title h3{font-size:24px}
+.gt5-app .gt5-guided .gt2-builder-stage-title small{font-size:12px;line-height:1.5}
+.gt5-app .gt5-guided .gt2-builder-progress button{font-size:10px;min-height:44px;padding:6px 2px}
