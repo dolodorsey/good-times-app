@@ -177,3 +177,7 @@
 .gt5-app .gt5-card .gt5-save{right:auto;left:calc(36% - 48px)}
 .gt5-app[data-screen="home"] .gt5-trending-grid .gt5-save{left:auto;right:4px}
 .gt5-app .gt5-card-copy>small{font-size:10px;padding-right:0}
+
+/* Keep poster lettering separate from the readable event title. */
+.gt5-app .gt5-detail-gradient{max-height:260px}
+.gt5-app .gt5-detail-body{margin-top:0;padding-top:20px}
