@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
-import { loadShakeRestaurants, recordProductEvent, recordTasteSignal } from '../intelligence/client.js'
+import { recordProductEvent, recordTasteSignal } from '../intelligence/client.js'
 import { detectShakePlatform, shakeImpulse, shakeThreshold, shouldTriggerShake } from './shake-motion.js'
 import { loadTasteDimensions, tasteGraphBoost } from './shake-personalization.js'
 
@@ -51,10 +51,10 @@ function weightedPick(rows, tasteDimensions = []) {
   return weighted.at(-1)?.row || rows[0]
 }
 
-export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }) {
-  const [rows, setRows] = useState([])
+export default function ShakeRestaurantPanel({ city, cityName, session, onOpen, onBuild, venues = [] }) {
+  const rows = useMemo(() => venues.filter(v => /restaurant|dining|cafe|coffee|bakery|food/.test(String(v.category_key || v.subcategory || '').toLowerCase())), [venues])
   const [tasteDimensions, setTasteDimensions] = useState([])
-  const [loading, setLoading] = useState(false)
+  const loading = false
   const [result, setResult] = useState(null)
   const [rolling, setRolling] = useState(false)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -68,21 +68,13 @@ export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }
   const [motionReady, setMotionReady] = useState(false)
   const [status, setStatus] = useState('Shake your phone or tap Pick for me.')
   const historyRef = useRef([])
+  const revealTimer = useRef(null)
+  const pickingRef = useRef(false)
+  useEffect(() => () => { clearTimeout(revealTimer.current); pickingRef.current = false }, [])
   const lastShakeRef = useRef(0)
   const pickRef = useRef(null)
   const platform = useMemo(() => detectShakePlatform(globalThis.navigator?.userAgent || ''), [])
   const threshold = useMemo(() => shakeThreshold(platform), [platform])
-
-  useEffect(() => {
-    let active = true
-    setLoading(true)
-    loadShakeRestaurants(city, { limit: 240 }).then(data => {
-      if (active) setRows(data || [])
-    }).catch(() => {
-      if (active) setStatus('Restaurant picks are temporarily unavailable.')
-    }).finally(() => active && setLoading(false))
-    return () => { active = false }
-  }, [city])
 
   useEffect(() => {
     let active = true
@@ -107,7 +99,8 @@ export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }
   }), [rows, cuisine, price, vibe, blackOwned, reservations, distance, location])
 
   const pick = async source => {
-    if (rolling || loading) return
+    if (pickingRef.current || rolling || loading) return
+    if (distance && !location) { setStatus('Enable location to use the distance filter, or choose Anywhere.'); return }
     const history = new Set(historyRef.current.slice(-8))
     let pool = filtered.filter(venue => !history.has(venue.id))
     if (!pool.length) pool = filtered
@@ -115,15 +108,17 @@ export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }
       setStatus('No restaurants match those filters. Remove one and shake again.')
       return
     }
+    pickingRef.current = true
     setRolling(true)
     setStatus(tasteDimensions.length ? 'GOOD TIMES is choosing for you…' : 'GOOD TIMES is choosing…')
-    try { await Haptics.impact({ style: ImpactStyle.Medium }) } catch {}
-    window.setTimeout(async () => {
+    void Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {})
+    revealTimer.current = window.setTimeout(async () => {
       const chosen = weightedPick(pool, tasteDimensions)
       historyRef.current = [...historyRef.current, chosen.id].slice(-12)
       setResult(chosen)
       setRolling(false)
-      setStatus(tasteDimensions.length ? 'Taste Graph says this is the move.' : 'This is the move.')
+      pickingRef.current = false
+      setStatus(tasteDimensions.length ? 'A pick shaped by what you like.' : 'This is the move.')
       try { await Haptics.impact({ style: ImpactStyle.Heavy }) } catch {}
       const metadata = tasteMetadata(chosen, { cuisine, price, vibe })
       recordProductEvent({
@@ -218,8 +213,8 @@ export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }
 
   return <section className="gt-shake" aria-label="Shake restaurant picker">
     <div className="gt-shake__head">
-      <div><span>GOOD TIMES SHAKE</span><h2>Where we eating?</h2><p>{status}</p></div>
-      <div className={`gt-shake__phone ${rolling ? 'is-rolling' : ''}`} aria-hidden="true">GT</div>
+      <div><span>GOOD TIMES SHAKE</span><h2>Where we eating?</h2><p role="status" aria-live="polite">{status}</p></div>
+      <div className={`gt-shake__phone ${rolling ? 'is-rolling' : ''}`} aria-hidden="true">✦</div>
     </div>
 
     <div className="gt-shake__actions">
@@ -236,17 +231,17 @@ export default function ShakeRestaurantPanel({ city, cityName, session, onOpen }
       {distance && !location && <button type="button" className="gt-shake__location" onClick={requestLocation}>Use my location</button>}
       <label className="gt-shake__check"><input type="checkbox" checked={blackOwned} onChange={event => setBlackOwned(event.target.checked)}/>Black-owned</label>
       <label className="gt-shake__check"><input type="checkbox" checked={reservations} onChange={event => setReservations(event.target.checked)}/>Reservations / booking</label>
-      <small>{filtered.length} eligible picks{tasteDimensions.length ? ` · Taste Graph ${tasteDimensions.length}` : ''}</small>
+      <small>{filtered.length} restaurants match your preferences</small>
     </div>}
 
-    {result && <article className="gt-shake__result">
+    {result && <article key={result.id} className="gt-shake__result">
       <div className="gt-shake__image">{result.hero_image ? <img src={result.hero_image} alt=""/> : <div>GT</div>}<span>{tasteDimensions.length ? 'FOR YOU' : 'GOOD TIMES PICK'}</span></div>
       <div className="gt-shake__copy">
         <small>{result.subcategory || 'Restaurant'}{result.price_range ? ` · ${result.price_range}` : ''}</small>
         <h3>{result.name}</h3>
         <p>{result.short_desc || `${result.name} is your GOOD TIMES pick in ${result.neighborhood || cityName}.`}</p>
         <div className="gt-shake__facts"><span>{result.neighborhood || cityName}</span>{result.google_rating ? <span>★ {Number(result.google_rating).toFixed(1)}</span> : null}{result.is_black_owned ? <span>Black-owned</span> : null}</div>
-        <div className="gt-shake__result-actions"><button type="button" className="gt-shake__primary" onClick={accept}>Let’s go</button><button type="button" onClick={() => pick('reshake')}>Shake again</button><button type="button" onClick={reject}>Nah</button></div>
+        <div className="gt-shake__result-actions"><button type="button" className="gt-shake__primary" onClick={accept}>Let’s go</button><button type="button" disabled={rolling} onClick={() => pick('reshake')}>Shake again</button><button type="button" disabled={rolling} onClick={reject}>Not my vibe</button>{onBuild&&<button type="button" onClick={()=>onBuild(result)}>Build a night around this ↗</button>}</div>
       </div>
     </article>}
   </section>
