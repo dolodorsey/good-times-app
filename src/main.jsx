@@ -29,6 +29,7 @@ import { readSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
 import { installMediaIntegrityGuard } from './media-integrity.js'
 import { isNative } from './native.js'
+import GoodTimesInstallPrompt from './features/experience/GoodTimesInstallPrompt.jsx'
 
 const LazyCommandApp = lazy(() => import('./features/experience/GoodTimesCommandAppV4.jsx'))
 const LazyLegacyApp = lazy(() => import('./App.jsx'))
@@ -107,7 +108,7 @@ function PremiumRoot({children,launch=false}){
   const[showLaunch,setShowLaunch]=useState(()=>launch&&sessionStorage.getItem('gt_premium_launch')!=='1')
   useEffect(()=>{if(!showLaunch)return undefined;sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1');const timer=setTimeout(()=>setShowLaunch(false),1250);return()=>clearTimeout(timer)},[showLaunch])
   if(showLaunch)return <div className="gt-launch" role="status" aria-label="Opening GOOD TIMES"><video className="gt-current-launch-video" autoPlay muted loop playsInline preload="metadata" poster={GT_CURRENT_HOME} src={GT_CURRENT_ANIMATION}/><div className="gt-launch__scene"/><div className="gt-launch__content"><img className="gt-launch__logo" src={GT_CURRENT_LOGO} alt="GOOD TIMES"/><div className="gt-launch__eyebrow">Worldwide experience concierge</div><div className="gt-launch__title">Your next move starts here.</div><div className="gt-launch__line"/></div></div>
-  return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}</div>
+  return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}<GoodTimesInstallPrompt/></div>
 }
 
 function SignedOutGuestExperience(){
