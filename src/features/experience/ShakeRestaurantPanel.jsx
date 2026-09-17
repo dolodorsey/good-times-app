@@ -239,7 +239,7 @@ export default function ShakeRestaurantPanel({ city, cityName, session, onOpen, 
       <div className="gt-shake__copy">
         <small>{result.subcategory || 'Restaurant'}{result.price_range ? ` · ${result.price_range}` : ''}</small>
         <h3>{result.name}</h3>
-        <p>{result.short_desc || `${result.name} is your GOOD TIMES pick in ${result.neighborhood || cityName}.`}</p>
+        <p>{(result.short_desc && !/^auto[- ]sourced/i.test(result.short_desc) ? result.short_desc : null) || `${result.name} is your GOOD TIMES pick in ${result.neighborhood || cityName}.`}</p>
         <div className="gt-shake__facts"><span>{result.neighborhood || cityName}</span>{result.google_rating ? <span>★ {Number(result.google_rating).toFixed(1)}</span> : null}{result.is_black_owned ? <span>Black-owned</span> : null}</div>
         <div className="gt-shake__result-actions"><button type="button" className="gt-shake__primary" onClick={accept}>Let’s go</button><button type="button" disabled={rolling} onClick={() => pick('reshake')}>Shake again</button><button type="button" disabled={rolling} onClick={reject}>Not my vibe</button>{onBuild&&<button type="button" onClick={()=>onBuild(result)}>Build a night around this ↗</button>}</div>
       </div>

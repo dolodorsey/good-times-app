@@ -55,7 +55,7 @@ function VenueCard({venue,saved,onOpen,onSave}){
   const media=safeMedia(venue.hero_image)
   return <article className={`gt5-card gt5-venue ${media?'':'gt5-no-media'}`} onClick={onOpen} role="button" tabIndex={0} onKeyDown={e=>{if(e.target===e.currentTarget&&(e.key==='Enter'||e.key===' ')){e.preventDefault();onOpen()}}}>
     <div className="gt5-card-media">{media?<img src={media} alt="" loading="lazy"/>:<div className="gt5-media-fallback"><AppMark/><small>{cat(venue.category_key)}</small></div>}<div className="gt5-card-shade"/>{venue.is_black_owned&&<span className="gt5-status">BLACK-OWNED</span>}</div>
-    <div className="gt5-card-copy"><small>{cat(venue.category_key)}</small><h3>{venue.name}</h3><p>{venue.short_desc||venue.subcategory||'Explore this place'}</p><em>{[venue.neighborhood,venue.google_rating?`★ ${Number(venue.google_rating).toFixed(1)}`:null,venue.price_range].filter(Boolean).join(' · ')}</em><span className="gt5-card-action">Explore place ↗</span></div>
+    <div className="gt5-card-copy"><small>{cat(venue.category_key)}</small><h3>{venue.name}</h3><p>{(venue.short_desc&&!/^auto[- ]sourced/i.test(venue.short_desc)?venue.short_desc:null)||venue.subcategory||'Explore this place'}</p><em>{[venue.neighborhood,venue.google_rating?`★ ${Number(venue.google_rating).toFixed(1)}`:null,venue.price_range].filter(Boolean).join(' · ')}</em><span className="gt5-card-action">Explore place ↗</span></div>
     <button className={`gt5-save ${saved?'active':''}`} aria-label={saved?'Remove saved item':'Save item'} onClick={e=>{e.stopPropagation();onSave()}}><GoodTimesIcon glyph={saved?'✓':'♡'}/></button>
   </article>
 }
