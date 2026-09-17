@@ -27,7 +27,7 @@ test('fast gateway uses one Supabase inventory RPC and drops stale same-day inve
   assert.match(liveSource,/p_service_date:serviceDate/)
   assert.match(liveSource,/isStaleServiceDayEvent/)
   assert.match(liveSource,/clock\.serviceMinute-\(6\*60\)/)
-  assert.match(liveSource,/X-Good-Times-Live-Gateway','v7'/)
+  assert.match(liveSource,/X-Good-Times-Live-Gateway','v8'/)
   assert.match(liveSource,/scoreGoodTimesEvent/)
 })
 
