@@ -1,8 +1,15 @@
 /** API display values for documented doors-only listings. No showtime inference. */
 export function validClock(value) {
-  const match=String(value??'').trim().match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
-  if(!match||Number(match[1])>23||Number(match[2])>59)return null;
-  return `${String(Number(match[1])).padStart(2,'0')}:${match[2]}`;
+  const match=String(value??'').trim().match(/^(\d{1,2})(?::(\d{2})(?::(\d{2}))?)?\s*(AM|PM)?$/i);
+  if(!match)return null;
+  let hour=Number(match[1]);
+  const minute=Number(match[2]??0),second=Number(match[3]??0);
+  if(minute>59||second>59)return null;
+  if(match[4]){
+    if(hour<1||hour>12)return null;
+    hour=hour%12+(match[4].toUpperCase()==='PM'?12:0);
+  }else if(match[2]===undefined||hour>23)return null;
+  return `${String(hour).padStart(2,'0')}:${String(minute).padStart(2,'0')}`;
 }
 export function eventTimeFields(item={}) {
   const performance=validClock(item.show_time),doors=validClock(item.doors_time);
