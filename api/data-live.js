@@ -101,7 +101,7 @@ function intelligenceEventScore(item){
     is_verified:item.status==='confirmed',
   }).total
 }
-function rankEvents(rows,clock){
+export function rankEvents(rows,clock){
   return [...rows].sort((a,b)=>{
     const date=String(a.show_date||'').localeCompare(String(b.show_date||''))
     if(date)return date
@@ -110,8 +110,13 @@ function rankEvents(rows,clock){
       if(priority)return priority
       const time=eventMinutes(b.show_time)-eventMinutes(a.show_time)
       if(time)return time
+      return intelligenceEventScore(b)-intelligenceEventScore(a)||Number(a.display_priority||99)-Number(b.display_priority||99)
     }
-    return intelligenceEventScore(b)-intelligenceEventScore(a)||Number(a.display_priority||99)-Number(b.display_priority||99)
+    const featured=Number(Boolean(b.is_featured))-Number(Boolean(a.is_featured))
+    if(featured)return featured
+    const editorial=Number(a.display_priority??99)-Number(b.display_priority??99)
+    if(editorial)return editorial
+    return intelligenceEventScore(b)-intelligenceEventScore(a)
   })
 }
 function isStaleServiceDayEvent(item,clock){
