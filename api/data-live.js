@@ -2,17 +2,17 @@ import {
   normalizeCity,
   clampLimit,
   dedupeCustomerVenues,
-  dedupeCustomerEvents,
   inferCustomerTaxonomy,
   getEventFreshness,
 } from './data.js'
 import { scoreGoodTimesEvent } from './good-times-intelligence.js'
-import { eventTimeFields } from './event-time-display.js'
+import { eventTimeFields, validClock } from './event-time-display.js'
+import { dedupeEventOccurrences, inventoryCacheKey } from './event-occurrences.js'
 
 const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 const EVENT_FRESHNESS_MAX_HOURS=72
-const CACHE=globalThis.__GT_DATA_LIVE_CACHE__||(globalThis.__GT_DATA_LIVE_CACHE__=new Map())
+const CACHE=globalThis.__GT_DATA_LIVE_CACHE_V8__||(globalThis.__GT_DATA_LIVE_CACHE_V8__=new Map())
 const CITY_TIMEZONES=Object.freeze({
   atlanta:'America/New_York',
   charlotte:'America/New_York',
@@ -72,7 +72,7 @@ async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLim
   throw lastError||new Error('inventory RPC failed')
 }
 
-function eventMinutes(value){const m=String(value||'').match(/^(\d{1,2}):(\d{2})/);return m?Number(m[1])*60+Number(m[2]):-1}
+function eventMinutes(value){const clock=validClock(value);if(!clock)return -1;const [h,m]=clock.split(':');return Number(h)*60+Number(m)}
 function nightlifePriority(item,serviceDate){
   if(item.show_date!==serviceDate)return 9
   const taxonomy=inferCustomerTaxonomy(item)
@@ -150,8 +150,8 @@ function mapVenues(rows){
 function send(response,status,payload,cache='MISS'){
   response.statusCode=status
   response.setHeader('Content-Type','application/json; charset=utf-8')
-  response.setHeader('Cache-Control',status===200?'public, s-maxage=60, stale-while-revalidate=600':'no-store')
-  response.setHeader('X-Good-Times-Live-Gateway','v7')
+  response.setHeader('Cache-Control',status===200&&cache!=='STALE'?'public, s-maxage=60, stale-while-revalidate=600':'no-store')
+  response.setHeader('X-Good-Times-Live-Gateway','v8')
   response.setHeader('X-Good-Times-Cache',cache)
   response.end(JSON.stringify(payload))
 }
@@ -165,7 +165,7 @@ export default async function handler(request,response){
   const clock=cityClock(city)
   const eventFetchLimit=Math.min(Math.max(eventLimit*4,360),720)
   const venueFetchLimit=Math.min(Math.max(venueLimit*3,240),540)
-  const cacheKey=`${city}:${clock.serviceDate}`
+  const cacheKey=inventoryCacheKey(city,clock.serviceDate,eventLimit,venueLimit)
   let inventory
   try{
     inventory=await fetchInventoryRPC({city,serviceDate:clock.serviceDate,eventFetchLimit,venueFetchLimit})
@@ -179,7 +179,7 @@ export default async function handler(request,response){
   const rawVenues=inventory.venues
   const freshness=getEventFreshness(rawEvents,new Date())
   const readyEvents=freshness.live?rawEvents.filter(item=>customerReadyEvent(item,clock)):[]
-  const ranked=rankEvents(dedupeCustomerEvents(readyEvents),clock)
+  const ranked=rankEvents(dedupeEventOccurrences(readyEvents),clock)
   const events=mapEvents(ranked).slice(0,eventLimit)
   const venues=mapVenues(rawVenues).slice(0,venueLimit)
   const degraded=freshness.status==='stale'
@@ -190,6 +190,7 @@ export default async function handler(request,response){
     counts:{events:events.length,venues:venues.length},events,venues,
   }
   CACHE.set(cacheKey,{at:Date.now(),payload})
-  if(request.method==='HEAD'){response.statusCode=200;response.setHeader('X-Good-Times-Events',String(events.length));response.setHeader('X-Good-Times-Venues',String(venues.length));response.setHeader('X-Good-Times-Degraded',String(degraded));response.setHeader('X-Good-Times-Service-Date',clock.serviceDate);response.setHeader('X-Good-Times-Live-Gateway','v7');return response.end()}
+  if(CACHE.size>128){const oldest=CACHE.keys().next().value;CACHE.delete(oldest)}
+  if(request.method==='HEAD'){response.statusCode=200;response.setHeader('X-Good-Times-Events',String(events.length));response.setHeader('X-Good-Times-Venues',String(venues.length));response.setHeader('X-Good-Times-Degraded',String(degraded));response.setHeader('X-Good-Times-Service-Date',clock.serviceDate);response.setHeader('X-Good-Times-Live-Gateway','v8');return response.end()}
   return send(response,200,payload)
 }
