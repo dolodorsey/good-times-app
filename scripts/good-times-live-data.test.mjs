@@ -61,12 +61,14 @@ test('Frontend uses same-origin fast event inventory and cannot bypass freshness
   assert.doesNotMatch(client, /gt_public_atlanta_feed/)
 })
 
-test('Service worker is retired and customer bootstrap does not register it', () => {
+test('Service worker is installable but cannot cache or force-reload customer data', () => {
   const worker = read('public/sw.js')
   const main = read('src/main.jsx')
-  assert.match(worker, /registration\.unregister\(\)/)
+  assert.doesNotMatch(worker, /registration\.unregister\(\)/)
+  assert.match(worker, /event\.respondWith\(fetch\(request\)\)/)
+  assert.doesNotMatch(worker, /caches\.put|cache\.add|cache\.match/)
   assert.doesNotMatch(worker, /client\.navigate/)
   assert.doesNotMatch(worker, /GOOD_TIMES_FORCE_RELOAD/)
-  assert.doesNotMatch(main, /navigator\.serviceWorker\.register/)
+  assert.match(main, /navigator\.serviceWorker\.register\('\/sw\.js'/)
   assert.doesNotMatch(main, /React\.StrictMode/)
 })
