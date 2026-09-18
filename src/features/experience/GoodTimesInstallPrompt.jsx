@@ -9,7 +9,7 @@ function InstallQr(){
   if(!qr)return null;
   return <aside aria-label="Scan to install app" style={{position:'fixed',right:22,bottom:22,zIndex:2147483002,width:188,padding:12,borderRadius:20,background:'rgba(7,8,11,.97)',border:'1px solid rgba(255,255,255,.16)',boxShadow:'0 24px 70px rgba(0,0,0,.48)',color:'#fff',fontFamily:'Arial,sans-serif'}}>
     <img src={qr} alt="QR code to install this app" width="164" height="164" style={{display:'block',width:'100%',height:'auto',borderRadius:12,background:'#fff',padding:6}}/>
-    <strong style={{display:'block',marginTop:10,fontSize:10,letterSpacing:'.14em'}}>SCAN TO GET THE APP</strong>
+    <strong style={{display:'block',marginTop:10,fontSize:10,letterSpacing:'.14em'}}>SCAN TO GET GOOD TIMES</strong>
     <small style={{display:'block',marginTop:5,color:'rgba(255,255,255,.62)',fontSize:9,lineHeight:1.45}}>iPhone: Share → Add to Home Screen → Open as Web App → Add. Android: tap Install App.</small>
   </aside>
 }
@@ -27,14 +27,15 @@ export default function GoodTimesInstallPrompt(){
  useEffect(()=>{
   if(isStandalone()||window.Capacitor){setInstalled(true);return}
   const a=isIOS();setApple(a)
-  const dismissed=Number(get('gt:pwa-dismissed')||0),eligible=!dismissed||Date.now()-dismissed>DISMISS_MS
+  const dismissed=Number(get('gt:pwa-dismissed')||0),eligible=forceInstall()||!dismissed||Date.now()-dismissed>DISMISS_MS
   const before=e=>{e.preventDefault();setPrompt(e);if(eligible)setTimeout(()=>setShow(true),2200)}
   const done=()=>{setInstalled(true);setShow(false);installComplete(a?'ios':'web')}
   addEventListener('beforeinstallprompt',before);addEventListener('appinstalled',done)
-  let t=0;if(eligible&&a)t=setTimeout(()=>setShow(true),5600)
+  let t=0;if(forceInstall())t=setTimeout(()=>setShow(true),120);else if(eligible&&a)t=setTimeout(()=>setShow(true),5600)
   return()=>{removeEventListener('beforeinstallprompt',before);removeEventListener('appinstalled',done);if(t)clearTimeout(t)}
  },[])
- if(installed||!show)return null
+ if(installed)return null
+ if(!show)return <button aria-label="Get GOOD TIMES app" onClick={()=>{setSteps(false);setShow(true);recordGrowthEvent('install_cta',{label:'good_times_persistent_get_app'})}} style={{position:'fixed',right:16,bottom:18,zIndex:2147482500,border:0,borderRadius:999,padding:'13px 17px',background:'linear-gradient(100deg,#ffcf64,#fc528b 55%,#8c7bff)',color:'#09060b',font:'900 11px/1 Arial',letterSpacing:'.08em',boxShadow:'0 16px 44px rgba(0,0,0,.35)',cursor:'pointer'}}>GET GOOD TIMES ↗</button>
  const close=()=>{set('gt:pwa-dismissed',String(Date.now()));setShow(false)}
  const install=async()=>{recordGrowthEvent('install_cta',{label:'good_times_home_screen_install'});if(prompt){const r=await prompt.prompt();setPrompt(null);if(r.outcome==='accepted')setShow(false);return}setSteps(true)}
  return <div className="gt-install" role="dialog" aria-modal="true" aria-label="Install GOOD TIMES">
