@@ -37,7 +37,8 @@ test('Explore renders approved category-specific Supabase art instead of repeate
 test('Build My Night is a visual planner using approved mood art and a three-stop preview',()=>{
   assert.match(builder,/VIBE_CONFIG/)
   assert.match(builder,/gt-cat-mood-bougie\.webp/)
-  assert.match(builder,/gt-cat-mood-turnt\.webp/)
+  assert.match(builder,/\['High energy','gt-cat-music\.webp'\]/)
+  assert.match(builder,/\['Something different','gt-cat-adventure\.webp'\]/)
   assert.match(builder,/gt2-builder-preview/)
   assert.match(builder,/gt2-builder-route/)
   assert.match(builder,/--gt-vibe-art/)
