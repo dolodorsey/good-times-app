@@ -38,6 +38,7 @@ function normalizeSubcategories(category) {
 }
 
 export default function ExploreTaxonomyBrowser({
+  externalSearch = false,
   taxonomy = [],
   directory = [],
   cityName,
@@ -148,11 +149,11 @@ export default function ExploreTaxonomyBrowser({
           : 'Catalog unavailable right now — check your connection and pull to refresh.'}</p>
     </div>
 
-    <div className="gt2-search">
+    {!externalSearch && <div className="gt2-search">
       <span>⌕</span>
       <input value={query} onChange={event => onQuery?.(event.target.value)} placeholder="Search venue, neighborhood, category or vibe…" />
       {query && <button onClick={() => onQuery?.('')}>×</button>}
-    </div>
+    </div>}
 
     {!activeCategory && <>
       <div className="gt2-taxonomy-heading"><span>DISCOVER BY CATEGORY</span><small>Choose a lane to open its complete subcategory list.</small></div>

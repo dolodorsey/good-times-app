@@ -3,13 +3,13 @@ import { gtAssetUrl } from './good-times-assets.js'
 
 const VIBE_CONFIG = [
   ['Grown & sexy','gt-cat-mood-bougie.webp'],
-  ['High energy','gt-cat-mood-turnt.webp'],
+  ['High energy','gt-cat-music.webp'],
   ['Date night','gt-cat-mood-date.webp'],
   ['Live music','gt-cat-music.webp'],
   ['Black-owned','gt-cat-culture.webp'],
   ['Rooftop','gt-bg-rooftop-lounge.webp'],
   ['Food first','gt-cat-dining.webp'],
-  ['Something different','gt-cat-mood-explore.webp'],
+  ['Something different','gt-cat-adventure.webp'],
 ]
 const BUDGETS = ['No preference', 'Under $50 each', '$50–$100 each', '$100–$200 each', 'Premium / VIP']
 const STEPS = ['Vibe','Basics','Preferences','Review']

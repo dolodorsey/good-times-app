@@ -1,0 +1,194 @@
+/* September customer enhancement: existing pages and navigation, brighter imagery,
+   compact shell, useful card metadata, and consistent 44px actions. */
+.gt5-app{--gt5-coral:#ff9b85;--gt5-teal:#78dbcb;--gt5-lilac:#c5adff;--gt5-blue:#90c9ff}
+.gt5-app .gt5-topbar{height:58px;min-height:58px;flex-basis:58px;padding:6px 16px;gap:8px}
+.gt5-app .gt5-brand{gap:8px;min-height:44px;padding:0}
+.gt5-app .gt5-brand .gt5-mark{width:30px;height:30px;min-width:30px;font-size:10px}
+.gt5-app .gt5-brand strong{font-size:15px;letter-spacing:.1em}
+.gt5-app .gt5-brand small{display:none}
+.gt5-app .gt5-city{height:44px;min-height:44px;font-size:12px;padding:0 10px;max-width:120px}
+.gt5-app .gt5-bell{display:grid;place-items:center;width:44px;min-width:44px;height:44px}
+.gt5-app .gt5-top-actions{gap:4px}
+.gt5-app .gt5-radar-strip{min-height:44px;flex-basis:44px;padding:0 16px;grid-template-columns:88px minmax(0,1fr) 12px;background:#0e171a}
+.gt5-app .gt5-radar-strip strong{font-family:var(--gt5-sans);font-size:11px}
+.gt5-app:not([data-screen="home"])>.gt5-radar-strip{display:none}
+.gt5-app .gt5-nav{min-height:68px;padding-top:4px;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+.gt5-app .gt5-nav button{min-height:54px;border-radius:12px;gap:3px}
+.gt5-app .gt5-nav button small{font-size:10px}
+.gt5-app .gt5-nav button.plan span{width:46px;height:46px;margin-top:-16px}
+.gt5-app .gt5-main{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+.gt5-app .gt5-hero::before{filter:none}
+.gt5-app .gt5-hero-shade{background:linear-gradient(90deg,rgba(3,4,5,.78),rgba(3,4,5,.2)),linear-gradient(0deg,rgba(3,4,5,.8),transparent 70%)}
+.gt5-app[data-screen="home"] .gt5-home-hero{min-height:0}
+.gt5-app[data-screen="home"] .gt5-home-hero .gt5-hero-copy{min-height:0;max-width:none;padding:20px 16px 16px}
+.gt5-app[data-screen="home"] .gt5-home-hero h1{font-size:38px;line-height:1.05;max-width:100%;margin:8px 0}
+.gt5-app[data-screen="home"] .gt5-home-hero h1 br{display:none}
+.gt5-app[data-screen="home"] .gt5-home-hero h1 em{margin-left:8px}
+.gt5-app[data-screen="home"] .gt5-home-hero .gt5-hero-copy>p{max-width:100%;font-size:12px}
+.gt5-app .gt5-script{display:none}
+.gt5-app[data-screen="home"] .gt5-hero-search{margin-top:14px;border-radius:16px;grid-template-columns:24px minmax(0,1fr) 44px;padding:3px 4px 3px 10px}
+.gt5-app[data-screen="home"] .gt5-hero-search input{height:44px;font-size:12px}
+.gt5-app[data-screen="home"] .gt5-hero-search button{height:44px;width:44px;border-radius:12px}
+.gt5-app[data-screen="home"] .gt5-home-quick{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:12px}
+.gt5-app[data-screen="home"] .gt5-home-quick button{min-height:44px;border-radius:12px;display:flex;gap:6px;background:rgba(10,17,25,.85);border-color:rgba(255,255,255,.2)}
+.gt5-app[data-screen="home"] .gt5-home-quick button:nth-child(3n+1){color:var(--gt5-coral)}
+.gt5-app[data-screen="home"] .gt5-home-quick button:nth-child(3n+2){color:var(--gt5-lilac)}
+.gt5-app[data-screen="home"] .gt5-home-quick button:nth-child(3n){color:var(--gt5-teal)}
+.gt5-app[data-screen="home"] .gt5-home-quick b{color:inherit;font-size:16px}
+.gt5-app[data-screen="home"] .gt5-home-quick small{font-size:11px}
+.gt5-app .gt5-compact-hero,.gt5-app .gt5-itinerary-hero{min-height:0;border-radius:0 0 20px 20px}
+.gt5-app .gt5-compact-hero .gt5-hero-copy,.gt5-app .gt5-itinerary-hero .gt5-hero-copy{min-height:136px;max-width:none;padding:22px 20px}
+.gt5-app .gt5-compact-hero h1,.gt5-app .gt5-itinerary-hero h1{font-size:34px;line-height:1.08;margin:8px 0;max-width:100%}
+.gt5-app .gt5-compact-hero h1 br,.gt5-app .gt5-itinerary-hero h1 br{display:none}
+.gt5-app .gt5-compact-hero h1 em,.gt5-app .gt5-itinerary-hero h1 em{margin-left:8px}
+.gt5-app .gt5-compact-hero .gt5-hero-copy>p{max-width:100%;font-size:12px}
+.gt5-app .gt5-section{padding:18px 16px}
+.gt5-app .gt5-section h2{font-size:25px;line-height:1.12}
+.gt5-app .gt5-section>header>button{min-height:44px;font-size:12px;padding:0 5px;flex-shrink:0}
+.gt5-app .gt5-card{border-color:rgba(255,255,255,.16);border-radius:16px;min-height:156px;grid-template-columns:36% minmax(0,1fr);background:linear-gradient(130deg,#172027,#0e1218)}
+.gt5-app .gt5-card-media{min-height:156px}
+.gt5-app .gt5-card-copy{padding:14px 12px;gap:0}
+.gt5-app .gt5-card-copy>small{font-size:9px;line-height:1.4;letter-spacing:.08em;color:var(--gt5-teal);padding-right:26px}
+.gt5-app .gt5-card-copy h3{font-size:21px;line-height:1.12;margin:7px 0}
+.gt5-app .gt5-card-copy p{font-size:12px;color:#d9dcdf;line-height:1.4}
+.gt5-app .gt5-card-copy>em{font-size:11px;color:#bbc7cc;white-space:normal;line-height:1.4}
+.gt5-app .gt5-card-action{font:700 11px/1.5 var(--gt5-sans);color:var(--gt5-gold2);margin-top:9px}
+.gt5-app .gt5-save{width:44px;height:44px;right:4px;top:4px;border:0;background:rgba(5,8,11,.7)}
+.gt5-app .gt5-save svg{width:20px;height:20px}
+.gt5-app .gt5-status{font-size:8px;left:6px;bottom:8px;padding:6px 8px;letter-spacing:.04em}
+.gt5-app[data-screen="home"] .gt5-card-feature{min-height:164px;grid-template-columns:36% minmax(0,1fr)}
+.gt5-app[data-screen="home"] .gt5-card-feature .gt5-card-media{min-height:164px}
+.gt5-app[data-screen="home"] .gt5-card-feature .gt5-card-copy{padding:14px 12px}
+.gt5-app[data-screen="home"] .gt5-card-feature h3{font-size:22px}
+.gt5-app[data-screen="home"] .gt5-trending-grid{grid-auto-flow:row;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;overflow:visible}
+.gt5-app[data-screen="home"] .gt5-trending-grid .gt5-card{min-height:0}
+.gt5-app[data-screen="home"] .gt5-trending-grid .gt5-card-media{height:124px;min-height:124px}
+.gt5-app[data-screen="home"] .gt5-trending-grid .gt5-card-copy{padding:12px}
+.gt5-app[data-screen="home"] .gt5-trending-grid .gt5-card-copy h3{font-size:21px}
+.gt5-app[data-screen="home"] .gt5-trending-grid .gt5-card-copy p{font-size:12px;-webkit-line-clamp:2}
+.gt5-app[data-screen="home"] .gt5-trending-grid .gt5-card-copy em{font-size:11px}
+/* Missing photography has an honest compact treatment, never unrelated venue art. */
+.gt5-app[data-screen="home"] .gt5-trending-grid .gt5-no-media .gt5-card-media{height:58px;min-height:58px;background:linear-gradient(120deg,#284449,#332744)}
+.gt5-app .gt5-no-media .gt5-media-fallback{background:linear-gradient(140deg,#284449,#332744);gap:4px}
+.gt5-app .gt5-no-media .gt5-media-fallback small{display:none}
+.gt5-app .gt5-no-media .gt5-media-fallback .gt5-mark{width:28px;height:28px;min-width:28px;font-size:9px}
+.gt5-app .gt5-ad{position:relative;isolation:isolate;overflow:hidden;margin:16px;padding:22px;min-height:168px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;border:1px solid rgba(255,255,255,.22);border-radius:20px;background:#19343c}
+.gt5-app .gt5-house-ad{background:linear-gradient(90deg,rgba(7,23,28,.93),rgba(7,23,28,.28)),var(--gt5-ad-art) center/cover}
+.gt5-app .gt5-ad>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+.gt5-app .gt5-ad:has(>img)::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(5,10,15,.9),rgba(5,10,15,.15));z-index:-1}
+.gt5-app .gt5-ad>span{font-size:9px;letter-spacing:.12em;color:var(--gt5-teal)}
+.gt5-app .gt5-ad strong{font:500 28px/1.1 var(--gt5-serif);max-width:90%;display:block}
+.gt5-app .gt5-ad p{font-size:12px;line-height:1.4;margin:5px 0;max-width:90%}
+.gt5-app .gt5-ad a,.gt5-app .gt5-ad button{min-height:44px;display:inline-flex;align-items:center;border:0;border-radius:12px;padding:0 16px;background:var(--gt5-gold2);color:#101214;text-decoration:none;font:800 12px var(--gt5-sans)}
+.gt5-app .gt5-section-note{margin:0;color:#bac6cc;font-size:13px;line-height:1.5}
+.gt5-app .gt5-upcoming-category:nth-of-type(3n) header span{color:var(--gt5-lilac)}
+.gt5-app .gt5-upcoming-category:nth-of-type(3n+1) header span{color:var(--gt5-coral)}
+.gt5-app[data-screen="discover"] .gt5-lanes{grid-template-columns:repeat(2,minmax(0,1fr));padding:4px 16px 16px;gap:10px}
+.gt5-app[data-screen="discover"] .gt5-lanes button{min-height:128px;padding:14px;border-radius:16px}
+.gt5-app[data-screen="discover"] .gt5-lanes button:last-child{grid-column:1/-1;min-height:96px}
+.gt5-app[data-screen="discover"] .gt5-lanes button::after{background:linear-gradient(0deg,rgba(0,0,0,.86),rgba(0,0,0,.08))}
+.gt5-app[data-screen="discover"] .gt5-lanes span{display:none}
+.gt5-app[data-screen="discover"] .gt5-lanes strong{font-size:27px;margin-top:34px}
+.gt5-app[data-screen="discover"] .gt5-lanes small{font-size:11px;max-width:86%}
+.gt5-app[data-screen="discover"] .gt5-lanes i{right:8px;width:24px;height:24px;font-size:21px;border:0;top:auto;bottom:12px;transform:none}
+.gt5-app .gt5-taxonomy{margin:0;padding:8px 16px 20px}
+.gt5-app .gt5-taxonomy .gt2-category-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+.gt5-app .gt5-taxonomy .gt2-category-grid>button{height:auto!important;min-height:150px!important;padding:14px!important;border-radius:16px!important;display:flex!important;flex-direction:column;justify-content:flex-end;align-items:flex-start;text-align:left}
+.gt5-app .gt5-taxonomy .gt2-category-grid>button::after{background:linear-gradient(0deg,rgba(3,5,8,.87),rgba(3,5,8,.03))!important}
+.gt5-app .gt5-taxonomy .gt2-category-grid strong{font-size:20px!important;line-height:1.12!important;position:relative!important;inset:auto!important}
+.gt5-app .gt5-taxonomy .gt2-category-grid small{font-size:10px!important;line-height:1.4!important;position:relative!important;inset:auto!important;margin-top:6px}
+.gt5-app .gt5-taxonomy .gt2-category-mark{display:none!important}
+.gt5-app .gt5-taxonomy .gt2-taxonomy-heading small{font-size:12px}
+.gt5-app .gt5-plan-mode{margin:14px 16px;min-height:0;border-radius:16px}
+.gt5-app .gt5-plan-mode button{padding:12px 10px;min-height:64px}
+.gt5-app .gt5-plan-mode strong{font-size:14px}
+.gt5-app .gt5-plan-mode small{font-size:10px}
+.gt5-app .gt5-plan-builder{margin:14px 16px;padding:16px;border-radius:20px}
+.gt5-app .gt5-plan-builder header{align-items:flex-start;gap:10px}
+.gt5-app .gt5-plan-builder h2{font-size:25px;line-height:1.08}
+.gt5-app .gt5-plan-builder header small{font-size:10px;line-height:1.4;max-width:70px}
+.gt5-app .gt5-plan-intents{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.gt5-app .gt5-plan-intents button{position:relative;isolation:isolate;min-height:102px;border-radius:14px;overflow:hidden;background:linear-gradient(0deg,rgba(5,8,12,.84),rgba(5,8,12,.15)),var(--gt5-mood-art) center/cover;border-color:rgba(255,255,255,.23);gap:5px}
+.gt5-app .gt5-plan-intents button.active{box-shadow:inset 0 0 0 2px var(--gt5-gold2);border-color:var(--gt5-gold2)}
+.gt5-app .gt5-plan-intents button span{font-size:19px;color:white}
+.gt5-app .gt5-plan-intents button b{font-size:21px;color:var(--gt5-gold2)}
+.gt5-plan-basics{display:grid;grid-template-columns:1.2fr .7fr 1.25fr;gap:8px;margin-top:16px}
+.gt5-plan-basics label{display:grid;gap:6px;font-size:10px;color:var(--gt5-teal)}
+.gt5-plan-basics select{width:100%;min-width:0;min-height:44px;border-radius:10px;padding:0 6px;border:1px solid #45515a;background:#142029;color:white;font-size:12px}
+.gt5-plan-recap{font-size:12px;color:#e1d6bc;line-height:1.5}
+.gt5-app .gt5-plan-text{margin-top:12px;padding:12px;border-radius:14px}
+.gt5-app .gt5-plan-text textarea{min-height:86px;font-size:13px}
+.gt5-app .gt5-build{min-height:52px;margin:12px 16px;width:calc(100% - 32px);border-radius:16px;font-size:14px}
+.gt5-app .gt5-popular{padding:0 16px}
+.gt5-app .gt5-popular h3{font-size:22px}
+.gt5-app .gt5-popular button{min-height:44px;font-size:12px}
+.gt5-app .gt-shake{margin:18px 16px;background:radial-gradient(ellipse at 90% 0,rgba(130,93,212,.32),transparent 65%),linear-gradient(135deg,#16353b,#151524);border-color:#477074}
+.gt5-app .gt-shake__phone{color:var(--gt5-teal);border-color:var(--gt5-teal);background:linear-gradient(130deg,#315f63,#44305e);font-size:32px;transform:rotate(8deg)}
+.gt5-app .gt-shake__result{animation:gtReveal .35s ease-out}
+.gt5-app .gt-shake__image{min-height:180px}
+.gt5-app .gt-shake__filters{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}
+.gt5-app .gt-shake__filters label{min-width:0}
+.gt5-app .gt-shake__filters select{font-size:12px;min-width:0}
+.gt5-app .gt-shake__copy h3{font-family:var(--gt5-serif)}
+.gt5-app .gt-shake__result-actions button:last-child{flex-basis:100%;border-color:var(--gt5-teal);color:var(--gt5-teal)}
+.gt5-app .gt5-segments{margin:16px;padding:4px;border-radius:16px}
+.gt5-app .gt5-segments button{min-height:48px;font-size:15px;border-radius:12px}
+.gt5-app .gt5-plan-list{margin:0;padding:0 16px;gap:12px}
+.gt5-app .gt5-plan-list>button{padding:18px;border-radius:18px;background:linear-gradient(135deg,#1a292d,#12121c)}
+.gt5-app .gt5-plan-list h2{font-size:25px;line-height:1.15}
+.gt5-app .gt5-plan-list p,.gt5-app .gt5-plan-list i em{font-size:12px;line-height:1.5}
+.gt5-app .gt5-profile-city,.gt5-app .gt5-member,.gt5-app .gt5-support{margin:16px;padding:16px;border-radius:16px}
+.gt5-app .gt5-profile-menu{margin:0 16px;gap:8px}
+.gt5-app .gt5-profile-menu button,.gt5-app .gt5-profile-menu a{min-height:72px;border-radius:14px;background:#121a22}
+.gt5-app .gt5-profile-menu strong{font-size:19px}
+.gt5-app .gt5-profile-menu small,.gt5-app .gt5-profile-city small{font-size:12px;line-height:1.4}
+.gt5-app .gt5-profile-city select{min-height:44px;font-size:12px;max-width:45%}
+.gt5-app .gt5-member{background:linear-gradient(115deg,#233e41,#262039)}
+.gt5-app .gt5-support{flex-wrap:wrap;gap:14px}
+.gt5-app .gt5-support a{min-height:44px;font-size:12px;display:flex;align-items:center}
+.gt5-app .gt5-detail-back{width:44px;height:44px}
+.gt5-app .gt5-detail-hero{max-height:260px}
+.gt5-app .gt5-detail-body h1{font-size:32px;line-height:1.1}
+.gt5-app .gt5-detail-meta,.gt5-app .gt5-fact-row p,.gt5-app .gt5-detail-actions a,.gt5-app .gt5-detail-actions button{font-size:13px}
+.gt5-app .gt5-timeline h2{white-space:normal;font-size:22px;line-height:1.15}
+.gt5-app .gt5-timeline p,.gt5-app .gt5-timeline em{font-size:11px}
+.gt5-app .gt5-empty p{font-size:13px}
+.gt5-app :is(button,a,input,select,textarea,[role="button"]):focus-visible{outline:2px solid var(--gt5-teal);outline-offset:3px}
+@keyframes gtReveal{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@media(min-width:700px){.gt5-app[data-screen="home"] .gt5-home-quick{grid-template-columns:repeat(6,minmax(0,1fr))}.gt5-app[data-screen="home"] .gt5-home-hero .gt5-hero-copy{padding:26px 32px}.gt5-app[data-screen="home"] .gt5-trending-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.gt5-app .gt5-taxonomy .gt2-category-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.gt5-app .gt5-plan-intents{grid-template-columns:repeat(3,minmax(0,1fr))}.gt5-app .gt-shake__result{grid-template-columns:1fr 1fr}.gt5-app .gt5-upcoming-category .gt5-stack{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:359px){.gt5-app .gt5-topbar{padding:6px 10px}.gt5-app .gt5-brand strong{font-size:12px}.gt5-app .gt5-brand .gt5-mark{display:none}.gt5-app .gt5-city{max-width:104px}.gt5-app[data-screen="home"] .gt5-home-hero h1{font-size:32px}.gt5-app .gt5-plan-basics{grid-template-columns:1fr 1fr}.gt5-plan-basics label:last-child{grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){.gt5-app .gt-shake__result{animation:none}}
+.gt5-app .gt5-plan-builder header small{white-space:normal;flex:0 0 66px;text-align:right}
+.gt5-app .gt5-taxonomy .gt2-category-grid>button strong,.gt5-app .gt5-taxonomy .gt2-category-grid>button small{text-align:left!important;width:100%!important;max-width:100%!important}
+.gt5-app .gt5-taxonomy .gt2-category-grid>button strong{font-size:18px!important}
+.gt5-app .gt5-guided{margin:16px;padding:14px;border:1px solid #41565b;border-radius:18px;background:#101b23}
+.gt5-app .gt5-guided summary{min-height:44px;display:flex;align-items:center;font-size:14px;color:var(--gt5-teal)}
+.gt5-app .gt2-builder-progress button{font-size:10px;min-height:44px}
+.gt5-app .gt2-builder-stage-title small{font-size:11px}
+.gt5-app .gt2-builder-review span,.gt5-app .gt2-builder-review strong{font-size:12px}
+.gt5-app .gt2-builder-fields label,.gt5-app .gt2-builder-fields select{font-size:13px}
+.gt5-app .gt2-builder-actions button{min-height:44px;font-size:13px}
+.gt5-app .gt2-builder-search-note{display:none}
+/* Win the legacy compact-phone rule without shrinking touch targets. */
+.gt5-app[data-screen] .gt5-topbar{height:58px;min-height:58px;flex-basis:58px}
+.gt5-app .gt-shake__image:has(>div){min-height:68px;background:linear-gradient(120deg,#254c50,#47375b)}
+.gt5-app .gt-shake__image:has(>div)>div{font-size:16px;opacity:.65}
+.gt5-app .gt5-guided>section>small{font-size:12px;line-height:1.5;display:block}
+.gt5-app .gt5-card .gt5-save{right:auto;left:calc(36% - 48px)}
+.gt5-app[data-screen="home"] .gt5-trending-grid .gt5-save{left:auto;right:4px}
+.gt5-app .gt5-card-copy>small{font-size:10px;padding-right:0}
+
+/* Keep poster lettering separate from the readable event title. */
+.gt5-app .gt5-detail-gradient{max-height:260px}
+.gt5-app .gt5-detail-body{margin-top:0;padding-top:20px}
+/* Give the existing guided planner the full card width on phones. */
+.gt5-app .gt5-guided{margin:14px 16px;padding:12px;background:linear-gradient(135deg,#142b30,#181629)}
+.gt5-app .gt5-guided .gt2-builder{margin:12px 0 0;padding:14px;border-radius:16px;width:100%}
+.gt5-app .gt5-guided .gt2-builder-head h2{font-size:28px}
+.gt5-app .gt5-guided .gt2-builder-head p{font-size:13px;line-height:1.5}
+.gt5-app .gt5-guided .gt2-builder-preview{margin:12px 0;padding:8px}
+.gt5-app .gt5-guided .gt2-builder-preview-art{min-height:100px}
+.gt5-app .gt5-guided .gt2-builder-route strong{font-size:12px;line-height:1.4}
+.gt5-app .gt5-guided .gt2-builder-stage-title h3{font-size:24px}
+.gt5-app .gt5-guided .gt2-builder-stage-title small{font-size:12px;line-height:1.5}
+.gt5-app .gt5-guided .gt2-builder-progress button{font-size:10px;min-height:44px;padding:6px 2px}

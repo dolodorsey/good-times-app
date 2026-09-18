@@ -141,3 +141,7 @@ A feature is complete only with real data, loading/empty/error states, analytics
 
 ## Final quality test
 Would this feel appropriate if Apple featured it tomorrow? Would a user trust it for an important date/night out? Would an upscale venue want to be represented this way? Does it remain premium and usable with messy real-world data? If not, it is not ready.
+
+## September 17 customer-directed enhancement
+
+The owner explicitly requested compact headers and heroes, brighter truthful imagery, controlled category colors, denser useful cards, polished existing ad placements, and interactive Plan/Shake. Preserve the five-tab navigation and existing page structure. The earlier percentage palette distribution is a historical reference, not a reason to retain the dull presentation. Use the shared customer-enhancement tokens (coral, teal, lilac, blue); retain gold for primary/selected actions. Verify each page top-to-bottom at phone and tablet sizes with screenshots and interaction evidence. Category illustrations are allowed on category/mood choices; never pass them off as a named venue's photo.
