@@ -144,6 +144,15 @@ export async function loadGoodTimesProfile(session = readSession()) {
   return rows?.[0] || null
 }
 
+export async function loadUserIntelligenceProfile(session = readSession()) {
+  if (!session?.access_token || !session?.user?.id) return null
+  const rows = await fetchJson(
+    `${GT_SUPABASE_URL}/rest/v1/gt_user_intelligence_profiles?auth_id=eq.${encodeURIComponent(session.user.id)}&select=*&limit=1`,
+    { headers: gtHeaders(session.access_token) },
+  )
+  return rows?.[0] || null
+}
+
 export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}) {
   const normalizedCity = normalizeCity(city)
   try {

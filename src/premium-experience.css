@@ -389,3 +389,13 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* GOOD TIMES V5 personalization */
+.gt5-personal-reason{display:block;margin:0 0 8px;padding:0 2px;color:#d4a853;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.gt5-secondary-intents button.active{border-color:rgba(212,168,83,.8);background:rgba(212,168,83,.16);color:#fff;box-shadow:0 0 0 1px rgba(212,168,83,.14) inset}
+.gt5-detail-actions button:disabled{opacity:.55;cursor:wait}
+
+.gt5-hydrating{position:fixed;top:76px;left:50%;z-index:45;display:flex;align-items:center;gap:8px;transform:translateX(-50%);padding:8px 12px;border:1px solid rgba(212,168,83,.28);border-radius:999px;background:rgba(8,8,12,.88);backdrop-filter:blur(14px);box-shadow:0 10px 30px rgba(0,0,0,.28);color:rgba(255,255,255,.8);font-size:11px;font-weight:700;letter-spacing:.04em;pointer-events:none}
+.gt5-hydrating .gt5-mark{width:24px;height:24px;font-size:9px;flex:0 0 24px}
+@media(max-width:520px){.gt5-hydrating{top:68px;max-width:calc(100vw - 28px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
