@@ -4,10 +4,10 @@ import test from 'node:test'
 
 const read = path => fs.readFileSync(new URL(`../${path}`, import.meta.url), 'utf8')
 
-test('production bootstrap cannot double-mount or register a reload worker', () => {
+test('production bootstrap stays single-mounted and registers the approved PWA worker', () => {
   const main = read('src/main.jsx')
   assert.doesNotMatch(main, /React\.StrictMode/)
-  assert.doesNotMatch(main, /navigator\.serviceWorker\.register/)
+  assert.match(main, /navigator\.serviceWorker\.register\('\/sw\.js'/)
 })
 
 test('Build My Night uses the lightweight live concierge and always releases loading', () => {
@@ -80,9 +80,12 @@ test('images have a same-origin resilient media path and fallback', () => {
   assert.match(media, /image\/webp/)
 })
 
-test('retired service worker only unregisters itself', () => {
+test('PWA worker enables installability without caching live GOOD TIMES data', () => {
   const worker = read('public/sw.js')
-  assert.match(worker, /registration\.unregister/)
+  assert.doesNotMatch(worker, /registration\.unregister/)
+  assert.match(worker, /addEventListener\('fetch'/)
+  assert.match(worker, /event\.respondWith\(fetch\(request\)\)/)
+  assert.doesNotMatch(worker, /caches\.put|cache\.add|cache\.match/)
   assert.doesNotMatch(worker, /navigate\(/)
   assert.doesNotMatch(worker, /FORCE_RELOAD/)
 })
