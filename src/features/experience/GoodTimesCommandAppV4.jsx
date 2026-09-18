@@ -11,6 +11,7 @@ import{screenEditorialMedia,categoryEditorialMedia}from'./good-times-editorial-m
 import GoodTimesIcon from'./GoodTimesIcon.jsx'
 import{eventIsDiscoverable,eventIsTonight,eventIsThisWeekend,eventDaysAway,eventStatus}from'./good-times-event-clock.js'
 import{shareContent}from'../../native.js'
+import{VIBE_OPTIONS}from'../onboarding/options.js'
 
 const NAV=[['home','⌂','Home'],['discover','⌕','Discover'],['plan','＋','Plan'],['saved','▣','Saved'],['profile','◎','Profile']]
 const PRIMARY_TABS=new Set(NAV.map(([id])=>id))
@@ -107,6 +108,7 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
   const[planWhen,setPlanWhen]=useState('Tonight'),[planBudget,setPlanBudget]=useState('Any budget'),[planPeople,setPlanPeople]=useState('2')
   const[conciergeText,setConciergeText]=useState(''),[conciergeBusy,setConciergeBusy]=useState(false),[conciergeResult,setConciergeResult]=useState(null),[conciergeMessage,setConciergeMessage]=useState(''),[planMode,setPlanMode]=useState('ai'),[planIntent,setPlanIntent]=useState('')
   const[follows,setFollows]=useState([]),[alertPrefs,setAlertPrefs]=useState(DEFAULT_ALERT_PREFS),[alerts,setAlerts]=useState([]),[savedView,setSavedView]=useState('plans')
+  const[preferencesOpen,setPreferencesOpen]=useState(false),[preferenceDraft,setPreferenceDraft]=useState([]),[preferenceSaving,setPreferenceSaving]=useState(false)
   const returnTab=useRef('home')
 
   useEffect(()=>{document.body.classList.add('gt-app-mode','gt5-mode');return()=>{document.body.classList.remove('gt-app-mode','gt5-mode')}},[])
@@ -145,6 +147,26 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
     const ok=await shareContent({title,text:[title,detail,'Found on GOOD TIMES'].filter(Boolean).join('\n'),url:window.location.origin,dialogTitle:'Share from GOOD TIMES'})
     if(ok){setToast('Shared from GOOD TIMES.');void recordProductEvent({eventName:'share_clicked',surface:tab,objectType:type,objectId:type==='event'?item?.event_key:item?.id,city},session);void recordTasteSignal({entityType:type,entityId:type==='event'?item?.event_key:item?.id,signalType:'share',signalValue:2,city},session)}
   }
+  const openPreferences=()=>{
+    if(!session?.user?.id){setToast('Sign in to personalize GOOD TIMES.');if(onAuth)onAuth();return}
+    setPreferenceDraft(Array.isArray(profile?.vibe_preferences)?profile.vibe_preferences:[])
+    setPreferencesOpen(true)
+  }
+  const togglePreference=value=>setPreferenceDraft(rows=>rows.includes(value)?rows.filter(x=>x!==value):(rows.length<5?[...rows,value]:rows))
+  const savePreferences=async()=>{
+    if(!session?.user?.id||preferenceSaving)return
+    setPreferenceSaving(true)
+    try{
+      const ok=await updatePreferences(session.user.id,{vibe_preferences:preferenceDraft},session.access_token)
+      if(!ok)throw new Error('Could not save preferences.')
+      setProfile(current=>({...current,vibe_preferences:preferenceDraft}))
+      try{localStorage.setItem('gt_personalization',JSON.stringify({city,vibes:preferenceDraft,updated_at:new Date().toISOString()}))}catch{}
+      void recordProductEvent({eventName:'preferences_updated',surface:'profile',objectType:'profile',objectId:session.user.id,city,properties:{vibes:preferenceDraft.join(',')}},session)
+      setPreferencesOpen(false)
+      setToast('Your GOOD TIMES preferences are updated.')
+    }catch(error){setToast(error.message||'Could not save preferences.')}finally{setPreferenceSaving(false)}
+  }
+
   const runConcierge=async(text=conciergeText,action='recommend')=>{const clean=String(text||'').trim();if(!clean||conciergeBusy)return;setConciergeBusy(true);setConciergeMessage('');void recordTasteSignal({entityType:'category',entityId:clean.slice(0,120),signalType:'concierge_select',city,metadata:{action}},session);try{const result=hardenRecommendationResult(await askGoodTimesConcierge({query:clean,action,city},session));setConciergeResult(result);setConciergeMessage(result?.message||'Here are the strongest current options.');if(result?.itinerary){setPlans(rows=>[result.itinerary,...rows.filter(x=>x.id!==result.itinerary.id)]);setSelectedPlan(result.itinerary);setToast('Your night is ready.')}}catch(error){setConciergeMessage(error.message||'I could not verify a strong answer from current data.')}finally{setConciergeBusy(false)}}
   const goTab=id=>{if(id==='radar'){returnTab.current=PRIMARY_TABS.has(tab)?tab:'home'}setTab(id);if(id!=='discover'){setSelectedCategory(null);setSelectedSubcategory(null);setDirectoryOpen(false)}document.querySelector('.gt5-main')?.scrollTo?.({top:0,behavior:'instant'})}
   const goBack=()=>{if(tab==='radar'){goTab(returnTab.current||'home');return}if(tab==='discover'&&directoryOpen){setDirectoryOpen(false);setSelectedSubcategory(null);return}if(tab==='discover'&&selectedCategory){setSelectedCategory(null);setSelectedSubcategory(null);return}goTab('home')}
@@ -204,7 +226,7 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
         <section className="gt5-profile-city"><div><span><GoodTimesIcon glyph="⌖"/></span><p><strong>{cityLabel(city)}</strong><small>Your preferred city</small></p></div><select value={city} onChange={e=>void changeCity(e.target.value)}>{cityOptions.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></section>
         <section className="gt5-member"><span>GOOD PEOPLE<br/>BETTER NIGHTS</span><div><small>{session?'GT MEMBER':'MAKE IT YOURS'}</small><strong>Elevated experiences, everywhere you go.</strong></div></section>
         {session&&<section className="gt5-watch"><header><span>YOUR TASTE PROFILE</span><strong>{Number(intelligence?.signal_count||0)} signals</strong></header><p>{Number(intelligence?.signal_count||0)>0?`GOOD TIMES is learning from what you view, save, follow and share. Stage: ${String(intelligence?.maturity_stage||'learning').replaceAll('_',' ')}.`:'Start viewing, saving and following experiences. GOOD TIMES will learn what deserves your attention.'}</p></section>}
-        <div className="gt5-profile-menu"><button onClick={()=>setToast('Your preferences shape GOOD TIMES recommendations.')}><b><GoodTimesIcon glyph="♡"/></b><span><strong>My Preferences</strong><small>Dining, nightlife, events & more</small></span><i>›</i></button><button onClick={()=>goTab('radar')}><b><GoodTimesIcon glyph="♢"/></b><span><strong>Notifications & Radar</strong><small>Manage alerts and what GOOD TIMES watches</small></span><i>›</i></button><a href="/privacy.html"><b><GoodTimesIcon glyph="⌾"/></b><span><strong>Privacy & Security</strong><small>Your data, your control</small></span><i>›</i></a><a href="mailto:info@thegoodtimesworldwide.com?subject=GOOD%20TIMES%20Support"><b>?</b><span><strong>Help & Support</strong><small>Get in touch with the concierge team</small></span><i>›</i></a></div>
+        <div className="gt5-profile-menu"><button onClick={openPreferences}><b><GoodTimesIcon glyph="♡"/></b><span><strong>My Preferences</strong><small>{(profile?.vibe_preferences||[]).length?`${profile.vibe_preferences.length} tastes selected`:'Dining, nightlife, events & more'}</small></span><i>›</i></button><button onClick={()=>goTab('radar')}><b><GoodTimesIcon glyph="♢"/></b><span><strong>Notifications & Radar</strong><small>Manage alerts and what GOOD TIMES watches</small></span><i>›</i></button><a href="/privacy.html"><b><GoodTimesIcon glyph="⌾"/></b><span><strong>Privacy & Security</strong><small>Your data, your control</small></span><i>›</i></a><a href="mailto:info@thegoodtimesworldwide.com?subject=GOOD%20TIMES%20Support"><b>?</b><span><strong>Help & Support</strong><small>Get in touch with the concierge team</small></span><i>›</i></a></div>
         <section className="gt5-support"><div><span>NEED PERSONAL ASSISTANCE?</span><h2>Our concierge team is here for you.</h2></div><a href="mailto:info@thegoodtimesworldwide.com?subject=GOOD%20TIMES%20Concierge">Contact Concierge ›</a></section>
         {!session&&onAuth&&<button className="gt5-primary gt5-profile-auth" onClick={onAuth}>Sign in or create account</button>}{session&&<button className="gt5-signout" onClick={()=>{clearSession();window.location.reload()}}>Log Out</button>}
       </section>}
@@ -218,6 +240,8 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
     </main>
 
     <nav className="gt5-nav" aria-label="GOOD TIMES primary navigation">{NAV.map(([id,icon,label])=><button key={id} className={`${tab===id?'active':''} ${id==='plan'?'plan':''}`} onClick={()=>goTab(id)}><span><GoodTimesIcon glyph={icon}/></span><small>{label}</small></button>)}</nav>
+
+    {preferencesOpen&&<div className="gt5-overlay"><article className="gt5-detail"><button className="gt5-detail-back" onClick={()=>setPreferencesOpen(false)}>←</button><div className="gt5-detail-body"><small>YOUR GOOD TIMES</small><h1>What should we know?</h1><p className="gt5-detail-meta">Choose up to five. These choices combine with what you actually view, save, follow and share.</p><section><span>CHOOSE UP TO FIVE</span><div className="gt5-secondary-intents">{VIBE_OPTIONS.map(option=><button key={option.id} className={preferenceDraft.includes(option.id)?'active':''} aria-pressed={preferenceDraft.includes(option.id)} onClick={()=>togglePreference(option.id)}>{option.icon} {option.label}</button>)}</div></section><section><span>HOW PERSONALIZATION WORKS</span><p>Your selected tastes guide discovery. GOOD TIMES then learns from your real behavior, while verified city headlines can still outrank personal taste when they matter.</p></section><div className="gt5-detail-actions"><button onClick={()=>setPreferenceDraft([])}>Clear</button><button className="primary" disabled={preferenceSaving} onClick={()=>void savePreferences()}>{preferenceSaving?'Saving…':'Save Preferences'}</button></div></div></article></div>}
 
     {selectedEvent&&<div className="gt5-overlay"><article className="gt5-detail"><button className="gt5-detail-back" onClick={()=>setSelectedEvent(null)}>←</button>{safeMedia(selectedEvent.image_url)?<img className="gt5-detail-hero" src={safeMedia(selectedEvent.image_url)} alt=""/>:<div className="gt5-detail-hero gt5-detail-fallback"><AppMark/></div>}<div className="gt5-detail-gradient"/><div className="gt5-detail-body"><small>{cityLabel(city).toUpperCase()} · {cat(selectedEvent.category_key)}</small><h1>{selectedEvent.title}</h1><p className="gt5-detail-meta">{fmtDate(selectedEvent.event_date)} · {fmtTime(selectedEvent.event_time)} · {selectedEvent.venue_name||'Location TBA'}</p><section><span>GOOD TIMES TAKE</span><p>{selectedEvent.reasons?.[0]||'This made the current shortlist based on timing, quality and current recommendation signals.'}</p></section><section><span>TRUST & SOURCE</span><p>{selectedEvent.is_verified?'Verified by GOOD TIMES':'Source-backed listing'}{selectedEvent.source_name?` · ${selectedEvent.source_name}`:''}{freshnessLabel(selectedEvent.updated_at)?` · ${freshnessLabel(selectedEvent.updated_at)}`:''}</p>{selectedEvent.source_url&&<a href={selectedEvent.source_url} target="_blank" rel="noreferrer">View source ↗</a>}</section><div className="gt5-detail-actions"><button onClick={()=>toggleSave('event',selectedEvent.event_key)}>{savedKeys.has(`event:${selectedEvent.event_key}`)?'Saved ✓':'Save'}</button><button onClick={()=>toggleFollow('event',selectedEvent)}>{followKeys.has(`event:${selectedEvent.event_key}`)?'Following ✓':'Follow + alerts'}</button><button onClick={()=>void shareExperience('event',selectedEvent)}>Share</button>{selectedEvent.ticket_url&&<a href={selectedEvent.ticket_url} target="_blank" rel="noreferrer">Check Tickets</a>}<button className="primary" onClick={()=>{const p=`Build my night around ${selectedEvent.title} at ${selectedEvent.venue_name||'this venue'} on ${fmtDate(selectedEvent.event_date)}.`;setPlanWhen(selectedEvent.event_date||'Tonight');setPlanMode('ai');setSelectedEvent(null);goTab('plan');setConciergeText(p)}}>Plan around this ✦</button></div></div></article></div>}
 
