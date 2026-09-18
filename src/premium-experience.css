@@ -389,3 +389,9 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* GOOD TIMES V5 personalization */
+.gt5-personal-reason{display:block;margin:0 0 8px;padding:0 2px;color:#d4a853;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.gt5-secondary-intents button.active{border-color:rgba(212,168,83,.8);background:rgba(212,168,83,.16);color:#fff;box-shadow:0 0 0 1px rgba(212,168,83,.14) inset}
+.gt5-detail-actions button:disabled{opacity:.55;cursor:wait}
