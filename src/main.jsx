@@ -92,6 +92,14 @@ installDataRequestGuard()
 installMediaIntegrityGuard()
 installGrowthTracking()
 
+if (!isNative && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(error => {
+      console.warn('[GOOD TIMES PWA] service worker registration failed', error)
+    })
+  }, { once: true })
+}
+
 class RuntimeBoundary extends Component {
   constructor(props){super(props);this.state={error:null}}
   static getDerivedStateFromError(error){return{error}}
