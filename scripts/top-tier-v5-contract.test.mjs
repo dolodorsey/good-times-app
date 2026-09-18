@@ -38,3 +38,13 @@ test('V5 avoids double-writing the save taste signal', () => {
   const saveSignals = toggleSave.match(/signalType:'save'/g) || []
   assert.equal(saveSignals.length, 0, 'toggleSave must rely on saveItem to write the single canonical save signal')
 })
+
+
+test('My Preferences is a real editor, not a toast-only control', () => {
+  assert.match(v4, /VIBE_OPTIONS/)
+  assert.match(v4, /openPreferences/)
+  assert.match(v4, /savePreferences/)
+  assert.match(v4, /updatePreferences/)
+  assert.match(v4, /Save Preferences/)
+  assert.doesNotMatch(v4, /onClick=\{\(\)=>setToast\('Your preferences shape GOOD TIMES recommendations\.'\)\}/)
+})
