@@ -7,6 +7,7 @@ let chromium=null
 try{({chromium}=await import('playwright-core'))}catch{}
 const skip=!BASE||!chromium?'requires the existing rendered-UI CI environment':false
 const FIXED=Date.parse('2026-09-14T12:00:00Z')
+const SESSION={access_token:'gt-reference-fixture-access',refresh_token:'gt-reference-fixture-refresh',expires_at:Math.floor(Date.now()/1000)+86400,user:{id:'gt-reference-fixture-user',email:'reference.fixture@goodtimes.invalid'}}
 const json=x=>({status:200,contentType:'application/json',body:JSON.stringify(x)})
 const EVENT={event_key:'composition-fixture:event',title:'Evening city experience',event_date:'2026-09-14',event_time:'20:00',city_key:'atlanta',venue_name:'QA fixture venue',category_key:'nightlife',image_url:'/venues/revel.webp',ticket_url:'https://example.invalid/no-transaction',quality_score:80,is_verified:true}
 const VENUES=['restaurant','nightlife','concerts_live_music','hotel'].map((category,i)=>({id:`composition-fixture:${i}`,name:`QA ${category}`,city_key:'atlanta',category_key:category,hero_image:'/venues/revel.webp',short_desc:'Deterministic QA data only.',quality_score:80-i}))
@@ -16,9 +17,9 @@ for(const vp of[{width:320,height:740},{width:390,height:844},{width:430,height:
   const ctx=await browser.newContext({viewport:vp,timezoneId:'America/New_York'})
   const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));fs.mkdirSync(OUT,{recursive:true})
   try{
-   await ctx.addInitScript(epoch=>{const NativeDate=Date;class FixedDate extends NativeDate{constructor(...args){super(...(args.length?args:[epoch]))}static now(){return epoch}};window.Date=FixedDate;sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},FIXED)
+   await ctx.addInitScript(({epoch,session})=>{const NativeDate=Date;class FixedDate extends NativeDate{constructor(...args){super(...(args.length?args:[epoch]))}static now(){return epoch}};window.Date=FixedDate;localStorage.setItem('gt_session',JSON.stringify(session));localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['nightlife','grown'],age:'25-34'}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},{epoch:FIXED,session:SESSION})
    await ctx.route('**/api/**',r=>{const p=new URL(r.request().url()).pathname;return r.fulfill(json(p==='/api/health'?{ok:true,service:'good-times',customer_ready:true,content_ready:true}:p.startsWith('/api/data')?{ok:true,connected:true,city:'atlanta',events:[EVENT,...['concerts_live_music','sports_watch','festivals_major_activations'].map((category,i)=>({...EVENT,event_key:`mixed:${i}`,title:`Upcoming ${category}`,category_key:category,image_url:null}))],venues:VENUES}:{ok:true}))})
-   await ctx.route('**/rest/v1/**',r=>r.fulfill(json([])))
+   await ctx.route('**/rest/v1/**',r=>{const u=new URL(r.request().url());if(u.pathname.endsWith('/gt_user_profiles'))return r.fulfill(json([{id:'gt-reference-profile',auth_id:SESSION.user.id,full_name:'GOOD TIMES Reference QA',home_city:'atlanta',last_city:'atlanta',vibe_preferences:['nightlife','grown']}])) ;return r.fulfill(json([]))})
    await ctx.route('**/functions/v1/**',r=>r.fulfill(json({ok:true,events:[],venues:[]})))
    await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:20000});await page.locator('.gt5-app').waitFor({timeout:15000});await page.waitForTimeout(350)
    const nav=page.locator('.gt5-nav button')
