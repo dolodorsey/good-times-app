@@ -47,6 +47,8 @@ for(const vp of[{width:320,height:740},{width:390,height:844},{width:430,height:
    const highlights=page.locator('.gt5-highlight-grid .gt5-card')
    assert.equal(await highlights.count(),4,'Home must show a mixed set, not a single oversized feature')
    assert.deepEqual(await highlights.evaluateAll(cards=>cards.map(card=>card.dataset.category)),['concerts_live_music','sports_watch','festivals_major_activations','restaurant'])
+   const highlightBoxes=await highlights.evaluateAll(cards=>cards.map(card=>({w:card.getBoundingClientRect().width,h:card.getBoundingClientRect().height})))
+   for(const box of highlightBoxes){assert.ok(box.w<=150,`Top Pick card too wide: ${JSON.stringify(box)}`);assert.ok(box.h<=180,`Top Pick card too tall: ${JSON.stringify(box)}`)}
    const headingFont=await highlights.first().locator('h3').evaluate(el=>getComputedStyle(el).fontFamily)
    assert.ok(!/Playfair|Georgia|Garamond/.test(headingFont),`legacy serif override returned: ${headingFont}`)
    if(vp.width>=390){const second=await highlights.nth(1).boundingBox();assert.ok(second.y+second.height<dock.y,'first two complete choices must fit above navigation')}
