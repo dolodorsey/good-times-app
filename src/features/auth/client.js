@@ -41,6 +41,21 @@ export function googleOAuthRedirectUrl(locationValue = globalThis.location) {
   return target.toString()
 }
 
+export async function isGoogleOAuthEnabled(fetchImpl = globalThis.fetch) {
+  try {
+    const response = await fetchImpl(`${GT_SUPABASE_URL}/auth/v1/settings`, {
+      method: 'GET',
+      headers: { apikey: GT_SUPABASE_ANON_KEY, Accept: 'application/json' },
+      cache: 'no-store',
+    })
+    if (!response.ok) return false
+    const payload = await response.json().catch(() => ({}))
+    return payload?.external?.google === true
+  } catch {
+    return false
+  }
+}
+
 export function signInWithGoogle(locationValue = globalThis.location) {
   const target = googleOAuthRedirectUrl(locationValue)
   locationValue?.assign?.(target)
