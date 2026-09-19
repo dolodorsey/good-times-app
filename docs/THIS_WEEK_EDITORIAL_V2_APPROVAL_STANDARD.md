@@ -1,119 +1,179 @@
-# GOOD TIMES — THIS WEEK EDITORIAL V2
+# GOOD TIMES — THIS WEEK APP EXPERIENCE V4
 
-## Visual Approval Standard / Production Protection Plan
+## App-Only Visual Approval Standard
 
-**Status:** VISUAL CANDIDATE — OWNER APPROVAL REQUIRED BEFORE APP IMPLEMENTATION  
+**Status:** VISUAL CANDIDATE — OWNER APPROVAL REQUIRED BEFORE RUNTIME IMPLEMENTATION  
 **Prepared:** September 19, 2026  
-**Scope:** GOOD TIMES only  
-**Production app:** UNCHANGED by this preview work
+**Scope:** GOOD TIMES native/mobile app experience only  
+**Public website:** NOT A PRODUCT REQUIREMENT  
+**Production app runtime:** UNCHANGED by this approval-standard work
 
 ## Product decision
 
-GOOD TIMES should have a first-class weekly editorial experience inspired by the owner-supplied Atlanta weekly graphics, without becoming a sixth permanent bottom-navigation destination and without forking the existing app logic.
+GOOD TIMES should treat **THIS WEEK** as a first-class **in-app editorial mode** — not a public web destination and not a sixth permanent bottom-navigation destination.
 
-The target architecture is a **secondary editorial destination** called **THIS WEEK**:
+The protected primary navigation remains exactly:
 
-- Preserve the protected primary navigation exactly: **HOME / DISCOVER / PLAN / SAVED / PROFILE**.
-- Keep the existing Home **This Week** quick action as the primary entry point.
-- Open the weekly issue full-screen and return to the prior app state when closed.
-- If a persistent secondary tab is approved later, place it inside the Home/Discover editorial area, never in the permanent bottom navigation.
-- Hand every event, venue, ticket, Save, Follow, Share, Plan and Concierge action to the existing GOOD TIMES functions.
+**HOME / DISCOVER / PLAN / SAVED / PROFILE**
 
-## Visual standard
+The weekly experience lives inside the signed-in app and is entered from:
+- the existing Home **This Week** quick action;
+- optionally, a secondary app-level segmented control such as **FOR YOU / THIS WEEK / TONIGHT**;
+- deep links/notifications that open the same in-app state.
 
-The weekly mode may be more editorial than the normal product UI:
+Vercel is the build/preview/runtime layer. It is not the customer-facing product definition. Supabase remains the live data source. Existing GOOD TIMES handlers remain the action layer.
 
-- near-black #050505;
-- warm ivory #F2EEE6;
-- semantic gold #D8AA4A;
-- large newspaper/editorial serif for weekly headlines only;
-- modern sans-serif for metadata, controls, dates, tags and app actions;
-- cinematic Atlanta atmosphere at section level;
-- strong columns, borders, hierarchy and concise useful copy.
+## App screen architecture
 
-Editorial serif styling is contained to This Week. It does not change the normal GOOD TIMES product typography.
+### Persistent shell — unchanged
+- native safe-area / status bar treatment;
+- GOOD TIMES brand header;
+- city context;
+- search / notification controls;
+- five-item bottom navigation;
+- existing authentication and session behavior.
 
-### Desktop hierarchy
+### Secondary app navigation
+A compact in-app segment may expose:
+- **FOR YOU**
+- **THIS WEEK**
+- **TONIGHT**
 
-1. GOOD TIMES / ATLANTA masthead + live-data indicator.
-2. ATLANTA THIS WEEK hero with current week range.
-3. Secondary editorial filter strip.
-4. Top Picks — five current verified events.
-5. Worth Knowing — verified places.
-6. Week Ahead.
-7. Tonight editorial feature.
-8. Food + Drinks.
-9. Nightlife Now.
-10. Plan Smarter handoff.
-11. Existing primary navigation preserved.
+This is not a second bottom navigation and does not remove any existing destination.
 
-### Mobile hierarchy
+### THIS WEEK scroll sequence
+1. **Atlanta This Week** cinematic in-app hero.
+2. Six compact jump controls: Top Picks / Live / Food / Nightlife / Sports / Culture.
+3. **Top Picks** horizontal swipe cards.
+4. **Atlanta After Dark / Tonight** current actionable options.
+5. **Week Ahead** chronological Sep 19–25 style list based on current city data.
+6. **Food + Drink** verified place module.
+7. **Culture + City** verified culture/experience module.
+8. **Plan Smarter** handoff to existing Save / Follow / Share / Plan actions.
+9. Existing bottom navigation remains available at all times.
 
-Mobile is a dedicated vertical issue, not a shrunken desktop grid: hero, compact filters, top picks, verified places, week ahead, Tonight feature, category editorial blocks, Plan Smarter, then return to the unchanged app.
+## Action contract — no duplicate product logic
+
+THIS WEEK is presentation over the app that already exists.
+
+- Event tap → existing event detail.
+- Venue/place tap → existing venue detail.
+- Ticket CTA → existing verified ticket handoff.
+- Save → existing Save function.
+- Follow → existing Radar/follow function.
+- Share → existing native Share.
+- Build My Night → existing Plan/Concierge.
+- See All → existing Discover state.
+
+No parallel user profile. No second saved system. No duplicate booking layer. No separate event database.
 
 ## Data contract
 
-The supplied 2024/2025 graphics are **creative references only**. Historical dates, venue facts, artists, rankings, restaurant statuses, QR codes and CTAs must never become production facts.
+The owner-supplied 2024/2025 weekly graphics are **creative direction only**.
 
-This Week consumes the existing live GOOD TIMES customer inventory.
+Historical dates, venues, artists, rankings, restaurant statuses, QR codes and CTAs from reference art can never become app facts.
 
-A named event must remain source-backed/current and preserve its actual date/time semantics, ticket/source handoff and selected-city timezone behavior.
+Current app facts must come from the existing live GOOD TIMES/Supabase inventory and preserve:
+- selected city;
+- selected-city timezone;
+- current/future event eligibility;
+- source and verification state;
+- published performance time vs doors-only/TBA semantics;
+- ticket/source URL;
+- existing content-quality gates.
 
 ## Image trust contract
 
-- Named event cards may use only current exact event imagery from the record after media QC.
-- Named venue cards may use only verified exact venue photography.
-- Category fallback art cannot impersonate a named venue.
-- Owner-supplied reference art may supply **generic editorial atmosphere only** after stale names, dates, rankings, QR codes and old CTAs are cropped away.
-- Editorial atmosphere must be explicitly separated from named factual content.
+- Named event card: exact current event art only after existing media QA.
+- Named venue card: exact verified venue photography only.
+- Category fallback: may support category atmosphere but may not impersonate a named venue.
+- Owner-supplied weekly graphics: may provide cropped **editorial atmosphere only** after stale names/dates/QR/CTA text is removed.
 - Unknown-rights candidates never auto-publish.
+- If no trustworthy exact image exists, the app uses a premium no-photo editorial card instead of a false photo.
 
-## Product behavior
+## Visual target
 
-This Week is presentation, not a parallel product:
+### Core aesthetic
+- black / warm ivory / semantic gold;
+- cinematic Atlanta atmosphere;
+- weekly headline serif only inside editorial mode;
+- normal app UI/metadata remains modern sans-serif;
+- high-density information with strong hierarchy;
+- touch targets >=44px where interactive;
+- horizontal swipe surfaces where appropriate;
+- no desktop-first composition shrunk onto mobile.
 
-- event → existing event detail;
-- place → existing venue detail;
-- ticket → existing verified ticket handoff;
-- Save → existing save function;
-- Follow → existing Radar/follow function;
-- Share → existing native share function;
-- Plan → existing Plan/Concierge path;
-- See Everything → existing Discover state.
+### Reference phone
+Primary approval width: **390×844**.
 
-## Safe implementation sequence — only after owner approval
+Also review:
+- 320×568
+- 390×844
+- 430×932
+- 834×1194 tablet
 
-1. Build an isolated `GoodTimesThisWeekV2.jsx` and dedicated stylesheet. Do not refactor Home/Discover/Plan/Saved/Profile.
-2. Expose V2 only behind an internal preview switch or preview-only route/state; current customer-facing behavior stays unchanged during QA.
-3. Reuse the already-loaded `week`, current venues, city and existing callbacks. No new production database/API is required for the first implementation.
-4. Capture and inspect 320×568, 390×844, 430×932, 834×1194 and 1440+ screenshots.
-5. Stress-test loading, no exact venue photo, doors-only time, long titles, empty lanes, narrow phone, signed-in account and reduced-motion states.
-6. Fail release if primary navigation changes, historical reference data is hard-coded, category art impersonates a venue, existing action handlers are bypassed, required screenshot evidence is absent, or production smoke/live-runtime checks fail.
-7. Require explicit owner approval of desktop and mobile screenshots before wiring V2 to the customer-facing This Week entry.
-8. After approval, deploy an isolated Vercel Preview from a feature branch, capture that exact deployment, compare against the approved screenshots, then consider merge.
+## Screenshot QA loop
 
-## Current candidate review
+No customer-facing implementation may ship from a successful build alone.
 
-Passed in the preview:
-- materially closer to the supplied premium editorial references;
-- strong desktop magazine hierarchy;
-- dedicated mobile composition;
-- current Sep 19–25, 2026 facts;
-- stale names/dates removed from final atmosphere crops;
-- named facts separated from generic editorial atmosphere;
-- primary app navigation unchanged;
-- no production app source altered by preview creation.
+Every app-only implementation pass must:
+1. build an isolated preview branch;
+2. load authenticated fixture state;
+3. capture the exact THIS WEEK app state at target phone/tablet widths;
+4. inspect visual hierarchy, overflow, touch controls, image truth, date/time formatting and bottom navigation;
+5. correct defects;
+6. recapture;
+7. repeat until screenshots match or exceed the approved visual standard.
 
-Still owner-controlled:
-- visual-direction approval;
-- overlay vs secondary Home/Discover tab vs both;
-- final photo/text density;
-- final official wordmark treatment.
+Release fails when:
+- Home / Discover / Plan / Saved / Profile changes unintentionally;
+- public-web layout is used as the design target;
+- reference-year facts are hard-coded;
+- generic imagery impersonates a named place/event;
+- event detail / Save / Follow / Share / Plan handlers are duplicated or bypassed;
+- horizontal overflow occurs outside intentional card carousels;
+- 320px layout breaks;
+- safe-area/bottom-navigation collision appears;
+- production smoke/live-runtime/auth gates fail;
+- screenshot evidence is missing.
 
-## No-downgrade rule
+## Safe implementation sequence — only after owner visual approval
 
-Once approved, the desktop/mobile screenshots become the **minimum visual target**. A technically functional implementation is rejected if it is visibly less editorial, less readable, less useful, less trustworthy or less polished.
+1. Create isolated `GoodTimesThisWeekAppV4.jsx` + dedicated CSS.
+2. Do not refactor the five existing app destinations.
+3. Reuse already-loaded current city events/venues and existing callbacks.
+4. Gate V4 behind a preview-only feature flag/state.
+5. Build the Capacitor/web bundle exactly as the app uses it.
+6. Capture phone/tablet evidence from that isolated branch.
+7. Owner reviews screenshots.
+8. Only after explicit approval, connect V4 to the signed-in app This Week entry.
+9. Merge only after existing production/app-store/runtime gates remain green.
+
+## Vercel / Supabase / GitHub roles
+
+### Supabase
+- canonical current data;
+- auth/session source;
+- saves/follows/preferences/radar;
+- content freshness and media-trust state.
+
+### GitHub
+- isolated feature branch;
+- visual-contract tests;
+- screenshot evidence;
+- no-downgrade checks;
+- PR approval gate.
+
+### Vercel
+- preview/build/runtime verification only;
+- API/runtime health;
+- screenshotable preview of the same React/Capacitor bundle used by the app;
+- never the design priority over the native app experience.
+
+## Owner approval gate
+
+The new phone-first visual preview is the candidate minimum standard.
 
 **Owner approval:** PENDING  
-**V2 app implementation:** NOT STARTED  
-**Production change from this approval-standard work:** NONE
+**Runtime component implementation:** NOT STARTED  
+**Production app changes from this correction:** NONE
