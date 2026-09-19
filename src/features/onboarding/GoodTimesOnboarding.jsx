@@ -3,6 +3,7 @@ import {
   friendlyAuthError,
   requestPasswordReset,
   signIn,
+  signInWithGoogle,
   signUp,
   storeSession,
   updatePreferences,
@@ -115,7 +116,7 @@ export default function GoodTimesOnboarding({ onComplete }) {
     <div style={{ position: 'relative', zIndex: 2, width: '100%', maxWidth: 360 }}>
       <img src={CURRENT_LOGO} alt="Good Times" style={{ height: 58, objectFit: 'contain', marginBottom: 18 }} />
       <h1 style={{ fontFamily: SERIF, fontSize: 46, fontWeight: 300, letterSpacing: '.14em', textTransform: 'uppercase', margin: '0 0 10px' }}>Good Times</h1>
-      <p style={{ color: 'rgba(255,255,255,.58)', lineHeight: 1.6, margin: '0 0 34px' }}>Your city. Your vibe. Your night.<br />Curated for you.</p>
+      <p style={{ color: 'rgba(255,255,255,.58)', lineHeight: 1.6, margin: '0 0 34px' }}>Your city. Your vibe. Your night.<br />A free account keeps your saves, plans and recommendations with you.</p>
       <button style={primary()} onClick={() => { setMode('signup'); setScreen('auth') }}>Get Started</button>
       <button onClick={() => { setMode('signin'); setScreen('auth') }} style={{ ...primary(), marginTop: 12, color: GOLD, background: 'rgba(255,255,255,.06)', border: `1px solid ${GOLD}55` }}>I Already Have an Account</button>
     </div>
@@ -143,6 +144,20 @@ export default function GoodTimesOnboarding({ onComplete }) {
         </> : <>
           <div style={{ display: 'flex', background: 'rgba(255,255,255,.08)', padding: 4, borderRadius: 12, marginBottom: 18 }}>
             {['signup', 'signin'].map(value => <button key={value} onClick={() => { setMode(value); setError(''); setNotice('') }} style={{ flex: 1, padding: 10, border: 0, borderRadius: 9, background: mode === value ? GOLD : 'transparent', color: mode === value ? '#08080d' : 'rgba(255,255,255,.55)', fontWeight: 800, cursor: 'pointer' }}>{value === 'signup' ? 'Sign Up' : 'Sign In'}</button>)}
+          </div>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => signInWithGoogle()}
+            style={{ ...primary(!busy), background: '#fff', color: '#151515', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 14 }}
+          >
+            <span aria-hidden="true" style={{ fontWeight: 900, fontSize: 18 }}>G</span>
+            Continue with Google
+          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 14px', color: 'rgba(255,255,255,.34)', fontSize: 10, fontWeight: 800, letterSpacing: '.12em' }}>
+            <span style={{ height: 1, flex: 1, background: 'rgba(255,255,255,.12)' }} />
+            OR USE EMAIL
+            <span style={{ height: 1, flex: 1, background: 'rgba(255,255,255,.12)' }} />
           </div>
           {mode === 'signup' && <input value={name} onChange={event => setName(event.target.value)} placeholder="Full name" style={{ ...field, marginBottom: 12 }} />}
           <input value={email} onChange={event => setEmail(event.target.value)} type="email" placeholder="Email address" style={{ ...field, marginBottom: 12 }} />
