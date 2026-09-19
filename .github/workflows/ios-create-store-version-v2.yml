@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Install Apple API dependencies
         run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
       - name: Create or verify App Store version 1.1.0
@@ -69,7 +69,7 @@ jobs:
           PY
       - name: Preserve version evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GOOD-TIMES-app-store-version-v2-${{ github.run_number }}
           path: ${{ runner.temp }}/good-times-app-store-version.json
