@@ -13,6 +13,7 @@ import{eventIsDiscoverable,eventIsTonight,eventIsThisWeekend,eventDaysAway,event
 import{shareContent}from'../../native.js'
 import{homeHighlights,withReviewedVenueMedia}from'./good-times-reviewed-media.js'
 import{VIBE_OPTIONS}from'../onboarding/options.js'
+import'./good-times-this-week.css'
 
 const NAV=[['home','⌂','Home'],['discover','⌕','Discover'],['plan','＋','Plan'],['saved','▣','Saved'],['profile','◎','Profile']]
 const PRIMARY_TABS=new Set(NAV.map(([id])=>id))
@@ -98,6 +99,73 @@ function AdSlot({placement,city,onPlan}){
 }
 function Hero({eyebrow,title,accent,subtitle,image,children,className=''}){return <section className={`gt5-hero ${className}`} style={{'--gt5-hero-image':`url("${image||GT_HOME_FALLBACK}")`}}><div className="gt5-hero-shade"/><div className="gt5-hero-copy"><span>{eyebrow}</span><h1>{title}{accent&&<><br/>{' '}<em>{accent}</em></>}</h1>{subtitle&&<p>{subtitle}</p>}{children}</div><div className="gt5-script">Good People<br/>Better Nights.</div></section>}
 
+const THIS_WEEK_GROUPS=[
+  ['NIGHTLIFE',['nightlife','day_parties_brunch']],
+  ['SPORTS',['sports_watch']],
+  ['CULTURE',['arts_museums_culture','community_civic','festivals_major_activations','black_culture_diaspora']],
+  ['LIVE',['concerts_live_music','comedy_performing_arts']],
+]
+function compactWeekRange(events){
+  const dates=[...new Set((events||[]).map(e=>e?.event_date).filter(Boolean))].sort()
+  if(!dates.length)return'THIS WEEK'
+  const first=new Date(`${dates[0]}T12:00:00`),last=new Date(`${dates[dates.length-1]}T12:00:00`)
+  const a=first.toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()
+  const b=last.toLocaleDateString(undefined,{month:'short',day:'numeric'}).toUpperCase()
+  return a===b?a:`${a} — ${b}`
+}
+function ThisWeekOverlay({city,events,venues,onClose,onEvent,onVenue,onExplore}){
+  const top=(events||[]).slice(0,5)
+  const restaurantPlaces=(venues||[]).filter(v=>/restaurant|dining|cafe|coffee|bakery|brunch|food/.test(normalize(`${v.category_key} ${v.subcategory} ${v.venue_subcategory}`))).slice(0,4)
+  const lanes=THIS_WEEK_GROUPS.map(([label,keys])=>[label,(events||[]).filter(e=>keys.includes(e.category_key)).slice(0,4)]).filter(([,rows])=>rows.length)
+  const openEvent=item=>{onClose();onEvent(item)}
+  const openVenue=item=>{onClose();onVenue(item)}
+  return <div className="gt-week" role="dialog" aria-modal="true" aria-label={`${cityLabel(city)} this week quick view`}>
+    <article className="gt-week-sheet">
+      <header className="gt-week-mast">
+        <button className="gt-week-close" onClick={onClose} aria-label="Close this week">×</button>
+        <div><span>GOOD TIMES</span><small>{cityLabel(city).toUpperCase()}</small></div>
+        <p>THE CITY. CURATED.</p>
+      </header>
+      <section className="gt-week-lead">
+        <span>QUICK VIEW · {compactWeekRange(events)}</span>
+        <h1>{cityLabel(city)}<br/><em>This Week.</em></h1>
+        <p>Real events. Real places. The strongest current moves without the endless scroll.</p>
+      </section>
+      {top.length>0&&<section className="gt-week-top">
+        <header><span>TOP PICKS</span><strong>THIS WEEK</strong></header>
+        <div>{top.map((item,index)=><button key={item.event_key} onClick={()=>openEvent(item)}>
+          <b>{String(index+1).padStart(2,'0')}</b>
+          <span><strong>{item.title}</strong><small>{fmtDate(item.event_date)} · {fmtTime(item.event_time)}{item.venue_name?` · ${item.venue_name}`:''}</small></span>
+          <i>›</i>
+        </button>)}</div>
+      </section>}
+      <section className="gt-week-grid">
+        {restaurantPlaces.length>0&&<div className="gt-week-lane gt-week-food">
+          <header><span>FOOD + DRINK</span><small>PLACES WORTH KNOWING</small></header>
+          <div>{restaurantPlaces.map(v=><button key={v.id} onClick={()=>openVenue(v)}>
+            {safeMedia(v.hero_image)?<img src={safeMedia(v.hero_image)} alt=""/>:<b>GT</b>}
+            <span><strong>{v.name}</strong><small>{[v.neighborhood,v.subcategory||cat(v.category_key)].filter(Boolean).join(' · ')}</small></span>
+          </button>)}</div>
+        </div>}
+        {lanes.map(([label,rows])=><div className="gt-week-lane" key={label}>
+          <header><span>{label}</span><small>CURATED NOW</small></header>
+          <div>{rows.map(item=><button key={item.event_key} onClick={()=>openEvent(item)}>
+            {safeMedia(item.image_url)?<img src={safeMedia(item.image_url)} alt=""/>:<b>GT</b>}
+            <span><strong>{item.title}</strong><small>{fmtDate(item.event_date)} · {item.venue_name||'Location TBA'}</small></span>
+          </button>)}</div>
+        </div>)}
+      </section>
+      <section className="gt-week-plan">
+        <span>PLAN SMARTER WITH GOOD TIMES</span>
+        <h2>Know the week.<br/>Then make your move.</h2>
+        <p>Save what matters, build a night, follow places and keep the city in your pocket.</p>
+        <button onClick={()=>{onClose();onExplore()}}>SEE EVERYTHING →</button>
+      </section>
+      <footer><strong>GOOD TIMES</strong><span>SAME CITY. MORE GOOD TIMES.</span></footer>
+    </article>
+  </div>
+}
+
 export default function GoodTimesCommandAppV4({onAuth=null}){
   const session=useMemo(()=>readSession(),[])
   const[clockNow,setClockNow]=useState(()=>Date.now())
@@ -110,6 +178,7 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
   const[conciergeText,setConciergeText]=useState(''),[conciergeBusy,setConciergeBusy]=useState(false),[conciergeResult,setConciergeResult]=useState(null),[conciergeMessage,setConciergeMessage]=useState(''),[planMode,setPlanMode]=useState('ai'),[planIntent,setPlanIntent]=useState('')
   const[follows,setFollows]=useState([]),[alertPrefs,setAlertPrefs]=useState(DEFAULT_ALERT_PREFS),[alerts,setAlerts]=useState([]),[savedView,setSavedView]=useState('plans')
   const[preferencesOpen,setPreferencesOpen]=useState(false),[preferenceDraft,setPreferenceDraft]=useState([]),[preferenceSaving,setPreferenceSaving]=useState(false)
+  const[weeklyOpen,setWeeklyOpen]=useState(false)
   const returnTab=useRef('home')
 
   useEffect(()=>{document.body.classList.add('gt-app-mode','gt5-mode');return()=>{document.body.classList.remove('gt-app-mode','gt5-mode')}},[])
@@ -185,7 +254,7 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
       {tab==='home'&&<>
         <Hero eyebrow={`GOOD TIMES · ${cityLabel(city).toUpperCase()}`} title="A Better" accent="Tonight." subtitle="Dining. Nightlife. Events. Experiences. All in one place." image={heroMedia} className="gt5-home-hero">
           <div className="gt5-hero-search"><span><GoodTimesIcon glyph="⌕"/></span><input value={conciergeText} onChange={e=>setConciergeText(e.target.value)} aria-label="Ask Good Times" placeholder="What are you in the mood for tonight?" onKeyDown={e=>{if(e.key==='Enter'){goTab('plan');void runConcierge(conciergeText,'recommend')}}}/><button onClick={()=>{goTab('plan');void runConcierge(conciergeText,'recommend')}}>→</button></div>
-          <div className="gt5-home-quick">{[['🍴','Restaurants','dining'],['◇','Nightlife','Late Night'],['☆','Events','Tonight'],['▱','Hotels','hotel'],['✦','Experiences','experience'],['••','More','']].map(([icon,label,value])=><button key={label} onClick={()=>{goTab('discover');setQuery(value==='dining'||value==='hotel'||value==='experience'?value:'');setIntent(value==='Late Night'||value==='Tonight'?value:'')}}><b><GoodTimesIcon glyph={icon}/></b><small>{label}</small></button>)}</div>
+          <div className="gt5-home-quick">{[['🍴','Restaurants','dining'],['◇','Nightlife','Late Night'],['☆','Events','Tonight'],['▱','Hotels','hotel'],['✦','Experiences','experience'],['▤','This Week','this-week']].map(([icon,label,value])=><button key={label} onClick={()=>{if(value==='this-week'){setWeeklyOpen(true);return}goTab('discover');setQuery(value==='dining'||value==='hotel'||value==='experience'?value:'');setIntent(value==='Late Night'||value==='Tonight'?value:'')}}><b><GoodTimesIcon glyph={icon}/></b><small>{label}</small></button>)}</div>
         </Hero>
         {highlights.length>0&&<Section className="gt5-highlights" kicker={`YOUR CITY · YOUR NEXT GOOD TIME`} title={`What's on in ${cityLabel(city)}`} action={<button onClick={()=>{goTab('discover');setIntent('');setQuery('')}}>See all</button>}><div className="gt5-highlight-grid">{highlights.map(({type,item})=>type==='event'?<EventCard key={item.event_key} city={city} now={clockNow} event={item} saved={savedKeys.has(`event:${item.event_key}`)} onOpen={()=>openEvent(item)} onSave={()=>toggleSave('event',item.event_key)}/>:<VenueCard key={item.id} venue={item} saved={savedKeys.has(`venue:${item.id}`)} onOpen={()=>openVenue(item)} onSave={()=>toggleSave('venue',item.id)}/>)}</div></Section>}
         {forYouEvents.length>0&&<Section kicker="FOR YOU · LEARNS AS YOU USE IT" title="Picked around your taste"><div className="gt5-trending-grid">{forYouEvents.map(e=><div key={e.event_key}><small className="gt5-personal-reason">{personalizedReason(e,profile,intelligence)}</small><EventCard city={city} now={clockNow} event={e} saved={savedKeys.has(`event:${e.event_key}`)} onOpen={()=>openEvent(e)} onSave={()=>toggleSave('event',e.event_key)}/></div>)}</div></Section>}
@@ -243,6 +312,8 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
     </main>
 
     <nav className="gt5-nav" aria-label="GOOD TIMES primary navigation">{NAV.map(([id,icon,label])=><button key={id} className={`${tab===id?'active':''} ${id==='plan'?'plan':''}`} onClick={()=>goTab(id)}><span><GoodTimesIcon glyph={icon}/></span><small>{label}</small></button>)}</nav>
+
+    {weeklyOpen&&<ThisWeekOverlay city={city} events={week} venues={homeVenues} onClose={()=>setWeeklyOpen(false)} onEvent={openEvent} onVenue={openVenue} onExplore={()=>{goTab('discover');setIntent('');setQuery('')}}/>}
 
     {preferencesOpen&&<div className="gt5-overlay"><article className="gt5-detail"><button className="gt5-detail-back" onClick={()=>setPreferencesOpen(false)}>←</button><div className="gt5-detail-body"><small>YOUR GOOD TIMES</small><h1>What should we know?</h1><p className="gt5-detail-meta">Choose up to five. These choices combine with what you actually view, save, follow and share.</p><section><span>CHOOSE UP TO FIVE</span><div className="gt5-secondary-intents">{VIBE_OPTIONS.map(option=><button key={option.id} className={preferenceDraft.includes(option.id)?'active':''} aria-pressed={preferenceDraft.includes(option.id)} onClick={()=>togglePreference(option.id)}>{option.icon} {option.label}</button>)}</div></section><section><span>HOW PERSONALIZATION WORKS</span><p>Your selected tastes guide discovery. GOOD TIMES then learns from your real behavior, while verified city headlines can still outrank personal taste when they matter.</p></section><div className="gt5-detail-actions"><button onClick={()=>setPreferenceDraft([])}>Clear</button><button className="primary" disabled={preferenceSaving} onClick={()=>void savePreferences()}>{preferenceSaving?'Saving…':'Save Preferences'}</button></div></div></article></div>}
 
