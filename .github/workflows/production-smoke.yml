@@ -21,7 +21,7 @@ jobs:
     env:
       BASE_URL: https://thegoodtimesworldwide.com
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Verify public shell and PWA assets
         shell: bash
