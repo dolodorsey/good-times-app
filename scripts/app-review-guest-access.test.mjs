@@ -3,28 +3,31 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
 const main = fs.readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8')
-const v3 = fs.readFileSync(new URL('../src/features/experience/GoodTimesCommandAppV3.jsx', import.meta.url), 'utf8')
+const auth = fs.readFileSync(new URL('../src/features/auth/client.js', import.meta.url), 'utf8')
+const onboarding = fs.readFileSync(new URL('../src/features/onboarding/GoodTimesOnboarding.jsx', import.meta.url), 'utf8')
 const support = fs.readFileSync(new URL('../fastlane/metadata/en-US/support_url.txt', import.meta.url), 'utf8').trim()
 const project = fs.readFileSync(new URL('../ios/App/App.xcodeproj/project.pbxproj', import.meta.url), 'utf8')
 
-test('signed-out users can browse GOOD TIMES V3 without a floating auth overlay', () => {
-  assert.match(main, /function SignedOutGuestExperience\(\)/)
-  assert.match(main, /else if\(!hasSession\)\{route=<SignedOutGuestExperience\/>/)
-  assert.match(main, /<LazyCommandApp onAuth=/)
-  assert.doesNotMatch(main, /gt-guest-access/)
-  assert.doesNotMatch(main, /function GuestAccessBar/)
-  assert.doesNotMatch(main, /else if\(!hasSession\)\{route=<LazyOnboarding/)
+test('signed-out users must authenticate before GOOD TIMES customer app access', () => {
+  assert.match(main, /function SignedOutMemberGate\(\)/)
+  assert.match(main, /else if\(!hasSession\)\{route=<SignedOutMemberGate\/>/)
+  assert.match(main, /return <LazyOnboarding onComplete=\{complete\}\/>/)
+  assert.doesNotMatch(main, /SignedOutGuestExperience/)
+  assert.doesNotMatch(main, /Continue as guest/)
+  assert.doesNotMatch(main, /<LazyCommandApp onAuth=/)
 })
 
-test('guest mode uses consolidated V3 surfaces and keeps auth in Profile', () => {
-  for (const id of ['home', 'discover', 'concierge', 'radar', 'vault']) {
-    assert.match(v3, new RegExp(`\\['${id}'`))
-  }
-  assert.match(v3, /Sign in to save and personalize\./)
-  assert.match(v3, /Browse freely\. Sign in when you want to save, follow and personalize\./)
-  assert.match(v3, /Sign in or create account/)
-  assert.doesNotMatch(main, /\.gt-guest-mode \.gt2-save/)
-  assert.doesNotMatch(main, /\.gt-guest-mode \.gt2-detail-actions/)
+test('GOOD TIMES supports Google OAuth and restores the returned session', () => {
+  assert.match(onboarding, /Continue with Google/)
+  assert.match(onboarding, /signInWithGoogle/)
+  assert.match(auth, /provider', 'google'/)
+  assert.match(auth, /export async function consumeOAuthRedirect/)
+  assert.match(main, /consumeOAuthRedirect\(window\.location\.hash\)/)
+  assert.match(main, /storeSession\(oauthSession\)/)
+})
+
+test('install prompt is shown only after an authenticated session exists', () => {
+  assert.match(main, /readSession\(\)\?<GoodTimesInstallPrompt\/>:null/)
 })
 
 test('App Store support URL points to the dedicated support surface', () => {
