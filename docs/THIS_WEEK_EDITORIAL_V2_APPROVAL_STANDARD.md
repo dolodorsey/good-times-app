@@ -2,7 +2,7 @@
 
 ## App-Only Visual Approval Standard
 
-**Status:** VISUAL CANDIDATE — OWNER APPROVAL REQUIRED BEFORE RUNTIME IMPLEMENTATION  
+**Status:** APPROVED VISUAL STANDARD — September 19, 2026  
 **Prepared:** September 19, 2026  
 **Scope:** GOOD TIMES native/mobile app experience only  
 **Public website:** NOT A PRODUCT REQUIREMENT  
@@ -174,6 +174,6 @@ Release fails when:
 
 The new phone-first visual preview is the candidate minimum standard.
 
-**Owner approval:** PENDING  
-**Runtime component implementation:** NOT STARTED  
+**Owner approval:** APPROVED  
+**Runtime component implementation:** AUTHORIZED ON ISOLATED FEATURE BRANCH  
 **Production app changes from this correction:** NONE
