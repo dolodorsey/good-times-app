@@ -25,7 +25,7 @@ import './features/experience/good-times-home-discover.css'
 import './features/experience/good-times-shake.css'
 import './features/experience/good-times-customer-enhancements.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
-import { readSession } from './features/auth/client.js'
+import { consumeOAuthRedirect, readSession, storeSession } from './features/auth/client.js'
 import { installGrowthTracking, recordGrowthEvent } from './growth.js'
 import { installMediaIntegrityGuard } from './media-integrity.js'
 import { isNative } from './native.js'
@@ -116,22 +116,15 @@ function PremiumRoot({children,launch=false}){
   const[showLaunch,setShowLaunch]=useState(()=>launch&&sessionStorage.getItem('gt_premium_launch')!=='1')
   useEffect(()=>{if(!showLaunch)return undefined;sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1');const timer=setTimeout(()=>setShowLaunch(false),1250);return()=>clearTimeout(timer)},[showLaunch])
   if(showLaunch)return <div className="gt-launch" role="status" aria-label="Opening GOOD TIMES"><video className="gt-current-launch-video" autoPlay muted loop playsInline preload="metadata" poster={GT_CURRENT_HOME} src={GT_CURRENT_ANIMATION}/><div className="gt-launch__scene"/><div className="gt-launch__content"><img className="gt-launch__logo" src={GT_CURRENT_LOGO} alt="GOOD TIMES"/><div className="gt-launch__eyebrow">Worldwide experience concierge</div><div className="gt-launch__title">Your next move starts here.</div><div className="gt-launch__line"/></div></div>
-  return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}<GoodTimesInstallPrompt/></div>
+  return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}{readSession()?<GoodTimesInstallPrompt/>:null}</div>
 }
 
-function SignedOutGuestExperience(){
-  const[showAuth,setShowAuth]=useState(false)
+function SignedOutMemberGate(){
   const complete=(nextSession,prefs)=>{
     if(prefs){try{localStorage.setItem('gt_personalization',JSON.stringify({...prefs,updated_at:new Date().toISOString()}))}catch{}}
     if(nextSession)window.location.reload()
   }
-  if(showAuth)return <>
-    <LazyOnboarding onComplete={complete}/>
-    <button type="button" className="gt-guest-back" onClick={()=>setShowAuth(false)}>← Continue as guest</button>
-  </>
-  return <div className="gt-guest-mode">
-    <LazyCommandApp onAuth={()=>setShowAuth(true)}/>
-  </div>
+  return <LazyOnboarding onComplete={complete}/>
 }
 
 async function bootstrap(){
@@ -145,7 +138,19 @@ async function bootstrap(){
   const requestType=directRoutes[pathname]
   const legacyRoute=pathname==='/legacy'
   const commandRoute=pathname==='/command'
-  if(!recoverySession)await refreshStoredSession()
+  let oauthSession=null
+  if(!recoverySession){
+    oauthSession=await consumeOAuthRedirect(window.location.hash)
+    if(oauthSession){
+      storeSession(oauthSession)
+      const cleanUrl=new URL(window.location.href)
+      cleanUrl.hash=''
+      cleanUrl.searchParams.delete('auth')
+      history.replaceState({},'',`${cleanUrl.pathname}${cleanUrl.search}`)
+    }else{
+      await refreshStoredSession()
+    }
+  }
   const hasSession=Boolean(readSession())
   recordGrowthEvent('app_open',{member:hasSession,route:requestType||pathname})
   if(!requestType&&!recoverySession)sessionStorage.setItem('gt_splash_shown','1')
@@ -154,7 +159,7 @@ async function bootstrap(){
   let loadingLabel='Opening GOOD TIMES'
   if(recoverySession){route=<LazyPasswordRecovery recoverySession={recoverySession}/>;loadingLabel='Securing your account'}
   else if(requestType){route=<LazyDirectRequest requestType={requestType}/>;loadingLabel='Opening your concierge request'}
-  else if(!hasSession){route=<SignedOutGuestExperience/>;loadingLabel='Opening GOOD TIMES guest access'}
+  else if(!hasSession){route=<SignedOutMemberGate/>;loadingLabel='Opening GOOD TIMES sign in'}
   else if(legacyRoute){route=<LazyLegacyApp/>;loadingLabel='Opening legacy GOOD TIMES'}
   else {route=<LazyCommandApp/>;loadingLabel=commandRoute?'Opening command interface':'Opening GOOD TIMES'}
 
