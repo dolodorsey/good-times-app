@@ -1,0 +1,275 @@
+/* GOOD TIMES approved app UI standard — 2026-09-19.
+   UI-only authority. Preserve app behavior, primary nav, data sources, auth and actions.
+   Approved direction: compact cards, restrained headers, image-rich surfaces, warm black/gold,
+   modern interface typography, editorial serif reserved for hero moments. */
+
+:root{
+  --gt-approved-gold:#f3c851;
+  --gt-approved-gold-soft:#d9a83d;
+  --gt-approved-cream:#f8f3ea;
+  --gt-approved-ink:#050607;
+  --gt-approved-panel:rgba(10,12,14,.91);
+}
+
+/* Warmer, image-friendly canvas rather than dead flat black. */
+.gt5-app{
+  background:
+    radial-gradient(circle at 18% 12%,rgba(244,190,70,.08),transparent 29%),
+    radial-gradient(circle at 88% 44%,rgba(73,99,115,.07),transparent 28%),
+    linear-gradient(180deg,#050607,#080808 48%,#030405);
+}
+.gt5-main{
+  background:
+    radial-gradient(circle at 12% 6%,rgba(244,190,70,.055),transparent 22%),
+    linear-gradient(180deg,#060708,#090a0b 50%,#050607);
+}
+.gt5-topbar{
+  height:68px;min-height:68px;flex-basis:68px;
+  padding:8px 16px 5px;
+  background:linear-gradient(180deg,rgba(4,5,6,.98),rgba(5,6,7,.94));
+}
+.gt5-mark{width:40px;height:40px;min-width:40px;font-size:12px}
+.gt5-brand{gap:9px}
+.gt5-brand strong{font:650 15px/1 var(--gt5-sans);letter-spacing:.16em}
+.gt5-brand small{font-size:5.5px;letter-spacing:.15em}
+.gt5-city,.gt5-bell{height:40px;min-height:40px}
+.gt5-bell{width:40px}
+.gt5-radar-strip{min-height:36px;flex-basis:36px;padding:0 16px;grid-template-columns:92px minmax(0,1fr) 15px}
+.gt5-radar-strip strong{font:600 10px/1.2 var(--gt5-sans)}
+
+/* Editorial serif is a feature, not the whole interface. */
+.gt5-section h2,
+.gt5-card-copy h3,
+.gt5-profile-menu strong,
+.gt5-popular h3,
+.gt5-plan-builder h2,
+.gt5-alert-list article strong,
+.gt5-watch strong,
+.gt5-plan-list h2{
+  font-family:var(--gt5-sans);
+  letter-spacing:-.02em;
+}
+.gt5-section h2{font-size:21px;font-weight:750;line-height:1.08}
+.gt5-section>header>div>span{font-size:7px;letter-spacing:.18em}
+.gt5-section>header>button{min-height:44px;font-size:10px}
+.gt5-hero h1,.gt5-detail-body h1,.gt5-itinerary-hero h1{font-family:var(--gt5-serif)}
+
+/* Smaller cinematic heroes. */
+.gt5-hero{min-height:250px}
+.gt5-hero-copy{min-height:250px;padding:44px 18px 18px}
+.gt5-hero h1{max-width:78%;margin:7px 0 8px;font-size:clamp(34px,9.8vw,46px);line-height:.94}
+.gt5-hero-copy>span{font-size:8px;letter-spacing:.23em}
+.gt5-hero-copy>p{max-width:80%;font-size:11px;line-height:1.38}
+.gt5-script{right:16px;top:18px;font-size:13px}
+.gt5-home-hero{min-height:348px}
+.gt5-home-hero .gt5-hero-copy{min-height:348px;padding:38px 16px 14px}
+.gt5-home-hero h1{font-size:clamp(38px,10.7vw,48px);max-width:70%;margin-top:6px}
+.gt5-home-hero .gt5-hero-copy>p{font-size:10.5px;max-width:72%}
+.gt5-compact-hero{min-height:218px;border-radius:0 0 18px 18px}
+.gt5-compact-hero .gt5-hero-copy{min-height:218px;padding:50px 18px 18px}
+.gt5-compact-hero h1{font-size:clamp(34px,9vw,44px)}
+.gt5-hero-search{margin-top:12px;grid-template-columns:26px minmax(0,1fr) 44px;padding:3px 4px 3px 11px;border-radius:24px}
+.gt5-hero-search input{height:42px;font-size:12px}
+.gt5-hero-search button{width:42px;height:42px;border-radius:50%;font-size:21px}
+.gt5-home-quick{gap:5px;margin-top:10px}
+.gt5-home-quick button{min-height:54px;padding:6px 2px;border-radius:14px;gap:5px;background:linear-gradient(180deg,rgba(10,12,14,.82),rgba(5,6,7,.9))}
+.gt5-home-quick b{font-size:15px}.gt5-home-quick small{font-size:8px}
+
+/* Approved secondary app views. Never replaces bottom navigation. */
+.gt5-home-modes{
+  position:sticky;top:0;z-index:34;
+  display:grid;grid-template-columns:repeat(3,1fr);
+  gap:4px;padding:5px;margin:8px 14px 4px;
+  border:1px solid rgba(248,212,106,.18);border-radius:15px;
+  background:rgba(7,8,9,.94);backdrop-filter:blur(18px);
+}
+.gt5-home-modes button{
+  min-height:42px;border:0;border-radius:11px;background:transparent;
+  color:rgba(245,242,234,.58);font:800 10px/1 var(--gt5-sans);
+}
+.gt5-home-modes button.active{
+  background:linear-gradient(135deg,#f8d76f,#dba53b);color:#070809;
+  box-shadow:0 6px 18px rgba(226,172,52,.12);
+}
+
+/* Tighter content density. */
+.gt5-section{padding:18px 14px}
+.gt5-section>header{margin-bottom:10px}
+.gt5-stack{gap:8px}
+.gt5-card{
+  min-height:118px;grid-template-columns:35% minmax(0,1fr);
+  border-radius:15px;background:linear-gradient(145deg,rgba(18,19,20,.94),rgba(7,8,9,.96));
+}
+.gt5-card-media{min-height:116px}
+.gt5-card-copy{padding:12px 38px 11px 12px}
+.gt5-card-copy>small{font-size:6.5px}
+.gt5-card-copy h3{margin:5px 0;font-size:15px;line-height:1.1;font-weight:760}
+.gt5-card-copy p{font-size:9px;margin-bottom:4px}
+.gt5-card-copy>em{font-size:8px}
+.gt5-card-action{font-size:7px!important;margin-top:5px!important}
+.gt5-status{left:7px;bottom:7px;padding:5px 7px;font-size:6px}
+.gt5-save{right:8px;top:8px;width:34px;height:34px;font-size:16px}
+.gt5-card-feature{min-height:136px;grid-template-columns:38% minmax(0,1fr)}
+.gt5-card-feature .gt5-card-media{min-height:134px}
+.gt5-trending-grid{
+  display:grid;grid-auto-flow:column;grid-auto-columns:145px;grid-template-columns:none;
+  gap:8px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding-bottom:4px;
+}
+.gt5-trending-grid::-webkit-scrollbar{display:none}
+.gt5-trending-grid .gt5-card{display:block;min-height:174px;scroll-snap-align:start}
+.gt5-trending-grid .gt5-card-media{height:96px;min-height:96px}
+.gt5-trending-grid .gt5-card-copy{padding:9px}
+.gt5-trending-grid .gt5-card-copy h3{font-size:13px}
+.gt5-trending-grid .gt5-card-copy p{font-size:8px}
+.gt5-trending-grid .gt5-card-copy>em{font-size:7px}
+.gt5-highlight-grid{
+  display:grid!important;grid-auto-flow:column;grid-auto-columns:145px;grid-template-columns:none!important;
+  gap:8px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding-bottom:4px;
+}
+.gt5-highlight-grid::-webkit-scrollbar{display:none}
+.gt5-highlight-grid .gt5-card{
+  display:block;min-height:176px;height:176px;scroll-snap-align:start;border-radius:14px;
+}
+.gt5-highlight-grid .gt5-card-media{height:96px;min-height:96px}
+.gt5-highlight-grid .gt5-card-copy{height:80px;padding:8px 9px 9px}
+.gt5-highlight-grid .gt5-card-copy h3{font-size:12px;line-height:1.12;margin:3px 0}
+.gt5-highlight-grid .gt5-card-copy p{font-size:7.5px;margin:0}
+.gt5-highlight-grid .gt5-card-copy>em{display:none}
+.gt5-highlight-grid .gt5-card-action{display:none}
+.gt5-highlight-grid .gt5-save{width:31px;height:31px;right:6px;top:6px;font-size:14px}
+.gt5-highlight-grid .gt5-status{left:6px;bottom:6px;padding:4px 6px;font-size:5.5px}
+
+/* Newsletter-like Upcoming / Tonight: list first, current data, real app actions. */
+.gt5-newsletter{padding:6px 14px 26px}
+.gt5-newsletter-head{
+  position:relative;isolation:isolate;overflow:hidden;
+  min-height:158px;margin:8px 0 12px;padding:18px;
+  display:flex;flex-direction:column;justify-content:flex-end;
+  border:1px solid rgba(248,212,106,.32);border-radius:19px;
+  background:#111 center/cover no-repeat;
+}
+.gt5-newsletter-head::before{
+  content:'';position:absolute;inset:0;z-index:-2;
+  background-image:var(--gt5-newsletter-art);background-size:cover;background-position:center 45%;
+  filter:saturate(1.18) contrast(1.04);
+}
+.gt5-newsletter-head::after{
+  content:'';position:absolute;inset:0;z-index:-1;
+  background:linear-gradient(90deg,rgba(2,3,4,.92),rgba(2,3,4,.52) 62%,rgba(2,3,4,.22)),linear-gradient(0deg,rgba(2,3,4,.9),transparent 70%);
+}
+.gt5-newsletter-head>span{font:900 7px/1 var(--gt5-sans);letter-spacing:.18em;color:var(--gt5-gold2)}
+.gt5-newsletter-head h2{margin:7px 0 5px;font:650 27px/.96 var(--gt5-serif);letter-spacing:-.035em}
+.gt5-newsletter-head p{max-width:78%;margin:0;color:rgba(255,255,255,.75);font-size:9px;line-height:1.4}
+.gt5-upcoming-day{margin-top:13px}
+.gt5-upcoming-day>header{
+  min-height:40px;padding:0 4px 7px;display:flex;align-items:end;justify-content:space-between;
+  border-bottom:1px solid rgba(248,212,106,.24)
+}
+.gt5-upcoming-day>header>div{display:flex;align-items:baseline;gap:8px}
+.gt5-upcoming-day>header small{font:900 7px/1 var(--gt5-sans);letter-spacing:.14em;color:var(--gt5-gold2)}
+.gt5-upcoming-day>header strong{font:750 15px/1 var(--gt5-sans)}
+.gt5-upcoming-day>header>span{font-size:8px;color:var(--gt5-muted)}
+.gt5-upcoming-day>div{display:grid}
+.gt5-upcoming-row{
+  position:relative;min-height:82px;padding:8px 42px 8px 0;
+  display:grid;grid-template-columns:43px 66px minmax(0,1fr);gap:9px;align-items:center;
+  border-bottom:1px solid rgba(255,255,255,.075);color:var(--gt5-text);
+}
+.gt5-upcoming-date{text-align:center;display:grid;gap:2px}
+.gt5-upcoming-date small,.gt5-upcoming-date em{font:800 6px/1 var(--gt5-sans);font-style:normal;color:var(--gt5-gold2);letter-spacing:.08em}
+.gt5-upcoming-date strong{font:800 19px/1 var(--gt5-sans)}
+.gt5-upcoming-thumb{width:66px;height:62px;overflow:hidden;border:1px solid rgba(248,212,106,.2);border-radius:10px;background:#111;display:grid;place-items:center}
+.gt5-upcoming-thumb img{width:100%;height:100%;object-fit:cover}
+.gt5-upcoming-thumb .gt5-mark{width:31px;height:31px;min-width:31px;font-size:9px;border-width:1px}
+.gt5-upcoming-copy{min-width:0;display:grid;gap:3px}
+.gt5-upcoming-copy>small{font:850 6px/1.1 var(--gt5-sans);letter-spacing:.09em;color:var(--gt5-gold2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gt5-upcoming-copy>strong{font:750 12px/1.12 var(--gt5-sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gt5-upcoming-copy>span{font-size:8px;color:var(--gt5-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gt5-upcoming-save{position:absolute;right:1px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:1px solid rgba(248,212,106,.22);border-radius:50%;background:#090b0d;color:#fff;font-size:15px}
+.gt5-upcoming-save.active{background:var(--gt5-gold2);color:#08090a}
+
+/* Discover: shorter editorial choices, more image than empty black. */
+.gt5-discover-search{margin:11px 14px 8px;border-radius:22px}
+.gt5-intents,.gt5-secondary-intents{padding-left:14px;padding-right:14px}
+.gt5-intents button,.gt5-secondary-intents button{min-height:40px;font-size:9px}
+.gt5-lanes{padding:3px 14px 12px;gap:7px}
+.gt5-lanes button{min-height:94px;padding:13px 50px 13px 13px;border-radius:15px}
+.gt5-lanes strong{font:700 22px/1 var(--gt5-sans);letter-spacing:-.02em}
+.gt5-lanes small{font-size:9px}.gt5-lanes span{font-size:6px}.gt5-lanes i{right:12px;bottom:50%;transform:translateY(50%);font-size:20px}
+
+/* Plan / Saved / Profile / Radar: reduce oversized blocks while preserving functionality. */
+.gt5-plan-mode{margin:11px 14px;border-radius:17px}
+.gt5-plan-mode button{min-height:56px;padding:8px}
+.gt5-plan-builder{margin:0 14px;padding:14px;border-radius:18px}
+.gt5-plan-builder h2{font-size:19px}
+.gt5-plan-intents{gap:6px;margin-top:11px}
+.gt5-plan-intents button{min-height:82px;padding:8px;border-radius:13px}
+.gt5-plan-intents span{font:700 10px/1.1 var(--gt5-sans)}
+.gt5-plan-text{min-height:92px;padding:11px 11px 18px}
+.gt5-plan-text textarea{min-height:58px}
+.gt5-popular{padding:16px 14px 9px}.gt5-popular h3{font-size:18px}
+.gt5-build{width:calc(100% - 28px);min-height:52px;margin:8px 14px 15px;border-radius:16px;font-size:14px}
+
+.gt5-segments,.gt5-profile-city,.gt5-member,.gt5-profile-menu,.gt5-support,.gt5-watch,.gt5-alert-list,.gt5-plan-list,.gt5-radar-settings{margin-left:14px;margin-right:14px}
+.gt5-segments{margin-top:11px;margin-bottom:11px}
+.gt5-segments button{min-height:44px}
+.gt5-plan-list{padding:0 0 14px;gap:8px}
+.gt5-plan-list>button{padding:14px;border-radius:17px}
+.gt5-plan-list h2{font-size:19px}
+.gt5-profile-city{margin-top:11px;padding:12px 14px;border-radius:16px}
+.gt5-member{padding:14px;gap:12px;border-radius:16px}
+.gt5-member>span{font-size:15px}.gt5-member strong{font-size:11px}
+.gt5-profile-menu{gap:6px}
+.gt5-profile-menu button,.gt5-profile-menu a{min-height:62px;padding:9px 12px;grid-template-columns:36px minmax(0,1fr) 16px;border-radius:14px}
+.gt5-profile-menu b{width:34px;height:34px;font-size:17px}
+.gt5-profile-menu strong{font-size:13px;font-weight:720}
+.gt5-profile-menu small{font-size:8px}
+.gt5-support{padding:13px;border-radius:16px}.gt5-support h2{font:700 14px/1.15 var(--gt5-sans)}
+.gt5-radar-settings{margin-top:11px;padding:14px;border-radius:18px}
+.gt5-radar-settings>div{grid-template-columns:repeat(2,1fr);gap:6px}
+.gt5-radar-settings>div>label{min-height:88px;padding:11px 37px 10px 10px;border-radius:13px}
+.gt5-radar-settings strong{font:700 12px/1.1 var(--gt5-sans)}
+.gt5-radar-settings small{font-size:8px}
+.gt5-watch{padding:14px;border-radius:16px}
+
+/* Details stay cinematic but headline doesn't dominate the entire phone. */
+.gt5-detail-hero{height:min(46vh,390px)}
+.gt5-detail-gradient{height:min(46vh,390px)}
+.gt5-detail-body{margin-top:-88px;padding:0 16px 25px}
+.gt5-detail-body h1{font-size:clamp(36px,10vw,52px);line-height:.93}
+.gt5-detail-meta{font-size:11px}
+.gt5-detail-body>section p{font:500 13px/1.45 var(--gt5-sans)}
+.gt5-itinerary-hero{min-height:292px}.gt5-itinerary-hero .gt5-hero-copy{min-height:292px}
+.gt5-timeline section{min-height:104px;grid-template-columns:32px 76px minmax(0,1fr)}
+.gt5-timeline section>img,.gt5-stop-fallback{width:76px;height:76px}.gt5-timeline h2{font:750 16px/1 var(--gt5-sans)}
+.gt5-plan-services button{min-height:66px}
+
+/* Retain protected five-item nav and central Plan treatment. */
+.gt5-nav{min-height:74px;padding-top:5px}
+.gt5-nav button{min-height:55px;border-radius:15px}
+.gt5-nav button span{font-size:19px}
+.gt5-nav button small{font-size:8px}
+.gt5-nav button.plan span{width:50px;height:50px;margin-top:-23px;font-size:25px}
+
+@media(max-width:359px){
+  .gt5-home-hero{min-height:358px}
+  .gt5-home-hero .gt5-hero-copy{min-height:358px;padding-left:11px;padding-right:11px}
+  .gt5-home-hero h1{font-size:35px}
+  .gt5-home-quick{grid-template-columns:repeat(3,1fr)}
+  .gt5-home-quick button{min-height:50px}
+  .gt5-home-modes{margin-left:10px;margin-right:10px}
+  .gt5-card{grid-template-columns:34% minmax(0,1fr)}
+  .gt5-upcoming-row{grid-template-columns:38px 56px minmax(0,1fr);gap:7px}
+  .gt5-upcoming-thumb{width:56px;height:55px}
+}
+@media(min-width:600px){
+  .gt5-home-hero{min-height:390px}
+  .gt5-home-hero .gt5-hero-copy{min-height:390px;padding:48px 32px 20px}
+  .gt5-home-hero h1{font-size:50px}
+  .gt5-home-modes{max-width:720px;margin-left:auto;margin-right:auto}
+  .gt5-newsletter{max-width:760px;margin:0 auto;padding-left:28px;padding-right:28px}
+  .gt5-trending-grid{grid-auto-flow:row;grid-template-columns:repeat(4,1fr);grid-auto-columns:auto}
+}
+@media(prefers-reduced-motion:reduce){
+  .gt5-home-modes{backdrop-filter:none}
+}
