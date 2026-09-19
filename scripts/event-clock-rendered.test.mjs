@@ -20,7 +20,7 @@ for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,he
   page.on('pageerror',e=>errors.push(String(e)))
   page.on('response',r=>{if(r.url().includes('/api/'))requests.push({url:r.url(),status:r.status()})})
   try{
-   await context.addInitScript(epoch=>{const NativeDate=Date;class FixedDate extends NativeDate{constructor(...args){super(...(args.length?args:[epoch]))}static now(){return epoch}};window.Date=FixedDate;sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},FIXED)
+   await context.addInitScript(epoch=>{const NativeDate=Date;class FixedDate extends NativeDate{constructor(...args){super(...(args.length?args:[epoch]))}static now(){return epoch}};window.Date=FixedDate;sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1');localStorage.setItem('gt_session',JSON.stringify({access_token:'ui-clock-token',refresh_token:'ui-clock-refresh',expires_at:Math.floor(epoch/1000)+3600,user:{id:'00000000-0000-4000-8000-000000000002',email:'clock-proof@goodtimes.invalid',user_metadata:{full_name:'GOOD TIMES Clock QA'}}}))},FIXED)
    // All customer/API traffic is isolated to deterministic fixtures. Health must
    // identify the correct service; do not bypass or change the production guard.
    await context.route('**/api/**',route=>{

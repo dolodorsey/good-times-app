@@ -17,10 +17,18 @@ const viewports=[
 ]
 
 for(const vp of viewports){
-  test(`${vp.name} guest discovery uses the current iPad canvas`,{skip,timeout:30000},async()=>{
+  test(`${vp.name} authenticated discovery uses the current iPad canvas`,{skip,timeout:30000},async()=>{
     fs.mkdirSync(OUT,{recursive:true})
     const browser=await chromium.launch({headless:true,executablePath:CHROME||undefined,args:['--no-sandbox']})
     const context=await browser.newContext({viewport:{width:vp.width,height:vp.height}})
+    await context.addInitScript(() => {
+      localStorage.setItem('gt_session', JSON.stringify({
+        access_token: 'ui-proof-token',
+        refresh_token: 'ui-proof-refresh',
+        expires_at: Math.floor(Date.now()/1000)+3600,
+        user: { id: '00000000-0000-4000-8000-000000000001', email: 'ui-proof@goodtimes.invalid', user_metadata: { full_name: 'GOOD TIMES QA' } },
+      }))
+    })
     const page=await context.newPage()
     const errors=[]
     page.on('pageerror',error=>errors.push(String(error?.message||error)))
@@ -45,7 +53,7 @@ for(const vp of viewports){
         }
       })
       console.log(`[APP REVIEW ${vp.name}]`,JSON.stringify(geometry))
-      await page.screenshot({path:path.join(OUT,`${vp.name}__guest.png`),fullPage:false})
+      await page.screenshot({path:path.join(OUT,`${vp.name}__authenticated.png`),fullPage:false})
       const minCanvas=vp.width<900?vp.width*.9:Math.min(1000,vp.width*.82)
       assert.ok(geometry.app?.width>=minCanvas,`app canvas ${geometry.app?.width}px is too narrow for ${vp.width}px iPad; geometry=${JSON.stringify(geometry)}`)
       const allowedInset=vp.width<900?4:44
@@ -72,15 +80,15 @@ for(const vp of viewports){
           vw:innerWidth,vh:innerHeight,
         }:null
       })
-      assert.ok(profile,'guest profile geometry is unavailable')
-      assert.ok(profile.profile.left>=profile.main.left-2&&profile.profile.right<=profile.main.right+2,`guest profile escaped the horizontal app canvas; geometry=${JSON.stringify(profile)}`)
+      assert.ok(profile,'authenticated profile geometry is unavailable')
+      assert.ok(profile.profile.left>=profile.main.left-2&&profile.profile.right<=profile.main.right+2,`authenticated profile escaped the horizontal app canvas; geometry=${JSON.stringify(profile)}`)
       assert.ok(profile.main.top>=-2&&profile.main.bottom<=profile.vh+2,`main scroll container escaped the viewport; geometry=${JSON.stringify(profile)}`)
       assert.ok(profile.nav.top>=-2&&profile.nav.bottom<=profile.vh+2,`navigation moved offscreen while Profile was open; geometry=${JSON.stringify(profile)}`)
       if(profile.profile.height>profile.main.height+2){
         assert.ok(profile.main.scrollHeight>profile.main.clientHeight,`long Profile must scroll inside the app instead of being clipped; geometry=${JSON.stringify(profile)}`)
         assert.match(profile.main.overflowY,/auto|scroll/)
       }
-      assert.match(profile.profile.text,/Sign in or create account/i)
+      assert.match(profile.profile.text,/Log Out/i)
       assert.deepEqual(errors,[])
     }finally{
       await context.close();await browser.close()

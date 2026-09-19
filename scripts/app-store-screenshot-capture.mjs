@@ -7,6 +7,7 @@ const OUT=process.env.GT_UI_ARTIFACTS||'ui-artifacts'
 if(!BASE)throw new Error('GT_UI_BASE is required')
 const {chromium}=await import('playwright-core')
 
+const SESSION={access_token:'gt-app-store-fixture-access',refresh_token:'gt-app-store-fixture-refresh',expires_at:Math.floor(Date.now()/1000)+86400,user:{id:'gt-app-store-fixture-user',email:'app.review@goodtimes.invalid'}}
 const targets=[
   {name:'iphone-6.9',width:430,height:932,scale:3,expected:[1290,2796]},
   {name:'ipad-13',width:1024,height:1366,scale:2,expected:[2048,2732]},
@@ -35,6 +36,7 @@ const browser=await chromium.launch({headless:true,executablePath:CHROME||undefi
 try{
   for(const target of targets){
     const context=await browser.newContext({viewport:{width:target.width,height:target.height},deviceScaleFactor:target.scale})
+    await context.addInitScript(session=>{localStorage.setItem('gt_session',JSON.stringify(session));localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['nightlife','grown'],age:'25-34'}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},SESSION)
     const page=await context.newPage()
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
     await page.waitForSelector('.gt5-app',{state:'visible',timeout:20000})

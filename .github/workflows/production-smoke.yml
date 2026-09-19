@@ -1,0 +1,72 @@
+name: GOOD TIMES Production Smoke
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: good-times-production-smoke
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  production-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      BASE_URL: https://thegoodtimesworldwide.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify public shell and PWA assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          for route in / /manifest.json; do
+            out="$(mktemp)"
+            code="$(curl -L --silent --show-error --retry 3 --retry-all-errors --connect-timeout 8 --max-time 25 -o "$out" -w '%{http_code}' "${BASE_URL}${route}")"
+            [[ "$code" == "200" ]] || { echo "GOOD TIMES route failed: ${route} -> HTTP ${code}"; cat "$out"; exit 1; }
+            [[ "$(wc -c < "$out" | tr -d ' ')" -gt 200 ]] || { echo "GOOD TIMES route too small: ${route}"; exit 1; }
+            rm -f "$out"
+          done
+
+      - name: Verify live Atlanta inventory
+        shell: bash
+        run: |
+          set -euo pipefail
+          body="$(curl -L --fail --silent --show-error --retry 3 --retry-all-errors --connect-timeout 8 --max-time 30 "${BASE_URL}/api/data-fast?city=atlanta&event_limit=60&venue_limit=80&smoke=${GITHUB_RUN_ID}")"
+          printf '%s' "$body" | python3 -c '
+          import json,sys
+          d=json.load(sys.stdin)
+          assert d.get("ok") is True and d.get("connected") is True, d
+          assert d.get("degraded") is False, d.get("coverage")
+          counts=d.get("counts") or {}
+          assert counts.get("events",0)>=20, counts
+          assert counts.get("venues",0)>=20, counts
+          coverage=d.get("coverage") or {}
+          assert coverage.get("events_live") is True, coverage
+          assert float(coverage.get("event_age_hours") or 999)<=72, coverage
+          rows=(d.get("events") or [])[:30]
+          assert rows, "no events"
+          blocked=("maps.googleapis.com/maps/api/place/photo","placeholder","wordmark","logo")
+          for row in rows:
+              assert row.get("title") and row.get("event_date") and row.get("venue_name"), row
+              assert row.get("ticket_url") and row.get("image_url"), row
+              image=str(row.get("image_url")).lower()
+              assert not any(x in image for x in blocked), image
+          print("GOOD TIMES production smoke OK:", counts, coverage.get("event_latest_update"))
+          '
+
+      - name: Verify auth contract remains mandatory
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'SignedOutMemberGate' src/main.jsx
+          grep -q 'consumeOAuthRedirect' src/main.jsx
+          grep -q 'Continue with Google' src/features/onboarding/GoodTimesOnboarding.jsx
+          ! grep -q 'Continue as guest' src/main.jsx

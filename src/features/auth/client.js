@@ -30,6 +30,57 @@ export const signIn = (email, password) => request('token?grant_type=password', 
   body: { email, password },
 })
 
+export function googleOAuthRedirectUrl(locationValue = globalThis.location) {
+  const origin = locationValue?.origin || 'https://thegoodtimesworldwide.com'
+  const pathname = locationValue?.pathname || '/'
+  const redirect = new URL(pathname, origin)
+  redirect.searchParams.set('auth', 'google')
+  const target = new URL(`${GT_SUPABASE_URL}/auth/v1/authorize`)
+  target.searchParams.set('provider', 'google')
+  target.searchParams.set('redirect_to', redirect.toString())
+  return target.toString()
+}
+
+export async function isGoogleOAuthEnabled(fetchImpl = globalThis.fetch) {
+  try {
+    const response = await fetchImpl(`${GT_SUPABASE_URL}/auth/v1/settings`, {
+      method: 'GET',
+      headers: { apikey: GT_SUPABASE_ANON_KEY, Accept: 'application/json' },
+      cache: 'no-store',
+    })
+    if (!response.ok) return false
+    const payload = await response.json().catch(() => ({}))
+    return payload?.external?.google === true
+  } catch {
+    return false
+  }
+}
+
+export function signInWithGoogle(locationValue = globalThis.location) {
+  const target = googleOAuthRedirectUrl(locationValue)
+  locationValue?.assign?.(target)
+  return target
+}
+
+export async function consumeOAuthRedirect(hash = globalThis.location?.hash || '') {
+  const params = new URLSearchParams(String(hash || '').replace(/^#/, ''))
+  if (!params.get('access_token') || params.get('type') === 'recovery') return null
+  const accessToken = params.get('access_token')
+  const refreshToken = params.get('refresh_token')
+  if (!accessToken || !refreshToken) return null
+  const user = await request('user', { method: 'GET', bearer: accessToken })
+  if (!user?.id) throw new Error('Google sign-in completed, but the GOOD TIMES account could not be restored.')
+  const expiresIn = Number(params.get('expires_in') || 3600)
+  return {
+    access_token: accessToken,
+    refresh_token: refreshToken,
+    token_type: params.get('token_type') || 'bearer',
+    expires_in: expiresIn,
+    expires_at: Number(params.get('expires_at') || 0) || Math.floor(Date.now() / 1000) + expiresIn,
+    user,
+  }
+}
+
 export const requestPasswordReset = (email) => request('recover', { body: { email } })
 
 export function readSession(storage = globalThis.localStorage) {

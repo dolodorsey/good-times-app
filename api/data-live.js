@@ -51,13 +51,15 @@ function decode(value){return String(value||'').replace(/&amp;/gi,'&').replace(/
 
 async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLimit}){
   let lastError=null
+  let currentEventLimit=eventFetchLimit
+  let currentVenueLimit=venueFetchLimit
   for(let attempt=0;attempt<2;attempt+=1){
     const controller=new AbortController()
     const timer=setTimeout(()=>controller.abort(),7000)
     try{
       const response=await fetch(`${CONTENT_URL}/rest/v1/rpc/gt_public_live_inventory`,{
         method:'POST',headers:headers(),cache:'no-store',signal:controller.signal,
-        body:JSON.stringify({p_city:city,p_service_date:serviceDate,p_event_limit:eventFetchLimit,p_venue_limit:venueFetchLimit}),
+        body:JSON.stringify({p_city:city,p_service_date:serviceDate,p_event_limit:currentEventLimit,p_venue_limit:currentVenueLimit}),
       })
       const text=await response.text()
       if(!response.ok)throw new Error(`inventory RPC HTTP ${response.status}: ${text.slice(0,240)}`)
@@ -66,7 +68,15 @@ async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLim
       return payload
     }catch(error){
       lastError=error?.name==='AbortError'?new Error('inventory RPC timed out'):error
-      if(attempt===0)await wait(180)
+      if(attempt===0){
+        const timeoutLike=/57014|statement timeout|timed out/i.test(lastError?.message||'')
+        if(timeoutLike){
+          currentEventLimit=Math.max(120,Math.ceil(currentEventLimit/2))
+          currentVenueLimit=Math.max(120,Math.ceil(currentVenueLimit/2))
+          console.warn('[GOOD TIMES data-live] retrying reduced inventory after timeout',{city,event_limit:currentEventLimit,venue_limit:currentVenueLimit})
+        }
+        await wait(180)
+      }
     }finally{clearTimeout(timer)}
   }
   throw lastError||new Error('inventory RPC failed')
