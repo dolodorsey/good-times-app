@@ -1,0 +1,33 @@
+name: GOOD TIMES Production Lighthouse
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "41 9 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lighthouse-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Audit production customer surfaces
+        uses: treosh/lighthouse-ci-action@12.6.2
+        with:
+          urls: |
+            https://thegoodtimesworldwide.com/
+            https://thegoodtimesworldwide.com/join
+            https://thegoodtimesworldwide.com/concierge-request
+          configPath: "./lighthouserc.json"
+          uploadArtifacts: true
+          temporaryPublicStorage: false
