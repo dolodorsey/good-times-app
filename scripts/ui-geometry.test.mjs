@@ -56,7 +56,8 @@ async function open(vp,signedIn){
   const page=await ctx.newPage(),errors=[]
   page.on('pageerror',error=>errors.push(String(error)))
   await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
-  await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
+  if(signedIn) await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
+  else await page.getByRole('button',{name:'Get Started'}).waitFor({state:'visible',timeout:30000})
   await page.waitForTimeout(signedIn?1200:900)
   return{ctx,page,errors}
 }
@@ -103,9 +104,28 @@ async function openRadar(page){
 }
 
 for(const vp of VIEWPORTS){
-  test(`[${vp.name}] signed-out V4 shell has no geometry faults`,{skip,timeout:60000},async()=>{
+  test(`[${vp.name}] signed-out account gate is contained and blocks app access`,{skip,timeout:60000},async()=>{
     const{ctx,page,errors}=await open(vp,false)
-    try{const g=await assertShell(page,errors,`${vp.name} guest`);assert.ok(g.hero&&g.hero.h>120,`${vp.name}: Home hero collapsed`);await page.screenshot({path:path.join(OUT,`${vp.name}__signed-out-v4-home.png`),fullPage:false});await page.locator('.gt5-city').click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000});await assertShell(page,errors,`${vp.name} guest profile`);assert.match(await page.locator('.gt5-profile').innerText(),/Sign in or create account/i)}finally{await ctx.close()}
+    try{
+      const g=await page.evaluate(()=>{
+        const doc=document.scrollingElement||document.documentElement
+        const buttons=[...document.querySelectorAll('button')].map(x=>(x.textContent||'').trim()).filter(Boolean)
+        return{
+          horizontalOverflow:Math.max(0,doc.scrollWidth-innerWidth),
+          verticalOverflow:Math.max(0,doc.scrollHeight-innerHeight),
+          hasApp:Boolean(document.querySelector('.gt5-app')),
+          buttons,
+          bodyText:(document.body.innerText||'').slice(0,2000),
+        }
+      })
+      assert.ok(g.horizontalOverflow<=1,`${vp.name}: account gate horizontal overflow ${g.horizontalOverflow}px`)
+      assert.equal(g.hasApp,false,`${vp.name}: signed-out user reached protected V4 shell`)
+      assert.ok(g.buttons.includes('Get Started'),`${vp.name}: Get Started is missing`)
+      assert.ok(g.buttons.includes('I Already Have an Account'),`${vp.name}: existing-account CTA is missing`)
+      assert.match(g.bodyText,/A free account keeps your saves, plans and recommendations with you/i)
+      assert.deepEqual(errors,[],`${vp.name}: uncaught signed-out account gate errors`)
+      await page.screenshot({path:path.join(OUT,`${vp.name}__signed-out-account-gate.png`),fullPage:false})
+    }finally{await ctx.close()}
   })
 
   test(`[${vp.name}] signed-in V4 navigation and details stay contained`,{skip,timeout:60000},async()=>{
