@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   friendlyAuthError,
+  isGoogleOAuthEnabled,
   requestPasswordReset,
   signIn,
   signInWithGoogle,
@@ -66,6 +67,13 @@ export default function GoodTimesOnboarding({ onComplete }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [googleReady, setGoogleReady] = useState(false)
+
+  useEffect(() => {
+    let active = true
+    isGoogleOAuthEnabled().then(enabled => { if (active) setGoogleReady(enabled) })
+    return () => { active = false }
+  }, [])
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   const authValid = emailValid && password.length >= 8 && (mode === 'signin' || name.trim().length >= 2)
@@ -145,20 +153,22 @@ export default function GoodTimesOnboarding({ onComplete }) {
           <div style={{ display: 'flex', background: 'rgba(255,255,255,.08)', padding: 4, borderRadius: 12, marginBottom: 18 }}>
             {['signup', 'signin'].map(value => <button key={value} onClick={() => { setMode(value); setError(''); setNotice('') }} style={{ flex: 1, padding: 10, border: 0, borderRadius: 9, background: mode === value ? GOLD : 'transparent', color: mode === value ? '#08080d' : 'rgba(255,255,255,.55)', fontWeight: 800, cursor: 'pointer' }}>{value === 'signup' ? 'Sign Up' : 'Sign In'}</button>)}
           </div>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => signInWithGoogle()}
-            style={{ ...primary(!busy), background: '#fff', color: '#151515', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 14 }}
-          >
-            <span aria-hidden="true" style={{ fontWeight: 900, fontSize: 18 }}>G</span>
-            Continue with Google
-          </button>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 14px', color: 'rgba(255,255,255,.34)', fontSize: 10, fontWeight: 800, letterSpacing: '.12em' }}>
-            <span style={{ height: 1, flex: 1, background: 'rgba(255,255,255,.12)' }} />
-            OR USE EMAIL
-            <span style={{ height: 1, flex: 1, background: 'rgba(255,255,255,.12)' }} />
-          </div>
+          {googleReady && <>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => signInWithGoogle()}
+              style={{ ...primary(!busy), background: '#fff', color: '#151515', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 14 }}
+            >
+              <span aria-hidden="true" style={{ fontWeight: 900, fontSize: 18 }}>G</span>
+              Continue with Google
+            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 14px', color: 'rgba(255,255,255,.34)', fontSize: 10, fontWeight: 800, letterSpacing: '.12em' }}>
+              <span style={{ height: 1, flex: 1, background: 'rgba(255,255,255,.12)' }} />
+              OR USE EMAIL
+              <span style={{ height: 1, flex: 1, background: 'rgba(255,255,255,.12)' }} />
+            </div>
+          </>}
           {mode === 'signup' && <input value={name} onChange={event => setName(event.target.value)} placeholder="Full name" style={{ ...field, marginBottom: 12 }} />}
           <input value={email} onChange={event => setEmail(event.target.value)} type="email" placeholder="Email address" style={{ ...field, marginBottom: 12 }} />
           <input value={password} onChange={event => setPassword(event.target.value)} type="password" placeholder="Password — 8+ characters" style={field} />
