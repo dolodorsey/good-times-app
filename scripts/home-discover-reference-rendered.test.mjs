@@ -32,7 +32,7 @@ for(const vp of[{width:320,height:740},{width:390,height:844},{width:430,height:
    const upcomingRows=page.locator('.gt5-upcoming-row')
    assert.ok(await upcomingRows.count()>=4,'Upcoming should render the existing current fixture inventory as a list')
    const upcomingGeometry=await upcomingRows.evaluateAll(items=>items.slice(0,4).map(x=>({w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height})))
-   for(const box of upcomingGeometry){assert.ok(box.h<=100,`Upcoming row is oversized: ${JSON.stringify(box)}`);assert.ok(box.w<=innerWidth)}
+   for(const box of upcomingGeometry){assert.ok(box.h<=100,`Upcoming row is oversized: ${JSON.stringify(box)}`);assert.ok(box.w<=vp.width)}
    if(vp.width===390)await page.screenshot({path:path.join(OUT,`composition-fixture-${vp.width}-upcoming.png`)})
    await homeModes.filter({hasText:'Tonight'}).click()
    await page.locator('.gt5-newsletter-tonight').waitFor({timeout:5000})
