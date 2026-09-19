@@ -122,7 +122,22 @@
 .gt5-trending-grid .gt5-card-copy h3{font-size:13px}
 .gt5-trending-grid .gt5-card-copy p{font-size:8px}
 .gt5-trending-grid .gt5-card-copy>em{font-size:7px}
-.gt5-highlight-grid{gap:8px}
+.gt5-highlight-grid{
+  display:grid!important;grid-auto-flow:column;grid-auto-columns:145px;grid-template-columns:none!important;
+  gap:8px;overflow-x:auto;scroll-snap-type:x proximity;scrollbar-width:none;padding-bottom:4px;
+}
+.gt5-highlight-grid::-webkit-scrollbar{display:none}
+.gt5-highlight-grid .gt5-card{
+  display:block;min-height:176px;height:176px;scroll-snap-align:start;border-radius:14px;
+}
+.gt5-highlight-grid .gt5-card-media{height:96px;min-height:96px}
+.gt5-highlight-grid .gt5-card-copy{height:80px;padding:8px 9px 9px}
+.gt5-highlight-grid .gt5-card-copy h3{font-size:12px;line-height:1.12;margin:3px 0}
+.gt5-highlight-grid .gt5-card-copy p{font-size:7.5px;margin:0}
+.gt5-highlight-grid .gt5-card-copy>em{display:none}
+.gt5-highlight-grid .gt5-card-action{display:none}
+.gt5-highlight-grid .gt5-save{width:31px;height:31px;right:6px;top:6px;font-size:14px}
+.gt5-highlight-grid .gt5-status{left:6px;bottom:6px;padding:4px 6px;font-size:5.5px}
 
 /* Newsletter-like Upcoming / Tonight: list first, current data, real app actions. */
 .gt5-newsletter{padding:6px 14px 26px}
