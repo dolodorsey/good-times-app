@@ -50,7 +50,8 @@ jobs:
           assert counts.get("venues",0)>=20, counts
           coverage=d.get("coverage") or {}
           assert coverage.get("events_live") is True, coverage
-          assert float(coverage.get("event_age_hours") or 999)<=72, coverage
+          event_age_hours=coverage.get("event_age_hours")
+          assert event_age_hours is not None and float(event_age_hours)<=72, coverage
           rows=(d.get("events") or [])[:30]
           assert rows, "no events"
           blocked=("maps.googleapis.com/maps/api/place/photo","placeholder","wordmark","logo")
