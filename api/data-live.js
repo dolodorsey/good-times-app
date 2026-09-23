@@ -57,7 +57,7 @@ async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLim
     const controller=new AbortController()
     const timer=setTimeout(()=>controller.abort(),7000)
     try{
-      const response=await fetch(`${CONTENT_URL}/rest/v1/rpc/gt_public_live_inventory`,{
+      const response=await fetch(`${CONTENT_URL}/rest/v1/rpc/gt_public_live_inventory_cached`,{
         method:'POST',headers:headers(),cache:'no-store',signal:controller.signal,
         body:JSON.stringify({p_city:city,p_service_date:serviceDate,p_event_limit:currentEventLimit,p_venue_limit:currentVenueLimit}),
       })
@@ -71,8 +71,8 @@ async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLim
       if(attempt===0){
         const timeoutLike=/57014|statement timeout|timed out/i.test(lastError?.message||'')
         if(timeoutLike){
-          currentEventLimit=Math.max(120,Math.ceil(currentEventLimit/2))
-          currentVenueLimit=Math.max(120,Math.ceil(currentVenueLimit/2))
+          currentEventLimit=Math.max(60,Math.min(currentEventLimit-1,Math.ceil(currentEventLimit/2)))
+          currentVenueLimit=Math.max(90,Math.min(currentVenueLimit-1,Math.ceil(currentVenueLimit/2)))
           console.warn('[GOOD TIMES data-live] retrying reduced inventory after timeout',{city,event_limit:currentEventLimit,venue_limit:currentVenueLimit})
         }
         await wait(180)
@@ -166,7 +166,7 @@ function send(response,status,payload,cache='MISS'){
   response.statusCode=status
   response.setHeader('Content-Type','application/json; charset=utf-8')
   response.setHeader('Cache-Control',status===200&&cache!=='STALE'?'public, s-maxage=60, stale-while-revalidate=600':'no-store')
-  response.setHeader('X-Good-Times-Live-Gateway','v8')
+  response.setHeader('X-Good-Times-Live-Gateway','v9')
   response.setHeader('X-Good-Times-Cache',cache)
   response.end(JSON.stringify(payload))
 }
@@ -174,7 +174,9 @@ function send(response,status,payload,cache='MISS'){
 export default async function handler(request,response){
   if(!['GET','HEAD'].includes(request.method||'GET')){response.setHeader('Allow','GET, HEAD');return send(response,405,{ok:false,error:'Method not allowed'})}
   const url=new URL(request.url||'/api/data-live','https://thegoodtimesworldwide.com')
-  const city=normalizeCity(url.searchParams.get('city'))
+  const requestedCity=normalizeCity(url.searchParams.get('city'))
+  const city='atlanta'
+  if(requestedCity!=='atlanta')response.setHeader('X-Good-Times-Launch-Scope','atlanta-only')
   const eventLimit=clampLimit(url.searchParams.get('event_limit'),120,180)
   const venueLimit=clampLimit(url.searchParams.get('venue_limit'),120,180)
   const clock=cityClock(city)
@@ -188,7 +190,7 @@ export default async function handler(request,response){
     const stale=CACHE.get(cacheKey)
     if(stale&&Date.now()-stale.at<15*60*1000)return send(response,200,{...stale.payload,degraded:true,coverage:{...stale.payload.coverage,notice:'Live sources are refreshing; showing the most recent verified city snapshot.'}},'STALE')
     console.error('[GOOD TIMES data-live]',{city,error:error?.message})
-    return send(response,503,{ok:false,connected:false,city,source:'good-times-fast-customer-inventory',generated_at:new Date().toISOString(),error:'GOOD TIMES live data is temporarily unavailable.'})
+    return send(response,503,{ok:false,connected:false,city,source:'good-times-atlanta-cached-inventory',generated_at:new Date().toISOString(),error:'GOOD TIMES live data is temporarily unavailable.'})
   }
   const rawEvents=inventory.events
   const rawVenues=inventory.venues
@@ -206,6 +208,6 @@ export default async function handler(request,response){
   }
   CACHE.set(cacheKey,{at:Date.now(),payload})
   if(CACHE.size>128){const oldest=CACHE.keys().next().value;CACHE.delete(oldest)}
-  if(request.method==='HEAD'){response.statusCode=200;response.setHeader('X-Good-Times-Events',String(events.length));response.setHeader('X-Good-Times-Venues',String(venues.length));response.setHeader('X-Good-Times-Degraded',String(degraded));response.setHeader('X-Good-Times-Service-Date',clock.serviceDate);response.setHeader('X-Good-Times-Live-Gateway','v8');return response.end()}
+  if(request.method==='HEAD'){response.statusCode=200;response.setHeader('X-Good-Times-Events',String(events.length));response.setHeader('X-Good-Times-Venues',String(venues.length));response.setHeader('X-Good-Times-Degraded',String(degraded));response.setHeader('X-Good-Times-Service-Date',clock.serviceDate);response.setHeader('X-Good-Times-Live-Gateway','v9');response.setHeader('X-Good-Times-Launch-Scope','atlanta-only');return response.end()}
   return send(response,200,payload)
 }
