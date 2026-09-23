@@ -36,6 +36,38 @@ async function probe(url, key, query, fetchImpl) {
   }
 }
 
+async function probeAtlantaInventory(fetchImpl, now = new Date()) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS)
+  try {
+    const serviceDate = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/New_York',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(now)
+    const response = await fetchImpl(`${CONTENT_URL}/rest/v1/rpc/gt_public_live_inventory_cached`, {
+      method: 'POST',
+      headers: { ...headers(CONTENT_ANON_KEY), 'Content-Type': 'application/json' },
+      cache: 'no-store',
+      signal: controller.signal,
+      body: JSON.stringify({
+        p_city: 'atlanta',
+        p_service_date: serviceDate,
+        p_event_limit: 1,
+        p_venue_limit: 1,
+      }),
+    })
+    if (!response.ok) return false
+    const payload = await response.json().catch(() => null)
+    return Boolean(payload && Array.isArray(payload.events) && Array.isArray(payload.venues))
+  } catch {
+    return false
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 const SNAPSHOT_MAX_AGE_MS = 36 * 60 * 60 * 1000
 
 function parseSnapshotTimestamp(value) {
@@ -60,7 +92,7 @@ function verifiedSnapshotReady(now = new Date()) {
 export async function getGoodTimesHealth(fetchImpl = globalThis.fetch, now = new Date()) {
   const [customerReady, contentReady] = await Promise.all([
     probe(GT_URL, GT_ANON_KEY, 'gt_formula_versions?select=id&limit=1', fetchImpl),
-    probe(CONTENT_URL, CONTENT_ANON_KEY, 'gt_venues?select=id&status=eq.active&limit=1', fetchImpl),
+    probeAtlantaInventory(fetchImpl, now),
   ])
   const fallbackReady = !contentReady && verifiedSnapshotReady(now)
   const degraded = customerReady && !contentReady && fallbackReady
