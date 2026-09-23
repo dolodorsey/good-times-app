@@ -49,9 +49,15 @@ function atlantaServiceDate(now = new Date()) {
   return date.toISOString().slice(0, 10)
 }
 
+const SNAPSHOT_MAX_AGE_MS = 36 * 60 * 60 * 1000
+
 function verifiedSnapshotReady(now = new Date()) {
+  const refreshedAt = Date.parse(String(ATLANTA_FALLBACK_SNAPSHOT?.refreshed_at || '').replace(' ', 'T'))
+  const ageMs = now.getTime() - refreshedAt
   return Boolean(
-    ATLANTA_FALLBACK_SNAPSHOT?.service_date === atlantaServiceDate(now) &&
+    Number.isFinite(refreshedAt) &&
+    ageMs >= 0 &&
+    ageMs <= SNAPSHOT_MAX_AGE_MS &&
     Array.isArray(ATLANTA_FALLBACK_SNAPSHOT?.events) &&
     ATLANTA_FALLBACK_SNAPSHOT.events.length > 0 &&
     Array.isArray(ATLANTA_FALLBACK_SNAPSHOT?.venues) &&
