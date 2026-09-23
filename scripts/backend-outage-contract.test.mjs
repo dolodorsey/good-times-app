@@ -19,6 +19,7 @@ test('GOOD TIMES health requires both exact service planes', async () => {
   const calls = []
   const health = await getGoodTimesHealth(async (url, options = {}) => {
     calls.push({ url: String(url), options })
+    if (String(url).includes('/rpc/gt_public_live_inventory_cached')) return jsonResponse({ events: [], venues: [] })
     return jsonResponse([{ id: 'fixture' }])
   })
 
@@ -28,22 +29,50 @@ test('GOOD TIMES health requires both exact service planes', async () => {
   assert.equal(health.content_ready, true)
   assert.equal(calls.length, 2)
   assert.match(calls[0].url, /^https:\/\/czocqfaovfpjweayniuw\.supabase\.co\/rest\/v1\/gt_formula_versions\?select=id&limit=1$/)
-  assert.match(calls[1].url, /^https:\/\/dzlmtvodpyhetvektfuo\.supabase\.co\/rest\/v1\/gt_venues\?select=id&status=eq\.active&limit=1$/)
+  assert.match(calls[1].url, /^https:\/\/dzlmtvodpyhetvektfuo\.supabase\.co\/rest\/v1\/rpc\/gt_public_live_inventory_cached$/)
+  assert.equal(calls[1].options?.method, 'POST')
+  assert.equal(JSON.parse(calls[1].options?.body || '{}').p_city, 'atlanta')
   assert.match(String(calls[0].options?.headers?.apikey || ''), /^eyJ/)
   assert.equal(calls[0].options?.headers?.Authorization, `Bearer ${calls[0].options?.headers?.apikey}`)
   assert.match(String(calls[1].options?.headers?.apikey || ''), /^eyJ/)
   assert.equal(calls[1].options?.headers?.Authorization, `Bearer ${calls[1].options?.headers?.apikey}`)
 })
 
-test('GOOD TIMES health fails closed when either required plane is unavailable', async () => {
+test('GOOD TIMES health fails closed when the customer/auth plane is unavailable', async () => {
   const health = await getGoodTimesHealth(async (url) => {
     if (String(url).includes('czocqfaovfpjweayniuw')) return jsonResponse([])
-    return jsonResponse([{ id: 'venue-fixture' }])
-  })
+    return jsonResponse({ events: [], venues: [] })
+  }, new Date('2026-09-23T12:00:00Z'))
 
   assert.equal(health.ok, false)
   assert.equal(health.customer_ready, false)
   assert.equal(health.content_ready, true)
+  assert.equal(health.degraded, false)
+})
+
+test('GOOD TIMES health stays available in degraded mode when the verified Atlanta snapshot protects a content-plane outage', async () => {
+  const health = await getGoodTimesHealth(async (url) => {
+    if (String(url).includes('czocqfaovfpjweayniuw')) return jsonResponse([{ id: 'fixture' }])
+    return jsonResponse({ error: 'schema cache' }, false, 503)
+  }, new Date('2026-09-23T12:00:00Z'))
+
+  assert.equal(health.ok, true)
+  assert.equal(health.degraded, true)
+  assert.equal(health.customer_ready, true)
+  assert.equal(health.content_ready, false)
+  assert.equal(health.verified_snapshot_ready, true)
+  assert.equal(health.launch_scope, 'atlanta_only')
+})
+
+test('verified Atlanta snapshot remains a bounded fallback after service-date rollover', async () => {
+  const health = await getGoodTimesHealth(async (url) => {
+    if (String(url).includes('czocqfaovfpjweayniuw')) return jsonResponse([{ id: 'fixture' }])
+    return jsonResponse({ error: 'schema cache' }, false, 503)
+  }, new Date('2026-09-24T12:00:00Z'))
+
+  assert.equal(health.ok, true)
+  assert.equal(health.degraded, true)
+  assert.equal(health.verified_snapshot_ready, true)
 })
 
 test('GOOD TIMES runtime cannot mount before the service gate resolves', async () => {
