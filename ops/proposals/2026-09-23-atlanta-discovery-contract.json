@@ -1,0 +1,28 @@
+{
+  "version": "proposal-1.0",
+  "brand_key": "good_times",
+  "city_key": "atlanta",
+  "status": "SPECIFIED_NOT_ACTIVATED",
+  "preserve_navigation": ["Home", "Discover", "Plan", "Saved", "Profile"],
+  "preserve_existing_active_categories": true,
+  "workbook_id": "1pzvjbDbl1UKYFDJ-LSWQuJE9I8XDBNOg-fjLb2amo6Q",
+  "full_blueprint_tab": "ATL_Discovery_Map",
+  "dimensions": {
+    "place_type": ["restaurant", "nightclub", "lounge", "bar", "cafe", "dessert_shop", "bakery", "food_hall", "fitness_studio", "attraction"],
+    "offering": ["brunch_service", "dessert", "pastries", "ice_cream_gelato", "coffee_tea", "cocktails", "wine", "late_kitchen", "live_music"],
+    "physical_feature": ["rooftop", "patio", "courtyard", "waterfront", "skyline_view", "indoor", "outdoor"],
+    "occasion": ["first_date", "romantic_dinner", "coffee_date", "dessert_date", "active_date", "arts_date", "anniversary", "group_dinner", "birthday", "friends_night"],
+    "event_format": ["celebrity_hosted", "artist_battle", "reunion", "weekly_party", "official_afterparty", "day_party", "brunch_party", "concert", "comedy", "festival", "food_popup", "run_club", "fitness_session", "seasonal_attraction"],
+    "music": ["rnb", "hip_hop", "trap_soul", "afrobeats", "amapiano", "dancehall", "reggae", "soca", "reggaeton", "house", "techno", "jazz", "other", "unknown"],
+    "talent_role": ["host", "performer", "dj", "guest", "theme_only", "unknown"],
+    "operating_state": ["announced", "coming_soon", "soft_open", "operating", "temporarily_closed", "permanently_closed", "unknown"]
+  },
+  "place_membership_requirements": ["canonical_location_id", "field_specific_evidence", "verified_at", "expires_at", "membership_rationale"],
+  "event_requirements": ["canonical_occurrence_id", "local_event_date", "timezone", "real_venue_id_or_null", "official_source", "corroboration", "role_evidence", "freshness", "suppression_check"],
+  "crm_fields_to_validate_not_auto_create": ["gt_canonical_venue_id", "gt_city_key", "gt_place_type", "gt_subcategory_keys", "gt_feature_keys", "gt_venue_ig_handle", "gt_promoter_ig_handle", "gt_evidence_status", "gt_verified_at", "gt_media_rights_status"],
+  "must_verify": ["Revel current editions", "DDG hosting Opium", "Travis Porter vs Rich Kidz", "Exact R&B Wednesdays series"],
+  "suppressed": ["R&B Rewind Thursdays at Revel"],
+  "forbidden_inferences": ["capability implies offering", "venue open implies dated party", "host implies performer", "official afterparty implies artist attendance", "database update implies new opening", "price unknown implies free", "patio implies rooftop", "bar hours imply kitchen hours", "same name implies same location"],
+  "public_publishing_authorized": false,
+  "schema_changes_applied": false
+}
