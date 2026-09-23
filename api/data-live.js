@@ -13,6 +13,7 @@ import ATLANTA_FALLBACK_SNAPSHOT from './atlanta-fallback-snapshot.js'
 const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 const EVENT_FRESHNESS_MAX_HOURS=72
+const EMBEDDED_SNAPSHOT_MAX_AGE_MS=36*60*60*1000
 const CACHE=globalThis.__GT_DATA_LIVE_CACHE_V8__||(globalThis.__GT_DATA_LIVE_CACHE_V8__=new Map())
 const CITY_TIMEZONES=Object.freeze({
   atlanta:'America/New_York',
@@ -49,6 +50,11 @@ function safeImage(value){
   return text.startsWith('http://')?text.replace(/^http:\/\//i,'https://'):text
 }
 function decode(value){return String(value||'').replace(/&amp;/gi,'&').replace(/&#8217;/gi,"'").replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&nbsp;/gi,' ')}
+function embeddedSnapshotUsable(snapshot,now=new Date()){
+  const refreshedAt=Date.parse(String(snapshot?.refreshed_at||'').replace(' ','T'))
+  const ageMs=now.getTime()-refreshedAt
+  return Number.isFinite(refreshedAt)&&ageMs>=0&&ageMs<=EMBEDDED_SNAPSHOT_MAX_AGE_MS&&Array.isArray(snapshot?.events)&&snapshot.events.length>0&&Array.isArray(snapshot?.venues)&&snapshot.venues.length>0
+}
 
 async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLimit}){
   let lastError=null
@@ -194,7 +200,7 @@ export default async function handler(request,response){
     const stale=CACHE.get(cacheKey)
     if(stale&&Date.now()-stale.at<15*60*1000)return send(response,200,{...stale.payload,degraded:true,coverage:{...stale.payload.coverage,notice:'Live sources are refreshing; showing the most recent verified city snapshot.'}},'STALE')
     const embedded=ATLANTA_FALLBACK_SNAPSHOT
-    if(embedded?.service_date===clock.serviceDate&&Array.isArray(embedded?.events)&&Array.isArray(embedded?.venues)){
+    if(embeddedSnapshotUsable(embedded)){
       inventory={events:embedded.events,venues:embedded.venues}
       embeddedFallbackUsed=true
       console.warn('[GOOD TIMES data-live] PostgREST unavailable; serving verified embedded Atlanta snapshot',{city,refreshed_at:embedded.refreshed_at,error:error?.message})
