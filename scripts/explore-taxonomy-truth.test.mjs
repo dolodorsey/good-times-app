@@ -14,3 +14,10 @@ test('authoritative zero counts do not fall through to directory fallback', () =
   assert.doesNotMatch(source, /count:exact\|\|fallback/)
   assert.doesNotMatch(source, /const count=exact\|\|fallback/)
 })
+
+test('direct venue fallback preserves the current verified freshness gate', () => {
+  const client = fs.readFileSync(new URL('../src/features/intelligence/client.js', import.meta.url), 'utf8')
+  assert.match(client, /is_verified=eq\.true/)
+  assert.match(client, /verification_status=eq\.verified_current/)
+  assert.match(client, /freshness_expires_at=gt\.\$\{encodeURIComponent\(new Date\(\)\.toISOString\(\)\)\}/)
+})
