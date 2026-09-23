@@ -51,8 +51,13 @@ function atlantaServiceDate(now = new Date()) {
 
 const SNAPSHOT_MAX_AGE_MS = 36 * 60 * 60 * 1000
 
+function parseSnapshotTimestamp(value) {
+  const normalized = String(value || '').trim().replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')
+  return Date.parse(normalized)
+}
+
 function verifiedSnapshotReady(now = new Date()) {
-  const refreshedAt = Date.parse(String(ATLANTA_FALLBACK_SNAPSHOT?.refreshed_at || '').replace(' ', 'T'))
+  const refreshedAt = parseSnapshotTimestamp(ATLANTA_FALLBACK_SNAPSHOT?.refreshed_at)
   const ageMs = now.getTime() - refreshedAt
   return Boolean(
     Number.isFinite(refreshedAt) &&
