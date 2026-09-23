@@ -8,6 +8,7 @@ import {
 import { scoreGoodTimesEvent } from './good-times-intelligence.js'
 import { eventTimeFields, validClock } from './event-time-display.js'
 import { dedupeEventOccurrences, inventoryCacheKey } from './event-occurrences.js'
+import ATLANTA_FALLBACK_SNAPSHOT from './atlanta-fallback-snapshot.js'
 
 const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
@@ -53,7 +54,7 @@ async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLim
   let lastError=null
   let currentEventLimit=eventFetchLimit
   let currentVenueLimit=venueFetchLimit
-  for(let attempt=0;attempt<2;attempt+=1){
+  for(let attempt=0;attempt<3;attempt+=1){
     const controller=new AbortController()
     const timer=setTimeout(()=>controller.abort(),7000)
     try{
@@ -68,14 +69,16 @@ async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLim
       return payload
     }catch(error){
       lastError=error?.name==='AbortError'?new Error('inventory RPC timed out'):error
-      if(attempt===0){
-        const timeoutLike=/57014|statement timeout|timed out/i.test(lastError?.message||'')
+      if(attempt<2){
+        const message=lastError?.message||''
+        const timeoutLike=/57014|statement timeout|timed out/i.test(message)
+        const schemaCacheLike=/PGRST002|schema cache/i.test(message)
         if(timeoutLike){
           currentEventLimit=Math.max(60,Math.min(currentEventLimit-1,Math.ceil(currentEventLimit/2)))
           currentVenueLimit=Math.max(90,Math.min(currentVenueLimit-1,Math.ceil(currentVenueLimit/2)))
           console.warn('[GOOD TIMES data-live] retrying reduced inventory after timeout',{city,event_limit:currentEventLimit,venue_limit:currentVenueLimit})
         }
-        await wait(180)
+        await wait(schemaCacheLike?650:250)
       }
     }finally{clearTimeout(timer)}
   }
@@ -184,13 +187,21 @@ export default async function handler(request,response){
   const venueFetchLimit=Math.min(Math.max(venueLimit*3,240),540)
   const cacheKey=inventoryCacheKey(city,clock.serviceDate,eventLimit,venueLimit)
   let inventory
+  let embeddedFallbackUsed=false
   try{
     inventory=await fetchInventoryRPC({city,serviceDate:clock.serviceDate,eventFetchLimit,venueFetchLimit})
   }catch(error){
     const stale=CACHE.get(cacheKey)
     if(stale&&Date.now()-stale.at<15*60*1000)return send(response,200,{...stale.payload,degraded:true,coverage:{...stale.payload.coverage,notice:'Live sources are refreshing; showing the most recent verified city snapshot.'}},'STALE')
-    console.error('[GOOD TIMES data-live]',{city,error:error?.message})
-    return send(response,503,{ok:false,connected:false,city,source:'good-times-atlanta-cached-inventory',generated_at:new Date().toISOString(),error:'GOOD TIMES live data is temporarily unavailable.'})
+    const embedded=ATLANTA_FALLBACK_SNAPSHOT
+    if(embedded?.service_date===clock.serviceDate&&Array.isArray(embedded?.events)&&Array.isArray(embedded?.venues)){
+      inventory={events:embedded.events,venues:embedded.venues}
+      embeddedFallbackUsed=true
+      console.warn('[GOOD TIMES data-live] PostgREST unavailable; serving verified embedded Atlanta snapshot',{city,refreshed_at:embedded.refreshed_at,error:error?.message})
+    }else{
+      console.error('[GOOD TIMES data-live]',{city,error:error?.message})
+      return send(response,503,{ok:false,connected:false,city,source:'good-times-atlanta-cached-inventory',generated_at:new Date().toISOString(),error:'GOOD TIMES live data is temporarily unavailable.'})
+    }
   }
   const rawEvents=inventory.events
   const rawVenues=inventory.venues
@@ -199,15 +210,15 @@ export default async function handler(request,response){
   const ranked=rankEvents(dedupeEventOccurrences(readyEvents),clock)
   const events=mapEvents(ranked).slice(0,eventLimit)
   const venues=mapVenues(rawVenues).slice(0,venueLimit)
-  const degraded=freshness.status==='stale'
+  const degraded=embeddedFallbackUsed||freshness.status==='stale'
   const payload={
-    ok:true,connected:true,degraded,city,source:'good-times-fast-customer-inventory',generated_at:new Date().toISOString(),
+    ok:true,connected:true,degraded,city,source:embeddedFallbackUsed?'good-times-verified-embedded-snapshot':'good-times-fast-customer-inventory',generated_at:new Date().toISOString(),
     local_clock:{time_zone:clock.timeZone,calendar_date:clock.calendarDate,service_date:clock.serviceDate,hour:clock.hour,minute:clock.minute},
-    coverage:{events_live:freshness.live,event_status:freshness.status,event_latest_update:freshness.latest_update,event_age_hours:freshness.age_hours,event_freshness_max_hours:EVENT_FRESHNESS_MAX_HOURS,venues_live:true,notice:degraded?'Live event freshness is outside the normal window; verified venue inventory remains visible.':null},
+    coverage:{events_live:freshness.live,event_status:freshness.status,event_latest_update:freshness.latest_update,event_age_hours:freshness.age_hours,event_freshness_max_hours:EVENT_FRESHNESS_MAX_HOURS,venues_live:true,notice:embeddedFallbackUsed?'Live database gateway is refreshing; showing the latest verified Atlanta snapshot.':(freshness.status==='stale'?'Live event freshness is outside the normal window; verified venue inventory remains visible.':null)},
     counts:{events:events.length,venues:venues.length},events,venues,
   }
   CACHE.set(cacheKey,{at:Date.now(),payload})
   if(CACHE.size>128){const oldest=CACHE.keys().next().value;CACHE.delete(oldest)}
   if(request.method==='HEAD'){response.statusCode=200;response.setHeader('X-Good-Times-Events',String(events.length));response.setHeader('X-Good-Times-Venues',String(venues.length));response.setHeader('X-Good-Times-Degraded',String(degraded));response.setHeader('X-Good-Times-Service-Date',clock.serviceDate);response.setHeader('X-Good-Times-Live-Gateway','v9');response.setHeader('X-Good-Times-Launch-Scope','atlanta-only');return response.end()}
-  return send(response,200,payload)
+  return send(response,200,payload,embeddedFallbackUsed?'EMBEDDED':'MISS')
 }
