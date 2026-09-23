@@ -23,11 +23,11 @@ test('GOOD TIMES keeps the previous nightlife service date through 4 AM local',(
 })
 
 test('fast gateway uses one Supabase inventory RPC and drops stale same-day inventory',()=>{
-  assert.match(liveSource,/rpc\/gt_public_live_inventory/)
+  assert.match(liveSource,/rpc\/gt_public_live_inventory_cached/)
   assert.match(liveSource,/p_service_date:serviceDate/)
   assert.match(liveSource,/isStaleServiceDayEvent/)
   assert.match(liveSource,/clock\.serviceMinute-\(6\*60\)/)
-  assert.match(liveSource,/X-Good-Times-Live-Gateway','v8'/)
+  assert.match(liveSource,/X-Good-Times-Live-Gateway','v9'/)
   assert.match(liveSource,/scoreGoodTimesEvent/)
 })
 
