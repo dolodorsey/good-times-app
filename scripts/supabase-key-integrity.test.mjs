@@ -50,7 +50,9 @@ test('the two canonical keys address different projects', () => {
   assert.notEqual(claimsOf('CANONICAL_GT_ANON_KEY').ref, claimsOf('CANONICAL_KHG_ANON_KEY').ref)
 })
 
-test('GOOD TIMES health probe carries a valid anon key for the GOOD TIMES project', () => {
-  const claims = claimsFrom(HEALTH_SOURCE, 'GT_ANON_KEY')
-  assertValidAnonClaims(claims, 'GT_ANON_KEY', 'czocqfaovfpjweayniuw')
+test('GOOD TIMES health probe reuses the validated canonical project credentials', () => {
+  assert.match(HEALTH_SOURCE, /GT_SUPABASE_ANON_KEY/)
+  assert.match(HEALTH_SOURCE, /KHG_SUPABASE_ANON_KEY/)
+  assert.doesNotMatch(HEALTH_SOURCE, /const GT_ANON_KEY = 'eyJ/)
+  assert.doesNotMatch(HEALTH_SOURCE, /const CONTENT_ANON_KEY = 'eyJ/)
 })
