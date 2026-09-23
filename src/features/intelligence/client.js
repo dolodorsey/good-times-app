@@ -43,8 +43,9 @@ export function todayISO() {
   return `${year}-${month}-${day}`
 }
 
-function normalizeCity(city) {
-  return String(city || 'atlanta').toLowerCase().trim().replace(/[\s-]+/g, '_')
+function normalizeCity(_city) {
+  // Founder launch scope 2026-09-23: customer-facing GOOD TIMES is Atlanta only.
+  return 'atlanta'
 }
 
 const liveDataCache = new Map()
