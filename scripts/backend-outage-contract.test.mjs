@@ -59,6 +59,17 @@ test('GOOD TIMES health stays available in degraded mode when current verified A
   assert.equal(health.launch_scope, 'atlanta_only')
 })
 
+test('verified Atlanta snapshot remains a bounded fallback after service-date rollover', async () => {
+  const health = await getGoodTimesHealth(async (url) => {
+    if (String(url).includes('czocqfaovfpjweayniuw')) return jsonResponse([{ id: 'fixture' }])
+    return jsonResponse({ error: 'schema cache' }, false, 503)
+  }, new Date('2026-09-24T12:00:00Z'))
+
+  assert.equal(health.ok, true)
+  assert.equal(health.degraded, true)
+  assert.equal(health.verified_snapshot_ready, true)
+})
+
 test('GOOD TIMES runtime cannot mount before the service gate resolves', async () => {
   const [index, entry, guard, healthApi] = await Promise.all([
     repoFile('index.html'),
