@@ -2,13 +2,17 @@ const GT_PROJECT_REF = 'czocqfaovfpjweayniuw'
 const CONTENT_PROJECT_REF = 'dzlmtvodpyhetvektfuo'
 const GT_URL = `https://${GT_PROJECT_REF}.supabase.co`
 const CONTENT_URL = `https://${CONTENT_PROJECT_REF}.supabase.co`
-const GT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6b2NxZmFvdmZwandlYXluaXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNzEzODAsImV4cCI6MjA4Mzk0NzM4MH0.6-3rmA9tZXHLVg5N6a_82rKA9Kvrj4gRrUUiSczovho'
+const GT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6ImN6b2NxZmFvdmZwandlYXluaXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNzEzODAsImV4cCI6MjA4Mzk0NzM4MH0.6-3rmA9tZXHLVg5N6a_82rKA9Kvrj4gRrUUiSczovho'
 const CONTENT_PUBLISHABLE_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 
 const HEALTH_TIMEOUT_MS = 4500
 
 function headers(key) {
-  return { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' }
+  const requestHeaders = { apikey: key, Accept: 'application/json' }
+  // Modern sb_publishable_* keys identify the public application and are not JWTs.
+  // Keep Authorization only for the legacy JWT anon key; user JWTs belong there when signed in.
+  if (!key.startsWith('sb_publishable_')) requestHeaders.Authorization = `Bearer ${key}`
+  return requestHeaders
 }
 
 async function probe(url, key, query, fetchImpl) {
