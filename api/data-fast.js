@@ -37,7 +37,7 @@ function clamp(value, fallback, max) {
   const parsed = Number.parseInt(String(value ?? ''), 10)
   return Number.isFinite(parsed) && parsed > 0 ? Math.min(parsed, max) : fallback
 }
-function cityKey(value) { return String(value || 'atlanta').trim().toLowerCase().replace(/[\s-]+/g, '_') }
+function cityKey(_value) { return 'atlanta' }
 function parseVibes(value) {
   return [...new Set(String(value || '').split(',').map(v=>v.trim().toLowerCase()).filter(v=>ALLOWED_VIBES.has(v)))].slice(0,5)
 }
