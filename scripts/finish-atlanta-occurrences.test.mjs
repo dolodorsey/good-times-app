@@ -55,7 +55,7 @@ test('the real live handler preserves occurrences and cannot serve a differently
     const full=await call(3),d=JSON.parse(full.body)
     assert.equal(full.statusCode,200);assert.equal(d.events.length,3)
     assert.equal(d.events.find(e=>e.source_id==='show1').performance_time,'20:00')
-    assert.equal(full.headers['X-Good-Times-Live-Gateway'],'v8')
+    assert.equal(full.headers['X-Good-Times-Live-Gateway'],'v9')
     const small=await call(1);assert.equal(JSON.parse(small.body).events.length,1)
     globalThis.fetch=async()=>{throw new Error('simulated source outage')}
     const unseen=await call(2);assert.equal(unseen.statusCode,503,'Do not borrow a differently sized cached payload')
