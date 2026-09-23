@@ -83,9 +83,9 @@ for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobi
 
       await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000})
       const city=page.locator('.gt5-profile-city select')
-      await city.selectOption('houston');await page.waitForTimeout(250)
-      await city.selectOption('atlanta');await page.waitForTimeout(250)
+      assert.equal(await city.locator('option').count(),1,'Atlanta-only launch must expose exactly one public city option')
       assert.equal(await city.inputValue(),'atlanta')
+      assert.equal(await city.locator('option').first().getAttribute('value'),'atlanta')
 
       if(vp.mobile){await page.setViewportSize({width:844,height:390});await page.waitForTimeout(250);await assertOnscreen(page,'.gt5-nav');await assertOnscreen(page,'.gt5-topbar');await page.setViewportSize({width:390,height:844});await page.waitForTimeout(250)}
 
