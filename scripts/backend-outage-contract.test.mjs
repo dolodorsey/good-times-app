@@ -19,6 +19,7 @@ test('GOOD TIMES health requires both exact service planes', async () => {
   const calls = []
   const health = await getGoodTimesHealth(async (url, options = {}) => {
     calls.push({ url: String(url), options })
+    if (String(url).includes('/rpc/gt_public_live_inventory_cached')) return jsonResponse({ events: [], venues: [] })
     return jsonResponse([{ id: 'fixture' }])
   })
 
@@ -28,7 +29,9 @@ test('GOOD TIMES health requires both exact service planes', async () => {
   assert.equal(health.content_ready, true)
   assert.equal(calls.length, 2)
   assert.match(calls[0].url, /^https:\/\/czocqfaovfpjweayniuw\.supabase\.co\/rest\/v1\/gt_formula_versions\?select=id&limit=1$/)
-  assert.match(calls[1].url, /^https:\/\/dzlmtvodpyhetvektfuo\.supabase\.co\/rest\/v1\/gt_venues\?select=id&status=eq\.active&limit=1$/)
+  assert.match(calls[1].url, /^https:\/\/dzlmtvodpyhetvektfuo\.supabase\.co\/rest\/v1\/rpc\/gt_public_live_inventory_cached$/)
+  assert.equal(calls[1].options?.method, 'POST')
+  assert.equal(JSON.parse(calls[1].options?.body || '{}').p_city, 'atlanta')
   assert.match(String(calls[0].options?.headers?.apikey || ''), /^eyJ/)
   assert.equal(calls[0].options?.headers?.Authorization, `Bearer ${calls[0].options?.headers?.apikey}`)
   assert.match(String(calls[1].options?.headers?.apikey || ''), /^eyJ/)
@@ -38,7 +41,7 @@ test('GOOD TIMES health requires both exact service planes', async () => {
 test('GOOD TIMES health fails closed when the customer/auth plane is unavailable', async () => {
   const health = await getGoodTimesHealth(async (url) => {
     if (String(url).includes('czocqfaovfpjweayniuw')) return jsonResponse([])
-    return jsonResponse([{ id: 'venue-fixture' }])
+    return jsonResponse({ events: [], venues: [] })
   }, new Date('2026-09-23T12:00:00Z'))
 
   assert.equal(health.ok, false)
