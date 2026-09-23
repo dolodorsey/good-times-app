@@ -18,7 +18,7 @@ test('Atlanta filesystem entrypoint requests the curated inventory RPC', async (
     const res=response()
     await handler({method:'GET',url:'/api/data?city=atlanta'},res)
     assert.equal(res.statusCode,200)
-    assert.equal(JSON.parse(res.body).source,'good-times-atlanta-cached-inventory')
+    assert.equal(JSON.parse(res.body).source,'good-times-fast-customer-inventory')
     assert.equal(calls.length,1)
     assert.deepEqual(JSON.parse(res.body).events,[])
   } finally { globalThis.fetch=original }
