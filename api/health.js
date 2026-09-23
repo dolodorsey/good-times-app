@@ -1,3 +1,5 @@
+import ATLANTA_FALLBACK_SNAPSHOT from './atlanta-fallback-snapshot.js'
+
 const GT_PROJECT_REF = 'czocqfaovfpjweayniuw'
 const CONTENT_PROJECT_REF = 'dzlmtvodpyhetvektfuo'
 const GT_URL = `https://${GT_PROJECT_REF}.supabase.co`
@@ -30,17 +32,50 @@ async function probe(url, key, query, fetchImpl) {
   }
 }
 
-export async function getGoodTimesHealth(fetchImpl = globalThis.fetch) {
+function atlantaServiceDate(now = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(now)
+  const part = type => parts.find(item => item.type === type)?.value || ''
+  const calendar = `${part('year')}-${part('month')}-${part('day')}`
+  if (Number(part('hour') || 0) >= 4) return calendar
+  const date = new Date(`${calendar}T12:00:00Z`)
+  date.setUTCDate(date.getUTCDate() - 1)
+  return date.toISOString().slice(0, 10)
+}
+
+function verifiedSnapshotReady(now = new Date()) {
+  return Boolean(
+    ATLANTA_FALLBACK_SNAPSHOT?.service_date === atlantaServiceDate(now) &&
+    Array.isArray(ATLANTA_FALLBACK_SNAPSHOT?.events) &&
+    ATLANTA_FALLBACK_SNAPSHOT.events.length > 0 &&
+    Array.isArray(ATLANTA_FALLBACK_SNAPSHOT?.venues) &&
+    ATLANTA_FALLBACK_SNAPSHOT.venues.length > 0
+  )
+}
+
+export async function getGoodTimesHealth(fetchImpl = globalThis.fetch, now = new Date()) {
   const [customerReady, contentReady] = await Promise.all([
     probe(GT_URL, GT_ANON_KEY, 'gt_formula_versions?select=id&limit=1', fetchImpl),
     probe(CONTENT_URL, CONTENT_PUBLISHABLE_KEY, 'gt_venues?select=id&status=eq.active&limit=1', fetchImpl),
   ])
+  const fallbackReady = !contentReady && verifiedSnapshotReady(now)
+  const degraded = customerReady && !contentReady && fallbackReady
   return {
-    ok: customerReady && contentReady,
+    ok: customerReady && (contentReady || fallbackReady),
+    degraded,
     service: 'good-times',
     customer_ready: customerReady,
     content_ready: contentReady,
-    generated_at: new Date().toISOString(),
+    verified_snapshot_ready: fallbackReady,
+    snapshot_refreshed_at: fallbackReady ? ATLANTA_FALLBACK_SNAPSHOT.refreshed_at : null,
+    launch_scope: 'atlanta_only',
+    generated_at: now.toISOString(),
   }
 }
 
@@ -57,7 +92,8 @@ export default async function handler(req, res) {
   const health = await getGoodTimesHealth()
   res.setHeader('Cache-Control', 'no-store')
   res.setHeader('X-Content-Type-Options', 'nosniff')
-  res.setHeader('X-Good-Times-Health', health.ok ? 'ready' : 'unavailable')
+  res.setHeader('X-Good-Times-Health', health.ok ? (health.degraded ? 'degraded' : 'ready') : 'unavailable')
+  if (health.degraded) res.setHeader('X-Good-Times-Fallback', 'verified-atlanta-snapshot')
   if (!health.ok) res.setHeader('Retry-After', '30')
   if (req.method === 'HEAD') return res.status(health.ok ? 200 : 503).end()
   return res.status(health.ok ? 200 : 503).json(health)
