@@ -20,7 +20,11 @@ function categoryHue(key,index) {
 
 function exactCount(rows,categoryKey,subcategoryKey=null) {
   const match=(rows||[]).find(row=>row.category_key===categoryKey&&(subcategoryKey===null?row.subcategory_key==null:row.subcategory_key===subcategoryKey))
-  return Number(match?.place_count||0)
+  return match ? Number(match.place_count ?? 0) : null
+}
+
+function countWithFallback(exact,fallback) {
+  return exact === null ? fallback : exact
 }
 
 function normalizeSubcategories(category) {
@@ -108,7 +112,7 @@ export default function ExploreTaxonomyBrowser({
     const exact=exactCount(countRows,category.id)
     const fallback=new Set(directory.filter(row => row.category_key === category.id).map(row => row.id)).size
     const art=manifestAssetForCategory(creativeAssets,'explore_category',category.id)
-    return {...category,count:exact||fallback,art}
+    return {...category,count:countWithFallback(exact,fallback),art}
   }), [countRows,creativeAssets,directory,normalizedTaxonomy])
 
   const activeCategory = normalizedTaxonomy.find(category => category.id === selectedCategory) || null
@@ -129,13 +133,14 @@ export default function ExploreTaxonomyBrowser({
         row.short_desc,
         ...(row.vibe_tags || []),
         ...(row.culture_tags || []),
+        ...(row.search_tags || []),
       ].filter(Boolean).join(' ').toLowerCase().includes(needle)
     })
     return uniqueVenues(rows)
   }, [activeDirectory, needle, selectedCategory, selectedSubcategory])
 
   const selectedSubcategoryLabel = subcategoryRows.find(row => row.subcategory_key === selectedSubcategory)?.subcategory_name
-  const activeTotal=activeCategory ? (exactCount(countRows,activeCategory.id)||new Set(activeDirectory.filter(row=>row.category_key===activeCategory.id).map(row=>row.id)).size) : 0
+  const activeTotal=activeCategory ? countWithFallback(exactCount(countRows,activeCategory.id),new Set(activeDirectory.filter(row=>row.category_key===activeCategory.id).map(row=>row.id)).size) : 0
   const totalSubcategories=normalizedTaxonomy.reduce((sum, category) => sum + (category.subcategoryRows?.length || 0), 0)
 
   return <section className="gt2-explore-browser">
@@ -186,12 +191,12 @@ export default function ExploreTaxonomyBrowser({
         {subcategoryRows.map(subcategory => {
           const exact=exactCount(countRows,activeCategory.id,subcategory.subcategory_key)
           const fallback=new Set(activeDirectory.filter(row => row.category_key===activeCategory.id&&row.subcategory_key === subcategory.subcategory_key).map(row => row.id)).size
-          const count=exact||fallback
+          const count=countWithFallback(exact,fallback)
           return <button key={subcategory.subcategory_key} className={selectedSubcategory === subcategory.subcategory_key ? 'active' : ''} onClick={() => { onSubcategory?.(subcategory.subcategory_key);setDirectoryOpen(true) }}><span>Explore</span><strong>{subcategory.subcategory_name}</strong><small>{count} verified places</small><em>›</em></button>
         })}
       </div>
 
-      {directoryOpen && <><div className="gt2-taxonomy-heading compact"><span>{selectedSubcategoryLabel || activeCategory.name}</span><small>{categoryLoading ? 'Loading complete verified directory…' : `${filteredRows.length} loaded · ${selectedSubcategory ? exactCount(countRows,activeCategory.id,selectedSubcategory)||filteredRows.length : activeTotal} verified places`}</small></div>
+      {directoryOpen && <><div className="gt2-taxonomy-heading compact"><span>{selectedSubcategoryLabel || activeCategory.name}</span><small>{categoryLoading ? 'Loading complete verified directory…' : `${filteredRows.length} loaded · ${selectedSubcategory ? countWithFallback(exactCount(countRows,activeCategory.id,selectedSubcategory),filteredRows.length) : activeTotal} verified places`}</small></div>
 
       {categoryLoading && !categoryDirectory.length ? <div className="gt2-empty"><span>✦</span><h2>Loading verified places</h2><p>Pulling the complete {activeCategory.name} directory for {cityName}.</p></div>
       : categoryError && !filteredRows.length ? <div className="gt2-empty"><span>!</span><h2>Directory temporarily unavailable</h2><p>{categoryError}</p></div>
