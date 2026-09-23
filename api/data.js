@@ -273,13 +273,15 @@ function sendJson(response, status, payload) {
 export default async function handler(request, response) {
   if (!['GET','HEAD'].includes(request.method || 'GET')) { response.setHeader('Allow', 'GET, HEAD'); return sendJson(response, 405, { ok:false, error:'Method not allowed' }) }
   const requestUrl = new URL(request.url || '/api/data', 'https://thegoodtimesworldwide.com')
-  const city = normalizeCity(requestUrl.searchParams.get('city'))
+  const requestedCity = normalizeCity(requestUrl.searchParams.get('city'))
+  const city = 'atlanta'
+  if (requestedCity !== 'atlanta') response.setHeader('X-Good-Times-Launch-Scope','atlanta-only')
   // The filesystem API handler can take precedence over Vercel rewrites.
   // Load after this module initializes: data-live reuses the exports above.
-  if (city === 'atlanta') {
-    const { default: handleAtlantaInventory } = await import('./data-live.js')
-    return handleAtlantaInventory(request, response)
-  }
+  const { default: handleAtlantaInventory } = await import('./data-live.js')
+  return handleAtlantaInventory(request, response)
+
+  /* Future-city direct gateway retained below as dormant code for later founder-approved expansion. */
   const eventLimit = clampLimit(requestUrl.searchParams.get('event_limit'), 500, 500)
   const venueLimit = clampLimit(requestUrl.searchParams.get('venue_limit'), 500, 800)
   const generatedAt = new Date().toISOString()

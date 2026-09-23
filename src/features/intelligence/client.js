@@ -43,8 +43,9 @@ export function todayISO() {
   return `${year}-${month}-${day}`
 }
 
-function normalizeCity(city) {
-  return String(city || 'atlanta').toLowerCase().trim().replace(/[\s-]+/g, '_')
+function normalizeCity(_city) {
+  // Founder launch scope 2026-09-23: customer-facing GOOD TIMES is Atlanta only.
+  return 'atlanta'
 }
 
 const liveDataCache = new Map()
@@ -312,8 +313,9 @@ export function cityLabel(city) {
   })[city] || String(city || '').replaceAll('_', ' ').replace(/\b\w/g, value => value.toUpperCase())
 }
 
+// PUBLIC LAUNCH SCOPE — founder directive 2026-09-23.
+// Future-city records remain valid internal research, but customer-facing city selection is Atlanta only
+// until Dr. Dorsey explicitly expands launch scope.
 export const cityOptions = [
-  ['atlanta', 'Atlanta'], ['houston', 'Houston'], ['los_angeles', 'Los Angeles'], ['miami', 'Miami'],
-  ['charlotte', 'Charlotte'], ['washington_dc', 'Washington, DC'], ['new_york', 'New York'],
-  ['dallas', 'Dallas'], ['phoenix', 'Phoenix'], ['scottsdale', 'Scottsdale'], ['las_vegas', 'Las Vegas'],
+  ['atlanta', 'Atlanta'],
 ]

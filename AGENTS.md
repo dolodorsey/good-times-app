@@ -14,6 +14,12 @@ A coding agent may not reinterpret GOOD TIMES from a single ticket. The governan
 
 ## Current production authority
 
+### Launch scope — non-negotiable
+- **GOOD TIMES is launching publicly in Atlanta only.**
+- Customer-facing city selectors, public navigation, launch reporting, editorial programming and readiness claims must expose Atlanta only until Dr. Dorsey explicitly expands scope.
+- Future-city records may remain in the data warehouse for research and later expansion, but they are not live cities and must not leak into customer-facing launch surfaces.
+- Do not “fix” Atlanta-only scope by re-enabling other cities from existing database inventory.
+
 - Canonical consumer UI: `src/features/experience/GoodTimesCommandAppV4.jsx`
 - Final visual authority: `src/features/experience/good-times-v4.css`
 - Entry routing: `src/main.jsx`
@@ -183,4 +189,4 @@ PRODUCTION VERIFIED
 - Record evidence and unresolved owners.
 - Leave incomplete work behind a flag rather than exposing a lower-quality state.
 
-**Last updated: September 13, 2026 — GOOD TIMES V4 Product/UI Constitution + Anti-Regression Production System.**
+**Last updated: September 23, 2026 — Atlanta-only launch scope + GOOD TIMES V4 Product/UI Constitution + Anti-Regression Production System.**

@@ -9,7 +9,7 @@ test('Atlanta filesystem entrypoint requests the curated inventory RPC', async (
   const original=globalThis.fetch, calls=[]
   globalThis.fetch=async (url,options={}) => {
     calls.push({url:String(url),options})
-    assert.match(String(url), /\/rpc\/gt_public_live_inventory$/)
+    assert.match(String(url), /\/rpc\/gt_public_live_inventory_cached$/)
     assert.equal(options.method,'POST')
     assert.equal(JSON.parse(options.body).p_city,'atlanta')
     return new Response(JSON.stringify({events:[],venues:[]}), {status:200})
@@ -30,10 +30,11 @@ test('read-only method boundary still rejects writes before any fetch', async ()
   assert.equal(res.statusCode,405)
 })
 
-test('legacy exports and non-Atlanta query construction remain available', () => {
+test('legacy research helpers remain available while the public handler is Atlanta-locked', () => {
   assert.equal(normalizeCity('houston'),'houston')
   assert.match(buildGatewayQueries({city:'houston',today:'2026-09-16'}).eventPath,/city_key=eq.houston/)
   assert.equal(inferCustomerTaxonomy({event_type:'comedy',event_name:'Named headliner',venue_name:'The Punchline'}).category,'comedy_performing_arts')
   const text=fs.readFileSync(new URL('../api/data.js',import.meta.url),'utf8')
-  assert.match(text,/if \(city === 'atlanta'\)\s*\{\s*const \{ default: handleAtlantaInventory \} = await import\('\.\/data-live\.js'\)/)
+  assert.match(text,/const city = 'atlanta'/)
+  assert.match(text,/const \{ default: handleAtlantaInventory \} = await import\('\.\/data-live\.js'\)/)
 })

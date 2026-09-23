@@ -38,8 +38,9 @@ test('Discover preserves real category and subcategory traversal behind editoria
   mustContain(taxonomyBrowser,['SUBCATEGORIES','loadExploreDirectory','onSubcategory?.(subcategory.subcategory_key)','All categories'])
 })
 
-test('city switching persists and reloads canonical inventory', () => {
-  mustContain(app, ['const changeCity=async c=>','updatePreferences(session.user.id,{last_city:c}','await refresh(c)'])
+test('launch scope pins saved profiles and customer inventory to Atlanta', () => {
+  mustContain(app, ["const c='atlanta';setCity(c)","updatePreferences(session.user.id,{last_city:'atlanta',home_city:'atlanta'", "const changeCity=async()=>{const c='atlanta'",'await refresh(c)'])
+  mustContain(intelligence, ["function normalizeCity(_city)","return 'atlanta'"])
 })
 
 test('Saved operations use the authenticated customer database', () => {

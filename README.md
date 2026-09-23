@@ -8,9 +8,9 @@ Web prod: `good-times-app.vercel.app`
 
 ## What this app does
 
-Good Times is a multi-city nightlife & events concierge. Users pick a city, browse what's happening tonight or this week across categories (dining, nightlife, music, sports, etc.), save favorites, build multi-stop plans, and get pushed updates on new drops.
+Good Times is a nightlife & events concierge with a multi-city data architecture. Users browse what's happening tonight or this week across categories (dining, nightlife, music, sports, etc.), save favorites, build multi-stop plans, and get pushed updates on new drops.
 
-Currently shipping iOS (Capacitor) and web. Active cities: Atlanta, Houston, Miami, NYC, LA, Charlotte, Dallas, DC, Phoenix, Scottsdale, Las Vegas.
+**Current public launch: Atlanta only.** Future-city inventory may remain in the backend for research and later expansion, but Houston, Miami, NYC, LA, Charlotte, Dallas, DC, Phoenix, Scottsdale and Las Vegas are not current public launch cities.
 
 ---
 
@@ -41,7 +41,7 @@ The `venues`, `events`, `experiences`, `bookings`, `concierge_requests` tables i
 
 ### 2. KHG Main DB — `dzlmtvodpyhetvektfuo`
 "MCP Gateway" Supabase project (the KHG enterprise hub). Holds the live content the app renders:
-- `gt_venues` (2,200+ venues across 11 cities) — the heart of the Map and Explore tabs
+- `gt_venues` (multi-city research/inventory; current public launch is Atlanta only) — the heart of the Map and Explore tabs
 - `gt_shows` (1,400+ events) — Calendar, Now, and Dates tabs
 - `gt_cities` — city-level config
 - `gt_app_laws` — runtime QA rules

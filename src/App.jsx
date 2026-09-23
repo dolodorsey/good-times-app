@@ -153,18 +153,10 @@ const VIBE_OPTIONS=[
   {id:'exclusive',label:'Exclusive / VIP',icon:'✦',color:'#D4A853'},
 ];
 
+// PUBLIC LAUNCH SCOPE — founder directive 2026-09-23.
+// Keep future-city data in backend research only; public selection is Atlanta until explicit expansion.
 const CITY_OPTIONS=[
   {id:'atlanta',name:'Atlanta',emoji:'🍑'},
-  {id:'houston',name:'Houston',emoji:'🤠'},
-  {id:'los_angeles',name:'Los Angeles',emoji:'🌴'},
-  {id:'miami',name:'Miami',emoji:'🌊'},
-  {id:'charlotte',name:'Charlotte',emoji:'👑'},
-  {id:'washington_dc',name:'Washington DC',emoji:'🏛️'},
-  {id:'new_york',name:'New York',emoji:'🗽'},
-  {id:'dallas',name:'Dallas',emoji:'⭐'},
-  {id:'phoenix',name:'Phoenix',emoji:'🌵'},
-  {id:'scottsdale',name:'Scottsdale',emoji:'🏜️'},
-  {id:'las_vegas',name:'Las Vegas',emoji:'🎰'},
 ];
 
 function GoodTimesOnboarding({onComplete}){
