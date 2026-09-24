@@ -122,6 +122,13 @@ export function inferCustomerTaxonomy(item) {
   if (/film tv tour|film tour|studio tour|sightseeing tour|walking tour|city tour/.test(text)) return { category:'attractions_experiences', subcategory:'tours_sightseeing' }
   if (/happy hour|cocktail night|wine tasting|wine down/.test(text)) return { category:'dining_culinary', subcategory:'wine_cocktails' }
   if (/career fair|job fair|college expo|business expo|entrepreneur expo|professional expo|startup expo/.test(text)) return { category:'business_professional', subcategory:/career|job/.test(text)?'career_fairs':'conferences_summits' }
+  // Specific reviewed classifications must survive broad legacy event-type keywords.
+  // Only validated category/subcategory pairs are accepted here; other guards remain below.
+  if ((reviewed === 'arts_museums_culture' && ['film_screenings','exhibitions'].includes(fallbackSub))
+    || (reviewed === 'comedy_performing_arts' && fallbackSub === 'improv')
+    || (reviewed === 'festivals_major_activations' && fallbackSub === 'music_festivals')) {
+    return { category:reviewed, subcategory:fallbackSub }
+  }
   if (/stand up|stand-up|\bcomedy\b/.test(text)) return { category:'comedy_performing_arts', subcategory:'stand_up' }
   if (/\bimprov\b/.test(text)) return { category:'comedy_performing_arts', subcategory:'improv' }
   if (/burlesque|cabaret|variety show/.test(text)) return { category:'comedy_performing_arts', subcategory:'theater' }
