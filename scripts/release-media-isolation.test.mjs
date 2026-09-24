@@ -1,11 +1,14 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
+import {createHash} from 'node:crypto'
 import {screenEditorialMedia,categoryEditorialMedia} from '../src/features/experience/good-times-editorial-media.js'
 const zoo={city_key:'atlanta',category_key:'entertainment',hero_image:'https://zooatlanta.org/main-gate.jpg'}
 const dinner={city_key:'atlanta',category_key:'restaurant',hero_image:'https://restaurant.example/dinner.jpg'}
 const club={city_key:'atlanta',category_key:'nightclub',hero_image:'https://club.example/club.jpg'}
-test('home uses existing city editorial asset instead of top venue',()=>assert.equal(screenEditorialMedia('atlanta','home'),'/city-atlanta-nightlife.png'))
+// September 24 restoration uses the owner's supplied editorial reference, not a venue image.
+test('home uses owner-reference editorial art instead of top venue',()=>assert.equal(screenEditorialMedia('atlanta','home'),'/reference-base/atlanta-rooftop.webp'))
+test('owner-reference artwork bytes remain unchanged',()=>{const art=readFileSync(new URL('../public/reference-base/atlanta-rooftop.webp',import.meta.url));assert.equal(createHash('sha256').update(art).digest('hex'),'bf0e1f69441e899c6cb4d75949f693831e6b74ef75b286577c83957333dfaeb7')})
 test('other cities cannot inherit Atlanta art',()=>assert.ok(!screenEditorialMedia('miami','home').includes('atlanta')))
 test('screen mapping is independent of event order',()=>assert.notEqual(screenEditorialMedia('atlanta','home'),screenEditorialMedia('atlanta','plan')))
 test('dining cannot use a zoo image',()=>assert.ok(!categoryEditorialMedia('dining',[zoo],'atlanta').includes('zoo')))
