@@ -58,6 +58,11 @@ function Progress({ step }) {
 export default function GoodTimesOnboarding({ onComplete }) {
   const [screen, setScreen] = useState('welcome')
   const [mode, setMode] = useState('signup')
+  // Expose the step so the floating install pill only shows on the welcome screen, never over form CTAs.
+  useEffect(() => {
+    try { document.documentElement.dataset.gtOnboardingStep = screen } catch {}
+    return () => { try { delete document.documentElement.dataset.gtOnboardingStep } catch {} }
+  }, [screen])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')

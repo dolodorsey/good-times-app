@@ -39,5 +39,18 @@ test('web visitors are not mistaken for native because @capacitor/core exists on
 })
 
 test('floating install pill is signed-out only so it never covers the member bottom nav', () => {
-  assert.match(prompt, /if\(!show\)return !persistent\?null:<button aria-label="Get GOOD TIMES app"/)
+  assert.match(prompt, /if\(!show\)return !persistent\?null:<>/)
+  assert.match(prompt, /className="gt-install-pill" aria-label="Get GOOD TIMES app"/)
+})
+
+const main = fs.readFileSync(new URL('../src/main.jsx', import.meta.url), 'utf8')
+test('Google OAuth new accounts record signup_complete once', () => {
+  assert.match(main, /function recordOAuthSignup\(session\)/)
+  assert.match(main, /recordOAuthSignup\(oauthSession\)/)
+  assert.match(main, /gt_signup_recorded:\$\{user\.id\}/)
+})
+
+test('install pill hides on every onboarding step after welcome', () => {
+  assert.match(onboarding, /document\.documentElement\.dataset\.gtOnboardingStep = screen/)
+  assert.match(prompt, /html\[data-gt-onboarding-step\]:not\(\[data-gt-onboarding-step="welcome"\]\) \.gt-install-pill\{display:none!important\}/)
 })
