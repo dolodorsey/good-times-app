@@ -67,8 +67,9 @@ Current batch QA:
 - 35 ready to publish.
 - 0 owner-review holds.
 - 35 upgraded to the v2 caption/tagging standard.
-- 25 carry native media entity tags.
-- Remaining posts are generic editorial/guide assets where no specific verified entity should be force-tagged.
+- 29 carry native media entity tags after second-pass featured-entity enrichment.
+- 6 are intentionally untagged: generic O4W nightlife, brunch, rooftops, hidden gems, group-chat editorial, plus Pataaka where a current handle was not verified strongly enough to tag without guessing.
+- WEEK7 / WEEK17 directory graphics now tag their featured artist/event slate in both caption and native media metadata.
 
 ## Provider routing
 Canonical Meta account: @goodtimesworldwide. Provider execution uses the isolated GOOD TIMES direct Meta path. Native image tags are sent as Meta `user_tags`. HighLevel remains a CRM/engagement support lane unless its social-planner connector is explicitly verified for this account.
