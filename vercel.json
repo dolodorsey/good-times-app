@@ -21,6 +21,24 @@
       ]
     },
     {
+      "source": "/api/data-fast",
+      "headers": [
+        { "key": "Vercel-CDN-Cache-Control", "value": "max-age=30, stale-while-revalidate=120" }
+      ]
+    },
+    {
+      "source": "/api/data-live",
+      "headers": [
+        { "key": "Vercel-CDN-Cache-Control", "value": "max-age=30, stale-while-revalidate=120" }
+      ]
+    },
+    {
+      "source": "/api/data",
+      "headers": [
+        { "key": "Vercel-CDN-Cache-Control", "value": "max-age=30, stale-while-revalidate=120" }
+      ]
+    },
+    {
       "source": "/(.*)",
       "headers": [
         { "key": "X-Content-Type-Options", "value": "nosniff" },
