@@ -37,3 +37,7 @@ test('web visitors are not mistaken for native because @capacitor/core exists on
   assert.match(prompt, /window\.Capacitor\?\.isNativePlatform\?\.\(\)/)
   assert.doesNotMatch(prompt, /\|\|window\.Capacitor\)\{setInstalled/)
 })
+
+test('floating install pill is signed-out only so it never covers the member bottom nav', () => {
+  assert.match(prompt, /if\(!show\)return !persistent\?null:<button aria-label="Get GOOD TIMES app"/)
+})

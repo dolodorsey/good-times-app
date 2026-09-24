@@ -22,7 +22,8 @@ const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||!!navig
 const visitor=()=>{let id=get('khg_vid');if(id)return id;id=crypto.randomUUID();set('khg_vid',id);return id}
 async function installComplete(platform){try{await fetch(CAPTURE,{method:'POST',headers:{'content-type':'application/json'},keepalive:true,body:JSON.stringify({brand_key:'good-times',event_type:'app_install',visitor_key:visitor(),metadata:{event_id:crypto.randomUUID(),app:'good-times',platform,variant:'pwa',path:`${location.pathname}${location.search}`.slice(0,300)}})})}catch{}}
 
-export default function GoodTimesInstallPrompt(){
+// persistent=false hides the floating pill (members have a bottom nav it would cover); the install sheet still follows dismissal rules.
+export default function GoodTimesInstallPrompt({persistent=true}={}){
  const[prompt,setPrompt]=useState(null),[show,setShow]=useState(false),[steps,setSteps]=useState(false),[apple,setApple]=useState(false),[installed,setInstalled]=useState(false)
  useEffect(()=>{
   // @capacitor/core defines window.Capacitor on the web too; only a native platform counts as installed.
@@ -36,7 +37,7 @@ export default function GoodTimesInstallPrompt(){
   return()=>{removeEventListener('beforeinstallprompt',before);removeEventListener('appinstalled',done);if(t)clearTimeout(t)}
  },[])
  if(installed)return null
- if(!show)return <button aria-label="Get GOOD TIMES app" onClick={()=>{setSteps(false);setShow(true);recordGrowthEvent('install_cta',{label:'good_times_persistent_get_app'})}} style={{position:'fixed',right:16,bottom:18,zIndex:2147482500,border:0,borderRadius:999,padding:'13px 17px',background:'linear-gradient(100deg,#ffcf64,#fc528b 55%,#8c7bff)',color:'#09060b',font:'900 11px/1 Arial',letterSpacing:'.08em',boxShadow:'0 16px 44px rgba(0,0,0,.35)',cursor:'pointer'}}>GET GOOD TIMES ↗</button>
+ if(!show)return !persistent?null:<button aria-label="Get GOOD TIMES app" onClick={()=>{setSteps(false);setShow(true);recordGrowthEvent('install_cta',{label:'good_times_persistent_get_app'})}} style={{position:'fixed',right:16,bottom:18,zIndex:2147482500,border:0,borderRadius:999,padding:'13px 17px',background:'linear-gradient(100deg,#ffcf64,#fc528b 55%,#8c7bff)',color:'#09060b',font:'900 11px/1 Arial',letterSpacing:'.08em',boxShadow:'0 16px 44px rgba(0,0,0,.35)',cursor:'pointer'}}>GET GOOD TIMES ↗</button>
  const close=()=>{set('gt:pwa-dismissed',String(Date.now()));setShow(false)}
  const install=async()=>{recordGrowthEvent('install_cta',{label:'good_times_home_screen_install'});if(prompt){const r=await prompt.prompt();setPrompt(null);if(r.outcome==='accepted')setShow(false);return}setSteps(true)}
  return <div className="gt-install" role="dialog" aria-modal="true" aria-label="Install GOOD TIMES">
