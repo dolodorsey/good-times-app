@@ -54,11 +54,9 @@ function safeImage(value){
 }
 function decode(value){return String(value||'').replace(/&amp;/gi,'&').replace(/&#8217;/gi,"'").replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&nbsp;/gi,' ')}
 function parseSnapshotTimestamp(value) {
-  const normalized=String(value||'')
-    .trim()
-    .replace(' ','T')
-    .replace(/([+-]\\d{2})$/,'$1:00')
-    .replace(/\\.(\\d{3})\\d+(?=([+-]\\d{2}:\\d{2}|Z)$)/,'.$1')
+  let normalized=String(value||'').trim().replace(' ','T')
+  if(/[+-][0-9]{2}$/.test(normalized)) normalized += ':00'
+  normalized=normalized.replace(/\.([0-9]{3})[0-9]+(?=([+-][0-9]{2}:[0-9]{2}|Z)$)/,'.$1')
   return Date.parse(normalized)
 }
 function embeddedSnapshotUsable(snapshot,now=new Date()){
