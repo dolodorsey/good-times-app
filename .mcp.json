@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "kollective": {
+      "type": "http",
+      "url": "https://khg-mcp-server.vercel.app/mcp",
+      "headers": { "Authorization": "Bearer ${KHG_MCP_AUTH_TOKEN}" }
+    }
+  }
+}
