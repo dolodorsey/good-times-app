@@ -4,7 +4,10 @@ import { readFile } from 'node:fs/promises'
 import { getGoodTimesHealth } from '../api/health.js'
 import ATLANTA_FALLBACK_SNAPSHOT from '../api/atlanta-fallback-snapshot.js'
 
-const snapshotEpoch = Date.parse(String(ATLANTA_FALLBACK_SNAPSHOT.refreshed_at).replace(' ', 'T').replace(/([+-]\\d{2})$/, '$1:00'))
+const snapshotEpoch = Date.parse(String(ATLANTA_FALLBACK_SNAPSHOT.refreshed_at)
+  .replace(' ', 'T')
+  .replace(/([+-]\\d{2})$/, '$1:00')
+  .replace(/\\.(\\d{3})\\d+(?=([+-]\\d{2}:\\d{2}|Z)$)/, '.$1'))
 const snapshotSameDay = new Date(snapshotEpoch + 3 * 60 * 60 * 1000)
 const snapshotNextDay = new Date(snapshotEpoch + 24 * 60 * 60 * 1000)
 
