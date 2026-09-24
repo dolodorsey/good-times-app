@@ -59,7 +59,7 @@ test('GOOD TIMES health stays available in degraded mode when the verified Atlan
   const health = await getGoodTimesHealth(async (url) => {
     if (String(url).includes('czocqfaovfpjweayniuw')) return jsonResponse([{ id: 'fixture' }])
     return jsonResponse({ error: 'schema cache' }, false, 503)
-  }, new Date('2026-09-23T12:00:00Z'))
+  }, snapshotSameDay)
 
   assert.equal(health.ok, true)
   assert.equal(health.degraded, true)
