@@ -22,10 +22,12 @@ const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||!!navig
 const visitor=()=>{let id=get('khg_vid');if(id)return id;id=crypto.randomUUID();set('khg_vid',id);return id}
 async function installComplete(platform){try{await fetch(CAPTURE,{method:'POST',headers:{'content-type':'application/json'},keepalive:true,body:JSON.stringify({brand_key:'good-times',event_type:'app_install',visitor_key:visitor(),metadata:{event_id:crypto.randomUUID(),app:'good-times',platform,variant:'pwa',path:`${location.pathname}${location.search}`.slice(0,300)}})})}catch{}}
 
-export default function GoodTimesInstallPrompt(){
+// persistent=false hides the floating pill (members have a bottom nav it would cover); the install sheet still follows dismissal rules.
+export default function GoodTimesInstallPrompt({persistent=true}={}){
  const[prompt,setPrompt]=useState(null),[show,setShow]=useState(false),[steps,setSteps]=useState(false),[apple,setApple]=useState(false),[installed,setInstalled]=useState(false)
  useEffect(()=>{
-  if(isStandalone()||window.Capacitor){setInstalled(true);return}
+  // @capacitor/core defines window.Capacitor on the web too; only a native platform counts as installed.
+  if(isStandalone()||window.Capacitor?.isNativePlatform?.()){setInstalled(true);return}
   const a=isIOS();setApple(a)
   const dismissed=Number(get('gt:pwa-dismissed')||0),eligible=forceInstall()||!dismissed||Date.now()-dismissed>DISMISS_MS
   const before=e=>{e.preventDefault();setPrompt(e);if(eligible)setTimeout(()=>setShow(true),2200)}
@@ -35,13 +37,13 @@ export default function GoodTimesInstallPrompt(){
   return()=>{removeEventListener('beforeinstallprompt',before);removeEventListener('appinstalled',done);if(t)clearTimeout(t)}
  },[])
  if(installed)return null
- if(!show)return <button aria-label="Get GOOD TIMES app" onClick={()=>{setSteps(false);setShow(true);recordGrowthEvent('install_cta',{label:'good_times_persistent_get_app'})}} style={{position:'fixed',right:16,bottom:18,zIndex:2147482500,border:0,borderRadius:999,padding:'13px 17px',background:'linear-gradient(100deg,#ffcf64,#fc528b 55%,#8c7bff)',color:'#09060b',font:'900 11px/1 Arial',letterSpacing:'.08em',boxShadow:'0 16px 44px rgba(0,0,0,.35)',cursor:'pointer'}}>GET GOOD TIMES ↗</button>
+ if(!show)return !persistent?null:<button aria-label="Get GOOD TIMES app" onClick={()=>{setSteps(false);setShow(true);recordGrowthEvent('install_cta',{label:'good_times_persistent_get_app'})}} style={{position:'fixed',right:16,bottom:18,zIndex:2147482500,border:0,borderRadius:999,padding:'13px 17px',background:'linear-gradient(100deg,#ffcf64,#fc528b 55%,#8c7bff)',color:'#09060b',font:'900 11px/1 Arial',letterSpacing:'.08em',boxShadow:'0 16px 44px rgba(0,0,0,.35)',cursor:'pointer'}}>GET GOOD TIMES ↗</button>
  const close=()=>{set('gt:pwa-dismissed',String(Date.now()));setShow(false)}
  const install=async()=>{recordGrowthEvent('install_cta',{label:'good_times_home_screen_install'});if(prompt){const r=await prompt.prompt();setPrompt(null);if(r.outcome==='accepted')setShow(false);return}setSteps(true)}
  return <div className="gt-install" role="dialog" aria-modal="true" aria-label="Install GOOD TIMES">
     <InstallQr/><section>
   <button className="gt-install__close" onClick={close} aria-label="Close">×</button>
-  <div className="gt-install__city" aria-hidden="true"><span>ATL</span><span>LAS VEGAS</span><span>HOU</span><span>MIA</span></div>
+  <div className="gt-install__city" aria-hidden="true"><span>ATL</span><span>MIDTOWN</span><span>BUCKHEAD</span><span>EASTSIDE</span></div>
   <div className="gt-install__phone" aria-hidden="true"><i/><b>GT</b><small>GOOD TIMES</small></div>
   {!steps?<div className="gt-install__copy"><p className="gt-install__kicker">WHAT'S GOING ON / BEFORE EVERYBODY ELSE</p><h2>PUT<br/><em>GOOD TIMES</em><br/>ON YOUR PHONE.</h2><p>Restaurants. Concerts. Comedy. Nightlife. New openings. Weekend moves. Open GOOD TIMES from your Home Screen and know what’s happening without searching for it.</p><div className="gt-install__chips"><span>DISCOVER</span><b>•</b><span>PLAN</span><b>•</b><span>SAVE</span><b>•</b><span>GO</span></div><button className="gt-install__cta" onClick={install}><span>{prompt?'INSTALL GOOD TIMES':'ADD GOOD TIMES'}</span><strong>↗</strong></button><button className="gt-install__later" onClick={close}>Keep exploring</button></div>:
   <div className="gt-install__copy"><p className="gt-install__kicker">{apple?'IPHONE / HOME SCREEN':'INSTALL / HOME SCREEN'}</p><h2>THREE TAPS.<br/><em>THEN YOU’RE OUTSIDE.</em></h2><ol><li><b>01</b><div><strong>{apple?'Tap Share':'Open browser menu'}</strong><small>{apple?'Use Safari’s Share button.':'Open the browser install menu.'}</small></div></li><li><b>02</b><div><strong>Add to Home Screen</strong><small>Select Add to Home Screen / Install App.</small></div></li><li><b>03</b><div><strong>Tap Add</strong><small>GOOD TIMES lands beside your other apps.</small></div></li></ol><button className="gt-install__cta" onClick={close}>GOT IT</button></div>}

@@ -10,6 +10,7 @@ import {
   updatePreferences,
 } from '../auth/client.js'
 import { AGE_OPTIONS, CITY_OPTIONS, VIBE_OPTIONS } from './options.js'
+import { recordSignupComplete } from '../../growth.js'
 
 const MEDIA_BASE = 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics'
 const CURRENT_LOGO = `${MEDIA_BASE}/good_times/graphics/GOOD_TIMES_logo.png`
@@ -91,6 +92,7 @@ export default function GoodTimesOnboarding({ onComplete }) {
       }
 
       const signup = await signUp(email.trim(), password, name.trim(), city)
+      recordSignupComplete({ method: 'email', city })
       let nextSession = signup?.session || null
       if (!nextSession) {
         try { nextSession = await signIn(email.trim(), password) } catch { /* confirmation may be required */ }

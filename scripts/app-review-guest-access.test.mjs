@@ -26,8 +26,10 @@ test('GOOD TIMES supports Google OAuth and restores the returned session', () =>
   assert.match(main, /storeSession\(oauthSession\)/)
 })
 
-test('install prompt is shown only after an authenticated session exists', () => {
-  assert.match(main, /readSession\(\)\?<GoodTimesInstallPrompt\/>:null/)
+test('install prompt reaches signed-out web visitors but never native, recovery or direct-request routes', () => {
+  assert.match(main, /\{installPrompt\?<GoodTimesInstallPrompt persistent=\{!readSession\(\)\}\/>:null\}/)
+  assert.match(main, /const showInstallPrompt=!isNative&&!requestType&&!recoverySession/)
+  assert.doesNotMatch(main, /readSession\(\)\?<GoodTimesInstallPrompt/)
 })
 
 test('App Store support URL points to the dedicated support surface', () => {
