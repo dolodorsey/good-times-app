@@ -28,7 +28,7 @@ import './features/experience/good-times-approved-ui-standard.css'
 import './features/experience/good-times-founder-v4-restore.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { consumeOAuthRedirect, readSession, storeSession } from './features/auth/client.js'
-import { installGrowthTracking, recordGrowthEvent } from './growth.js'
+import { installGrowthTracking, recordGrowthEvent, recordSignupComplete } from './growth.js'
 import { installMediaIntegrityGuard } from './media-integrity.js'
 import { isNative } from './native.js'
 import GoodTimesInstallPrompt from './features/experience/GoodTimesInstallPrompt.jsx'
@@ -102,6 +102,18 @@ if (!isNative && 'serviceWorker' in navigator) {
   }, { once: true })
 }
 
+// Google OAuth has no separate signup call: treat an account created in the last 10 minutes as a new signup (once per user).
+function recordOAuthSignup(session){
+  try{
+    const user=session?.user,created=Date.parse(user?.created_at||'')
+    if(!user?.id||!created||Date.now()-created>10*60*1000)return
+    const key=`gt_signup_recorded:${user.id}`
+    if(localStorage.getItem(key))return
+    localStorage.setItem(key,'1')
+    recordSignupComplete({method:'google'})
+  }catch{}
+}
+
 class RuntimeBoundary extends Component {
   constructor(props){super(props);this.state={error:null}}
   static getDerivedStateFromError(error){return{error}}
@@ -145,6 +157,7 @@ async function bootstrap(){
     oauthSession=await consumeOAuthRedirect(window.location.hash)
     if(oauthSession){
       storeSession(oauthSession)
+      recordOAuthSignup(oauthSession)
       const cleanUrl=new URL(window.location.href)
       cleanUrl.hash=''
       cleanUrl.searchParams.delete('auth')
