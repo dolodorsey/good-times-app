@@ -1,0 +1,44 @@
+name: GOOD TIMES Production Reference Proof
+on:
+  push:
+    branches: ['qa/gt-production-proof-20260924']
+    paths:
+      - '.github/workflows/production-reference-proof.yml'
+      - 'scripts/production-reference-proof.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: good-times-production-reference-proof
+  cancel-in-progress: true
+jobs:
+  production-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --include=dev
+      - uses: browser-actions/setup-chrome@v2.2.0
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Verify real production screens without customer transactions
+        env:
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GOOD_TIMES_APP_REVIEW_USERNAME: ${{ secrets.GOOD_TIMES_APP_REVIEW_USERNAME }}
+          GOOD_TIMES_APP_REVIEW_PASSWORD: ${{ secrets.GOOD_TIMES_APP_REVIEW_PASSWORD }}
+        run: node scripts/production-reference-proof.mjs
+      - name: Preserve redacted screenshots and non-secret evidence only
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: good-times-production-reference-proof-${{ github.run_id }}
+          path: production-reference-proof
+          if-no-files-found: error
+          retention-days: 14
