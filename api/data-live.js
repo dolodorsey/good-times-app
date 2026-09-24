@@ -14,6 +14,7 @@ const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 const EVENT_FRESHNESS_MAX_HOURS=72
 const EMBEDDED_SNAPSHOT_MAX_AGE_MS=36*60*60*1000
+const CACHE_ONLY_RPC_TIMEOUT_MS=1600
 const INVENTORY_RPC_TIMEOUT_MS=2600
 const INVENTORY_RPC_ATTEMPTS=1
 const CACHE=globalThis.__GT_DATA_LIVE_CACHE_V8__||(globalThis.__GT_DATA_LIVE_CACHE_V8__=new Map())
@@ -52,14 +53,36 @@ function safeImage(value){
   return text.startsWith('http://')?text.replace(/^http:\/\//i,'https://'):text
 }
 function decode(value){return String(value||'').replace(/&amp;/gi,'&').replace(/&#8217;/gi,"'").replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&nbsp;/gi,' ')}
-function parseSnapshotTimestamp(value){
-  const normalized=String(value||'').trim().replace(' ','T').replace(/([+-]\d{2})$/,'$1:00')
+function parseSnapshotTimestamp(value) {
+  let normalized=String(value||'').trim().replace(' ','T')
+  if(/[+-][0-9]{2}$/.test(normalized)) normalized += ':00'
+  normalized=normalized.replace(/\.([0-9]{3})[0-9]+(?=([+-][0-9]{2}:[0-9]{2}|Z)$)/,'.$1')
   return Date.parse(normalized)
 }
 function embeddedSnapshotUsable(snapshot,now=new Date()){
   const refreshedAt=parseSnapshotTimestamp(snapshot?.refreshed_at)
   const ageMs=now.getTime()-refreshedAt
   return Number.isFinite(refreshedAt)&&ageMs>=0&&ageMs<=EMBEDDED_SNAPSHOT_MAX_AGE_MS&&Array.isArray(snapshot?.events)&&snapshot.events.length>0&&Array.isArray(snapshot?.venues)&&snapshot.venues.length>0
+}
+
+async function fetchInventoryCacheOnly({city,serviceDate}){
+  const controller=new AbortController()
+  const timer=setTimeout(()=>controller.abort(),CACHE_ONLY_RPC_TIMEOUT_MS)
+  try{
+    const response=await fetch(`${CONTENT_URL}/rest/v1/rpc/gt_public_live_inventory_cache_only_v1`,{
+      method:'POST',headers:headers(),cache:'no-store',signal:controller.signal,
+      body:JSON.stringify({p_city:city,p_service_date:serviceDate}),
+    })
+    const text=await response.text()
+    if(!response.ok)throw new Error(`cache-only RPC HTTP ${response.status}: ${text.slice(0,240)}`)
+    const result=text?JSON.parse(text):null
+    if(!result?.ok||result?.is_service_date_match!==true||result?.is_fresh!==true||!Array.isArray(result?.payload?.events)||!Array.isArray(result?.payload?.venues)){
+      throw new Error(`cache-only RPC unavailable: ${result?.reason||'stale_or_invalid'}`)
+    }
+    return result.payload
+  }catch(error){
+    throw error?.name==='AbortError'?new Error('cache-only RPC timed out'):error
+  }finally{clearTimeout(timer)}
 }
 
 async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLimit}){
@@ -201,7 +224,12 @@ export default async function handler(request,response){
   let inventory
   let embeddedFallbackUsed=false
   try{
-    inventory=await fetchInventoryRPC({city,serviceDate:clock.serviceDate,eventFetchLimit,venueFetchLimit})
+    try{
+      inventory=await fetchInventoryCacheOnly({city,serviceDate:clock.serviceDate})
+    }catch(cacheError){
+      console.warn('[GOOD TIMES data-live] cache-only inventory unavailable; trying canonical inventory RPC',{city,error:cacheError?.message})
+      inventory=await fetchInventoryRPC({city,serviceDate:clock.serviceDate,eventFetchLimit,venueFetchLimit})
+    }
   }catch(error){
     const stale=CACHE.get(cacheKey)
     if(stale&&Date.now()-stale.at<15*60*1000)return send(response,200,{...stale.payload,degraded:true,coverage:{...stale.payload.coverage,notice:'Live sources are refreshing; showing the most recent verified city snapshot.'}},'STALE')
