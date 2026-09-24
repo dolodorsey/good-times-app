@@ -1,0 +1,11 @@
+{
+  "app": "good-times-app",
+  "brand": "Good Times Worldwide",
+  "service": "curated-city-discovery-concierge",
+  "status": "ok",
+  "schema_version": 1,
+  "release_gate": "enterprise-control-plane",
+  "authority": "MCP Gateway public.gt_*",
+  "staging": "Google Drive source directory",
+  "generated_at": "2026-07-10T00:00:00-04:00"
+}
