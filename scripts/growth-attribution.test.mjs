@@ -54,3 +54,11 @@ test('install pill hides on every onboarding step after welcome', () => {
   assert.match(onboarding, /document\.documentElement\.dataset\.gtOnboardingStep = screen/)
   assert.match(prompt, /html\[data-gt-onboarding-step\]:not\(\[data-gt-onboarding-step="welcome"\]\) \.gt-install-pill\{display:none!important\}/)
 })
+
+test('attribution and install state are copied to the account for CRM tagging', () => {
+  assert.match(growth, /export async function syncAttributionToAccount\(session\)/)
+  assert.match(growth, /\/auth\/v1\/user`,\{method:'PUT'/)
+  assert.match(growth, /gt_meta_updated_at/)
+  assert.match(main, /if\(hasSession\)syncAttributionToAccount\(readSession\(\)\)/)
+  assert.match(onboarding, /syncAttributionToAccount\(nextSession\)/)
+})
