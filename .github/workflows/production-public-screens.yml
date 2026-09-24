@@ -1,0 +1,84 @@
+name: GOOD TIMES Public Production Screens
+on:
+  push:
+    branches: ['qa/gt-production-proof-20260924']
+    paths: ['.github/workflows/production-public-screens.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  public-screens:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --include=dev
+      - uses: browser-actions/setup-chrome@v2.2.0
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Capture welcome and sign-in on the real domain
+        env:
+          CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          node --input-type=module <<'NODE'
+          import {chromium} from 'playwright-core'
+          import fs from 'node:fs'
+          import {createHash} from 'node:crypto'
+          const base='https://thegoodtimesworldwide.com',out='production-public-screens'
+          fs.mkdirSync(out,{recursive:true})
+          const report={target:base,startedAt:new Date().toISOString(),evidenceType:'real-production-public-screens',authenticationTested:false,screenshots:[],failures:[]}
+          const browser=await chromium.launch({executablePath:process.env.CHROME,headless:true,args:['--no-sandbox']})
+          try{
+            for(const viewport of [{width:390,height:844},{width:834,height:1194},{width:1440,height:900}]){
+              const context=await browser.newContext({viewport,timezoneId:'America/New_York',reducedMotion:'reduce'})
+              await context.route(/\/rest\/v1\/(gt_growth_events|gt_product_events|gt_taste_signals)(\?|$)/,r=>r.request().method()==='POST'?r.fulfill({status:204}):r.continue())
+              const page=await context.newPage()
+              let errors=0;page.on('pageerror',()=>errors++)
+              async function shot(screen){
+                await page.evaluate(()=>Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,2000))]))
+                await page.waitForTimeout(300)
+                const bytes=await page.screenshot({animations:'disabled'})
+                const filename=`${viewport.width}-${screen}.png`
+                fs.writeFileSync(`${out}/${filename}`,bytes)
+                const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth)
+                report.screenshots.push({filename,viewport,overflow,sha256:createHash('sha256').update(bytes).digest('hex')})
+                if(overflow>1)report.failures.push(`Horizontal overflow at ${viewport.width} ${screen}`)
+              }
+              try{
+                const response=await page.goto(base,{waitUntil:'domcontentloaded',timeout:30000})
+                if(response.status()!==200)throw new Error('Public route did not return 200')
+                const button=page.getByRole('button',{name:'I Already Have an Account',exact:true})
+                await button.waitFor({timeout:30000})
+                await shot('welcome')
+                await button.click()
+                await page.locator('input[type=email]').waitFor({timeout:15000})
+                await shot('sign-in')
+                report[`googleButton_${viewport.width}`]=await page.getByRole('button',{name:/Continue with Google/}).isVisible()
+                if(errors)report.failures.push(`${errors} uncaught errors at ${viewport.width}`)
+              }catch(error){report.failures.push(`${viewport.width}: ${error.name}`);await shot('failed').catch(()=>{})}
+              finally{await context.close()}
+            }
+          }finally{
+            await browser.close()
+            report.finishedAt=new Date().toISOString()
+            report.status=report.failures.length?'INCOMPLETE':'PUBLIC_SCREENS_VERIFIED'
+            fs.writeFileSync(`${out}/report.json`,JSON.stringify(report,null,2))
+            console.log(JSON.stringify(report))
+            if(report.failures.length)process.exitCode=1
+          }
+          NODE
+      - name: Preserve actual public screenshots and evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: good-times-public-production-screens-${{ github.run_id }}
+          path: production-public-screens
+          if-no-files-found: error
+          retention-days: 14
