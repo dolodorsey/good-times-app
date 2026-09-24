@@ -134,7 +134,9 @@ export function inferCustomerTaxonomy(item) {
       ? { category:'sports_watch', subcategory:'watch_parties' }
       : { category:'nightlife', subcategory:'late_night' }
   }
-  if (/\b(vs\.?|versus|boxing|ufc|mma|wrestling|fight night|home game|matchup)\b/.test(text)) return { category:'sports_watch', subcategory:/boxing|ufc|mma|wrestling|fight/.test(text)?'combat_sports':fallbackSub || 'pro_home_games' }
+  const combatSignal=/\b(boxing|ufc|mma|wrestling|fight night)\b/.test(text)
+  const sportsMatchupSignal=/\b(home game|matchup)\b/.test(text)||(/\b(vs\.?|versus)\b/.test(text)&&hasSportsSignal(text))
+  if (combatSignal||sportsMatchupSignal) return { category:'sports_watch', subcategory:combatSignal?'combat_sports':fallbackSub || 'pro_home_games' }
 
   const concertSignal = rawType === 'concert' || /live music|music show|concert|symphony|dj set|night sets|\br&b\b|\brnb\b|hip hop|hip-hop|\brap\b|\bjazz\b|\bgospel\b|karaoke|open mic/.test(text)
   if (concertSignal) return { category:'concerts_live_music', subcategory:inferMusicSubcategory(text, fallbackSub, item?.genre) }
