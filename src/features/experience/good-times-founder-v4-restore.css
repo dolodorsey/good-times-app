@@ -498,3 +498,12 @@ html body.gt-app-mode #root .gt-premium-experience>.gt5-app{
   .gt5-home-quick button{min-height:50px!important}
   .gt5-home-modes{margin-left:10px!important;margin-right:10px!important}
 }
+
+/* Preserve the compact authenticated shell required by the existing customer experience. */
+.gt5-app[data-screen] .gt5-topbar{height:58px!important;min-height:58px!important;flex-basis:58px!important}
+@media(max-width:359px){
+  .gt5-app .gt5-topbar{padding:6px 10px!important}
+  .gt5-app .gt5-brand strong{font-size:12px!important}
+  .gt5-app .gt5-brand .gt5-mark{display:none!important}
+  .gt5-app .gt5-city{max-width:104px!important}
+}
