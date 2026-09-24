@@ -2,7 +2,11 @@ import { KHG_SUPABASE_ANON_KEY, KHG_SUPABASE_URL } from './lib/supabase.js'
 
 const ALLOWED_EVENTS = new Set([
   'landing_view','signup_cta','app_open','share_click','ticket_click','reservation_click','concierge_request','install_cta',
+  'signup_complete','first_action',
 ])
+const ATTRIBUTION_KEY='gt_attribution_v1'
+const LAST_TOUCH_TTL_MS=30*24*60*60*1000
+const FIRST_ACTION_KEY='gt_first_action_v1'
 const TICKET_HOSTS = ['ticketmaster.com','eventbrite.com','axs.com','dice.fm','seatgeek.com','stubhub.com']
 const RESERVATION_HOSTS = ['resy.com','opentable.com','tockhq.com','exploretock.com']
 const ENTERPRISE_CAPTURE='https://wfkohcwxxsrhcxhepfql.supabase.co/functions/v1/marketing-event-capture'
@@ -33,11 +37,55 @@ function currentCity() {
   const cities = ['atlanta','houston','miami','charlotte','dallas','phoenix','scottsdale','las_vegas','los_angeles','new_york','washington_dc']
   return cities.find(city => path.includes(city.replaceAll('_','-'))) || 'atlanta'
 }
+function readAttribution(){
+  try{const parsed=JSON.parse(getStored(ATTRIBUTION_KEY)||'null');return parsed&&typeof parsed==='object'?parsed:{}}catch{return {}}
+}
+// First/last-touch attribution. First touch is written once and never overwritten;
+// last touch is replaced whenever a URL carries campaign parameters.
+export function captureAttribution(){
+  if(typeof window==='undefined')return {}
+  const params=new URLSearchParams(location.search)
+  const touch={
+    source:clean(params.get('utm_source')||params.get('source'),120),
+    medium:clean(params.get('utm_medium'),80),
+    campaign:clean(params.get('utm_campaign')||params.get('campaign'),160),
+    content:clean(params.get('utm_content'),160),
+    term:clean(params.get('utm_term'),160),
+  }
+  const stored=readAttribution()
+  if(!touch.source&&!touch.medium&&!touch.campaign&&!touch.content)return stored
+  touch.at=new Date().toISOString()
+  touch.landing_path=clean(location.pathname,200)
+  const next={first:stored.first||touch,last:touch}
+  setStored(ATTRIBUTION_KEY,JSON.stringify(next))
+  return next
+}
+function activeTouch(){
+  const params=new URLSearchParams(location.search)
+  const fromUrl=params.get('utm_source')||params.get('source')||params.get('utm_campaign')||params.get('campaign')||params.get('utm_medium')||params.get('utm_content')
+  const {first,last}=captureAttribution()
+  if(fromUrl&&last)return {touch:last,first,basis:'url'}
+  const fresh=last?.at&&Date.now()-Date.parse(last.at)<LAST_TOUCH_TTL_MS
+  if(fresh)return {touch:last,first,basis:'stored'}
+  return {touch:null,first,basis:'none'}
+}
 function campaignContext() {
-  const params = new URLSearchParams(location.search)
+  const {touch,first,basis}=activeTouch()
   return {
-    source: clean(params.get('utm_source') || params.get('source') || 'direct',120),
-    campaign: clean(params.get('utm_campaign') || params.get('campaign') || '',160),
+    source: clean(touch?.source || 'direct',120),
+    medium: clean(touch?.medium,80),
+    campaign: clean(touch?.campaign,160),
+    content: clean(touch?.content,160),
+    term: clean(touch?.term,160),
+    first: first || null,
+    basis,
+  }
+}
+function attributionMetadata(ctx){
+  const f=ctx.first||{}
+  return {
+    utm_medium:ctx.medium||undefined,utm_content:ctx.content||undefined,utm_term:ctx.term||undefined,attribution_basis:ctx.basis,
+    first_source:f.source||undefined,first_medium:f.medium||undefined,first_campaign:f.campaign||undefined,first_content:f.content||undefined,first_touch_at:f.at||undefined,
   }
 }
 function safeMetadata(metadata={}) {
@@ -53,11 +101,15 @@ function enterpriseEventName(eventName){
   if(eventName==='landing_view'||eventName==='app_open')return 'page_view'
   if(eventName==='install_cta')return 'app_install_click'
   if(eventName==='concierge_request')return 'booking_interest'
+  if(eventName==='signup_complete')return 'signup'
+  if(eventName==='first_action')return 'conversion'
   return 'cta_click'
 }
 async function recordEnterpriseEvent(eventName, metadata={}){
   const code=enterpriseCode()
-  const { source,campaign }=campaignContext()
+  const ctx=campaignContext()
+  const { source,campaign }=ctx
+  const f=ctx.first||{}
   try{
     const response=await fetch(ENTERPRISE_CAPTURE,{
       method:'POST',keepalive:true,headers:{'Content-Type':'application/json'},
@@ -68,10 +120,12 @@ async function recordEnterpriseEvent(eventName, metadata={}){
         metadata:{
           event_id:crypto.randomUUID(),
           source,
-          medium:'good_times_app',
+          medium:ctx.medium||'good_times_app',
           channel:'app',
           campaign_key:campaign||undefined,
-          conversion_type:eventName==='concierge_request'?'booking_interest':undefined,
+          content_key:ctx.content||undefined,
+          variant:f.source?clean(`first:${f.source}|${f.medium||''}|${f.campaign||''}|${f.content||''}`,300):undefined,
+          conversion_type:eventName==='concierge_request'?'booking_interest':eventName==='first_action'?'first_action':eventName==='signup_complete'?'signup':undefined,
           app:'good-times',
           path:clean(`${location.pathname}${location.search}`,300),
           cta:clean(metadata?.label||eventName,200),
@@ -88,7 +142,8 @@ async function recordEnterpriseEvent(eventName, metadata={}){
 
 export async function recordGrowthEvent(eventName, metadata={}) {
   if (!ALLOWED_EVENTS.has(eventName)) return false
-  const { source, campaign } = campaignContext()
+  const ctx = campaignContext()
+  const { source, campaign } = ctx
   const legacyWrite=(async()=>{
     try {
       const response = await fetch(`${KHG_SUPABASE_URL}/rest/v1/gt_growth_events`, {
@@ -106,7 +161,7 @@ export async function recordGrowthEvent(eventName, metadata={}) {
           source,
           path:clean(`${location.pathname}${location.search}`,300),
           campaign,
-          metadata:safeMetadata({ referrer:document.referrer || '', ...metadata }),
+          metadata:safeMetadata({ referrer:document.referrer || '', ...attributionMetadata(ctx), ...metadata }),
         }),
       })
       return response.ok
@@ -116,6 +171,14 @@ export async function recordGrowthEvent(eventName, metadata={}) {
   const [legacyOk,enterpriseOk]=await Promise.all([legacyWrite,enterpriseWrite])
   return legacyOk||enterpriseOk
 }
+
+const FIRST_ACTIONS=new Set(['ticket_click','reservation_click','concierge_request','share_click'])
+function maybeFirstAction(eventName,metadata){
+  if(!FIRST_ACTIONS.has(eventName)||getStored(FIRST_ACTION_KEY))return
+  setStored(FIRST_ACTION_KEY,new Date().toISOString())
+  recordGrowthEvent('first_action',{action:eventName,label:metadata?.label})
+}
+export function recordSignupComplete(metadata={}){return recordGrowthEvent('signup_complete',metadata)}
 
 function classifyClick(target) {
   const clickable = target?.closest?.('a,button,[role="button"]')
@@ -137,9 +200,10 @@ function classifyClick(target) {
 export function installGrowthTracking() {
   if (typeof window === 'undefined' || window.__GT_GROWTH_TRACKING__) return
   window.__GT_GROWTH_TRACKING__ = true
+  captureAttribution()
   recordGrowthEvent('landing_view',{title:document.title})
   document.addEventListener('click', event => {
     const classified = classifyClick(event.target)
-    if (classified) recordGrowthEvent(classified[0],classified[1])
+    if (classified) { recordGrowthEvent(classified[0],classified[1]); maybeFirstAction(classified[0],classified[1]) }
   }, { capture:true, passive:true })
 }

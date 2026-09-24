@@ -25,7 +25,8 @@ async function installComplete(platform){try{await fetch(CAPTURE,{method:'POST',
 export default function GoodTimesInstallPrompt(){
  const[prompt,setPrompt]=useState(null),[show,setShow]=useState(false),[steps,setSteps]=useState(false),[apple,setApple]=useState(false),[installed,setInstalled]=useState(false)
  useEffect(()=>{
-  if(isStandalone()||window.Capacitor){setInstalled(true);return}
+  // @capacitor/core defines window.Capacitor on the web too; only a native platform counts as installed.
+  if(isStandalone()||window.Capacitor?.isNativePlatform?.()){setInstalled(true);return}
   const a=isIOS();setApple(a)
   const dismissed=Number(get('gt:pwa-dismissed')||0),eligible=forceInstall()||!dismissed||Date.now()-dismissed>DISMISS_MS
   const before=e=>{e.preventDefault();setPrompt(e);if(eligible)setTimeout(()=>setShow(true),2200)}
@@ -41,7 +42,7 @@ export default function GoodTimesInstallPrompt(){
  return <div className="gt-install" role="dialog" aria-modal="true" aria-label="Install GOOD TIMES">
     <InstallQr/><section>
   <button className="gt-install__close" onClick={close} aria-label="Close">×</button>
-  <div className="gt-install__city" aria-hidden="true"><span>ATL</span><span>LAS VEGAS</span><span>HOU</span><span>MIA</span></div>
+  <div className="gt-install__city" aria-hidden="true"><span>ATL</span><span>MIDTOWN</span><span>BUCKHEAD</span><span>EASTSIDE</span></div>
   <div className="gt-install__phone" aria-hidden="true"><i/><b>GT</b><small>GOOD TIMES</small></div>
   {!steps?<div className="gt-install__copy"><p className="gt-install__kicker">WHAT'S GOING ON / BEFORE EVERYBODY ELSE</p><h2>PUT<br/><em>GOOD TIMES</em><br/>ON YOUR PHONE.</h2><p>Restaurants. Concerts. Comedy. Nightlife. New openings. Weekend moves. Open GOOD TIMES from your Home Screen and know what’s happening without searching for it.</p><div className="gt-install__chips"><span>DISCOVER</span><b>•</b><span>PLAN</span><b>•</b><span>SAVE</span><b>•</b><span>GO</span></div><button className="gt-install__cta" onClick={install}><span>{prompt?'INSTALL GOOD TIMES':'ADD GOOD TIMES'}</span><strong>↗</strong></button><button className="gt-install__later" onClick={close}>Keep exploring</button></div>:
   <div className="gt-install__copy"><p className="gt-install__kicker">{apple?'IPHONE / HOME SCREEN':'INSTALL / HOME SCREEN'}</p><h2>THREE TAPS.<br/><em>THEN YOU’RE OUTSIDE.</em></h2><ol><li><b>01</b><div><strong>{apple?'Tap Share':'Open browser menu'}</strong><small>{apple?'Use Safari’s Share button.':'Open the browser install menu.'}</small></div></li><li><b>02</b><div><strong>Add to Home Screen</strong><small>Select Add to Home Screen / Install App.</small></div></li><li><b>03</b><div><strong>Tap Add</strong><small>GOOD TIMES lands beside your other apps.</small></div></li></ol><button className="gt-install__cta" onClick={close}>GOT IT</button></div>}
