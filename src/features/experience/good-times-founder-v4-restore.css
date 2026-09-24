@@ -1,21 +1,10 @@
-/* GOOD TIMES REFERENCE BASE — 2026-09-24.
-   The owner's nine Sep 13–14 references are the design authority.
-   This file replaces the ineffective copied V4 restore; it is not another theme.
-   Keep current data/auth/planning behavior. Do not rebaseline screenshots without
-   explicit visual review. See docs/GOOD_TIMES_REFERENCE_BASE_LOCK.md. */
-.gt-premium-experience .gt5-app[data-screen]{
-  --gt5-canvas:#050607;--gt5-surface:#090a0c;--gt5-surface2:#0e1013;
-  --gt5-ivory:#f7f2e9;--gt5-text:#f5f2ea;--gt5-muted:#aaa8a3;
-  --gt5-gold1:#fff0b3;--gt5-gold2:#f8d46a;--gt5-gold3:#e9b83f;
-  --gt5-line:rgba(248,212,106,.38);
-  --gt5-serif:'Playfair Display','Cormorant Garamond',Georgia,serif;
-  --gt5-sans:'DM Sans',Inter,system-ui,-apple-system,sans-serif;
-  --gt5-coral:#f8d46a;--gt5-teal:#f8d46a;--gt5-lilac:#f8d46a;--gt5-blue:#f8d46a;
-  background:#050607;color:#f5f2ea;
-}
+/* GOOD TIMES reference-base authority — September 24, 2026.
+   One maintained override, not copied historical stylesheets.
+   Preserve product logic, current data, auth and the five-destination shell.
+   Narrow !important font rules resolve inherited global typography overrides. */
+.gt-premium-experience .gt5-app[data-screen]{--gt5-canvas:#050607;--gt5-surface:#090a0c;--gt5-surface2:#0e1013;--gt5-ivory:#f7f2e9;--gt5-text:#f5f2ea;--gt5-muted:#aaa8a3;--gt5-gold1:#fff0b3;--gt5-gold2:#f8d46a;--gt5-gold3:#e9b83f;--gt5-line:rgba(248,212,106,.38);--gt5-serif:'Playfair Display','Cormorant Garamond',Georgia,serif;--gt5-sans:'DM Sans',Inter,system-ui,-apple-system,sans-serif;--gt5-coral:#f8d46a;--gt5-teal:#f8d46a;--gt5-lilac:#f8d46a;--gt5-blue:#f8d46a;background:#050607;color:#f5f2ea}
 .gt-premium-experience .gt5-app[data-screen] .gt5-main{background:#050607}
 .gt-premium-experience .gt5-app[data-screen] :is(button,a,input,textarea,select):focus-visible{outline:2px solid #fff0b3;outline-offset:3px}
-/* Fixed, readable brand header: never hide the mark to make the layout fit. */
 .gt-premium-experience .gt5-app[data-screen] .gt5-topbar{height:58px;min-height:58px;flex-basis:58px;padding:6px 14px;gap:8px;background:#050607}
 .gt-premium-experience .gt5-app[data-screen] .gt5-brand{gap:8px;padding:0;min-width:0}
 .gt-premium-experience .gt5-app[data-screen] .gt5-brand .gt5-mark{display:grid;width:34px;height:34px;min-width:34px;font-size:11px;border-color:#f8d46a}
@@ -24,61 +13,59 @@
 .gt-premium-experience .gt5-app[data-screen] .gt5-top-actions{gap:5px}
 .gt-premium-experience .gt5-app[data-screen] .gt5-city{height:44px;min-height:44px;max-width:100px;padding:0 8px;font-size:11px;background:#090a0c;border-color:var(--gt5-line)}
 .gt-premium-experience .gt5-app[data-screen] .gt5-bell{display:grid;place-items:center;width:44px;min-width:44px;height:44px;background:#090a0c;color:#f8d46a}
-.gt-premium-experience .gt5-app[data-screen] .gt5-radar-strip{background:#090a0c;min-height:44px;flex-basis:44px}
-.gt-premium-experience .gt5-app[data-screen] .gt5-radar-strip strong{font:500 11px/1.3 var(--gt5-sans)}
-/* Editorial hierarchy is explicitly scoped above inherited compact-theme rules. */
-.gt-premium-experience .gt5-app[data-screen] :is(.gt5-hero h1,.gt5-detail-body h1,.gt5-itinerary h1){font-family:var(--gt5-serif);font-weight:500;font-style:normal;letter-spacing:-.045em;line-height:.98}
-.gt-premium-experience .gt5-app[data-screen] .gt5-hero h1 em{font-family:inherit;font-style:normal;font-weight:500;color:#f8d46a}
-.gt-premium-experience .gt5-app[data-screen] :is(.gt5-section h2,.gt5-card-copy h3,.gt5-lanes strong,.gt5-profile-menu strong,.gt5-plan-builder h2,.gt5-popular h3,.gt5-plan-list h2,.gt5-timeline h2,.gt5-member strong,.gt5-support strong){font-family:var(--gt5-serif);font-weight:500;letter-spacing:-.025em}
-.gt-premium-experience .gt5-app[data-screen] .gt5-script{display:block;right:16px;top:22px;max-width:100px;color:#f8d46a;font:italic 17px/1.12 'Brush Script MT','Segoe Script',cursive;opacity:.94;pointer-events:none}
-.gt-premium-experience .gt5-app[data-screen] .gt5-hero{background-color:#090a0c;background-position:center;border-color:var(--gt5-line)}
-.gt-premium-experience .gt5-app[data-screen] .gt5-hero::before{filter:saturate(1.02) contrast(1.02)}
-.gt-premium-experience .gt5-app[data-screen] .gt5-hero-shade{background:linear-gradient(90deg,rgba(0,0,0,.76),rgba(0,0,0,.2) 72%),linear-gradient(0deg,#050607 0%,rgba(5,6,7,.08) 60%)}
+/* Radar remains available through the visible bell; remove the extra strip from the reference opening. */
+.gt-premium-experience .gt5-app[data-screen]>.gt5-radar-strip{display:none}
+.gt-premium-experience .gt5-app[data-screen] .gt5-hero h1,.gt-premium-experience .gt5-app[data-screen] .gt5-detail-body h1,.gt-premium-experience .gt5-app[data-screen] .gt5-itinerary h1{font-family:var(--gt5-serif)!important;font-weight:500;font-style:normal;letter-spacing:-.045em;line-height:.98}
+.gt-premium-experience .gt5-app[data-screen] .gt5-hero h1 em{font-family:inherit!important;font-style:normal;font-weight:500;color:#f8d46a;margin-left:0}
+.gt-premium-experience .gt5-app[data-screen] .gt5-hero h1 br{display:initial}
+.gt-premium-experience .gt5-app[data-screen] .gt5-section h2,.gt-premium-experience .gt5-app[data-screen] .gt5-lanes strong,.gt-premium-experience .gt5-app[data-screen] .gt5-profile-menu strong,.gt-premium-experience .gt5-app[data-screen] .gt5-plan-builder h2,.gt-premium-experience .gt5-app[data-screen] .gt5-timeline h2{font-family:var(--gt5-serif)!important;font-weight:500;letter-spacing:-.025em}
+.gt-premium-experience .gt5-app[data-screen] .gt5-script{display:block;right:14px;top:18px;max-width:100px;color:#f8d46a;font:italic 17px/1.12 'Brush Script MT','Segoe Script',cursive;opacity:.94;pointer-events:none}
+.gt-premium-experience .gt5-app[data-screen] .gt5-hero{background-color:#050607;background-position:right top;background-size:auto 288px;background-repeat:no-repeat;border-color:var(--gt5-line)}
+.gt-premium-experience .gt5-app[data-screen] .gt5-hero::before{background-position:right top;background-size:auto 288px;background-repeat:no-repeat;transform:none;filter:none}
+.gt-premium-experience .gt5-app[data-screen] .gt5-hero-shade{background:linear-gradient(90deg,#050607 0%,rgba(5,6,7,.82) 34%,rgba(5,6,7,.03) 75%),linear-gradient(0deg,#050607 0%,rgba(5,6,7,.55) 25%,transparent 60%)}
 .gt-premium-experience .gt5-app[data-screen] .gt5-home-hero{min-height:350px}
-.gt-premium-experience .gt5-app[data-screen] .gt5-home-hero .gt5-hero-copy{min-height:350px;padding:26px 16px 18px;justify-content:flex-end}
-.gt-premium-experience .gt5-app[data-screen] .gt5-home-hero h1{font-size:48px;max-width:76%;margin:8px 0 10px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-home-hero .gt5-hero-copy{min-height:350px;padding:26px 16px 16px;justify-content:flex-end}
+.gt-premium-experience .gt5-app[data-screen] .gt5-home-hero h1{font-size:48px;max-width:58%;margin:8px 0 10px}
 .gt-premium-experience .gt5-app[data-screen] .gt5-hero-copy>span{font-size:9px;letter-spacing:.2em;color:#f8d46a}
-.gt-premium-experience .gt5-app[data-screen] .gt5-hero-copy>p{font:400 12px/1.4 var(--gt5-sans);max-width:80%;color:#e1ded7}
-.gt-premium-experience .gt5-app[data-screen] .gt5-compact-hero{min-height:210px;border-radius:0}
-.gt-premium-experience .gt5-app[data-screen] .gt5-compact-hero .gt5-hero-copy{min-height:210px;padding:40px 18px 20px}
-.gt-premium-experience .gt5-app[data-screen] .gt5-compact-hero h1{font-size:46px;max-width:78%}
-.gt-premium-experience .gt5-app[data-screen] .gt5-hero-search{margin-top:14px;padding:4px 5px 4px 12px;grid-template-columns:24px minmax(0,1fr) 44px;gap:5px;border-radius:999px;background:rgba(5,6,7,.88)}
+.gt-premium-experience .gt5-app[data-screen] .gt5-hero-copy>p{font:400 12px/1.4 var(--gt5-sans);max-width:76%;color:#e1ded7}
+.gt-premium-experience .gt5-app[data-screen] .gt5-compact-hero{min-height:190px;border-radius:0}
+.gt-premium-experience .gt5-app[data-screen] .gt5-compact-hero .gt5-hero-copy{min-height:190px;padding:38px 18px 18px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-compact-hero h1{font-size:44px;max-width:68%}
+.gt-premium-experience .gt5-app[data-screen] .gt5-hero-search{margin-top:14px;padding:4px 5px 4px 12px;grid-template-columns:24px minmax(0,1fr) 44px;gap:5px;border-radius:999px;background:rgba(5,6,7,.92)}
 .gt-premium-experience .gt5-app[data-screen] .gt5-hero-search input{height:44px;font-size:12px}
 .gt-premium-experience .gt5-app[data-screen] .gt5-hero-search button{width:44px;height:44px;border-radius:50%;color:#050607;background:linear-gradient(120deg,#fff0b3,#e9b83f)}
 .gt-premium-experience .gt5-app[data-screen] .gt5-home-quick{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin-top:12px}
-.gt-premium-experience .gt5-app[data-screen] .gt5-home-quick button{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;min-height:62px;min-width:0;padding:6px 1px;border:1px solid var(--gt5-line);border-radius:15px;background:rgba(5,6,7,.8);color:#f5f2ea}
+.gt-premium-experience .gt5-app[data-screen] .gt5-home-quick button{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:5px;min-height:62px;min-width:0;padding:6px 1px;border:1px solid var(--gt5-line);border-radius:15px;background:rgba(5,6,7,.86);color:#f5f2ea}
 .gt-premium-experience .gt5-app[data-screen] .gt5-home-quick b{color:#f8d46a;line-height:1;font-size:20px}
-.gt-premium-experience .gt5-app[data-screen] .gt5-home-quick small{font:500 8px/1.15 var(--gt5-sans);white-space:normal;text-align:center;overflow-wrap:normal;max-width:100%}
+.gt-premium-experience .gt5-app[data-screen] .gt5-home-quick small{font:500 8px/1.15 var(--gt5-sans);white-space:normal;text-align:center;max-width:100%}
 .gt-premium-experience .gt5-app[data-screen] .gt5-home-modes{background:#090a0c;border-color:var(--gt5-line);margin:8px 14px 4px;padding:5px}
 .gt-premium-experience .gt5-app[data-screen] .gt5-home-modes button{min-height:44px;font:600 12px/1 var(--gt5-sans)}
 .gt-premium-experience .gt5-app[data-screen] .gt5-section{padding:18px 14px;background:transparent}
 .gt-premium-experience .gt5-app[data-screen] .gt5-section h2{font-size:26px}
 .gt-premium-experience .gt5-app[data-screen] .gt5-section>header{margin-bottom:10px}
 .gt-premium-experience .gt5-app[data-screen] .gt5-section>header>button{min-height:44px;font-size:12px}
-/* Cards stay data-driven. No made-up venue photographs, ratings or confirmations. */
 .gt-premium-experience .gt5-app[data-screen] .gt5-card{background:#090a0c;border-color:var(--gt5-line);border-radius:18px}
 .gt-premium-experience .gt5-app[data-screen] .gt5-card-copy{background:transparent}
 .gt-premium-experience .gt5-app[data-screen] .gt5-card-copy>small{color:#f8d46a;font-size:9px}
-.gt-premium-experience .gt5-app[data-screen] .gt5-card-copy h3{font-size:22px;line-height:1.08}
 .gt-premium-experience .gt5-app[data-screen] .gt5-card-copy p{font:400 12px/1.35 var(--gt5-sans);color:#d5d2cc}
 .gt-premium-experience .gt5-app[data-screen] .gt5-card-copy>em{font-size:11px;color:#b7b4ae}
 .gt-premium-experience .gt5-app[data-screen] .gt5-card .gt5-save{width:44px;height:44px;min-height:44px;left:auto;right:7px;top:7px;color:#f7f2e9;background:rgba(5,6,7,.88)}
 .gt-premium-experience .gt5-app[data-screen] .gt5-card .gt5-save.active{color:#050607;background:#f8d46a}
+.gt-premium-experience .gt5-app[data-screen] .gt5-no-media .gt5-media-fallback{background:linear-gradient(145deg,#211d13,#090a0c)}
 .gt-premium-experience .gt5-app[data-screen] :is(.gt5-highlight-grid,.gt5-trending-grid) .gt5-card{height:176px;min-height:176px;background:#090a0c}
 .gt-premium-experience .gt5-app[data-screen] :is(.gt5-highlight-grid,.gt5-trending-grid) .gt5-card-copy{height:80px;padding:8px 9px}
-.gt-premium-experience .gt5-app[data-screen] :is(.gt5-highlight-grid,.gt5-trending-grid) .gt5-card-copy h3{font:500 16px/1.06 var(--gt5-serif);margin:2px 0 4px;-webkit-line-clamp:2}
+/* Small data-dense teaser cards retain the tested sans UI role; major titles and lanes are editorial serif. */
+.gt-premium-experience .gt5-app[data-screen] :is(.gt5-highlight-grid,.gt5-trending-grid) .gt5-card-copy h3{font:600 13px/1.12 var(--gt5-sans);margin:2px 0 4px;-webkit-line-clamp:2}
 .gt-premium-experience .gt5-app[data-screen] :is(.gt5-highlight-grid,.gt5-trending-grid) .gt5-card-copy>small{font-size:7px}
 .gt-premium-experience .gt5-app[data-screen] :is(.gt5-highlight-grid,.gt5-trending-grid) .gt5-card-copy p{font-size:10px;line-height:1.2}
-/* Restore the five editorial discovery lanes. */
 .gt-premium-experience .gt5-app[data-screen] .gt5-discover-search{background:#090a0c;border-color:var(--gt5-line)}
 .gt-premium-experience .gt5-app[data-screen] :is(.gt5-intents,.gt5-secondary-intents) button{min-height:44px;background:#090a0c;color:#f5f2ea;border-color:var(--gt5-line)}
 .gt-premium-experience .gt5-app[data-screen] :is(.gt5-intents,.gt5-secondary-intents) button.active{background:#f8d46a;color:#050607}
-.gt-premium-experience .gt5-app[data-screen] .gt5-lanes{gap:8px;padding-top:4px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-lanes{gap:8px;padding-top:4px;grid-template-columns:1fr}
 .gt-premium-experience .gt5-app[data-screen] .gt5-lanes button{min-height:104px;padding:12px 52px 12px 14px;border:1px solid rgba(248,212,106,.65);border-radius:18px;background-color:#090a0c}
-.gt-premium-experience .gt5-app[data-screen] .gt5-lanes strong{font:500 29px/1 var(--gt5-serif)}
+.gt-premium-experience .gt5-app[data-screen] .gt5-lanes strong{font-size:29px;line-height:1;margin-top:6px}
 .gt-premium-experience .gt5-app[data-screen] .gt5-lanes span{display:block;color:#f8d46a;font:600 8px/1.25 var(--gt5-sans);letter-spacing:.12em}
 .gt-premium-experience .gt5-app[data-screen] .gt5-lanes small{font:400 12px/1.3 var(--gt5-sans);color:#e4e1dc}
-/* Planning, saved, membership and details share one warm-black system. */
 .gt-premium-experience .gt5-app[data-screen] :is(.gt5-plan-builder,.gt5-plan-mode,.gt5-guided,.gt2-builder,.gt5-member,.gt5-profile-city,.gt5-profile-menu,.gt5-support,.gt5-watch,.gt5-alert-list,.gt5-empty,.gt5-itinerary-summary,.gt5-fact-row p,.gt5-upcoming-row,.gt5-newsletter){background:#090a0c;border-color:var(--gt5-line)}
 .gt-premium-experience .gt5-app[data-screen] .gt5-plan-mode button{min-height:64px;color:#f5f2ea;font-family:var(--gt5-sans)}
 .gt-premium-experience .gt5-app[data-screen] .gt5-plan-mode button.active{color:#050607;background:linear-gradient(120deg,#fff0b3,#e9b83f)}
@@ -101,24 +88,24 @@
 .gt-premium-experience .gt5-app[data-screen] .gt5-nav button small{font:500 10px/1.1 var(--gt5-sans)}
 .gt-premium-experience .gt5-app[data-screen] .gt5-nav button.plan span{width:52px;height:52px;margin-top:-24px;background:linear-gradient(120deg,#fff0b3,#e9b83f);color:#050607}
 @media(max-width:359px){
- .gt-premium-experience .gt5-app[data-screen] .gt5-topbar{padding:6px 8px;gap:5px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-brand{gap:5px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-brand .gt5-mark{width:28px;height:28px;min-width:28px;font-size:9px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-brand strong{font-size:12px;letter-spacing:.05em}
- .gt-premium-experience .gt5-app[data-screen] .gt5-brand small{font-size:4px;letter-spacing:.02em}
- .gt-premium-experience .gt5-app[data-screen] .gt5-city{font-size:10px;max-width:88px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-home-hero .gt5-hero-copy{padding:20px 12px 14px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-home-hero h1{font-size:40px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-home-quick{grid-template-columns:repeat(3,minmax(0,1fr))}
- .gt-premium-experience .gt5-app[data-screen] .gt5-home-quick button{min-height:48px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-plan-intents{grid-template-columns:repeat(2,minmax(0,1fr))}
+.gt-premium-experience .gt5-app[data-screen] .gt5-topbar{padding:6px 8px;gap:5px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-brand{gap:5px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-brand .gt5-mark{width:28px;height:28px;min-width:28px;font-size:9px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-brand strong{font-size:12px;letter-spacing:.05em}
+.gt-premium-experience .gt5-app[data-screen] .gt5-brand small{font-size:4px;letter-spacing:.02em}
+.gt-premium-experience .gt5-app[data-screen] .gt5-city{font-size:10px;max-width:88px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-home-hero .gt5-hero-copy{padding:20px 12px 14px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-home-hero h1{font-size:40px;max-width:65%}
+.gt-premium-experience .gt5-app[data-screen] .gt5-home-quick{grid-template-columns:repeat(3,minmax(0,1fr))}
+.gt-premium-experience .gt5-app[data-screen] .gt5-home-quick button{min-height:48px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-plan-intents{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(min-width:600px){
- .gt-premium-experience .gt5-app[data-screen] .gt5-home-hero,.gt-premium-experience .gt5-app[data-screen] .gt5-home-hero .gt5-hero-copy{min-height:390px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-home-hero h1{font-size:64px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-compact-hero h1{font-size:58px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-brand strong{font-size:20px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-brand small{font-size:6px}
- .gt-premium-experience .gt5-app[data-screen] .gt5-home-quick small{font-size:11px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-home-hero,.gt-premium-experience .gt5-app[data-screen] .gt5-home-hero .gt5-hero-copy{min-height:390px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-home-hero h1{font-size:64px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-compact-hero h1{font-size:58px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-brand strong{font-size:20px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-brand small{font-size:6px}
+.gt-premium-experience .gt5-app[data-screen] .gt5-home-quick small{font-size:11px}
 }
 @media(prefers-reduced-motion:reduce){.gt-premium-experience .gt5-app[data-screen] *{animation:none!important;scroll-behavior:auto!important}}
