@@ -477,3 +477,24 @@ html body.gt-app-mode #root .gt-premium-experience>.gt5-app{
   .gt2-event-card,.gt2-venue-card{transition:none!important}
 }
 
+
+/* Compact-phone QA guard: keep the restored V4 look while preserving founder-approved first-view density. */
+@media(max-width:399px){
+  .gt5-home-hero{min-height:348px!important}
+  .gt5-home-hero .gt5-hero-copy{min-height:348px!important;padding:38px 16px 14px!important}
+  .gt5-home-hero h1{font-size:clamp(38px,10.7vw,48px)!important;max-width:70%!important;margin-top:6px!important}
+  .gt5-home-hero .gt5-hero-copy>p{font-size:10.5px!important;max-width:72%!important}
+  .gt5-home-quick{gap:5px!important;margin-top:10px!important}
+  .gt5-home-quick button{min-height:54px!important;padding:6px 2px!important}
+  .gt5-home-modes{margin:8px 14px 4px!important;padding:5px!important}
+  .gt5-section{padding:18px 14px!important}
+  .gt5-section>header{margin-bottom:10px!important}
+}
+@media(max-width:359px){
+  .gt5-home-hero{min-height:340px!important}
+  .gt5-home-hero .gt5-hero-copy{min-height:340px!important;padding-left:11px!important;padding-right:11px!important}
+  .gt5-home-hero h1{font-size:35px!important}
+  .gt5-home-quick{grid-template-columns:repeat(3,1fr)!important}
+  .gt5-home-quick button{min-height:50px!important}
+  .gt5-home-modes{margin-left:10px!important;margin-right:10px!important}
+}
