@@ -214,7 +214,7 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
   const returnTab=useRef('home')
 
   useEffect(()=>{document.body.classList.add('gt-app-mode','gt5-mode');return()=>{document.body.classList.remove('gt-app-mode','gt5-mode')}},[])
-  const refresh=useCallback(async nextCity=>{setLoading(true);try{const[e,v,t]=await Promise.all([loadCanonicalEvents(nextCity,{limit:500}).catch(()=>[]),loadCanonicalVenues(nextCity,{limit:500}).catch(()=>[]),loadExploreTaxonomy().catch(()=>[])]);const hardened=hardenDisplayInventory(e||[],withReviewedVenueMedia(v||[]));setEvents(hardened.events);setVenues(hardened.venues);setTaxonomy(t||[])}finally{setLoading(false)}},[])
+  const refresh=useCallback(async nextCity=>{setLoading(true);const taxonomyPromise=loadExploreTaxonomy().catch(()=>[]);try{const[e,v]=await Promise.all([loadCanonicalEvents(nextCity,{limit:80}).catch(()=>[]),loadCanonicalVenues(nextCity,{limit:120}).catch(()=>[])]);const hardened=hardenDisplayInventory(e||[],withReviewedVenueMedia(v||[]));setEvents(hardened.events);setVenues(hardened.venues)}finally{setLoading(false)}void taxonomyPromise.then(t=>setTaxonomy(t||[]))},[])
   const refreshAccount=useCallback(async p=>{if(!p?.id)return;const[s,i,r,learned]=await Promise.all([loadSavedItems(p.id,session).catch(()=>[]),loadItineraries(session).catch(()=>[]),loadRadarState(session).catch(()=>({follows:[],preferences:DEFAULT_ALERT_PREFS,alerts:[]})),loadUserIntelligenceProfile(session).catch(()=>null)]);setSaved(s||[]);setPlans(i||[]);setFollows(r.follows||[]);setAlertPrefs({...DEFAULT_ALERT_PREFS,...(r.preferences||{})});setAlerts(r.alerts||[]);setIntelligence(learned||null)},[session])
   useEffect(()=>{let live=true;(async()=>{const p=await loadGoodTimesProfile(session).catch(()=>null);if(!live)return;setProfile(p);const c='atlanta';setCity(c);await Promise.all([refresh(c),refreshAccount(p)]);if(session?.user?.id&&(p?.last_city!=='atlanta'||p?.home_city!=='atlanta'))void updatePreferences(session.user.id,{last_city:'atlanta',home_city:'atlanta'},session.access_token).catch(()=>false)})();return()=>{live=false}},[refresh,refreshAccount,session])
   useEffect(()=>{if(!toast)return;const timer=setTimeout(()=>setToast(''),2400);return()=>clearTimeout(timer)},[toast])
@@ -279,7 +279,7 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
 
   const hydrating=loading&&!events.length&&!venues.length
   return <div className="gt5-app" data-screen={tab}>
-    {hydrating&&<div className="gt5-hydrating" role="status" aria-live="polite"><AppMark/><span>{`Reading ${cityLabel(city)} intelligence…`}</span></div>}
+    {hydrating&&<span className="gt5-sr-status" role="status" aria-live="polite">{`Loading ${cityLabel(city)} recommendations…`}</span>}
     <header className="gt5-topbar"><button className="gt5-brand" onClick={()=>goTab('home')}><AppMark/><span><strong>GOOD TIMES</strong><small>WORLDWIDE EXPERIENCE CONCIERGE</small></span></button><div className="gt5-top-actions"><button className="gt5-city" onClick={()=>goTab('profile')}><GoodTimesIcon name="pin" size={16}/> {cityLabel(city)}⌄</button><button className="gt5-bell" aria-label="Open GOOD TIMES Radar" onClick={()=>goTab('radar')}><GoodTimesIcon name="bell"/>{alerts.length>0&&<i/>}</button></div></header>
     {tab!=='radar'&&<button className="gt5-radar-strip" onClick={()=>goTab('radar')}><span><i/> CITY RADAR</span><strong>{radar[0]?`${radar[0].label}: ${radar[0].item.title}`:`Watching ${follows.length} things that matter`}</strong><em>›</em></button>}
 
