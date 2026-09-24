@@ -71,7 +71,11 @@ async function probeAtlantaInventory(fetchImpl, now = new Date()) {
 const SNAPSHOT_MAX_AGE_MS = 36 * 60 * 60 * 1000
 
 function parseSnapshotTimestamp(value) {
-  const normalized = String(value || '').trim().replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')
+  const normalized=String(value||'')
+    .trim()
+    .replace(' ','T')
+    .replace(/([+-]\\d{2})$/,'$1:00')
+    .replace(/\\.(\\d{3})\\d+(?=([+-]\\d{2}:\\d{2}|Z)$)/,'.$1')
   return Date.parse(normalized)
 }
 
