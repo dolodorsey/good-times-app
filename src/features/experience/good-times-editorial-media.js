@@ -1,16 +1,15 @@
 /** GOOD TIMES editorial art is not venue photography. Never select by list position. */
 const MEDIA_ROOT = 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public'
 const BRAND_FRAME = `${MEDIA_ROOT}/brand-graphics/motion/goodtimes.jpg`
+// Owner-supplied reference crop: decorative context only, never venue or account imagery.
 const ATLANTA_SCREENS = Object.freeze({
-  home: '/city-atlanta-nightlife.png',
-  discover: '/city-atlanta.png',
+  home: '/reference-base/atlanta-rooftop.webp',
+  discover: '/reference-base/atlanta-rooftop.webp',
   plan: '/city-atlanta-night.png',
-  saved: '/city-atlanta.png',
-  profile: '/city-atlanta-night.png',
-  radar: '/city-atlanta-nightlife.png',
+  saved: '/reference-base/atlanta-rooftop.webp',
+  profile: '/reference-base/atlanta-rooftop.webp',
+  radar: '/reference-base/atlanta-rooftop.webp',
 })
-// Existing approved category art from gt_asset_manifest. These are category covers,
-// never substituted into event or named-venue cards.
 const CATEGORIES = Object.freeze({
   dining: { match: /^(restaurant|food|food_and_dining|dining_culinary|coffee|bakery|cafe)$/, cover: 'gt-cat-dining.webp' },
   nightlife: { match: /^(nightlife|nightclub|bar|wine_bar|rooftop|lounge)$/, cover: 'gt-cat-nightlife.webp' },

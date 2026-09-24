@@ -1,8 +1,7 @@
 name: UI regression
 
-# Render the production build in Chromium at every required viewport.
-# Green static CI is not UI acceptance; screenshots are retained for review.
-
+# Geometry success requires actual reference-style and interaction checks.
+# Fixture screenshots prove layout only, never production authentication.
 on:
   pull_request:
   push:
@@ -19,23 +18,18 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-
       - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-
       - name: Install locked dependencies
         run: npm ci --include=dev
-
       - name: Build production bundle
         run: npm run build
-
       - uses: browser-actions/setup-chrome@v2.2.0
         id: chrome
         with:
           chrome-version: stable
-
       - name: Serve the build
         run: |
           GT_UI_HEALTH_FIXTURE=healthy node scripts/serve-dist.mjs &
@@ -48,7 +42,6 @@ jobs:
           done
           echo "server failed to start"
           exit 1
-
       - name: Prepare optional QA session
         env:
           GT_UI_QA_SESSION: ${{ secrets.GT_UI_QA_SESSION }}
@@ -60,42 +53,42 @@ jobs:
             rm -f /tmp/gt-qa-session.json
             echo "signed-in QA secret not configured; deterministic signed-in fixtures will still run"
           fi
-
       - name: Prove App Review iPad layouts
         env:
           GT_UI_BASE: http://localhost:4180
           GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           GT_UI_ARTIFACTS: ui-artifacts
         run: timeout 120s node --test --test-concurrency=1 scripts/app-review-ipad-rendered.test.mjs
-
       - name: Prove selected-city Tonight and weekend results
         env:
           GT_UI_BASE: http://localhost:4180
           GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           GT_UI_ARTIFACTS: ui-artifacts
         run: timeout 120s node --test --test-concurrency=1 scripts/event-clock-rendered.test.mjs
-
+      - name: Prove nine reference screens and actual computed styles
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: timeout 360s node --test --test-concurrency=1 scripts/reference-base-rendered.test.mjs
       - name: Prove Home and Discover composition and touch targets
         env:
           GT_UI_BASE: http://localhost:4180
           GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           GT_UI_ARTIFACTS: ui-artifacts
         run: timeout 180s node --test --test-concurrency=1 scripts/home-discover-reference-rendered.test.mjs
-
       - name: Verify customer page enhancements and Shake
         env:
           GT_UI_BASE: http://localhost:4180
           GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           GT_UI_ARTIFACTS: ui-artifacts
         run: timeout 240s node --test --test-concurrency=1 scripts/customer-enhancements-rendered.test.mjs
-
-      - name: Capture App Store-ready screenshots
+      - name: Capture App Store-sized layout screenshots
         env:
           GT_UI_BASE: http://localhost:4180
           GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           GT_UI_ARTIFACTS: ui-artifacts
         run: timeout 180s node scripts/app-store-screenshot-capture.mjs
-
       - name: Rendered geometry gate
         env:
           GT_UI_BASE: http://localhost:4180
@@ -103,7 +96,6 @@ jobs:
           GT_UI_SESSION: /tmp/gt-qa-session.json
           GT_UI_ARTIFACTS: ui-artifacts
         run: timeout 600s node --test --test-concurrency=1 scripts/ui-geometry.test.mjs
-
       - name: Creative, font and mobile utility gates
         env:
           GT_UI_BASE: http://localhost:4180
@@ -111,7 +103,6 @@ jobs:
           GT_UI_SESSION: /tmp/gt-qa-session.json
           GT_UI_ARTIFACTS: ui-artifacts
         run: timeout 480s node --test --test-concurrency=1 scripts/ui-creative-assets.test.mjs scripts/ui-mobile-utilities.test.mjs scripts/ui-font-resilience.test.mjs
-
       - name: Interaction torture gate
         env:
           GT_UI_BASE: http://localhost:4180
@@ -119,12 +110,11 @@ jobs:
           GT_UI_SESSION: /tmp/gt-qa-session.json
           GT_UI_ARTIFACTS: ui-artifacts
         run: timeout 480s node --test --test-concurrency=1 scripts/ui-interaction.test.mjs
-
       - name: Upload rendered screenshots
         if: always()
         uses: actions/upload-artifact@v7
         with:
           name: ui-screenshots-${{ github.sha }}
           path: ui-artifacts
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 14
