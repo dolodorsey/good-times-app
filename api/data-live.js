@@ -14,6 +14,8 @@ const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 const EVENT_FRESHNESS_MAX_HOURS=72
 const EMBEDDED_SNAPSHOT_MAX_AGE_MS=36*60*60*1000
+const INVENTORY_RPC_TIMEOUT_MS=2600
+const INVENTORY_RPC_ATTEMPTS=1
 const CACHE=globalThis.__GT_DATA_LIVE_CACHE_V8__||(globalThis.__GT_DATA_LIVE_CACHE_V8__=new Map())
 const CITY_TIMEZONES=Object.freeze({
   atlanta:'America/New_York',
@@ -64,9 +66,9 @@ async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLim
   let lastError=null
   let currentEventLimit=eventFetchLimit
   let currentVenueLimit=venueFetchLimit
-  for(let attempt=0;attempt<3;attempt+=1){
+  for(let attempt=0;attempt<INVENTORY_RPC_ATTEMPTS;attempt+=1){
     const controller=new AbortController()
-    const timer=setTimeout(()=>controller.abort(),7000)
+    const timer=setTimeout(()=>controller.abort(),INVENTORY_RPC_TIMEOUT_MS)
     try{
       const response=await fetch(`${CONTENT_URL}/rest/v1/rpc/gt_public_live_inventory_cached`,{
         method:'POST',headers:headers(),cache:'no-store',signal:controller.signal,
@@ -79,7 +81,7 @@ async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLim
       return payload
     }catch(error){
       lastError=error?.name==='AbortError'?new Error('inventory RPC timed out'):error
-      if(attempt<2){
+      if(attempt<INVENTORY_RPC_ATTEMPTS-1){
         const message=lastError?.message||''
         const timeoutLike=/57014|statement timeout|timed out/i.test(message)
         const schemaCacheLike=/PGRST002|schema cache/i.test(message)
@@ -193,8 +195,8 @@ export default async function handler(request,response){
   const eventLimit=clampLimit(url.searchParams.get('event_limit'),120,180)
   const venueLimit=clampLimit(url.searchParams.get('venue_limit'),120,180)
   const clock=cityClock(city)
-  const eventFetchLimit=Math.min(Math.max(eventLimit*4,360),720)
-  const venueFetchLimit=Math.min(Math.max(venueLimit*3,240),540)
+  const eventFetchLimit=Math.min(Math.max(eventLimit*2,120),240)
+  const venueFetchLimit=Math.min(Math.max(venueLimit*2,120),240)
   const cacheKey=inventoryCacheKey(city,clock.serviceDate,eventLimit,venueLimit)
   let inventory
   let embeddedFallbackUsed=false
