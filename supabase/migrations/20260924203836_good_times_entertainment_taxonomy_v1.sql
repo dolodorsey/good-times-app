@@ -28,7 +28,8 @@ insert into public.gt_taxonomy_subcategories(
 ('ent_comedy_clubs','entertainment','Comedy Clubs','Verified comedy clubs and improv venues. Individual shows remain dated event records.',9,2,true,now(),now()),
 ('ent_theme_parks','entertainment','Theme Parks & Attractions','Verified theme parks and large entertainment attractions.',10,1,true,now(),now()),
 ('ent_mini_golf','entertainment','Mini Golf','Verified mini-golf and tech-enabled putting venues.',11,1,true,now(),now()),
-('ent_social_darts','entertainment','Darts & Social Sports','Verified darts and social-sport venues.',12,1,true,now(),now())
+('ent_social_darts','entertainment','Darts & Social Sports','Verified darts and social-sport venues.',12,1,true,now(),now()),
+('ent_sim_racing','entertainment','Racing & Simulators','Verified social simulator and racing entertainment venues. Real races and watch parties remain separate event records.',13,1,true,now(),now())
 on conflict(subcategory_key) do update set
   category_key=excluded.category_key,subcategory_name=excluded.subcategory_name,description=excluded.description,
   sort_order=excluded.sort_order,minimum_upcoming_inventory=excluded.minimum_upcoming_inventory,
@@ -67,7 +68,10 @@ values
 ('virtual reality','entertainment','ent_vr','title_keyword',100,true,now()),
 ('immersive','entertainment','ent_immersive','title_keyword',100,true,now()),
 ('museums','entertainment','ent_museums','title_keyword',95,true,now()),
-('movies','entertainment','ent_movies','title_keyword',95,true,now())
+('movies','entertainment','ent_movies','title_keyword',95,true,now()),
+('sim racing','entertainment','ent_sim_racing','title_keyword',100,true,now()),
+('racing simulators','entertainment','ent_sim_racing','title_keyword',100,true,now()),
+('f1 arcade','entertainment','ent_sim_racing','title_keyword',100,true,now())
 on conflict(alias_key) do update set
   category_key=excluded.category_key,subcategory_key=excluded.subcategory_key,
   alias_type=excluded.alias_type,priority=excluded.priority,is_active=true;
