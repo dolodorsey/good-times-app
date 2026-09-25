@@ -1,0 +1,86 @@
+name: GOOD TIMES Screenshot Corrections
+on:
+  push:
+    branches: [upgrade/home-discovery-planner-20260925]
+    paths: [.github/workflows/good-times-ux-review-polish.yml]
+permissions:
+  contents: write
+jobs:
+  polish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply exact reviewed delta; refuse changed source
+        env:
+          GT_BRANCH: ${{ github.ref_name }}
+        run: |
+          test "$GT_BRANCH" = 'upgrade/home-discovery-planner-20260925'
+          python - <<'PY'
+          from pathlib import Path
+          import json, hashlib
+          source=Path('.changes/ux-review-polish.json')
+          bundle=json.loads(source.read_text())
+          if bundle['base_sha']!='e0de7055bdbfc1d13ad1ff62d09835c58942781e':raise RuntimeError('Unexpected baseline')
+          allowed={'api/discovery-search.js','src/features/experience/GoodTimesUXScreens.jsx','src/features/experience/good-times-ux-model.js','src/features/experience/GoodTimesPlannerStudio.jsx','src/features/experience/good-times-ux.css','scripts/ux-component-review.mjs','scripts/good-times-ux-polish.test.mjs'}
+          digest=lambda text:hashlib.sha256(text.encode()).hexdigest()
+          pending=[]
+          for change in bundle['files']:
+              name=change['path']
+              if name not in allowed:raise RuntimeError('Unapproved or duplicate file')
+              allowed.remove(name)
+              if 'expected_sha256' in change:
+                  text=Path(name).read_text()
+                  if digest(text)!=change['expected_sha256']:raise RuntimeError('Concurrent source change: '+name)
+                  for before,after in change['replacements']:
+                      if text.count(before)!=1:raise RuntimeError('Ambiguous source anchor: '+name)
+                      text=text.replace(before,after)
+                  text+=change.get('append','')
+              else:
+                  if Path(name).exists():raise RuntimeError('New file already exists')
+                  text=change['content']
+              if digest(text)!=change['sha256']:raise RuntimeError('Output mismatch: '+name)
+              pending.append((name,text))
+          if allowed:raise RuntimeError('Missing files')
+          for name,text in pending:
+              Path(name).write_text(text)
+              print('APPLIED',name,digest(text))
+          source.unlink()
+          Path('.github/workflows/good-times-ux-review-polish.yml').unlink()
+          PY
+      - name: Validate before committing
+        run: |
+          npm ci
+          mkdir -p .ux-review
+          set -o pipefail
+          npm run build 2>&1 | tee .ux-review/build-and-tests.log
+      - name: Commit corrections only on the isolated upgrade branch
+        run: |
+          git config user.name 'GOOD TIMES UX Build'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add api/discovery-search.js src/features/experience/GoodTimesUXScreens.jsx src/features/experience/good-times-ux-model.js src/features/experience/GoodTimesPlannerStudio.jsx src/features/experience/good-times-ux.css scripts/ux-component-review.mjs scripts/good-times-ux-polish.test.mjs .changes/ux-review-polish.json .github/workflows/good-times-ux-review-polish.yml
+          git commit -m 'GOOD TIMES: correct card density, planner hierarchy, and place filters after screenshot review'
+          git push origin HEAD:upgrade/home-discovery-planner-20260925
+          git rev-parse HEAD > .ux-review/source-sha.txt
+          echo "GT_UX_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Install screenshot browser
+        run: npx playwright-core install --with-deps chromium
+      - name: Recapture actual screens and enforce touch/image geometry checks
+        run: |
+          set -o pipefail
+          node scripts/ux-component-review.mjs 2>&1 | tee .ux-review/browser-review.log
+      - name: Preserve review evidence even if a check fails
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: good-times-ux-proof-pass2
+          path: .ux-review/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
