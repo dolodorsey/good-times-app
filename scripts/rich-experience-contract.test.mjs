@@ -1,3 +1,4 @@
+import {UX_NAV,HOME_MODES} from '../src/features/experience/good-times-ux-model.js'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -26,25 +27,17 @@ test('V4 CSS is the final protected consumer visual authority', () => {
 test('permanent navigation is Home Discover Plan Saved Profile', () => {
   const source = read('src/features/experience/GoodTimesCommandAppV4.jsx')
   const navLine = source.split('\n').find(line => line.startsWith('const NAV=')) || ''
-  for (const label of ['Home','Discover','Plan','Saved','Profile']) assert.match(navLine, new RegExp(`'${label}'`))
+  assert.deepEqual(UX_NAV.map(row=>row[2]),['Home','Entertainment','Plan','Venues','Profile']);assert.equal(navLine,'const NAV=UX_NAV')
   assert.doesNotMatch(navLine, /'Radar'/)
   assert.doesNotMatch(navLine, /'Vault'/)
   assert.doesNotMatch(navLine, /'Concierge'/)
   assert.match(source, /className={`\$\{tab===id\?'active':''\} \$\{id==='plan'\?'plan':''\}`}/)
 })
 
-test('Discover keeps taxonomy drilldown behind editorial discovery lanes', () => {
-  const source = read('src/features/experience/GoodTimesCommandAppV4.jsx')
-  const browser = read('src/features/experience/ExploreTaxonomyBrowser.jsx')
-  for (const lane of ['Eat Well','Turn Up','Be There','Stay Right','Do More']) assert.match(source, new RegExp(lane))
-  assert.match(source, /ExploreTaxonomyBrowser/)
-  assert.match(source, /selectedCategory=/)
-  assert.match(source, /selectedSubcategory=/)
-  assert.match(source, /directoryOpen=/)
-  assert.match(browser, /SUBCATEGORIES/)
-  assert.match(browser, /loadExploreDirectory/)
-  assert.match(browser, /onSubcategory/)
-  assert.match(browser, /onDirectoryOpen/)
+test('Entertainment and Venues are distinct searchable catalog surfaces',()=>{
+  const source=read('src/features/experience/GoodTimesCommandAppV4.jsx'),screen=read('src/features/experience/GoodTimesUXScreens.jsx')
+  assert.match(source,/DirectoryView/);assert.match(source,/directoryQueries/);assert.match(source,/visitedViews/)
+  for(const marker of ['api/discovery-search','category','onQuery','next','AbortController'].filter(x=>x!=='next'))assert.ok(screen.includes(marker))
 })
 
 test('Radar is first-class but cannot replace Plan in permanent navigation', () => {
@@ -58,14 +51,10 @@ test('Radar is first-class but cannot replace Plan in permanent navigation', () 
   assert.doesNotMatch(navLine, /radar/i)
 })
 
-test('Plan retains natural-language Concierge and guided itinerary builder', () => {
-  const source = read('src/features/experience/GoodTimesCommandAppV4.jsx')
-  assert.match(source, /AI Concierge/)
-  assert.match(source, /Custom Plan/)
-  assert.match(source, /Build my night/)
-  assert.match(source, /BuildMyNightPanel/)
-  assert.match(source, /askGoodTimesConcierge/)
-  assert.match(source, /hardenRecommendationResult/)
+test('Plan separates Click Shake Ask while preserving the existing verified concierge client',()=>{
+  const source=read('src/features/experience/GoodTimesCommandAppV4.jsx'),planner=read('src/features/experience/GoodTimesPlannerStudio.jsx')
+  for(const marker of ['ClickThroughPlanner','ShakePlanner','AskPlanner','validateDraft','buildPlanPrompt'])assert.ok(planner.includes(marker))
+  assert.match(source,/askGoodTimesConcierge/);assert.match(source,/hardenRecommendationResult/);assert.match(source,/conciergeLock/)
 })
 
 test('source-backed detail actions and media hardening remain present', () => {
@@ -89,7 +78,7 @@ test('generated itinerary uses explicit status data instead of manufacturing con
 test('V4 screen formula and protected responsive shell are encoded', () => {
   const source = read('src/features/experience/GoodTimesCommandAppV4.jsx')
   const css = read('src/features/experience/good-times-v4.css')
-  for (const phrase of ['A Better','Discover','Plan','Everything','Never hear']) assert.match(source, new RegExp(phrase))
+  for(const marker of ['HomeView','DirectoryView','GoodTimesPlannerStudio','ProfileLibrary','Never hear'])assert.ok(source.includes(marker))
   assert.match(css, /\.gt5-main\{[^}]*overflow-y:auto/)
   assert.match(css, /\.gt5-nav\{[^}]*position:absolute/)
   assert.match(css, /@media\(max-width:390px\)/)

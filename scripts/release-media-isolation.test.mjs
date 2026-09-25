@@ -1,3 +1,4 @@
+import {UX_NAV,HOME_MODES} from '../src/features/experience/good-times-ux-model.js'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
@@ -20,5 +21,5 @@ test('no accurate dining photo retains approved dining category cover',()=>asser
 test('category covers do not alter original venue records',()=>{const row={...zoo};categoryEditorialMedia('dining',[row],'atlanta');assert.deepEqual(row,zoo)})
 test('invalid image protocol is rejected',()=>assert.ok(!categoryEditorialMedia('dining',[{...dinner,hero_image:'javascript:alert(1)'}],'atlanta').includes('javascript')))
 test('unknown category uses only brand frame',()=>assert.ok(categoryEditorialMedia('invalid',[zoo],'atlanta').endsWith('/motion/goodtimes.jpg')))
-test('primary navigation retains all five labels and uses SVG icons',()=>{const src=readFileSync(new URL('../src/features/experience/GoodTimesCommandAppV4.jsx',import.meta.url),'utf8');for(const name of ['Home','Discover','Plan','Saved','Profile'])assert.ok(src.includes(`'${name}'`));assert.ok(src.includes('<GoodTimesIcon glyph={icon}/>'));assert.ok(!src.includes('homeVenues[i]?.hero_image'))})
+test('primary navigation retains all five labels and uses SVG icons',()=>{const src=readFileSync(new URL('../src/features/experience/GoodTimesCommandAppV4.jsx',import.meta.url),'utf8');assert.deepEqual(UX_NAV.map(row=>row[2]),['Home','Entertainment','Plan','Venues','Profile']);assert.match(src,/const NAV=UX_NAV/);assert.ok(src.includes('<GoodTimesIcon glyph={icon}/>'));assert.ok(!src.includes('homeVenues[i]?.hero_image'))})
 test('iOS keeps reviewed export answer for future builds',()=>{const src=readFileSync(new URL('../ios/App/App/Info.plist',import.meta.url),'utf8');assert.match(src,/<key>ITSAppUsesNonExemptEncryption<\/key>\s*<false\/>/);assert.ok(src.includes('NSLocationWhenInUseUsageDescription'));assert.ok(src.includes('NSUserNotificationUsageDescription'))})

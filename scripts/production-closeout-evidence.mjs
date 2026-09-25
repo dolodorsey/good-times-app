@@ -53,25 +53,43 @@ async function observeAuthorizedSession(){
       page.on('pageerror',()=>errors.push('uncaught_page_error'))
       await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
       await page.locator('.gt5-app').waitFor({state:'visible',timeout:30000})
-      for(const name of ['Home','Discover','Plan','Saved','Profile']){
-        await page.locator('.gt5-nav').getByRole('button',{name,exact:true}).click()
+      const capture=async(name,selector)=>{
+        await page.locator(selector).waitFor({state:'visible',timeout:15000})
         await page.waitForTimeout(1200)
-        const visible=await page.locator('.gt5-main').isVisible()
-        const hasContent=await page.locator('.gt5-main').evaluate(el=>Boolean(el.textContent.trim()))
+        const visible=await page.locator(selector).isVisible()
+        const hasContent=await page.locator(selector).evaluate(el=>Boolean(el.textContent.trim()))
         const overflow=await page.evaluate(()=>Math.max(0,document.documentElement.scrollWidth-innerWidth))
-        report.signed_in.screens.push({device:viewport.name,tab:name,visible,has_content:hasContent,horizontal_overflow:overflow,page_errors:errors.length})
-        // Profile/saved/planned content may be private. Record only status, not text or screenshots.
-        if(name==='Discover'){
-          const entertainment=page.getByRole('button',{name:'Entertainment',exact:true}).first()
-          const available=await entertainment.isVisible().catch(()=>false)
-          report.signed_in.screens.push({device:viewport.name,tab:'Entertainment',visible:available})
-          if(available){await entertainment.click();await page.waitForTimeout(1000)}
+        const labels=await page.locator('.gt5-nav button small').allTextContents()
+        const expected=['Home','Entertainment','Plan','Venues','Profile']
+        const navigationMatches=JSON.stringify(labels)===JSON.stringify(expected)
+        report.signed_in.screens.push({device:viewport.name,tab:name,visible,has_content:hasContent,horizontal_overflow:overflow,page_errors:errors.length,navigation_matches:navigationMatches})
+        // Keep private profile, saved items, personal plans, and draft conversation contents out of artifacts.
+        if(name!=='Profile'&&!name.startsWith('Plan')){
+          const mask=page.locator('.gt-ux-resume,.gt5-radar-strip')
+          await page.screenshot({path:`${OUT}/${viewport.name}-${name.toLowerCase()}.png`,fullPage:false,mask:[mask]})
+        }
+      }
+      for(const [name,selector] of [['Home','.gt-ux-home'],['Entertainment','.gt-ux-directory:visible'],['Venues','.gt-ux-directory:visible'],['Plan','.gt-ux-planner:visible'],['Profile','.gt5-profile']]){
+        await page.locator('.gt5-nav').getByRole('button',{name,exact:true}).click()
+        if(name==='Entertainment'||name==='Venues')await page.locator('.gt-ux-directory[aria-busy="false"]:visible').waitFor({timeout:20000})
+        await capture(name,selector)
+        if(name==='Home'){
+          for(const mode of ['Upcoming','Tonight','Sports']){
+            await page.locator('.gt-ux-home-modes').getByRole('button',{name:mode,exact:true}).click()
+            await capture(mode,'.gt-ux-home')
+          }
+        }
+        if(name==='Plan'){
+          for(const mode of ['Build It','Shake It','Ask GOOD TIMES']){
+            await page.getByRole('tab',{name:new RegExp(mode)}).click()
+            await capture(`Plan ${mode}`,'.gt-ux-planner:visible')
+          }
         }
       }
     }catch{report.signed_in.state='failed';report.signed_in.reason='real_signed_in_navigation_failed'}
     finally{await context.close()}
   }
-  report.signed_in.navigation_verified=report.signed_in.state!=='failed'&&report.signed_in.screens.length===12&&report.signed_in.screens.every(s=>s.visible&&s.has_content!==false&&(s.page_errors||0)===0&&(s.horizontal_overflow||0)<=1)
+  report.signed_in.navigation_verified=report.signed_in.state!=='failed'&&report.signed_in.screens.length===22&&report.signed_in.screens.every(s=>s.visible&&s.navigation_matches===true&&s.has_content!==false&&(s.page_errors||0)===0&&(s.horizontal_overflow||0)<=1)
   report.signed_in.state=report.signed_in.navigation_verified?'navigation_verified':'failed'
 }
 try{
@@ -101,6 +119,13 @@ try{
       report.public_screens.push({device:viewport.name,member_gate_visible:true,horizontal_overflow:overflow,page_errors:errors})
     }finally{await context.close()}
   }
+  for(const scope of ['entertainment','venues']){
+    const response=await read(`/api/discovery-search?scope=${scope}`)
+    const payload=response.body||{}
+    report[`catalog_${scope}`]={status:response.status,ok:payload.ok===true,city:payload.city,count:Array.isArray(payload.items)?payload.items.length:0,scope:payload.scope}
+  }
+  const sports=await read('/api/home-sports')
+  report.sports={status:sports.status,ok:sports.body?.ok===true,game_count:Array.isArray(sports.body?.games)?sports.body.games.length:0,team_count:Array.isArray(sports.body?.teams)?sports.body.teams.length:0,live_scores_verified:false}
   await observeAuthorizedSession()
 }catch(error){report.execution_error=String(error.message).replace(/eyJ[A-Za-z0-9_.-]+/g,'[redacted]').slice(0,150);process.exitCode=1}
 finally{

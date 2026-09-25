@@ -1,3 +1,4 @@
+import {UX_NAV,HOME_MODES} from '../src/features/experience/good-times-ux-model.js'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -18,11 +19,9 @@ test('This Week is a live editorial quick view, not a hard-coded flyer',()=>{
   assert.doesNotMatch(app,/SEP 18|SEP 24|2024/)
 })
 
-test('Home exposes This Week without removing the six-action compact layout',()=>{
-  assert.match(app,/\['▤','This Week','this-week'\]/)
-  const quick=app.match(/\[\['🍴','Restaurants','dining'\][\s\S]*?\]\]\.map\(\(\[icon,label,value\]\)/)
-  assert.ok(quick,'six compact home actions should remain data-driven')
-  assert.match(app,/setWeeklyOpen\(true\)/)
+test('Home promotes Upcoming and restores Sports without changing the five-tab navigation',()=>{
+  assert.deepEqual(HOME_MODES.map(x=>x[1]),['For You','Upcoming','Tonight','Sports'])
+  assert.equal(UX_NAV.length,5);assert.match(app,/upcoming=\{upcomingEvents\}/);assert.match(app,/<HomeView/)
 })
 
 test('This Week is a focused modal surface with mobile and desktop contracts',()=>{

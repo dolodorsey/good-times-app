@@ -1,3 +1,4 @@
+import {UX_NAV,HOME_MODES} from '../src/features/experience/good-times-ux-model.js'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -24,18 +25,17 @@ test('authenticated bootstrap routes members into the integrated GOOD TIMES V4 a
   assert.doesNotMatch(main,/LazyAccountCenter/)
 })
 
-test('signed-in navigation uses five protected customer jobs', () => {
-  mustContain(app, ["['home','⌂','Home']","['discover','⌕','Discover']","['plan','＋','Plan']","['saved','▣','Saved']","['profile','◎','Profile']"])
-  const navLine=app.split('\n').find(line=>line.startsWith('const NAV='))||''
-  assert.doesNotMatch(navLine,/radar/i)
-  assert.doesNotMatch(navLine,/vault/i)
-  assert.doesNotMatch(navLine,/concierge/i)
-  mustContain(app,["savedView==='plans'","savedView==='saved'"])
+test('founder Sept 25 navigation preserves five jobs and moves My Plans into Profile',()=>{
+  assert.deepEqual(UX_NAV.map(x=>x[2]),['Home','Entertainment','Plan','Venues','Profile'])
+  mustContain(app,['const NAV=UX_NAV','<ProfileLibrary','plans={plans}','saved={saved}'])
+  assert.ok(!UX_NAV.some(row=>['radar','vault','saved'].includes(row[0])))
 })
 
-test('Discover preserves real category and subcategory traversal behind editorial lanes', () => {
-  mustContain(app,['Eat Well','Turn Up','Be There','Stay Right','Do More','ExploreTaxonomyBrowser','selectedCategory','selectedSubcategory','onCategory={setSelectedCategory}','onSubcategory={setSelectedSubcategory}'])
-  mustContain(taxonomyBrowser,['SUBCATEGORIES','loadExploreDirectory','onSubcategory?.(subcategory.subcategory_key)','All categories'])
+test('separate discovery screens search the catalog with canonical taxonomy filters',()=>{
+  const screen=read('src/features/experience/GoodTimesUXScreens.jsx'),search=read('api/discovery-search.js')
+  mustContain(app,["['entertainment','venues'].map",'<DirectoryView'])
+  mustContain(screen,['api/discovery-search','category','AbortController','has_more'])
+  mustContain(search,['category_key_v2','subcategory','city_key','eq.atlanta','verification_status'])
 })
 
 test('launch scope pins saved profiles and customer inventory to Atlanta', () => {

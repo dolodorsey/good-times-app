@@ -262,3 +262,7 @@ export default async function handler(request,response){
   if(request.method==='HEAD'){response.statusCode=200;response.setHeader('X-Good-Times-Events',String(events.length));response.setHeader('X-Good-Times-Venues',String(venues.length));response.setHeader('X-Good-Times-Degraded',String(degraded));response.setHeader('X-Good-Times-Service-Date',clock.serviceDate);response.setHeader('X-Good-Times-Live-Gateway','v9');response.setHeader('X-Good-Times-Launch-Scope','atlanta-only');return response.end()}
   return send(response,200,payload,embeddedFallbackUsed?'EMBEDDED':'MISS')
 }
+
+// Shared public read configuration; reuses the existing anonymous publisher contract.
+// Never substitute a service-role credential in public catalog or sports readers.
+export { CONTENT_URL as PUBLIC_CONTENT_URL, headers as publicContentReadHeaders }
