@@ -229,3 +229,13 @@
 .gt-ux-shell .gt-ux-suggestions{margin:16px 0 0}
 .gt-ux-shell .gt-ux-directory>.gt-ux-search-help{font-size:12px;margin-top:8px;margin-bottom:10px}
 @media(max-width:359px){.gt-ux-shell .gt-ux-plan-tabs strong{font-size:13px}.gt-ux-shell .gt-ux-plan-tabs small{display:none}.gt-ux-shell .gt-ux-plan-tabs button{min-height:58px}.gt-ux-shell .gt-ux-ask{padding:14px 12px}.gt-ux-shell .gt-ux-composer textarea{min-height:90px}.gt-ux-shell .gt-ux-ask h2{font-size:23px}}
+
+/* Final review: retain a 44px interactive control while drawing a compact checkbox. */
+.gt-ux-shell .gt-ux-toggle{min-height:48px;cursor:pointer}
+.gt-ux-shell .gt-ux-toggle input{position:relative;appearance:none;-webkit-appearance:none;display:block;flex:0 0 44px;height:44px;min-height:44px;width:44px;padding:0;border:0;border-radius:8px;background:transparent;cursor:pointer}
+.gt-ux-shell .gt-ux-toggle input:before{content:'';position:absolute;inset:11px;border:1px solid #a99154;border-radius:5px;background:#0c1011}
+.gt-ux-shell .gt-ux-toggle input:checked:before{background:#f8d46a;border-color:#f8d46a}
+.gt-ux-shell .gt-ux-toggle input:checked:after{content:'✓';position:absolute;inset:8px;display:grid;place-items:center;color:#10100b;font-size:20px;font-weight:700}
+.gt-ux-shell .gt-ux-directory-grid .gt-ux-card-image img{position:absolute;inset:0}
+.gt-ux-shell .gt-ux-directory-grid .gt-ux-card-info{min-height:128px}
+@media(max-width:359px){.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt-ux-homehead{min-height:128px;padding:15px 16px}.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt-ux-homehead h1{font-size:28px}.gt-ux-shell .gt-ux-homehead>p{font-size:13px;max-width:100%}}

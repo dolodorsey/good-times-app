@@ -1,11 +1,12 @@
 import React,{useEffect,useMemo,useRef,useState} from 'react'
-import { HOME_MODES,cityDate,diversePicks,isExplicitlyFamily,planBucket,safePublicUrl,sportPresentation } from './good-times-ux-model.js'
+import { HOME_MODES,cityDate,diversePicks,isLeisureEvent,isExplicitlyFamily,planBucket,safePublicUrl,sportPresentation } from './good-times-ux-model.js'
 import { hardenDisplayInventory } from './good-times-media-uniqueness.js'
 import { withReviewedVenueMedia } from './good-times-reviewed-media.js'
 const titleOf=x=>x.title||x.name||'GOOD TIMES'
 const dateLabel=value=>value?new Date(`${value}T12:00:00`).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}):'Date to confirm'
 function timeLabel(value){if(!value)return 'Time to confirm';const match=String(value).match(/^(\d{1,2}):(\d{2})/);if(!match)return value;const hour=Number(match[1]);return `${hour%12||12}:${match[2]} ${hour>=12?'PM':'AM'}`}
-const typeLabel=value=>String(value||'Experience').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase())
+const CATEGORY_LABELS={concerts_live_music:'Live music',attractions_experiences:'Experiences',festivals_major_activations:'Festivals',comedy_performing_arts:'Comedy & shows',arts_museums_culture:'Arts & culture',dining_culinary:'Food & drink',family_kids:'Family',sports_watch:'Sports',day_parties_brunch:'Brunch & day parties'}
+const typeLabel=value=>CATEGORY_LABELS[value]||String(value||'Experience').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase())
 function Section({title,kicker,action,children}) { return <section className="gt-ux-section"><header><div>{kicker&&<span>{kicker}</span>}<h2>{title}</h2></div>{action}</header>{children}</section> }
 export function UXCard({item,type='event',saved,onOpen,onSave,compact=false}) {
   const image=safePublicUrl(type==='event'?item.image_url:item.hero_image)
@@ -28,7 +29,7 @@ export function SportsView({compact=false,onExpand,onPlan}) {
 export function HomeView({mode,onMode,events,today,upcoming,venues,savedKeys,onEvent,onVenue,onSave,onExplore,onPlan,heroImage,plans=[],onPlanOpen}) {
   const[search,setSearch]=useState(''),picks=useMemo(()=>diversePicks(events,venues,5),[events,venues]),family=useMemo(()=>[...events.map(item=>({type:'event',item})),...venues.map(item=>({type:'venue',item}))].filter(row=>isExplicitlyFamily(row.item)).slice(0,4),[events,venues])
   const continuing=plans.find(p=>planBucket(p)==='upcoming')||plans.find(p=>planBucket(p)==='drafts')
-  const rows=mode==='tonight'?today:upcoming
+  const leisureUpcoming=upcoming.filter(isLeisureEvent),rows=(mode==='tonight'?today:upcoming).filter(isLeisureEvent)
   return <section className="gt-ux-home"><header className="gt-ux-homehead" style={{'--ux-art':`url("${heroImage||''}")`}}><span>ATLANTA · {dateLabel(cityDate()).toUpperCase()}</span><h1>Your city.<br/><em>More good times.</em></h1><p>Something worth doing. All day. All week.</p></header><SearchBox value={search} onChange={setSearch} onSubmit={()=>onExplore('entertainment',search)} placeholder="Events, food, places, neighborhoods…"/><nav className="gt-ux-home-modes" aria-label="GOOD TIMES Home views">{HOME_MODES.map(([id,label])=><button key={id} aria-pressed={mode===id} onClick={()=>onMode(id)}>{label}</button>)}</nav>
     {mode==='sports'?<SportsView onPlan={onPlan}/>:mode==='upcoming'||mode==='tonight'?<Section kicker={mode==='tonight'?'YOUR EVENING, AT A GLANCE':'THE CITY, IN ORDER'} title={mode==='tonight'?'Tonight in Atlanta':'Coming up in Atlanta'}><div className="gt-ux-rows">{rows.slice(0,30).map(event=><UXCard key={event.event_key} item={event} type="event" compact saved={savedKeys.has(`event:${event.event_key}`)} onOpen={onEvent} onSave={onSave}/>)}</div>{!rows.length&&<p className="gt-ux-note">No verified listings are available in this view right now. Explore the catalog for more options.</p>}</Section>:<>
       {continuing&&<button className="gt-ux-resume" onClick={()=>onPlanOpen(continuing)}><span>YOUR NEXT GOOD TIME<strong>{continuing.name||'Continue your plan'}</strong></span><b aria-hidden="true">↗</b></button>}
@@ -36,7 +37,7 @@ export function HomeView({mode,onMode,events,today,upcoming,venues,savedKeys,onE
       <SportsView compact onExpand={()=>onMode('sports')}/>
       {family.length>0&&<Section kicker="GOOD TIMES FOR EVERYONE" title="Bring the family" action={<button onClick={()=>onExplore('entertainment','family')}>Explore →</button>}><div className="gt-ux-card-grid">{family.map(({item,type})=><UXCard key={`${type}:${item.event_key||item.id}`} item={item} type={type} saved={savedKeys.has(`${type}:${item.event_key||item.id}`)} onOpen={type==='event'?onEvent:onVenue} onSave={onSave}/>)}</div></Section>}
       <button className="gt-ux-plan-callout" onClick={()=>onPlan('')}><span><small>THE BEST PART IS GOING.</small><strong>Leave the planning to us.</strong><em>Click. Shake. Ask.</em></span><b aria-hidden="true">↗</b></button>
-      <Section kicker="DATES WORTH KEEPING" title="Next up" action={<button onClick={()=>onMode('upcoming')}>The week →</button>}><div className="gt-ux-rows">{upcoming.slice(0,4).map(event=><UXCard key={event.event_key} item={event} type="event" compact saved={savedKeys.has(`event:${event.event_key}`)} onOpen={onEvent} onSave={onSave}/>)}</div></Section>
+      <Section kicker="DATES WORTH KEEPING" title="Next up" action={<button onClick={()=>onMode('upcoming')}>The week →</button>}><div className="gt-ux-rows">{leisureUpcoming.slice(0,4).map(event=><UXCard key={event.event_key} item={event} type="event" compact saved={savedKeys.has(`event:${event.event_key}`)} onOpen={onEvent} onSave={onSave}/>)}</div></Section>
     </>}
   </section>
 }

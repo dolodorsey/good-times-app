@@ -1,8 +1,7 @@
 /** GOOD TIMES public catalog search. Read-only, allowlisted fields, bounded pages. */
 import { inferCustomerTaxonomy } from './data.js'
 import { cityClock } from './data-live.js'
-const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
-const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
+import { PUBLIC_CONTENT_URL as CONTENT_URL, publicContentReadHeaders } from './data-live.js'
 const ALLOWED_CATEGORIES=new Set(['concerts_live_music','nightlife','comedy_performing_arts','festivals_major_activations','dining_culinary','sports_watch','day_parties_brunch','arts_museums_culture','family_kids','wellness_fitness','attractions_experiences','entertainment'])
 const VENUE_CATEGORY_KEYS=Object.freeze({
   dining_culinary:['dining_culinary','restaurant','food','food_and_dining','coffee'],
@@ -51,7 +50,7 @@ export default async function handler(req,res) {
   const options=parseSearch(req.url),key=JSON.stringify(options),cache=CACHE.get(key)
   if(cache&&Date.now()-cache.time<30000)return send(res,200,cache.value)
   const fetchCatalog=async()=>{
-    const upstream=await fetch(`${CONTENT_URL}/rest/v1/${searchPath(options)}`,{headers:{apikey:CONTENT_KEY,Authorization:`Bearer ${CONTENT_KEY}`},signal:AbortSignal.timeout(6500)})
+    const upstream=await fetch(`${CONTENT_URL}/rest/v1/${searchPath(options)}`,{headers:publicContentReadHeaders(),signal:AbortSignal.timeout(6500)})
     if(!upstream.ok){let code='unknown';try{code=(await upstream.json()).code||'unknown'}catch{}throw new Error(`catalog_upstream_${upstream.status}_${code}`)}
     const rows=await upstream.json();if(!Array.isArray(rows))throw new Error('invalid_catalog_response')
     const value={ok:true,city:'atlanta',scope:options.scope,query:options.q,page:options.page,items:mapSearchRows(rows.slice(0,options.limit),options.scope),has_more:rows.length>options.limit,next_page:rows.length>options.limit?options.page+1:null,generated_at:new Date().toISOString(),search_mode:'catalog-keyword',coverage:'Eligible published records; not limited to Home inventory'}

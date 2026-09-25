@@ -12,6 +12,7 @@ function useDraft(session, mode) {
   useEffect(()=>{try{sessionStorage.setItem(key,JSON.stringify(draft))}catch{}},[key,draft])
   return [draft,patch=>setDraft(current=>({...current,...patch}))]
 }
+function moodArtwork(label,art){return label==='Family day'?'/city-atlanta.png':categoryEditorialMedia(art,[],'atlanta')}
 function Field({label,error,children}) { return <label className="gt-ux-field"><span>{label}</span>{children}{error&&<small className="gt-ux-error">{error}</small>}</label> }
 function Basics({draft,patch,errors={},compact=false}) {
   return <div className={`gt-ux-fields ${compact?'gt-ux-fields-compact':''}`}>
@@ -43,7 +44,7 @@ function ClickThroughPlanner({session,onBuild,busy}) {
     <div className="gt-ux-stephead"><span>BUILD IT</span><strong>{step+1} / 3</strong></div>
     <div className="gt-ux-progress" aria-label={`Step ${step+1} of 3`}>{['The occasion','The details','Your plan'].map((label,index)=><span className={index<=step?'active':''} key={label}>{label}</span>)}</div>
     <h2>{['What kind of good time?','Make it work for your people.','Your brief. Your good time.'][step]}</h2>
-    {step===0&&<div className="gt-ux-moods">{MOODS.map(([label,art])=><button key={label} aria-pressed={draft.occasion===label} className={draft.occasion===label?'active':''} style={{backgroundImage:`linear-gradient(0deg,rgba(0,0,0,.82),rgba(0,0,0,.12)),url("${categoryEditorialMedia(art,[],'atlanta')}")`}} onClick={()=>patch({occasion:label,...(label==='Family day'&&Number(draft.children)===0?{children:'1'}:{})})}><span>{label}</span>{draft.occasion===label&&<b aria-hidden="true">✓</b>}</button>)}</div>}
+    {step===0&&<div className="gt-ux-moods">{MOODS.map(([label,art])=><button key={label} aria-pressed={draft.occasion===label} className={draft.occasion===label?'active':''} style={{backgroundImage:`linear-gradient(0deg,rgba(0,0,0,.82),rgba(0,0,0,.12)),url("${moodArtwork(label,art)}")`}} onClick={()=>patch({occasion:label,...(label==='Family day'&&Number(draft.children)===0?{children:'1'}:{})})}><span>{label}</span>{draft.occasion===label&&<b aria-hidden="true">✓</b>}</button>)}</div>}
     {step===1&&<><Basics draft={draft} patch={patch} errors={errors}/><Field label="Anything else we should know?"><textarea rows={3} value={draft.notes} maxLength={1000} placeholder="Accessibility, dietary needs, indoor activities, music…" onChange={e=>patch({notes:e.target.value})}/></Field></>}
     {step===2&&<><DraftSummary draft={draft}/>{draft.notes&&<p className="gt-ux-note">{draft.notes}</p>}<p className="gt-ux-note">GOOD TIMES checks your request against current listings. Unknown prices or availability remain unconfirmed.</p></>}
     {message&&<p className="gt-ux-status" role="status">{message}</p>}

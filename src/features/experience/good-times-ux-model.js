@@ -24,10 +24,15 @@ export function isExplicitlyFamily(item) {
   const keys = [item?.category_key,item?.subcategory_key,...(Array.isArray(item?.best_for)?item.best_for:[]),...(Array.isArray(item?.search_tags)?item.search_tags:[])].map(cleanText);
   return keys.some(value => /^(family kids|family friendly|families|family|kids|children|all ages)$/.test(value));
 }
+export function isLeisureEvent(item) {
+  // Administrative/professional inventory is retained in the source catalog, not promoted as a leisure pick.
+  const category=cleanText(item?.category_key||item?.category_key_v2||'');
+  return !/^(business professional|business networking|professional networking|business|career jobs|healthcare|medical)$/.test(category);
+}
 export function diversePicks(events = [], venues = [], limit = 5) {
   if(limit<=0)return [];
   const hasImage=item=>{const image=item.image_url||item.hero_image;return !!safePublicUrl(image)&&!/(?:city-atlanta\.png|good-times-backgrounds|gt-fallback)/i.test(image)};
-  const sortedEvents=[...events].sort((a,b)=>Number(hasImage(b))-Number(hasImage(a))||String(a.event_date||'9999').localeCompare(String(b.event_date||'9999'))||String(a.event_time||'23:59').localeCompare(String(b.event_time||'23:59')));
+  const sortedEvents=events.filter(isLeisureEvent).sort((a,b)=>Number(hasImage(b))-Number(hasImage(a))||String(a.event_date||'9999').localeCompare(String(b.event_date||'9999'))||String(a.event_time||'23:59').localeCompare(String(b.event_time||'23:59')));
   const sortedVenues=[...venues].sort((a,b)=>Number(hasImage(b))-Number(hasImage(a)));
   const pool = [...sortedEvents.slice(0,2).map(item=>({type:'event',item})),...sortedVenues.slice(0,1).map(item=>({type:'venue',item})),...sortedEvents.slice(2).map(item=>({type:'event',item})),...sortedVenues.slice(1).map(item=>({type:'venue',item}))];
   const counts = new Map(), seen = new Set(), result = [];

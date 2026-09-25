@@ -1,6 +1,5 @@
 /** GOOD TIMES sports reader. Does not fabricate a live feed from stale rows. */
-const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
-const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
+import { PUBLIC_CONTENT_URL as CONTENT_URL, publicContentReadHeaders } from './data-live.js'
 const cache={value:null,at:0,pending:null}
 const KNOWN_TEAMS=[['Atlanta Falcons','NFL'],['Atlanta Braves','MLB'],['Atlanta Hawks','NBA'],['Atlanta Dream','WNBA'],['Atlanta United','MLS']]
 function send(res,status,payload){res.statusCode=status;res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control',status===200?'public, s-maxage=30, stale-while-revalidate=30':'no-store');res.end(JSON.stringify(payload))}
@@ -9,7 +8,7 @@ async function read(){
   const names=KNOWN_TEAMS.map(([name])=>name==='Atlanta United'?'Atlanta United*':name)
   const local=names.flatMap(name=>[`home_team.ilike.${name}`,`away_team.ilike.${name}`]).join(',')
   const params=new URLSearchParams({select:'id,league,home_team,away_team,game_date,game_time,venue,city_key,status,home_score,away_score,home_logo,away_logo,is_home_game,updated_at',and:`(game_date.gte.${from},game_date.lte.${to})`,or:`(${local})`,order:'game_date.asc,game_time.asc',limit:'180'})
-  const response=await fetch(`${CONTENT_URL}/rest/v1/gt_sports_games?${params}`,{headers:{apikey:CONTENT_KEY,Authorization:`Bearer ${CONTENT_KEY}`},signal:AbortSignal.timeout(6500)})
+  const response=await fetch(`${CONTENT_URL}/rest/v1/gt_sports_games?${params}`,{headers:publicContentReadHeaders(),signal:AbortSignal.timeout(6500)})
   if(!response.ok)throw new Error(`sports_upstream_${response.status}`)
   const games=await response.json();if(!Array.isArray(games))throw new Error('invalid_sports_payload')
   return {ok:true,city:'atlanta',games,teams:KNOWN_TEAMS.map(([name,league])=>({id:name.toLowerCase().replaceAll(' ','-'),name,league})),generated_at:now.toISOString(),coverage:'Core Atlanta professional teams currently mapped. Additional local teams and source freshness require verification.',source:'gt_sports_games'}
