@@ -32,7 +32,7 @@ const server=await createServer({root,server:{host:'127.0.0.1',port:4187,strictP
   if(url.pathname.startsWith('/api/data'))return json(res,200,snapshot)
   return json(res,200,{ok:true,items:[]})
  }
- if(newHandlers[url.pathname])return newHandlers[url.pathname](req,res)
+ if(newHandlers[url.pathname]){res.once('finish',()=>evidence.network.push({path:req.url,status:res.statusCode}));return newHandlers[url.pathname](req,res)}
  try{const response=await fetch(`https://thegoodtimesworldwide.com${req.url}`,{signal:AbortSignal.timeout(12000)});res.statusCode=response.status;res.setHeader('Content-Type',response.headers.get('content-type')||'application/json');res.end(await response.text());evidence.network.push({path:req.url,status:response.status})}catch(error){json(res,503,{ok:false,error:error.message})}
  })}}]})
 await server.listen()
@@ -58,15 +58,15 @@ try{
     const failures=[],small=[];for(const el of document.querySelectorAll('.gt-ux-shell button,.gt-ux-shell input,.gt-ux-shell textarea')){const b=el.getBoundingClientRect(),cs=getComputedStyle(el);if(b.width<2||b.height<2||b.bottom<=0||b.top>=innerHeight||cs.visibility==='hidden'||el.closest('[hidden]'))continue;if(b.width<43||b.height<43)small.push({label:(el.getAttribute('aria-label')||el.textContent||'').slice(0,60),width:b.width,height:b.height})}
     if(document.documentElement.scrollWidth>innerWidth+1)failures.push('document horizontal overflow');if(!n||n.bottom>innerHeight+2||n.top<0)failures.push('navigation outside viewport');if(!r||r.width<200||r.height<300)failures.push('app frame collapsed');
     const broken=[...document.querySelectorAll('.gt-ux-shell img')].filter(img=>img.complete&&!img.naturalWidth&&!img.closest('[hidden]')).map(img=>img.getAttribute('src'))
-    return{failures,small,broken,nav:{x:n?.x,y:n?.y,width:n?.width,height:n?.height},main:{scrollHeight:main?.scrollHeight,clientHeight:main?.clientHeight},account_session_present:!!localStorage.getItem('gt_session')}
+    if(small.length)failures.push('undersized touch control');if(broken.length)failures.push('broken image');return{failures,small,broken,nav:{x:n?.x,y:n?.y,width:n?.width,height:n?.height},main:{scrollHeight:main?.scrollHeight,clientHeight:main?.clientHeight},account_session_present:!!localStorage.getItem('gt_session')}
    })
    const filename=`${viewport.width}-${name}.png`;await page.screenshot({path:path.join(out,filename),timeout:20000});evidence.screens.push({name,viewport,file:filename,...metrics,uncaught_errors:[...pageErrors]});for(const failure of [...metrics.failures,...pageErrors])evidence.failures.push(`${viewport.width}/${name}: ${failure}`)
   }
   await capture('home')
   await page.locator('.gt-ux-home-modes').getByRole('button',{name:'Upcoming',exact:true}).click();await capture('upcoming')
   await page.locator('.gt-ux-home-modes').getByRole('button',{name:'Sports',exact:true}).click();await page.waitForTimeout(1500);await capture('sports')
-  await nav('Entertainment');await page.waitForTimeout(2000);await capture('entertainment')
-  await nav('Venues');await page.waitForTimeout(2000);await capture('venues')
+  await nav('Entertainment');await page.locator('.gt-ux-directory[aria-busy=false]:visible').waitFor({timeout:12000});await capture('entertainment')
+  await nav('Venues');await page.locator('.gt-ux-directory[aria-busy=false]:visible').waitFor({timeout:12000});await capture('venues')
   await nav('Plan');await capture('plan-click')
   await page.getByRole('button',{name:'Continue',exact:false}).click();await capture('plan-details')
   await page.getByRole('tab',{name:/Shake It/}).click();await capture('plan-shake')

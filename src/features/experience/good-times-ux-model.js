@@ -25,7 +25,11 @@ export function isExplicitlyFamily(item) {
   return keys.some(value => /^(family kids|family friendly|families|family|kids|children|all ages)$/.test(value));
 }
 export function diversePicks(events = [], venues = [], limit = 5) {
-  const pool = [...events.map(item=>({type:'event',item})),...venues.map(item=>({type:'venue',item}))];
+  if(limit<=0)return [];
+  const hasImage=item=>{const image=item.image_url||item.hero_image;return !!safePublicUrl(image)&&!/(?:city-atlanta\.png|good-times-backgrounds|gt-fallback)/i.test(image)};
+  const sortedEvents=[...events].sort((a,b)=>Number(hasImage(b))-Number(hasImage(a))||String(a.event_date||'9999').localeCompare(String(b.event_date||'9999'))||String(a.event_time||'23:59').localeCompare(String(b.event_time||'23:59')));
+  const sortedVenues=[...venues].sort((a,b)=>Number(hasImage(b))-Number(hasImage(a)));
+  const pool = [...sortedEvents.slice(0,2).map(item=>({type:'event',item})),...sortedVenues.slice(0,1).map(item=>({type:'venue',item})),...sortedEvents.slice(2).map(item=>({type:'event',item})),...sortedVenues.slice(1).map(item=>({type:'venue',item}))];
   const counts = new Map(), seen = new Set(), result = [];
   for (const row of pool) {
     const key = itemKey(row.item,row.type), category = row.item.category_key || row.type;

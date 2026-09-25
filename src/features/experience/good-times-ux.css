@@ -68,7 +68,7 @@
 .gt-ux-shell .gt-ux-score>small{color:#a9aaa4;font-size:11px;display:block}
 .gt-ux-shell .gt-ux-score>button{margin-top:12px;width:100%;color:#f7d67d}
 .gt-ux-shell .gt-ux-toggle{display:flex;align-items:center;gap:8px;font-size:14px}
-.gt-ux-shell .gt-ux-toggle input{accent-color:#f8d46a;min-width:24px;width:24px;min-height:44px}
+.gt-ux-shell .gt-ux-toggle input{accent-color:#f8d46a;min-width:44px;width:44px;min-height:44px}
 .gt-ux-shell .gt-ux-chips{display:flex;gap:7px;overflow-x:auto;align-items:center;scrollbar-width:thin;padding:7px 0}
 .gt-ux-shell .gt-ux-chips button{white-space:nowrap;flex-shrink:0;border-radius:22px;font-size:13px}
 .gt-ux-shell .gt-ux-chips small{font-size:10px}
@@ -76,8 +76,8 @@
 .gt-ux-shell .gt-ux-search-help{color:#aeb0ad;font:400 12px/1.5 var(--ux-sans);margin:0 18px 6px}
 .gt-ux-shell .gt-ux-directory-grid{display:grid;grid-template-columns:1fr;gap:14px}
 .gt-ux-shell .gt-ux-directory-grid .gt-ux-card-open{display:grid;grid-template-columns:35% minmax(0,1fr)}
-.gt-ux-shell .gt-ux-directory-grid .gt-ux-card-image{min-height:180px;height:100%}
-.gt-ux-shell .gt-ux-directory-grid .gt-ux-card-info{padding-right:36px;min-height:180px}
+.gt-ux-shell .gt-ux-directory-grid .gt-ux-card-image{min-height:128px;height:100%}
+.gt-ux-shell .gt-ux-directory-grid .gt-ux-card-info{padding:12px 40px 12px 12px;min-height:128px}
 .gt-ux-shell .gt-ux-directory-grid .gt-ux-bookmark{background:transparent;right:0;top:0;border:0}
 .gt-ux-shell .gt-ux-date-filter{display:flex;align-items:center;gap:10px;margin:8px 16px;color:#cfc8ba;font-size:13px}
 .gt-ux-shell .gt-ux-date-filter input{background:#101214;border:1px solid var(--ux-line);border-radius:9px;padding:9px;width:160px;font-size:14px;color-scheme:dark}
@@ -201,7 +201,7 @@
  .gt-ux-shell .gt-ux-plan-tabs strong{font-size:12px}
  .gt-ux-shell .gt-ux-plan-tabs small{font-size:10px}
  .gt-ux-shell .gt-ux-fields{grid-template-columns:1fr}
- .gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-nav button small{font-size:9px}
+ .gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-nav button small{font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){.gt-ux-shell *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
@@ -211,3 +211,21 @@
 .gt-ux-shell .gt-ux-card-grid .gt-ux-card-info p{font-size:13px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .gt-ux-shell .gt-ux-card-grid .gt-ux-card-info>small{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(min-width:700px){.gt-ux-shell .gt-ux-homehead{min-height:195px;padding:26px 30px}.gt-ux-shell .gt-ux-homehead h1{font-size:40px}.gt-ux-shell .gt-ux-card-grid{grid-auto-columns:215px}.gt-ux-shell .gt-ux-card-grid .gt-ux-card-image{height:135px}}
+
+/* Corrections from the first actual 55-screen review. */
+.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt-ux-directory>.gt-ux-pagehead{min-height:116px;padding:16px 20px}
+.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt-ux-directory>.gt-ux-pagehead h1{font-size:29px;margin:6px 0}
+.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt-ux-planner>.gt-ux-pagehead{min-height:120px;padding:14px 20px}
+.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt-ux-planner>.gt-ux-pagehead h1{font-size:29px;line-height:1.05;margin:5px 0}
+.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt-ux-planner>.gt-ux-pagehead h1 br{display:none}
+.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt-ux-planner>.gt-ux-pagehead h1 em::before{content:' '}
+.gt-ux-shell .gt-ux-plan-tabs{margin-top:12px;margin-bottom:12px}
+.gt-ux-shell .gt-ux-plan-tabs button{min-height:82px}
+.gt-ux-shell .gt-ux-plan-tabs button>span{display:none}
+.gt-ux-shell .gt-ux-plan-tabs small{font-size:11px}
+.gt-ux-shell .gt-ux-ask h2{font-size:25px;margin:8px 0}
+.gt-ux-shell .gt-ux-ask>p{margin:8px 0 14px}
+.gt-ux-shell .gt-ux-ask .gt-ux-conversation:empty{display:none}
+.gt-ux-shell .gt-ux-suggestions{margin:16px 0 0}
+.gt-ux-shell .gt-ux-directory>.gt-ux-search-help{font-size:12px;margin-top:8px;margin-bottom:10px}
+@media(max-width:359px){.gt-ux-shell .gt-ux-plan-tabs strong{font-size:13px}.gt-ux-shell .gt-ux-plan-tabs small{display:none}.gt-ux-shell .gt-ux-plan-tabs button{min-height:58px}.gt-ux-shell .gt-ux-ask{padding:14px 12px}.gt-ux-shell .gt-ux-composer textarea{min-height:90px}.gt-ux-shell .gt-ux-ask h2{font-size:23px}}
