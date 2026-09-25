@@ -22,6 +22,11 @@ jobs:
       BASE_URL: https://thegoodtimesworldwide.com
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - name: Verify exact release is serving production before customer checks
+        run: node scripts/wait-production-release.mjs
 
       - name: Verify public shell and PWA assets
         shell: bash

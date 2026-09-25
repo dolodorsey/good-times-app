@@ -1,0 +1,44 @@
+name: GOOD TIMES Production Closeout Evidence
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: good-times-production-closeout
+  cancel-in-progress: true
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --include=dev
+      - uses: browser-actions/setup-chrome@v2.2.0
+        id: chrome
+        with:
+          chrome-version: stable
+      - name: Wait for the exact production deployment
+        run: node scripts/wait-production-release.mjs
+      - name: Observe real public requests and validate existing authorized QA session
+        env:
+          GT_UI_QA_SESSION: ${{ secrets.GT_UI_QA_SESSION }}
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+        run: node scripts/production-closeout-evidence.mjs
+      - name: Save sanitized production evidence, never session credentials
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: good-times-closeout-${{ github.sha }}
+          path: closeout-evidence
+          if-no-files-found: error
+          retention-days: 14
