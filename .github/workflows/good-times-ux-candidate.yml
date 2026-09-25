@@ -9,7 +9,7 @@ on:
       - scripts/**
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: good-times-ux-candidate
   cancel-in-progress: false
@@ -20,70 +20,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: npm
-      - name: Apply reviewed source delta on the isolated branch only
-        env:
-          GT_BRANCH: ${{ github.ref_name }}
+      - name: Record exact source identity
         run: |
-          test "$GT_BRANCH" = 'upgrade/home-discovery-planner-20260925'
-          if test ! -f .ux-source-applied.json; then
-            node --input-type=module <<'NODE'
-          import fs from 'node:fs';
-          import path from 'node:path';
-          import crypto from 'node:crypto';
-          import zlib from 'node:zlib';
-          const digest=value=>crypto.createHash('sha256').update(value).digest('hex');
-          const expected='a7bd18f628cbefd8b99b4a73388df4a3619ef5f57c99c1e88cfbc4ae4a71461a';
-          const packed=Buffer.from(Array.from({length:7},(_,i)=>fs.readFileSync(`.changes/good-times-ux/part-${i}.b64`,'utf8').trim()).join(''),'base64');
-          if(digest(packed)!==expected)throw new Error('Source transfer checksum mismatch; no changes applied');
-          const bundle=JSON.parse(zlib.brotliDecompressSync(packed));
-          if(bundle.base_sha!=='0a9b59fd8bb0091c3bff14b05cd2539accf805f7')throw new Error('Wrong source baseline');
-          const allowed=new Set([
-            'src/features/experience/GoodTimesCommandAppV4.jsx','src/main.jsx',
-            'src/features/experience/GoodTimesPlannerStudio.jsx','src/features/experience/GoodTimesUXScreens.jsx',
-            'src/features/experience/good-times-ux-model.js','src/features/experience/good-times-ux.css',
-            'api/discovery-search.js','api/home-sports.js','scripts/ux-component-review.mjs',
-            'scripts/good-times-ux-model.test.mjs','scripts/good-times-ux-catalog.test.mjs',
-            'scripts/approved-app-ui-standard.test.mjs','scripts/authenticated-product-contract.test.mjs',
-            'scripts/entertainment-discovery-contract.test.mjs','scripts/reference-base-guard.test.mjs',
-            'scripts/release-media-isolation.test.mjs','scripts/rich-experience-contract.test.mjs',
-            'scripts/this-week-contract.test.mjs','scripts/top-tier-v5-contract.test.mjs','scripts/ui-contract.test.mjs'
-          ]);
-          if(bundle.files.length!==allowed.size)throw new Error('Unexpected file count');
-          const pending=[];
-          for(const file of bundle.files){
-            if(!allowed.delete(file.path))throw new Error(`Unexpected or duplicate path: ${file.path}`);
-            let text=file.content;
-            if(file.expected_sha256){
-              const old=fs.readFileSync(file.path,'utf8');
-              if(digest(old)!==file.expected_sha256)throw new Error(`Source changed concurrently: ${file.path}`);
-              const lines=old.match(/[^\n]*\n|[^\n]+$/g)||[];
-              for(const edit of [...file.edits].sort((a,b)=>b.start-a.start)){
-                if(!Number.isInteger(edit.start)||edit.start<0||edit.end<edit.start||edit.end>lines.length)throw new Error('Invalid edit range');
-                lines.splice(edit.start,edit.end-edit.start,edit.text);
-              }
-              text=lines.join('');
-            }else if(fs.existsSync(file.path))throw new Error(`New file already exists: ${file.path}`);
-            if(typeof text!=='string'||digest(text)!==file.sha256)throw new Error(`Output checksum mismatch: ${file.path}`);
-            pending.push({path:file.path,text,sha256:file.sha256});
-          }
-          for(const file of pending){fs.mkdirSync(path.dirname(file.path),{recursive:true});fs.writeFileSync(file.path,file.text);console.log('APPLIED',file.path,file.sha256);}
-          fs.writeFileSync('.ux-source-applied.json',JSON.stringify({base_sha:bundle.base_sha,bundle_sha256:expected,applied_at:new Date().toISOString(),files:pending.map(({path,sha256})=>({path,sha256}))},null,2));
-          fs.rmSync('.changes/good-times-ux',{recursive:true});
-          NODE
-            git config user.name 'GOOD TIMES UX Build'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add src/main.jsx src/features/experience/GoodTimesCommandAppV4.jsx src/features/experience/GoodTimesPlannerStudio.jsx src/features/experience/GoodTimesUXScreens.jsx src/features/experience/good-times-ux-model.js src/features/experience/good-times-ux.css api/discovery-search.js api/home-sports.js scripts .ux-source-applied.json .changes/good-times-ux
-            git commit -m 'GOOD TIMES: upgrade Home, split discovery, and separate Click Shake Ask'
-            git push origin HEAD:upgrade/home-discovery-planner-20260925
-          fi
-          echo "GT_UX_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           mkdir -p .ux-review
           git rev-parse HEAD > .ux-review/source-sha.txt
+          echo "GT_UX_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - name: Install locked dependencies
         run: npm ci
       - name: Build and run all source contract tests
@@ -102,5 +49,6 @@ jobs:
         with:
           name: good-times-ux-proof
           path: .ux-review/
+          include-hidden-files: true
           retention-days: 14
           if-no-files-found: error
