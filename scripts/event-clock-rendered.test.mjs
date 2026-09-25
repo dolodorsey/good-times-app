@@ -12,7 +12,7 @@ const rows=[['morning','Morning fixture','2026-09-14','09:00',99],['unknown','Un
 const EVENTS=rows.map(([id,title,date,time,score])=>({event_key:`time-fixture:${id}`,title,event_date:date,event_time:time,city_key:'atlanta',venue_name:'Calendar Test Venue',category_key:'concerts_live_music',image_url:PHOTO,ticket_url:'https://example.invalid/never-send',quality_score:score,is_verified:true}))
 const json=x=>({status:200,contentType:'application/json',body:JSON.stringify(x)})
 for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,height:1194}]){
- test(`${vp.name}: Tonight and This Weekend render the correct fixture set`,{skip,timeout:45000},async()=>{
+ test(`${vp.name}: Tonight and Upcoming render the correct fixture set`,{skip,timeout:45000},async()=>{
   const browser=await chromium.launch({headless:true,executablePath:process.env.GT_UI_CHROME_PATH||undefined,args:['--no-sandbox']})
   const context=await browser.newContext({viewport:{width:vp.width,height:vp.height},timezoneId:'Pacific/Honolulu'})
   const page=await context.newPage(),errors=[],requests=[]
@@ -35,17 +35,20 @@ for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,he
    await page.locator('.gt5-app').waitFor({state:'visible',timeout:15000})
    await page.waitForTimeout(600)
    const nav=page.locator('.gt5-nav button')
-   assert.deepEqual((await nav.allTextContents()).map(s=>s.replace(/^[^A-Za-z]+/,'').trim()),['Home','Discover','Plan','Saved','Profile'])
+   assert.deepEqual((await nav.allTextContents()).map(s=>s.replace(/^[^A-Za-z]+/,'').trim()),['Home','Entertainment','Plan','Venues','Profile'])
    const morning=page.locator('.gt5-event').filter({hasText:'Morning fixture'}).first()
    assert.equal((await morning.locator('.gt5-status').textContent()).trim(),'TODAY')
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-home.png`)})
-   await nav.filter({hasText:'Discover'}).click()
-   await page.locator('.gt5-secondary-intents button').filter({hasText:/^Tonight$/}).click()
-   assert.deepEqual(await page.locator('.gt5-event h3').allTextContents(),['Evening fixture'])
+   const modes=page.locator('.gt-ux-home-modes button')
+   await modes.filter({hasText:/^Tonight$/}).click()
+   assert.deepEqual(await page.locator('.gt-ux-rows .gt-ux-card strong').allTextContents(),['Evening fixture'])
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-tonight.png`)})
-   await page.locator('.gt5-secondary-intents button').filter({hasText:/^This Weekend$/}).click()
-   assert.deepEqual(await page.locator('.gt5-event h3').allTextContents(),['Friday fixture'])
-   await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-weekend.png`)})
+   await modes.filter({hasText:/^Upcoming$/}).click()
+   const upcomingTitles=await page.locator('.gt-ux-rows .gt-ux-card strong').allTextContents()
+   assert.ok(upcomingTitles.includes('Friday fixture'))
+   assert.ok(upcomingTitles.includes('Next Monday fixture'))
+   assert.ok(!upcomingTitles.includes('Morning fixture'))
+   await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-upcoming.png`)})
    assert.deepEqual(errors,[])
   }catch(error){
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-failure.png`)}).catch(()=>{})
