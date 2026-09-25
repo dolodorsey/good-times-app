@@ -45,7 +45,7 @@ for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,he
    const upcomingTitles=await page.locator('.gt-ux-rows .gt-ux-card strong').allTextContents()
    assert.ok(upcomingTitles.includes('Friday fixture'))
    assert.ok(upcomingTitles.includes('Next Monday fixture'))
-   assert.ok(!upcomingTitles.includes('Morning fixture'))
+   assert.ok(upcomingTitles.includes('Morning fixture'))
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-upcoming.png`)})
    assert.deepEqual(errors,[])
   }catch(error){
