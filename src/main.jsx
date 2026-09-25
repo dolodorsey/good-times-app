@@ -28,7 +28,7 @@ import './features/experience/good-times-approved-ui-standard.css'
 import './features/experience/good-times-founder-v4-restore.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { consumeOAuthRedirect, readSession, storeSession } from './features/auth/client.js'
-import { installGrowthTracking, recordGrowthEvent, recordSignupComplete } from './growth.js'
+import { installGrowthTracking, recordGrowthEvent, recordSignupComplete, syncAttributionToAccount } from './growth.js'
 import { installMediaIntegrityGuard } from './media-integrity.js'
 import { isNative } from './native.js'
 import GoodTimesInstallPrompt from './features/experience/GoodTimesInstallPrompt.jsx'
@@ -167,6 +167,7 @@ async function bootstrap(){
     }
   }
   const hasSession=Boolean(readSession())
+  if(hasSession)syncAttributionToAccount(readSession())
   recordGrowthEvent('app_open',{member:hasSession,route:requestType||pathname})
   if(!requestType&&!recoverySession)sessionStorage.setItem('gt_splash_shown','1')
 

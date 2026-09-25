@@ -10,7 +10,7 @@ import {
   updatePreferences,
 } from '../auth/client.js'
 import { AGE_OPTIONS, CITY_OPTIONS, VIBE_OPTIONS } from './options.js'
-import { recordSignupComplete } from '../../growth.js'
+import { recordSignupComplete, syncAttributionToAccount } from '../../growth.js'
 
 const MEDIA_BASE = 'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics'
 const CURRENT_LOGO = `${MEDIA_BASE}/good_times/graphics/GOOD_TIMES_logo.png`
@@ -108,6 +108,7 @@ export default function GoodTimesOnboarding({ onComplete }) {
         return
       }
       storeSession(nextSession)
+      syncAttributionToAccount(nextSession)
       setSession(nextSession)
       setScreen('city')
     } catch (authError) {
