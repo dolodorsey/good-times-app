@@ -1,3 +1,4 @@
+import {UX_NAV,HOME_MODES} from '../src/features/experience/good-times-ux-model.js'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -7,7 +8,7 @@ const css=fs.readFileSync(new URL('../src/features/experience/good-times-approve
 const main=fs.readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8')
 
 test('approved GOOD TIMES UI keeps the protected five-destination app contract',()=>{
-  assert.match(app,/const NAV=\[\['home','⌂','Home'\],\['discover','⌕','Discover'\],\['plan','＋','Plan'\],\['saved','▣','Saved'\],\['profile','◎','Profile'\]\]/)
+  assert.match(app,/const NAV=UX_NAV/);assert.deepEqual(UX_NAV.map(x=>x[2]),['Home','Entertainment','Plan','Venues','Profile'])
   assert.doesNotMatch(app,/\['upcoming'[^\]]*'Upcoming'\].*const NAV/)
   assert.match(app,/openEvent=e=>/)
   assert.match(app,/toggleSave=async\(type,id\)=>/)
@@ -17,12 +18,12 @@ test('approved GOOD TIMES UI keeps the protected five-destination app contract',
 })
 
 test('Upcoming is a secondary in-app newsletter view over existing live inventory',()=>{
-  assert.match(app,/\['for-you','For You'\],\['upcoming','Upcoming'\],\['tonight','Tonight'\]/)
+  assert.deepEqual(HOME_MODES.map(x=>x[1]),['For You','Upcoming','Tonight','Sports'])
   assert.match(app,/const upcomingEvents=useMemo\(\(\)=>activeEvents\.filter/)
   assert.match(app,/function UpcomingNewsletter/)
   assert.match(app,/function UpcomingRow/)
-  assert.match(app,/events=\{upcomingEvents\}/)
-  assert.match(app,/onOpen=\{openEvent\}/)
+  assert.match(app,/upcoming=\{upcomingEvents\}/)
+  assert.match(app,/onEvent=\{openEvent\}/)
   assert.match(app,/onSave=\{toggleSave\}/)
   assert.doesNotMatch(app,/SEP 18|SEP 24|2024|2025/)
 })
