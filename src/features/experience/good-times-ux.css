@@ -156,11 +156,11 @@
 .gt-ux-shell .gt-ux-my-plans p{color:#c8c2b5;font-size:14px}
 .gt-ux-shell .gt-ux-my-plans strong{font-size:14px;color:#f8d46a}
 /* Precise shell adjustments, not another global redesign. */
-.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-topbar{height:64px;min-height:64px;flex-basis:64px;padding:8px 14px}
+.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-topbar{height:58px;min-height:58px;flex-basis:58px;padding:6px 14px}
 .gt-premium-experience .gt5-app.gt-ux-shell[data-screen] :is(.gt5-brand,.gt5-city,.gt5-bell){min-height:44px}
 .gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-bell{min-width:44px;width:44px}
 .gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-brand small{display:none}
-.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-brand strong{font:600 14px/1.2 var(--gt5-sans);letter-spacing:.08em}
+.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-brand strong{font:500 16px/1.2 var(--gt5-serif);font-family:var(--gt5-serif)!important;letter-spacing:.05em}
 .gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-radar-strip{display:none}
 .gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-nav{min-height:78px;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))}
 .gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-nav button{border-radius:13px;padding:4px 0;min-height:60px}
@@ -247,3 +247,6 @@
 .gt-ux-shell .gt-ux-card.compact .gt-ux-card-info>small{margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gt-ux-shell .gt-ux-card.compact .gt-ux-card-info h3{margin:0 0 4px;font-size:16px;line-height:20px}
 .gt-ux-shell .gt-ux-card.compact .gt-ux-card-info p{margin:0;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+@media(max-width:359px){.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-brand strong{font-size:14px}}
+@media(min-width:700px){.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt5-topbar{height:64px;min-height:64px;flex-basis:64px;padding:8px 14px}}
