@@ -1,3 +1,4 @@
+import { installUXCatalogFixtures } from './ux-render-fixtures.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -32,6 +33,7 @@ if(!skip){
   browser=process.env.GT_UI_CHROME_PATH?await chromium.launch({executablePath:process.env.GT_UI_CHROME_PATH,headless:true,args:['--no-sandbox']}):await chromium.launch({channel:process.env.GT_UI_CHANNEL||'chrome',headless:true})
 }
 async function installFixtureRoutes(ctx){
+  await installUXCatalogFixtures(ctx,EVENTS,VENUES)
   await ctx.route('**/api/data**',route=>route.fulfill(json({ok:true,connected:true,degraded:false,city:'atlanta',counts:{events:EVENTS.length,venues:VENUES.length},events:EVENTS,venues:VENUES})))
   await ctx.route('**/rest/v1/gt_taxonomy_categories**',route=>route.fulfill(json(CATEGORIES)))
   await ctx.route('**/rest/v1/gt_taxonomy_subcategories**',route=>route.fulfill(json(SUBCATEGORIES)))
@@ -88,7 +90,7 @@ async function assertShell(page,errors,context){
   assert.deepEqual(g.oversizedOverlays,[],`${context}: full-screen overlay wider/taller than viewport`)
   assert.ok(g.app&&g.topbar&&g.nav&&g.main,`${context}: V4 shell is incomplete`)
   assert.ok(g.appOverflow<=4,`${context}: app shell clips ${g.appOverflow}px instead of delegating scroll to main`)
-  assert.deepEqual(g.labels,['Home','Discover','Plan','Saved','Profile'],`${context}: protected V4 navigation changed`)
+  assert.deepEqual(g.labels,['Home','Entertainment','Plan','Venues','Profile'],`${context}: protected V4 navigation changed`)
   if(g.profile){
     assert.ok(g.profileHorizontallyContained,`${context}: Profile escaped the app scroll canvas`)
     if(g.profile.h>g.main.h+2){assert.ok(g.mainScrollHeight>g.mainClientHeight,`${context}: long Profile is clipped instead of scrollable`);assert.match(g.mainOverflowY||'',/auto|scroll/,`${context}: Profile scroll container is not enabled`)}
@@ -133,10 +135,10 @@ for(const vp of VIEWPORTS){
     try{
       await assertShell(page,errors,`${vp.name} member home`)
       await page.screenshot({path:path.join(OUT,`${vp.name}__signed-in-v4-home.png`),fullPage:false})
-      const destinations=[['Discover','.gt5-discover'],['Plan','.gt5-plan'],['Saved','.gt5-saved'],['Profile','.gt5-profile'],['Home','.gt5-home-hero']]
+      const destinations=[['Entertainment','.gt-ux-directory:visible'],['Plan','.gt-ux-planner:visible'],['Venues','.gt-ux-directory:visible'],['Profile','.gt5-profile'],['Home','.gt-ux-home']]
       for(const[label,selector]of destinations){await page.locator('.gt5-nav button').filter({hasText:label}).click();await page.locator(selector).waitFor({state:'visible',timeout:10000});await assertShell(page,errors,`${vp.name} ${label}`)}
       await openRadar(page);await assertShell(page,errors,`${vp.name} Radar`);await page.locator('.gt5-back').click()
-      const card=page.locator('.gt5-event').first();if(await card.count()){await card.click();await page.locator('.gt5-detail').waitFor({state:'visible',timeout:5000});const detail=await page.locator('.gt5-detail').first().boundingBox();assert.ok(detail&&detail.width<=vp.width+4,`${vp.name}: detail too wide`);await page.locator('.gt5-detail-back').click()}
+      const card=page.locator('.gt-ux-home .gt-ux-card-open').first();if(await card.count()){await card.click();await page.locator('.gt5-detail').waitFor({state:'visible',timeout:5000});const detail=await page.locator('.gt5-detail').first().boundingBox();assert.ok(detail&&detail.width<=vp.width+4,`${vp.name}: detail too wide`);await page.locator('.gt5-detail-back').click()}
       await page.locator('.gt5-nav button').filter({hasText:'Profile'}).click();assert.match(await page.locator('.gt5-profile').innerText(),/GOOD TIMES QA/i)
       await assertShell(page,errors,`${vp.name} final`)
     }finally{await ctx.close()}

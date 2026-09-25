@@ -1,3 +1,4 @@
+import { installUXCatalogFixtures } from './ux-render-fixtures.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -37,20 +38,27 @@ try{
   for(const target of targets){
     const context=await browser.newContext({viewport:{width:target.width,height:target.height},deviceScaleFactor:target.scale})
     await context.addInitScript(session=>{localStorage.setItem('gt_session',JSON.stringify(session));localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['nightlife','grown'],age:'25-34'}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},SESSION)
+    const json=body=>({status:200,contentType:'application/json',body:JSON.stringify(body)})
+    const events=[{event_key:'store-layout-fixture',title:'Your next good time',category_key:'concerts_live_music',city_key:'atlanta',event_date:new Date(Date.now()+86400000).toISOString().slice(0,10),event_time:'20:00',venue_name:'Layout fixture',image_url:'/venues/revel.webp',quality_score:90}]
+    const venues=[{id:'store-place-fixture',name:'Atlanta place preview',city_key:'atlanta',category_key:'restaurant',hero_image:'/reference-base/atlanta-rooftop.webp',quality_score:90}]
+    await context.route('**/api/**',r=>r.fulfill(json(new URL(r.request().url()).pathname==='/api/health'?{ok:true,service:'good-times',customer_ready:true,content_ready:true}:{ok:true,connected:true,city:'atlanta',events,venues})))
+    await context.route('**/rest/v1/**',r=>r.fulfill(json(r.request().url().includes('gt_user_profiles')?[{id:'store-profile',auth_id:SESSION.user.id,full_name:'GOOD TIMES Member',home_city:'atlanta',last_city:'atlanta'}]:[])))
+    await context.route('**/functions/v1/**',r=>r.fulfill(json({ok:true})))
+    await installUXCatalogFixtures(context,events,venues)
     const page=await context.newPage()
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
     await page.waitForSelector('.gt5-app',{state:'visible',timeout:20000})
-    await page.waitForSelector('.gt5-home-hero',{state:'visible',timeout:20000})
+    await page.waitForSelector('.gt-ux-homehead',{state:'visible',timeout:20000})
     await capture(page,target,'01-home')
 
-    await openTab(page,'Discover','.gt5-discover')
-    await capture(page,target,'02-discover')
+    await openTab(page,'Entertainment','.gt-ux-directory:visible')
+    await capture(page,target,'02-entertainment')
 
-    await openTab(page,'Plan','.gt5-plan')
+    await openTab(page,'Plan','.gt-ux-planner:visible')
     await capture(page,target,'03-plan')
 
-    await openTab(page,'Saved','.gt5-saved')
-    await capture(page,target,'04-saved')
+    await openTab(page,'Venues','.gt-ux-directory:visible')
+    await capture(page,target,'04-venues')
 
     await openTab(page,'Profile','.gt5-profile')
     await capture(page,target,'05-profile')
@@ -61,4 +69,4 @@ try{
   await browser.close()
 }
 
-console.log('GOOD TIMES V4 App Store screenshots captured at Apple-accepted pixel dimensions.')
+console.log('GOOD TIMES layout-only fixtures captured at configured iPhone/iPad pixel dimensions; not production account or store submission evidence.')

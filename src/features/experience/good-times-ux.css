@@ -239,3 +239,11 @@
 .gt-ux-shell .gt-ux-directory-grid .gt-ux-card-image img{position:absolute;inset:0}
 .gt-ux-shell .gt-ux-directory-grid .gt-ux-card-info{min-height:128px}
 @media(max-width:359px){.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt-ux-homehead{min-height:128px;padding:15px 16px}.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] .gt-ux-homehead h1{font-size:28px}.gt-ux-shell .gt-ux-homehead>p{font-size:13px;max-width:100%}}
+/* Scoped release authority: legacy blanket !important rules must not flatten the new editorial headers. */
+.gt-premium-experience .gt5-app.gt-ux-shell[data-screen] :is(.gt-ux-homehead,.gt-ux-pagehead) h1{font-family:var(--gt5-serif)!important;font-weight:500;font-style:normal}
+.gt-ux-shell .gt-ux-card.compact .gt-ux-card-image{min-height:96px}
+.gt-ux-shell .gt-ux-card.compact .gt-ux-card-image img{position:absolute;inset:0}
+.gt-ux-shell .gt-ux-card.compact .gt-ux-card-info{padding:8px 42px 8px 10px;min-height:96px}
+.gt-ux-shell .gt-ux-card.compact .gt-ux-card-info>small{margin:0 0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gt-ux-shell .gt-ux-card.compact .gt-ux-card-info h3{margin:0 0 4px;font-size:16px;line-height:20px}
+.gt-ux-shell .gt-ux-card.compact .gt-ux-card-info p{margin:0;line-height:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

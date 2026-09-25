@@ -1,3 +1,4 @@
+import { installUXCatalogFixtures } from './ux-render-fixtures.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -18,6 +19,7 @@ const SUBCATEGORIES=[{category_key:'nightlife',subcategory_key:'nightclubs',subc
 const json=value=>({status:200,contentType:'application/json',body:JSON.stringify(value)})
 
 async function routes(ctx){
+  await installUXCatalogFixtures(ctx,EVENTS,VENUES)
   await ctx.route('**/api/data**',route=>route.fulfill(json({ok:true,connected:true,degraded:false,city:'atlanta',counts:{events:1,venues:1},events:EVENTS,venues:VENUES})))
   await ctx.route('**/rest/v1/gt_taxonomy_categories**',route=>route.fulfill(json(CATEGORIES)))
   await ctx.route('**/rest/v1/gt_taxonomy_subcategories**',route=>route.fulfill(json(SUBCATEGORIES)))
@@ -63,7 +65,7 @@ test('mobile V4 keeps utilities inside the canonical app shell and Profile usabl
     assert.match(await page.locator('.gt5-profile').innerText(),/Utility QA/i)
     assert.equal(await page.locator('.gt5-profile select').inputValue(),'atlanta')
     await page.locator('.gt5-nav button').filter({hasText:'Home'}).click()
-    await page.locator('.gt5-home-hero').waitFor({state:'visible',timeout:4000})
+    await page.locator('.gt-ux-homehead').waitFor({state:'visible',timeout:4000})
 
     const bell=page.locator('.gt5-bell')
     if(await bell.isVisible())await bell.click()
