@@ -1,0 +1,90 @@
+name: GOOD TIMES Final UX Review
+on:
+  push:
+    branches: [upgrade/home-discovery-planner-20260925]
+    paths: [.github/workflows/good-times-ux-final-review.yml]
+permissions:
+  contents: write
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply checksum-guarded screenshot corrections
+        env:
+          GT_BRANCH: ${{ github.ref_name }}
+        run: |
+          test "$GT_BRANCH" = 'upgrade/home-discovery-planner-20260925'
+          python - <<'PY'
+          from pathlib import Path
+          import json,hashlib,re
+          source=Path('.changes/ux-final-review.json')
+          bundle=json.loads(source.read_text())
+          if bundle['base_sha']!='725bee89113d308fbe245d133e05907613b2a8d6':raise RuntimeError('Unexpected baseline')
+          allowed={'api/data-live.js','api/discovery-search.js','api/home-sports.js','src/features/experience/good-times-ux-model.js','src/features/experience/GoodTimesUXScreens.jsx','src/features/experience/good-times-ux.css','src/features/experience/GoodTimesPlannerStudio.jsx','scripts/good-times-ux-final-review.test.mjs'}
+          digest=lambda text:hashlib.sha256(text.encode()).hexdigest()
+          pending=[]
+          for change in bundle['files']:
+              name=change['path']
+              if name not in allowed:raise RuntimeError('Unapproved or duplicate file')
+              allowed.remove(name)
+              if 'expected_sha256' in change:
+                  text=Path(name).read_text()
+                  if digest(text)!=change['expected_sha256']:raise RuntimeError('Concurrent source change: '+name)
+                  if 'replace_public_config_with' in change:
+                      lines=text.splitlines(True)
+                      targets=[i for i,line in enumerate(lines) if re.match(r'^const CONTENT_(URL|KEY)=',line)]
+                      if len(targets)!=2 or targets[1]!=targets[0]+1:raise RuntimeError('Public config anchors changed')
+                      lines[targets[0]:targets[-1]+1]=[change['replace_public_config_with']]
+                      text=''.join(lines)
+                  for before,after in change['replacements']:
+                      if text.count(before)!=1:raise RuntimeError('Ambiguous source anchor: '+name)
+                      text=text.replace(before,after)
+                  text+=change.get('append','')
+              else:
+                  if Path(name).exists():raise RuntimeError('New file already exists')
+                  text=change['content']
+              if digest(text)!=change['sha256']:raise RuntimeError('Output mismatch: '+name)
+              pending.append((name,text))
+          if allowed:raise RuntimeError('Missing file')
+          for name,text in pending:Path(name).write_text(text);print('APPLIED',name,digest(text))
+          source.unlink()
+          Path('.github/workflows/good-times-ux-final-review.yml').unlink()
+          PY
+      - name: Build and test before committing
+        run: |
+          npm ci
+          mkdir -p .ux-review
+          set -o pipefail
+          npm run build 2>&1 | tee .ux-review/build-and-tests.log
+      - name: Commit only to the isolated feature branch
+        run: |
+          git config user.name 'GOOD TIMES UX Build'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add api/data-live.js api/discovery-search.js api/home-sports.js src/features/experience/good-times-ux-model.js src/features/experience/GoodTimesUXScreens.jsx src/features/experience/good-times-ux.css src/features/experience/GoodTimesPlannerStudio.jsx scripts/good-times-ux-final-review.test.mjs .changes/ux-final-review.json .github/workflows/good-times-ux-final-review.yml
+          git commit -m 'GOOD TIMES: refine Home relevance, compact cards and accessible controls'
+          git push origin HEAD:upgrade/home-discovery-planner-20260925
+          git rev-parse HEAD > .ux-review/source-sha.txt
+          echo "GT_UX_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+      - name: Install screenshot browser
+        run: npx playwright-core install --with-deps chromium
+      - name: Capture actual app screens and enforce visual geometry checks
+        run: |
+          set -o pipefail
+          node scripts/ux-component-review.mjs 2>&1 | tee .ux-review/browser-review.log
+      - name: Preserve evidence including any failed checks
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: good-times-ux-proof-pass3
+          path: .ux-review/
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 14
