@@ -39,8 +39,10 @@ function UseBuild({onBuild,busy,children}) {
 }
 function ClickThroughPlanner({session,onBuild,busy}) {
   const[draft,patch]=useDraft(session,'click'),[step,setStep]=useState(0),[errors,setErrors]=useState({})
+  const panel=useRef(null), initialStep=useRef(true)
+  useEffect(()=>{if(initialStep.current){initialStep.current=false;return}panel.current?.scrollIntoView({block:'start',behavior:'auto'})},[step])
   const next=()=>{if(step===1){const found=validateDraft(draft);setErrors(found);if(Object.keys(found).length)return}setStep(x=>Math.min(2,x+1))}
-  return <UseBuild onBuild={onBuild} busy={busy}>{({submit,working,message})=><section className="gt-ux-planner-panel" aria-label="Click-through plan builder">
+  return <UseBuild onBuild={onBuild} busy={busy}>{({submit,working,message})=><section ref={panel} className="gt-ux-planner-panel" aria-label="Click-through plan builder">
     <div className="gt-ux-stephead"><span>BUILD IT</span><strong>{step+1} / 3</strong></div>
     <div className="gt-ux-progress" aria-label={`Step ${step+1} of 3`}>{['The occasion','The details','Your plan'].map((label,index)=><span className={index<=step?'active':''} key={label}>{label}</span>)}</div>
     <h2>{['What kind of good time?','Make it work for your people.','Your brief. Your good time.'][step]}</h2>
@@ -54,7 +56,8 @@ function ClickThroughPlanner({session,onBuild,busy}) {
 }
 function ShakePlanner({session,venues,onOpen,onBuild,busy}) {
   const[draft,patch]=useDraft(session,'shake'),[picked,setPicked]=useState(null),[recent,setRecent]=useState([]),[enabled,setEnabled]=useState(false),[motionMessage,setMotionMessage]=useState('Tap to choose. Phone motion is optional.'),[errors,setErrors]=useState({}),[details,setDetails]=useState(false)
-  const lastMotion=useRef(0), previous=useRef(null), pickRef=useRef(null)
+  const lastMotion=useRef(0), previous=useRef(null), pickRef=useRef(null), resultRef=useRef(null)
+  useEffect(()=>{if(picked)resultRef.current?.scrollIntoView({block:'start',behavior:'auto'})},[picked])
   const choose=()=>{
     const found=validateDraft(draft);setErrors(found);if(Object.keys(found).length){setDetails(true);return}
     const pool=eligibleShakeVenues(venues,draft), next=nextShakePick(pool,recent)
@@ -70,7 +73,7 @@ function ShakePlanner({session,venues,onOpen,onBuild,busy}) {
     <div className="gt-ux-actions"><button onClick={()=>setDetails(x=>!x)} aria-expanded={details}>{details?'Hide details':'Set my preferences'}</button><button onClick={()=>enabled?setEnabled(false):void enable()}>{enabled?'Turn motion off':'Enable phone shake'}</button></div>
     {details&&<Basics draft={draft} patch={patch} errors={errors} compact/>}
     <p className="gt-ux-status" role="status">{motionMessage}</p>
-    {picked&&<div className="gt-ux-shake-result">{picked.hero_image&&<img src={picked.hero_image} alt=""/>}<div><span>YOUR STARTING POINT</span><h3>{picked.name}</h3><p>{picked.neighborhood||'Atlanta'}{picked.price_range?` · ${picked.price_range}`:''}</p><p className="gt-ux-note">Hours, age rules and total cost still need verification.</p><div className="gt-ux-actions"><button onClick={()=>onOpen(picked)}>View place</button><button className="primary" disabled={working} onClick={()=>void submit(buildPlanPrompt(draft,{anchor:picked}))}>{working?'Building…':'Keep it & build a plan'}</button></div></div></div>}
+    {picked&&<div ref={resultRef} className="gt-ux-shake-result">{picked.hero_image&&<img src={picked.hero_image} alt=""/>}<div><span>YOUR STARTING POINT</span><h3>{picked.name}</h3><p>{picked.neighborhood||'Atlanta'}{picked.price_range?` · ${picked.price_range}`:''}</p><p className="gt-ux-note">Hours, age rules and total cost still need verification.</p><div className="gt-ux-actions"><button onClick={()=>onOpen(picked)}>View place</button><button className="primary" disabled={working} onClick={()=>void submit(buildPlanPrompt(draft,{anchor:picked}))}>{working?'Building…':'Keep it & build a plan'}</button></div></div></div>}
     {message&&<p className="gt-ux-status" role="status">{message}</p>}
   </section>}</UseBuild>
 }
