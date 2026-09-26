@@ -1,4 +1,3 @@
-import { installUXCatalogFixtures } from './ux-render-fixtures.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
@@ -21,7 +20,6 @@ let browser
 if(!skip){browser=process.env.GT_UI_CHROME_PATH?await chromium.launch({executablePath:process.env.GT_UI_CHROME_PATH,headless:true,args:['--no-sandbox']}):await chromium.launch({channel:process.env.GT_UI_CHANNEL||'chrome',headless:true})}
 
 async function routes(ctx){
-  await installUXCatalogFixtures(ctx,EVENTS,VENUES)
   await ctx.route('**/api/data**',route=>route.fulfill(json({ok:true,connected:true,degraded:false,city:'atlanta',counts:{events:1,venues:1},events:EVENTS,venues:VENUES})))
   await ctx.route('**/rest/v1/gt_taxonomy_categories**',route=>route.fulfill(json(CATEGORIES)))
   await ctx.route('**/rest/v1/gt_taxonomy_subcategories**',route=>route.fulfill(json(SUBCATEGORIES)))
@@ -68,12 +66,12 @@ for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobi
     try{
       const nav=page.locator('.gt5-nav button')
       assert.equal(await nav.count(),5,'V4 navigation must contain five protected destinations')
-      assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Entertainment','Plan','Venues','Profile'])
+      assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Discover','Plan','Saved','Profile'])
       for(let round=0;round<3;round++)for(let i=0;i<5;i++){await nav.nth(i).click();await page.waitForTimeout(100);await assertOnscreen(page,'.gt5-nav')}
 
       await nav.filter({hasText:'Home'}).click()
       for(let i=0;i<3;i++){
-        const card=page.locator('.gt-ux-home .gt-ux-card-open').first();await card.waitFor({state:'visible',timeout:5000});await card.click()
+        const card=page.locator('.gt5-event').first();await card.waitFor({state:'visible',timeout:5000});await card.click()
         await page.locator('.gt5-overlay .gt5-detail').waitFor({state:'visible',timeout:5000})
         const overlay=await page.locator('.gt5-overlay').boundingBox();assert.ok(overlay&&overlay.width<=vp.width+4&&overlay.height<=vp.height+4,'detail overlay escaped viewport')
         await page.locator('.gt5-detail-back').click();await page.locator('.gt5-overlay').waitFor({state:'hidden',timeout:5000})

@@ -1,4 +1,3 @@
-import {UX_NAV,HOME_MODES} from '../src/features/experience/good-times-ux-model.js'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {readFileSync,existsSync} from 'node:fs'
@@ -7,10 +6,10 @@ const source=readFileSync(new URL('../src/features/experience/GoodTimesCommandAp
 const css=readFileSync(new URL('../src/features/experience/good-times-v4.css',import.meta.url),'utf8')
 const main=readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8')
 
-const canonicalNav="const NAV=UX_NAV"
+const canonicalNav="const NAV=[['home','⌂','Home'],['discover','⌕','Discover'],['plan','＋','Plan'],['saved','▣','Saved'],['profile','◎','Profile']]"
 
 test('GOOD TIMES permanent bottom navigation cannot regress',()=>{
-  assert.ok(source.includes(canonicalNav));assert.deepEqual(UX_NAV.map(x=>x[2]),['Home','Entertainment','Plan','Venues','Profile'])
+  assert.ok(source.includes(canonicalNav),'V4 must keep Home / Discover / Plan / Saved / Profile in canonical order')
   const navLine=source.split('\n').find(line=>line.startsWith('const NAV='))||''
   assert.equal(navLine.includes("'radar'"),false,'Radar must not replace Plan in the permanent bottom navigation')
   assert.equal(navLine.includes("'vault'"),false,'Vault is the editorial Saved surface, not a permanent nav label')
@@ -22,10 +21,10 @@ test('V4 is the routed consumer authority',()=>{
   assert.ok(main.includes("good-times-v4.css"),'main.jsx must load the protected V4 design authority last')
 })
 
-test('founder UX upgrade preserves premium identity and independent planning methods',()=>{
-  const screens=readFileSync(new URL('../src/features/experience/GoodTimesUXScreens.jsx',import.meta.url),'utf8'),planner=readFileSync(new URL('../src/features/experience/GoodTimesPlannerStudio.jsx',import.meta.url),'utf8')
-  for(const phrase of ['Your city.','More good times.','Worth your time','Your city. Your teams.','My Plans'])assert.ok(screens.includes(phrase))
-  for(const phrase of ['Build it. Shake it. Ask us.','ClickThroughPlanner','ShakePlanner','AskPlanner'])assert.ok(planner.includes(phrase))
+test('V4 preserves the protected product language',()=>{
+  for(const phrase of ['A Better','Tonight.','Discover','Plan','My Night.','Everything','you kept.','Never hear','about it late.']){
+    assert.ok(source.includes(phrase),`protected editorial phrase missing: ${phrase}`)
+  }
 })
 
 test('V4 design tokens and shell protections exist',()=>{
