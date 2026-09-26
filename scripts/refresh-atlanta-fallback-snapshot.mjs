@@ -11,11 +11,13 @@
 import {readFileSync,writeFileSync} from 'node:fs'
 import {fileURLToPath} from 'node:url'
 import path from 'node:path'
+import {KHG_SUPABASE_URL,KHG_SUPABASE_ANON_KEY} from '../src/lib/supabase.js'
 
 const ROOT=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..')
 export const SNAPSHOT_PATH=path.join(ROOT,'api','atlanta-fallback-snapshot.js')
-const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
-const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR' // public publishable key, same as api/data-live.js
+// Content-plane URL/anon key come from the single canonical client config (same source api/health.js uses).
+const CONTENT_URL=KHG_SUPABASE_URL
+const CONTENT_KEY=KHG_SUPABASE_ANON_KEY
 export const MIN_EVENTS=20
 export const MIN_VENUES=50
 export const MAX_COLLAPSE_RATIO=0.5
