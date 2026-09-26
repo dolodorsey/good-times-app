@@ -1,0 +1,54 @@
+name: Refresh Atlanta fallback snapshot
+
+# The embedded Atlanta snapshot (api/atlanta-fallback-snapshot.js) is the
+# last-resort customer fallback when PostgREST is unavailable. It expires after
+# 36h (api/data-live.js EMBEDDED_SNAPSHOT_MAX_AGE_MS). An expired snapshot means
+# a PostgREST stall returns 503 to customers AND fails the release test gate.
+# Runs every 12h => two consecutive failures still leave >=12h of headroom.
+
+on:
+  schedule:
+    - cron: '17 7,19 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: atlanta-fallback-snapshot-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Install
+        run: npm install --legacy-peer-deps --no-audit --no-fund
+      - name: Refresh snapshot from canonical cache (validated)
+        run: node scripts/refresh-atlanta-fallback-snapshot.mjs
+      - name: Data-only diff guard
+        id: diff
+        run: |
+          CHANGED=$(git status --porcelain | awk '{print $2}')
+          echo "changed: $CHANGED"
+          if [ -z "$CHANGED" ]; then echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if [ "$CHANGED" != "api/atlanta-fallback-snapshot.js" ]; then echo "Refusing: unexpected files changed"; exit 1; fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+      - name: Full release gate (tests + production build)
+        if: steps.diff.outputs.changed == 'true'
+        run: npm run build
+      - name: Commit data-only snapshot refresh
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          git config user.name "good-times-snapshot-bot"
+          git config user.email "good-times-snapshot-bot@users.noreply.github.com"
+          git add api/atlanta-fallback-snapshot.js
+          git commit -m "GOOD TIMES: refresh verified Atlanta fallback snapshot (data-only)"
+          git push origin HEAD:main
