@@ -53,6 +53,12 @@ jobs:
             rm -f /tmp/gt-qa-session.json
             echo "signed-in QA secret not configured; deterministic signed-in fixtures will still run"
           fi
+      - name: Protect complete taxonomy and category-to-place journeys
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: timeout 240s node --test --test-concurrency=1 scripts/protected-taxonomy.test.mjs
       - name: Prove App Review iPad layouts
         env:
           GT_UI_BASE: http://localhost:4180
