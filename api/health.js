@@ -96,7 +96,9 @@ export async function getGoodTimesHealth(fetchImpl = globalThis.fetch, now = new
     probe(GT_URL, GT_ANON_KEY, 'gt_formula_versions?select=id&limit=1', fetchImpl),
     probeAtlantaInventory(fetchImpl, now),
   ])
-  const fallbackReady = !contentReady && verifiedSnapshotReady(now)
+  const snapshotArmed = verifiedSnapshotReady(now)
+  const fallbackReady = !contentReady && snapshotArmed
+  const snapshotAgeMs = now.getTime() - parseSnapshotTimestamp(ATLANTA_FALLBACK_SNAPSHOT?.refreshed_at)
   const degraded = customerReady && !contentReady && fallbackReady
   return {
     ok: customerReady && (contentReady || fallbackReady),
@@ -106,6 +108,10 @@ export async function getGoodTimesHealth(fetchImpl = globalThis.fetch, now = new
     content_ready: contentReady,
     verified_snapshot_ready: fallbackReady,
     snapshot_refreshed_at: fallbackReady ? ATLANTA_FALLBACK_SNAPSHOT.refreshed_at : null,
+    // Observability: whether the last-resort fallback is usable right now, independent of
+    // content-plane health. verified_snapshot_ready (above) is only true while it is in use.
+    fallback_snapshot_armed: snapshotArmed,
+    fallback_snapshot_age_hours: Number.isFinite(snapshotAgeMs) ? Math.round(snapshotAgeMs / 36e5 * 10) / 10 : null,
     launch_scope: 'atlanta_only',
     generated_at: now.toISOString(),
   }
