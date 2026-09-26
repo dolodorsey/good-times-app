@@ -97,7 +97,7 @@ jobs:
 
       - name: Preserve status evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GOOD-TIMES-testflight-status-${{ github.run_number }}
           path: ${{ runner.temp }}/testflight-status.log
