@@ -7,7 +7,7 @@ const main=read('src/main.jsx')
 const authority='features/experience/good-times-founder-v4-restore.css'
 test('reference-base stylesheet is the final eager CSS authority',()=>{
  const imports=[...main.matchAll(/import\s+['"]\.\/([^'"]+\.css)['"]/g)].map(m=>m[1])
- assert.equal(imports.at(-1),'features/experience/good-times-ux.css','Only the founder-authorized scoped UX contract may follow the reference base');assert.equal(imports.at(-2),authority);const upgrade=read('src/features/experience/good-times-ux.css');assert.match(upgrade,/gt-ux-shell/);assert.match(upgrade,/prefers-reduced-motion/);assert.match(upgrade,/min-height:44px/)
+ assert.equal(imports.at(-1),authority,'A later global stylesheet may silently redesign GOOD TIMES')
  assert.equal(imports.filter(x=>x===authority).length,1)
 })
 test('reference-base retains protected palette, editorial typography and responsive controls',()=>{

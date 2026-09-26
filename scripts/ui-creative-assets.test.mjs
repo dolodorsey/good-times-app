@@ -1,4 +1,3 @@
-import { installUXCatalogFixtures } from './ux-render-fixtures.mjs'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
@@ -45,7 +44,6 @@ const COUNTS=[
 const json=value=>({status:200,contentType:'application/json',body:JSON.stringify(value)})
 
 async function installRoutes(ctx){
-  await installUXCatalogFixtures(ctx,EVENTS,VENUES)
   await ctx.route('**/api/data**',route=>route.fulfill(json({ok:true,connected:true,degraded:false,city:'atlanta',counts:{events:EVENTS.length,venues:VENUES.length},events:EVENTS,venues:VENUES})))
   await ctx.route('**/rest/v1/gt_asset_manifest**',route=>route.fulfill(json(MANIFEST)))
   await ctx.route('**/rest/v1/gt_taxonomy_categories**',route=>route.fulfill(json(CATEGORIES)))
@@ -71,32 +69,24 @@ async function prove(width,height,name){
   try{
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
     await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
-    const headers=[]
-    for(const label of ['Entertainment','Venues']){
-      await page.locator('.gt5-nav').getByRole('button',{name:label,exact:true}).click()
-      const directory=page.locator('.gt-ux-directory:visible');await directory.waitFor();await page.locator('.gt-ux-directory[aria-busy=false]:visible').waitFor()
-      const artwork=await directory.locator('.gt-ux-pagehead').evaluate(el=>getComputedStyle(el).backgroundImage)
-      assert.ok(artwork.includes('/reference-base/atlanta-rooftop.webp'),'Owner-approved decorative artwork lost')
-      assert.ok(await directory.locator('.gt-ux-card').count()>0,'Catalog did not render real fixture records')
-      const chips=await directory.locator('.gt-ux-chips button').allTextContents()
-      assert.ok(chips.includes(label==='Venues'?'Rooftops':'Live music'),'Discovery category context lost')
-      const titleFont=await directory.locator('h1').evaluate(el=>getComputedStyle(el).fontFamily)
-      assert.match(titleFont,/Playfair|Georgia|Garamond/,'Editorial screen font regressed')
-      headers.push({label,artwork,chips,titleFont})
-      await page.screenshot({path:path.join(OUT,`${name}__${label.toLowerCase()}-creative.png`),fullPage:false})
-    }
-    await page.locator('.gt5-nav').getByRole('button',{name:'Plan',exact:true}).click()
-    await page.getByRole('tab',{name:/Build It/}).click()
-    const moods=await page.locator('.gt-ux-moods button').evaluateAll(items=>items.map(el=>({label:el.textContent,background:getComputedStyle(el).backgroundImage})))
-    assert.equal(moods.length,6,'All guided occasions must remain available')
-    assert.ok(moods.every(m=>m.background.includes('url(')),'Occasion choices must retain distinct editorial imagery')
-    assert.ok(new Set(moods.map(m=>m.background)).size>=4,'Occasion artwork collapsed into repeated decoration')
-    assert.ok(moods.find(m=>m.label.includes('Family day')).background.includes('/city-atlanta.png'),'Family imagery must not become a bar scene')
-    assert.ok(moods.filter(m=>!m.label.includes('Family day')).every(m=>m.background.includes('good-times-backgrounds')),'Use approved editorial media, not unrelated external stock')
-    fs.writeFileSync(path.join(OUT,`${name}__creative-contract.json`),JSON.stringify({evidenceType:'isolated-render-fixture',headers,moods},null,2))
+    await page.locator('.gt5-nav button').filter({hasText:'Discover'}).click()
+    await page.waitForSelector('.gt5-discover',{state:'visible',timeout:10000})
+    await page.waitForSelector('.gt5-lanes button',{timeout:10000})
+    const lanes=await page.evaluate(()=>[...document.querySelectorAll('.gt5-lanes button')].map(card=>({label:String(card.querySelector('strong')?.textContent||'').trim(),background:getComputedStyle(card,'::before').backgroundImage})))
+    assert.deepEqual(lanes.map(x=>x.label),['Eat Well','Turn Up','Be There','Stay Right','Do More'],'V4 editorial discovery lanes changed')
+    assert.ok(lanes.every(row=>row.background&&row.background!=='none'),'every V4 discovery lane must remain image-backed')
+
+    await page.waitForSelector('.gt5-taxonomy .gt2-category-grid>button',{timeout:15000})
+    await page.waitForFunction(()=>[...document.querySelectorAll('.gt5-taxonomy .gt2-category-grid>button')].every(card=>card.dataset.hasArt==='true'&&getComputedStyle(card).backgroundImage.includes('good-times-backgrounds')),{timeout:15000})
+    const taxonomy=await page.evaluate(()=>[...document.querySelectorAll('.gt5-taxonomy .gt2-category-grid>button')].map(card=>({key:card.dataset.gtCategory,hasArt:card.dataset.hasArt,background:getComputedStyle(card).backgroundImage})))
+    await page.screenshot({path:path.join(OUT,`${name}__signed-in-v4-discover-creative.png`),fullPage:true})
+    assert.equal(taxonomy.length,3)
+    assert.ok(taxonomy.every(row=>row.hasArt==='true'))
+    assert.equal(new Set(taxonomy.map(row=>row.background)).size,3,'deep taxonomy categories must resolve distinct approved creative')
+    assert.ok(taxonomy.every(row=>row.background.includes('good-times-backgrounds')),'taxonomy creative must resolve from approved Supabase bucket')
     assert.deepEqual(errors,[],'uncaught page errors')
   }finally{await ctx.close();await browser.close()}
 }
 
-test('desktop split discovery and planning keep approved editorial artwork',{skip},async()=>prove(1440,900,'1440x900'))
-test('mobile split discovery and planning keep approved editorial artwork',{skip},async()=>prove(390,844,'390x844'))
+test('desktop V4 Discover keeps cinematic lanes and distinct approved taxonomy artwork',{skip},async()=>prove(1440,900,'1440x900'))
+test('mobile V4 Discover keeps cinematic lanes and distinct approved taxonomy artwork',{skip},async()=>prove(390,844,'390x844'))

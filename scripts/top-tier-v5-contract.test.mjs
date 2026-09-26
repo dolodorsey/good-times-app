@@ -10,7 +10,7 @@ test('V5 uses learned intelligence without sacrificing editorial priority', () =
   assert.match(v4, /personalizedScore/)
   assert.match(v4, /display_priority/)
   assert.match(v4, /is_featured/)
-  assert.match(v4, /events=\{rankedEvents\}/)
+  assert.match(v4, /FOR YOU · LEARNS AS YOU USE IT/)
   assert.match(intelligence, /gt_user_intelligence_profiles/)
 })
 
