@@ -190,3 +190,7 @@ PRODUCTION VERIFIED
 - Leave incomplete work behind a flag rather than exposing a lower-quality state.
 
 **Last updated: September 23, 2026 — Atlanta-only launch scope + GOOD TIMES V4 Product/UI Constitution + Anti-Regression Production System.**
+
+
+## Owner-approved compact pilot — 2026-09-27
+For the isolated preview pilot, read `docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.md`. Its compact presentation supersedes oversized hero requirements only within the compiled pilot; all taxonomy, truth, privacy, release and paused-scheduler protections remain binding.

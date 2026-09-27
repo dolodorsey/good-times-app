@@ -1,0 +1,81 @@
+name: Complete GOOD TIMES upgrade build
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths: ['.tmp-complete/**', '.github/workflows/complete-build-once.yml']
+permissions:
+  contents: write
+concurrency:
+  group: gt-complete-once
+  cancel-in-progress: false
+jobs:
+  complete-candidate:
+    if: github.event.pull_request.head.ref == 'build/gt-complete-release-20260927'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_SHA: 4f026b39054beffcf695cb1850d06c121c94c3c1
+      PRODUCTION_BASE: 090ffa483d2898f072cc2d835961d07362029878
+      FINAL_BRANCH: upgrade/gt-complete-release-20260927
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Materialize guarded corrections in actual candidate
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/gt-complete-evidence
+          cp -r .tmp-complete /tmp/gt-complete-transfer
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$PRODUCTION_BASE"
+          test "$(git ls-remote origin refs/heads/$FINAL_BRANCH | cut -f1)" = "$BASE_SHA"
+          git checkout --detach "$BASE_SHA"
+          python /tmp/gt-complete-transfer/finalize.py
+          cp /tmp/gt-complete-transfer/live-check.mjs scripts/complete-live-check.mjs
+          git config user.name good-times-build
+          git config user.email good-times-build@users.noreply.github.com
+          git add src api scripts supabase docs
+          git commit -m "GOOD TIMES: complete desktop density, truthful constraints, protected plan edits and live-read verification"
+          git rev-parse HEAD > /tmp/gt-complete-evidence/candidate-sha.txt
+          git diff --stat "$PRODUCTION_BASE" HEAD > /tmp/gt-complete-evidence/changes.txt
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies and browser
+        run: |
+          npm ci --legacy-peer-deps
+          npx --no-install playwright-core install --with-deps chromium
+          echo "GT_UI_CHROME_PATH=$(node --input-type=module -e 'import{chromium}from"playwright-core";console.log(chromium.executablePath())')" >> "$GITHUB_ENV"
+      - name: Verify default and complete builds
+        run: |
+          set -euo pipefail
+          npm run build 2>&1 | tee /tmp/gt-complete-evidence/default-build.log
+          GT_COMPACT_PILOT=1 GT_COMPLETE_UPGRADE=1 npm run build 2>&1 | tee /tmp/gt-complete-evidence/complete-build.log
+      - name: Actual browser geometry and journeys
+        env:
+          GT_COMPLETE_EVIDENCE: /tmp/gt-complete-evidence/screens
+        run: |
+          set -euo pipefail
+          node scripts/complete-upgrade-evidence.mjs 2>&1 | tee /tmp/gt-complete-evidence/browser.log
+      - name: Separate live serving and authorized QA read checks
+        env:
+          GT_UI_QA_SESSION: ${{ secrets.GT_UI_QA_SESSION }}
+          GT_COMPLETE_EVIDENCE: /tmp/gt-complete-evidence/live
+        run: |
+          set -euo pipefail
+          node scripts/complete-live-check.mjs 2>&1 | tee /tmp/gt-complete-evidence/live.log
+      - name: Publish verified candidate only
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$PRODUCTION_BASE"
+          test "$(git ls-remote origin refs/heads/$FINAL_BRANCH | cut -f1)" = "$BASE_SHA"
+          test -z "$(git status --porcelain --untracked-files=no)"
+          git push origin HEAD:refs/heads/$FINAL_BRANCH
+      - name: Preserve separate screenshot and execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: good-times-complete-evidence-${{ github.run_id }}
+          path: /tmp/gt-complete-evidence
+          retention-days: 7

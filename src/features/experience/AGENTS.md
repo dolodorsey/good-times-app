@@ -21,3 +21,7 @@ The owner rejected release `09a48fe6c8a3c851bd9de69f97baa8d0ee1fbe09`: the previ
 `scripts/protected-taxonomy.test.mjs` runs static checks during the ordinary test/build and dynamic catalog traversal in the existing required `geometry` workflow. It verifies unknown database-shaped category/subcategory IDs, complete lists, directory results, detail return, Map and retained empty subcategories. Fixtures are confined to loopback test origins; they are not evidence of a production customer login.
 
 For future releases record the exact tested SHA, protected-capability comparison, category and subcategory traversal results, desktop/mobile screenshots, unchanged data scope and actual production release. A product-regression rejection requires restoration first, not another redesign. No agent may declare another independent agent approved a release without its actual review evidence.
+
+
+## Owner-approved compact pilot — 2026-09-27
+For the isolated preview pilot, read `docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.md`. Its compact presentation supersedes oversized hero requirements only within the compiled pilot; all taxonomy, truth, privacy, release and paused-scheduler protections remain binding.

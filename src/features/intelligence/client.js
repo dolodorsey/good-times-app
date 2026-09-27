@@ -1,3 +1,4 @@
+import { requestExplorePage } from './explore-page.js'
 import {
   GT_SUPABASE_ANON_KEY,
   GT_SUPABASE_URL,
@@ -136,6 +137,11 @@ export async function loadExploreDirectory(city = 'atlanta', { limit = 2500, cat
   )
 }
 
+/** Bounded full-corpus place search, separate from Home inventory. */
+export function loadExplorePage(city = 'atlanta', options = {}, request = {}) {
+  return requestExplorePage(KHG_SUPABASE_URL, gatewayHeaders, { ...options, city: normalizeCity(city) }, request)
+}
+
 export async function loadGoodTimesProfile(session = readSession()) {
   if (!session?.access_token || !session?.user?.id) return null
   const rows = await fetchJson(
@@ -225,7 +231,7 @@ export async function unsaveItem({ profileId, itemType, itemId }, session = read
   await fetchJson(
     `${GT_SUPABASE_URL}/rest/v1/gt_saved_items?user_id=eq.${encodeURIComponent(profileId)}&item_type=eq.${encodeURIComponent(itemType)}&item_id=eq.${encodeURIComponent(String(itemId))}`,
     { method: 'DELETE', headers: { ...gtHeaders(session.access_token), Prefer: 'return=minimal' } },
-  ).catch(() => null)
+  )
 }
 
 export async function loadItineraries(session = readSession()) {
