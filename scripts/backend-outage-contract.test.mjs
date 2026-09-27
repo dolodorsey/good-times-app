@@ -43,7 +43,7 @@ test('GOOD TIMES health requires both exact service planes', async () => {
   assert.equal(calls[0].options?.headers?.Authorization, `Bearer ${calls[0].options?.headers?.apikey}`)
   assert.match(String(calls[1].options?.headers?.apikey || ''), /^sb_publishable_/)
   assert.doesNotMatch(String(calls[1].options?.headers?.apikey || ''), /^sb_secret_/)
-  assert.equal(calls[1].options?.headers?.Authorization, `Bearer ${calls[1].options?.headers?.apikey}`)
+  assert.equal(calls[1].options?.headers?.Authorization, undefined)
 })
 
 test('GOOD TIMES health fails closed when the customer/auth plane is unavailable', async () => {
