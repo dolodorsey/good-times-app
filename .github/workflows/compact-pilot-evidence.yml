@@ -35,6 +35,13 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - name: Existing test and build gates
         run: npm run build
+      - name: Pack dependency-locked verification workspace
+        run: tar -czf /tmp/gt-verification-runtime.tgz node_modules dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compact-pilot-runtime-${{ github.sha }}
+          path: /tmp/gt-verification-runtime.tgz
+          retention-days: 3
       - name: Compact pilot browser checks when present
         run: |
           if [ -f scripts/compact-pilot-evidence.mjs ]; then
