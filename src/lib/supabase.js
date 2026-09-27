@@ -35,12 +35,18 @@ export const KHG_SB = `${KHG_SUPABASE_URL}/rest/v1`
 export const KHG_SK = KHG_SUPABASE_ANON_KEY
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+function publicApiHeaders(key) {
+  const headers = { apikey: key, Accept: 'application/json' }
+  if (!String(key).startsWith('sb_publishable_')) headers.Authorization = `Bearer ${key}`
+  return headers
+}
+
 async function readJson(baseUrl, anonKey, query, fetchImpl = globalThis.fetch) {
   const url = `${baseUrl}/${query}`
   let lastError = null
   for (let attempt=0;attempt<2;attempt+=1) {
     try {
-      const response = await fetchImpl(url,{headers:{apikey:anonKey,Authorization:`Bearer ${anonKey}`,Accept:'application/json'},cache:'no-store'})
+      const response = await fetchImpl(url,{headers:publicApiHeaders(anonKey),cache:'no-store'})
       if (!response.ok) {
         const body=await response.text().catch(()=> '');lastError=new Error(`Supabase ${response.status}: ${body||response.statusText}`)
         if(response.status<500||attempt===1)break
