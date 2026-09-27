@@ -21,3 +21,8 @@ The owner rejected release `09a48fe6c8a3c851bd9de69f97baa8d0ee1fbe09`: the previ
 `scripts/protected-taxonomy.test.mjs` runs static checks during the ordinary test/build and dynamic catalog traversal in the existing required `geometry` workflow. It verifies unknown database-shaped category/subcategory IDs, complete lists, directory results, detail return, Map and retained empty subcategories. Fixtures are confined to loopback test origins; they are not evidence of a production customer login.
 
 For future releases record the exact tested SHA, protected-capability comparison, category and subcategory traversal results, desktop/mobile screenshots, unchanged data scope and actual production release. A product-regression rejection requires restoration first, not another redesign. No agent may declare another independent agent approved a release without its actual review evidence.
+
+
+## September 27, 2026 — approved compact pilot
+
+Read `docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.md` for this owner-authorized change. The opt-in preview replaces oversized Discover/category/subcategory presentation with a compact two-column variant. Full active taxonomy, empty types, Directory/Map, detail return, Save/Plan, five-tab navigation, source truth and existing release gates remain binding. Production defaults and scheduled jobs are unchanged. Generated mockup facts are not approved inventory. No browser or production acceptance is implied by code or CI alone.

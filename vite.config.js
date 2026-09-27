@@ -10,6 +10,7 @@ function splitVendorChunk(moduleId) {
 
 export default defineConfig({
   plugins: [react()],
+  define: { __GT_COMPACT_PREVIEW__: JSON.stringify(process.env.VERCEL_ENV === 'preview') },
   build: {
     outDir: 'dist',
     target: 'es2022',

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
+import CompactTaxonomyBrowser from './CompactTaxonomyBrowser.jsx'
 import { loadExploreCounts, loadExploreDirectory } from '../intelligence/client.js'
 import { loadGoodTimesAssetManifest, manifestAssetForCategory } from './good-times-assets.js'
 
@@ -41,7 +42,7 @@ function normalizeSubcategories(category) {
   return []
 }
 
-export default function ExploreTaxonomyBrowser({
+function LegacyExploreTaxonomyBrowser({
   externalSearch = false,
   taxonomy = [],
   directory = [],
@@ -206,4 +207,9 @@ export default function ExploreTaxonomyBrowser({
       </div> : filteredRows.length ? <div className="gt2-venue-grid">{filteredRows.map(venue => renderVenue?.(venue, false))}</div> : <div className="gt2-empty"><span>⌕</span><h2>No verified matches yet</h2><p>Try another subcategory or clear the search. This lane remains visible while its sourcing agent fills it.</p></div>}</>}
     </>}
   </section>
+}
+
+// Owner-approved compact preview retains the legacy implementation and the full taxonomy.
+export default function ExploreTaxonomyBrowser(props) {
+  return props.compact ? <CompactTaxonomyBrowser {...props}/> : <LegacyExploreTaxonomyBrowser {...props}/>
 }
