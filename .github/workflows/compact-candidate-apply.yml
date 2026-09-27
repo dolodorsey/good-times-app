@@ -1,0 +1,67 @@
+name: Apply Compact Preview Candidate
+on:
+  push:
+    branches: [feat/compact-two-column-pilot-20260927]
+    paths:
+      - scripts/.compact-pilot-candidate.json
+      - .github/workflows/compact-candidate-apply.yml
+permissions:
+  contents: write
+concurrency:
+  group: compact-candidate-writer
+  cancel-in-progress: false
+jobs:
+  apply:
+    if: github.ref == 'refs/heads/feat/compact-two-column-pilot-20260927' && github.actor == 'dolodorsey'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check for candidate
+        id: candidate
+        run: |
+          if [ -f scripts/.compact-pilot-candidate.json ]; then echo 'present=true' >> "$GITHUB_OUTPUT"; else echo 'present=false' >> "$GITHUB_OUTPUT"; fi
+      - name: Validate and apply bounded code-only patch
+        if: steps.candidate.outputs.present == 'true'
+        run: |
+          python3 - <<'PY'
+          import base64,gzip,hashlib,json,pathlib,subprocess
+          payload=json.loads(pathlib.Path('scripts/.compact-pilot-candidate.json').read_text())
+          assert payload['version']==1
+          subprocess.run(['git','merge-base','--is-ancestor',payload['base_sha'],'HEAD'],check=True)
+          patch=gzip.decompress(base64.b64decode(payload['patch_gzip_base64'],validate=True))
+          assert len(patch)<1000000
+          assert hashlib.sha256(patch).hexdigest()==payload['patch_sha256']
+          file=pathlib.Path('/tmp/gt-compact-candidate.patch');file.write_bytes(patch)
+          subprocess.run(['git','apply','--check',str(file)],check=True)
+          subprocess.run(['git','apply','--index',str(file)],check=True)
+          names=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          allowed_exact={'AGENTS.md','vite.config.js','docs/GOOD_TIMES_PRODUCT_UI_CONSTITUTION.md','docs/GOOD_TIMES_SCREEN_CONTRACTS.md','docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.md','scripts/compact-pilot.test.mjs','scripts/compact-pilot-evidence.mjs'}
+          for name in names:
+              assert '..' not in pathlib.PurePosixPath(name).parts
+              assert name in allowed_exact or name.startswith('src/features/experience/') or name.startswith('src/features/intelligence/'),name
+          assert set(names)==set(payload['paths'])
+          print('Validated code-only preview candidate:',len(names),'files')
+          PY
+      - uses: actions/setup-node@v4
+        if: steps.candidate.outputs.present == 'true'
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Existing tests and candidate build
+        if: steps.candidate.outputs.present == 'true'
+        run: |
+          npm ci --legacy-peer-deps
+          GT_COMPACT_PILOT=1 npm run build
+      - name: Commit tested code to the preview branch only and remove importer
+        if: steps.candidate.outputs.present == 'true'
+        run: |
+          test "$GITHUB_REF" = 'refs/heads/feat/compact-two-column-pilot-20260927'
+          git config user.name 'GOOD TIMES preview builder'
+          git config user.email 'good-times-preview@users.noreply.github.com'
+          git rm scripts/.compact-pilot-candidate.json .github/workflows/compact-candidate-apply.yml
+          git commit -m 'GOOD TIMES: implement owner-approved compact Nightlife preview with scoped search, reliable states and tests'
+          git push origin HEAD:refs/heads/feat/compact-two-column-pilot-20260927
+          git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
