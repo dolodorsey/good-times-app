@@ -2,59 +2,67 @@ name: Compact Pilot Evidence
 on:
   push:
     branches: [feat/compact-two-column-pilot-20260927]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
-  group: compact-pilot-${{ github.ref }}
+  group: compact-pilot-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 jobs:
   evidence:
-    if: github.ref == 'refs/heads/feat/compact-two-column-pilot-20260927'
+    if: github.ref == 'refs/heads/feat/compact-two-column-pilot-20260927' || github.head_ref == 'feat/compact-two-column-pilot-20260927'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - name: Export exact tracked source for isolated build workspace
-        run: |
-          mkdir -p /tmp/gt-source
-          git archive --format=tar HEAD | tar -xf - -C /tmp/gt-source
-          printf '%s\n' "$GITHUB_SHA" > /tmp/gt-source/SOURCE_COMMIT.txt
-      - uses: actions/upload-artifact@v4
-        with:
-          name: compact-pilot-source-${{ github.sha }}
-          path: /tmp/gt-source/
-          include-hidden-files: true
-          retention-days: 7
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
           cache: npm
       - run: npm ci --legacy-peer-deps
-      - name: Existing test and build gates
+      - name: Existing test and baseline build gates
         run: npm run build
-      - name: Pack dependency-locked verification workspace
-        run: tar -czf /tmp/gt-verification-runtime.tgz node_modules dist
-      - uses: actions/upload-artifact@v4
-        with:
-          name: compact-pilot-runtime-${{ github.sha }}
-          path: /tmp/gt-verification-runtime.tgz
-          retention-days: 3
-      - name: Compact pilot browser checks when present
+      - name: Install locked Chromium for rendered checks
+        run: node node_modules/playwright-core/cli.js install --with-deps chromium
+      - name: Retain baseline render and test protected existing journeys
+        run: |
+          cp -a dist /tmp/gt-pilot-baseline
+          PORT=4180 GT_UI_HEALTH_FIXTURE=healthy node scripts/serve-dist.mjs > /tmp/gt-legacy-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill $SERVER_PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 40); do curl -sf http://localhost:4180/api/health && break || sleep 1; done
+          GT_UI_BASE=http://localhost:4180 GT_UI_ARTIFACTS=test-artifacts/compact-pilot/legacy node --test scripts/protected-taxonomy.test.mjs
+      - name: Build and exercise compact preview when implemented
         run: |
           if [ -f scripts/compact-pilot-evidence.mjs ]; then
-            npx playwright install --with-deps chromium
-            node scripts/compact-pilot-evidence.mjs
+            GT_COMPACT_PILOT=1 npm run build
+            GT_BASELINE_DIR=/tmp/gt-pilot-baseline node scripts/compact-pilot-evidence.mjs
           else
-            echo 'Pilot baseline checkout only; candidate browser checks not yet implemented.'
+            echo 'Baseline only; compact application changes are not present on this commit.'
           fi
-      - name: Upload rendered evidence when present
+      - name: Export exact tracked source for isolated verification workspace
+        if: always()
+        run: |
+          mkdir -p /tmp/gt-source
+          git archive --format=tar HEAD | tar -xf - -C /tmp/gt-source
+          git rev-parse HEAD > /tmp/gt-source/SOURCE_COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: compact-pilot-source-${{ github.event.pull_request.head.sha || github.sha }}
+          path: /tmp/gt-source/
+          include-hidden-files: true
+          retention-days: 7
+      - name: Upload actual browser evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: compact-pilot-evidence-${{ github.sha }}
+          name: compact-pilot-evidence-${{ github.event.pull_request.head.sha || github.sha }}
           path: test-artifacts/compact-pilot/
           if-no-files-found: ignore
           retention-days: 14
