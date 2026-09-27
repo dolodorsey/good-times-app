@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 20
     env:
       BASE_SHA: 9ce3552415826bba16798b8bddaf077cc06438fb
-      PRODUCTION_BASE: c0972ac1b6ff30e93a9fed34ac08b9f9544f36f0
+      PRODUCTION_BASE: 090ffa483d2898f072cc2d835961d07362029878
       FINAL_BRANCH: upgrade/gt-complete-release-20260927
     steps:
       - uses: actions/checkout@v4
@@ -31,12 +31,14 @@ jobs:
           test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$PRODUCTION_BASE"
           git checkout --detach "$BASE_SHA"
           python /tmp/gt-complete-transfer/apply.py
+          if test -f /tmp/gt-complete-transfer/post.py; then python /tmp/gt-complete-transfer/post.py; fi
           git config user.name good-times-build
           git config user.email good-times-build@users.noreply.github.com
-          git add src api scripts supabase vite.config.js .github/workflows/compact-workspace-capture.yml
+          git add src api scripts supabase docs vite.config.js .github/workflows/compact-workspace-capture.yml
           git commit -m "GOOD TIMES: complete compact customer experience in canonical app; preview only"
+          git merge --no-ff --no-edit "$PRODUCTION_BASE"
           git rev-parse HEAD > /tmp/gt-complete-evidence/candidate-sha.txt
-          git diff --stat "$BASE_SHA" HEAD > /tmp/gt-complete-evidence/changes.txt
+          git diff --stat "$PRODUCTION_BASE" HEAD > /tmp/gt-complete-evidence/changes.txt
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
