@@ -11,7 +11,7 @@ jobs:
   compact-pilot:
     if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'build/gt-compact-nightlife-20260927'
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 15
     permissions:
       contents: write
     env:
@@ -29,11 +29,12 @@ jobs:
         with:
           node-version: '24'
           cache: npm
-      - name: Check unchanged baseline
+      - name: Check unchanged baseline and prepare deterministic browser cleanup
         run: |
           set -euo pipefail
           test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$BASE_SHA"
           mkdir -p ui-artifacts/compact-pilot
+          node scripts/prepare-compact-harness.cjs
       - name: Install project and browser dependencies
         run: |
           set -euo pipefail
@@ -43,12 +44,12 @@ jobs:
       - name: Record baseline build and actual baseline screens
         run: |
           set -euo pipefail
-          npm run build 2>&1 | tee ui-artifacts/compact-pilot/baseline-build.log
+          timeout 240s npm run build 2>&1 | tee ui-artifacts/compact-pilot/baseline-build.log
           node scripts/serve-dist.mjs > ui-artifacts/compact-pilot/baseline-server.log 2>&1 &
           SERVER_PID=$!
           trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:4180/ >/dev/null && break || sleep 1; done
-          GT_COMPACT_UI_BASE=http://127.0.0.1:4180 GT_COMPACT_BASELINE=1 GT_COMPACT_ARTIFACTS=ui-artifacts/compact-pilot/baseline node --test scripts/compact-nightlife-ui.test.mjs 2>&1 | tee ui-artifacts/compact-pilot/baseline-browser.log
+          GT_COMPACT_UI_BASE=http://127.0.0.1:4180 GT_COMPACT_BASELINE=1 GT_COMPACT_ARTIFACTS=ui-artifacts/compact-pilot/baseline timeout 240s node --test scripts/compact-nightlife-ui.test.mjs 2>&1 | tee ui-artifacts/compact-pilot/baseline-browser.log
       - name: Materialize and commit the actual final candidate source
         run: |
           set -euo pipefail
@@ -65,12 +66,12 @@ jobs:
         run: |
           set -euo pipefail
           export VITE_VERCEL_GIT_COMMIT_SHA="$(git rev-parse HEAD)"
-          npm run build 2>&1 | tee ui-artifacts/compact-pilot/candidate-build.log
+          timeout 240s npm run build 2>&1 | tee ui-artifacts/compact-pilot/candidate-build.log
           node scripts/serve-dist.mjs > ui-artifacts/compact-pilot/candidate-server.log 2>&1 &
           SERVER_PID=$!
           trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
           for n in $(seq 1 30); do curl -fsS http://127.0.0.1:4180/ >/dev/null && break || sleep 1; done
-          GT_COMPACT_UI_BASE=http://127.0.0.1:4180 GT_COMPACT_ARTIFACTS=ui-artifacts/compact-pilot/candidate node --test scripts/compact-nightlife-ui.test.mjs 2>&1 | tee ui-artifacts/compact-pilot/candidate-browser.log
+          GT_COMPACT_UI_BASE=http://127.0.0.1:4180 GT_COMPACT_ARTIFACTS=ui-artifacts/compact-pilot/candidate timeout 300s node --test scripts/compact-nightlife-ui.test.mjs 2>&1 | tee ui-artifacts/compact-pilot/candidate-browser.log
       - name: Publish candidate branch only; never main
         run: |
           set -euo pipefail

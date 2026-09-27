@@ -1,0 +1,13 @@
+// One-time development preparation; excluded from final source candidate.
+const fs = require('node:fs'), assert = require('node:assert/strict')
+const file = 'scripts/compact-nightlife-ui.test.mjs'
+let code = fs.readFileSync(file, 'utf8')
+function edit(from,to){assert.equal(code.split(from).length-1,1,`Harness anchor changed: ${from}`);code=code.replace(from,to)}
+edit("import test from 'node:test'", "import test, {after} from 'node:test'")
+edit('fs.mkdirSync(OUT,{recursive:true})', 'fs.mkdirSync(OUT,{recursive:true})\nconst fixtureBrowsers=[]\nafter(async()=>{await Promise.allSettled(fixtureBrowsers.map(browser=>browser.close()))})')
+edit(' const ctx=await browser.newContext', ' fixtureBrowsers.push(browser)\n const ctx=await browser.newContext')
+edit("const page=await ctx.newPage();page.on('pageerror'", "const page=await ctx.newPage();page.setDefaultTimeout(15000);page.on('pageerror'")
+fs.writeFileSync(file,code)
+const component='src/features/experience/CompactTaxonomyBrowser.jsx'
+fs.writeFileSync(component,fs.readFileSync(component,'utf8').replace('in this type}', 'in this type'))
+console.log('Fixture browser cleanup added. Assertions retained; factual label punctuation corrected.')
