@@ -100,6 +100,7 @@ jobs:
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}   # may run before checkout (e.g. missing secret)
         run: |
           TITLE="Atlanta fallback snapshot refresh failed"
           BODY="Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID — the embedded fallback expires 36h after its last refresh. Check /api/health fallback_snapshot_armed / fallback_snapshot_age_hours."
