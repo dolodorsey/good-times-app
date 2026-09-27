@@ -4,11 +4,14 @@ on:
     branches: [main]
     paths:
       - .github/workflows/security-repair-verification.yml
+      - .github/workflows/secret-leak-gate.yml
       - scripts/security-finding-metadata.py
+      - scripts/validate-public-secret-exceptions.py
       - .gitleaks.toml
       - .gitleaksignore
 permissions:
   contents: read
+  issues: read
 concurrency:
   group: security-repair-metadata-${{ github.ref }}
   cancel-in-progress: true
@@ -18,6 +21,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: Verify reporter repository discovery before checkout (read-only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          cd "$RUNNER_TEMP"
+          test ! -d .git
+          gh issue list --state open --limit 1 --json number --jq length
+          echo "Pre-checkout issue discovery succeeded; no issue created or modified."
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0

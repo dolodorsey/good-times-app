@@ -5,7 +5,6 @@ import json
 from pathlib import Path
 import re
 import subprocess
-import sys
 
 FINGERPRINT = re.compile(r'([0-9a-f]{40}):([^:]+):(jwt|generic-api-key):([1-9][0-9]*)')
 JWT = re.compile(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+')
@@ -13,7 +12,6 @@ PUBLIC = re.compile(r'\bsb_publishable_[A-Za-z0-9_-]+\b')
 
 
 def public_line(rule, line):
-    # Disallow private-looking material even when a public key shares the line.
     if 'sb_secret_' in line or 'service_role' in line:
         return False
     tokens = JWT.findall(line)
@@ -24,7 +22,11 @@ def public_line(rule, line):
             try:
                 part = token.split('.')[1]
                 claims = json.loads(base64.urlsafe_b64decode(part + '=' * (-len(part) % 4)))
-                if claims.get('role') != 'anon' or claims.get('iss') != 'supabase':
+                # HS256 is an erroneous issuer in a reviewed historical anon-client
+                # literal. It does NOT establish signature validity or private access.
+                if claims.get('role') != 'anon' or claims.get('iss') not in ('supabase', 'HS256'):
+                    return False
+                if any(field in claims for field in ('sub', 'email', 'phone', 'session_id')):
                     return False
             except (ValueError, TypeError, UnicodeError):
                 return False
@@ -53,9 +55,9 @@ def validate(entries):
 
 
 def selftest():
-    def fake(role):
+    def fake(role, issuer='supabase', **extra):
         head = base64.urlsafe_b64encode(json.dumps({'alg': 'HS256'}).encode()).decode().rstrip('=')
-        body = base64.urlsafe_b64encode(json.dumps({'iss': 'supabase', 'role': role}).encode()).decode().rstrip('=')
+        body = base64.urlsafe_b64encode(json.dumps({'iss': issuer, 'role': role, **extra}).encode()).decode().rstrip('=')
         return head + '.' + body + '.synthetic_test_signature_not_a_credential'
     assert public_line('jwt', fake('anon'))
     assert not public_line('jwt', fake('service_role'))
@@ -66,7 +68,11 @@ def selftest():
     assert not public_line('generic-api-key', 'sb_secret_synthetic_test_only')
     assert not public_line('generic-api-key', 'sb_publishable_synthetic_test_only sb_secret_synthetic_test_only')
     assert not FINGERPRINT.fullmatch('api/data.js:jwt:2')
-    print('9 public-exception safety assertions passed')
+    assert public_line('jwt', fake('anon', issuer='HS256'))
+    assert not public_line('jwt', fake('service_role', issuer='HS256'))
+    assert not public_line('jwt', fake('anon', issuer='unreviewed-provider'))
+    assert not public_line('jwt', fake('anon', sub='synthetic-user'))
+    print('13 public-exception safety assertions passed')
 
 
 if __name__ == '__main__':
