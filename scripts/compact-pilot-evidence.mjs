@@ -5,14 +5,14 @@ import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
 import { chromium } from 'playwright-core'
 import { categories, nightlife, sampleMedia, state, fixture, sleep } from './compact-pilot-fixtures.mjs'
+import { measureCompactGeometry as density, assertCompactGeometry } from './compact-pilot-geometry.mjs'
 const OUT=path.resolve(process.env.GT_COMPACT_ARTIFACTS || 'test-artifacts/compact-pilot');fs.mkdirSync(OUT,{recursive:true})
 const report={kind:'rendered-browser-pilot',data:'Controlled public-listing sample with synthetic paging/category records and mocked account/map APIs. No real writes or live-account certification.',checks:[],screenshots:[],errors:[],viewports:[],sampleMedia,liveProductionVerified:false}
 const check=(name,details={})=>report.checks.push({name,result:'PASS',...details})
 async function server(dir,port){const proc=spawn(process.execPath,['scripts/serve-dist.mjs'],{env:{...process.env,ROOT:path.resolve(dir),PORT:String(port),GT_UI_HEALTH_FIXTURE:'healthy'},stdio:['ignore','pipe','pipe']});let logs='';proc.stdout.on('data',x=>logs+=x);proc.stderr.on('data',x=>logs+=x);for(let i=0;i<80;i++){try{if((await fetch(`http://localhost:${port}/api/health`)).ok)return proc}catch{}await sleep(100)}proc.kill();throw new Error(`Fixture server failed: ${logs}`)}
-async function shot(page,name){await page.screenshot({path:path.join(OUT,name+'.png'),animations:'disabled'});report.screenshots.push(name+'.png')}
+async function shot(page,name){await page.locator('.gt-compact-card-media img').evaluateAll(images=>Promise.all(images.map(image=>image.decode().catch(()=>null)))).catch(()=>null);await page.screenshot({path:path.join(OUT,name+'.png'),animations:'disabled'});report.screenshots.push(name+'.png')}
 async function count(page,selector,n){await page.waitForFunction(({selector,n})=>document.querySelectorAll(selector).length===n,{selector,n})}
 async function shell(page){await page.locator('.gt5-nav').waitFor();assert.deepEqual(await page.locator('.gt5-nav button small').allTextContents(),['Home','Discover','Plan','Saved','Profile']);assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1))}
-async function density(page){return page.evaluate(()=>{const main=document.querySelector('.gt5-main').getBoundingClientRect(),cards=[...document.querySelectorAll('.gt2-venue-grid article')];return{visible:cards.filter(el=>{const r=el.getBoundingClientRect();return r.top>=main.top-1&&r.bottom<=main.bottom+1}).length,columns:new Set(cards.slice(0,4).map(el=>Math.round(el.getBoundingClientRect().left))).size,width:innerWidth,overflow:document.documentElement.scrollWidth-innerWidth,cardRects:cards.slice(0,4).map(el=>{const r=el.getBoundingClientRect();return{x:r.x,y:r.y,w:r.width,h:r.height}})}})}
 async function nav(page,name){await page.locator('.gt5-nav').getByRole('button',{name,exact:true}).click()}
 async function clubs(page,compact=true){await nav(page,'Discover');await page.locator('[data-gt-category="nightlife"]').click();await page.locator('[data-gt-subcategories="nightlife"]').getByRole('button',{name:/Clubs/}).click();await page.locator('.gt2-venue-grid h3').first().waitFor();if(compact)await page.locator('.gt-compact-result-header').scrollIntoViewIfNeeded()}
 let browser,baseProc,appProc
@@ -28,15 +28,15 @@ try{
   }
  }
  appProc=await server('dist',4182)
- for(const viewport of [{width:360,height:800},{width:390,height:844},{width:430,height:932},{width:1440,height:1000},{width:320,height:800}]){
+ for(const viewport of [{width:360,height:800},{width:390,height:844},{width:430,height:932},{width:768,height:1024},{width:1024,height:768},{width:1440,height:1000},{width:320,height:800}]){
   const context=await browser.newContext({viewport,reducedMotion:'reduce',timezoneId:'America/New_York'}),page=await context.newPage(),s=state(),errors=[]
   page.on('pageerror',e=>errors.push(e.message));await fixture(context,s)
   try{
    await page.goto('http://localhost:4182/',{waitUntil:'domcontentloaded'});await page.locator('[data-compact-pilot="preview"]').waitFor();await shell(page)
    await nav(page,'Discover');await page.locator('[data-gt-category="nightlife"]').waitFor();assert.equal(await page.locator('[data-gt-category]').count(),26);await shot(page,`candidate-${viewport.width}-discover`)
    await page.locator('[data-gt-category="nightlife"]').click();assert.deepEqual(await page.locator('[data-gt-subcategories] strong').allTextContents(),['All Nightlife',...nightlife.map(x=>x[1])]);await shot(page,`candidate-${viewport.width}-subcategories`)
-   await page.locator('[data-gt-subcategory="nightclubs"]').click();await count(page,'.gt-compact-results h3',6);await page.locator('.gt-compact-result-header').scrollIntoViewIfNeeded();await shot(page,`candidate-${viewport.width}-clubs`)
-   const d=await density(page);report.viewports.push({variant:'candidate',...d});assert.ok(d.overflow<=1);if(viewport.width>=360&&viewport.width<=430)assert.equal(d.columns,2);if(viewport.width===390)assert.ok(d.visible>=4,`Only ${d.visible} complete entries visible at 390px`);check(`layout, density and scoped six-row results ${viewport.width}`,d)
+   await page.locator('[data-gt-subcategory="nightclubs"]').click();await count(page,'.gt-compact-results h3',6);await shot(page,`candidate-${viewport.width}-clubs`)
+   const d=await density(page);report.viewports.push({variant:'candidate',...d});assertCompactGeometry(d);check(`unobstructed density, readable cards and scoped six-row results ${viewport.width}`,d)
    const originScroll=await page.locator('.gt5-main').evaluate(el=>el.scrollTop);await page.locator('.gt-compact-card-open').first().click();await page.locator('.gt5-detail').waitFor();await shot(page,`candidate-${viewport.width}-detail`);await page.locator('.gt5-detail-back').click();assert.ok(Math.abs(await page.locator('.gt5-main').evaluate(el=>el.scrollTop)-originScroll)<3);assert.equal(await page.locator('[data-gt-subcategory="nightclubs"]').getAttribute('class'),'active');check(`detail/back retains scope and scroll ${viewport.width}`)
    if(viewport.width===390){
     const save=page.getByRole('button',{name:'Save Opium',exact:true});s.failSave=true;await save.click();await page.getByRole('status').filter({hasText:'Test save failure'}).waitFor();assert.equal(await save.getAttribute('aria-pressed'),'false');assert.equal(await page.locator('.gt5-detail').count(),0);check('failed save is not acknowledged; Save does not open detail')
