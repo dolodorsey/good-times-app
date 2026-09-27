@@ -1,0 +1,15 @@
+import {KHG_SUPABASE_URL,KHG_SUPABASE_ANON_KEY,GT_SUPABASE_URL,GT_SUPABASE_ANON_KEY} from '../src/lib/supabase.js'
+export const contentHeaders={apikey:KHG_SUPABASE_ANON_KEY,Authorization:`Bearer ${KHG_SUPABASE_ANON_KEY}`,'Content-Type':'application/json',Accept:'application/json'}
+export async function contentRead(path,{body,signal,timeout=6500}={}){
+ const response=await fetch(`${KHG_SUPABASE_URL}/rest/v1/${path}`,{method:body?'POST':'GET',headers:contentHeaders,body:body?JSON.stringify(body):undefined,signal:signal||AbortSignal.timeout(timeout),cache:'no-store'})
+ const data=await response.json().catch(()=>null)
+ if(!response.ok){const err=new Error('The verified content service could not complete this request.');err.status=response.status;throw err}
+ return data
+}
+export function send(res,status,body,cache='no-store'){res.statusCode=status;res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('Cache-Control',cache);res.setHeader('X-Content-Type-Options','nosniff');res.end(JSON.stringify(body))}
+export function bearer(req){const value=String(req.headers?.authorization||'');return /^Bearer [A-Za-z0-9._-]+$/.test(value)?value.slice(7):null}
+export async function currentUser(req){const token=bearer(req);if(!token)throw Object.assign(new Error('Sign in to save your plan.'),{status:401});const r=await fetch(`${GT_SUPABASE_URL}/auth/v1/user`,{headers:{apikey:GT_SUPABASE_ANON_KEY,Authorization:`Bearer ${token}`},signal:AbortSignal.timeout(6500)});const u=await r.json().catch(()=>null);if(!r.ok||!u?.id)throw Object.assign(new Error('Please sign in again.'),{status:401});return{user:u,token}}
+export async function accountRequest(path,token,{method='GET',body,prefer='return=representation'}={}){const r=await fetch(`${GT_SUPABASE_URL}/rest/v1/${path}`,{method,headers:{apikey:GT_SUPABASE_ANON_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json',Prefer:prefer},body:body?JSON.stringify(body):undefined,signal:AbortSignal.timeout(7000),cache:'no-store'});const data=await r.json().catch(()=>null);if(!r.ok)throw Object.assign(new Error(r.status===409?'The plan changed. Reload it before saving.':'Your changes could not be saved. Please retry.'),{status:r.status===409?409:503});return data}
+export function readBody(req){if(typeof req.body==='object'&&req.body){if(Array.isArray(req.body)||JSON.stringify(req.body).length>40000)throw Object.assign(new Error('Invalid or oversized request.'),{status:400});return req.body;}if(typeof req.body==='string'){if(req.body.length>40000)throw Object.assign(new Error('Request too large.'),{status:413});try{const value=JSON.parse(req.body);if(!value||typeof value!=='object'||Array.isArray(value))throw new Error('Invalid body');return value}catch{throw Object.assign(new Error('Invalid request.'),{status:400})}}return{}}
+export const uuid=value=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value||''))
+export function assertMethod(req,res,methods){if(methods.includes(req.method||'GET'))return true;res.setHeader('Allow',methods.join(', '));send(res,405,{ok:false,error:'Method not allowed'});return false}
