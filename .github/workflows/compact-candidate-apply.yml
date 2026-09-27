@@ -31,7 +31,10 @@ jobs:
           payload=json.loads(pathlib.Path('scripts/.compact-pilot-candidate.json').read_text())
           assert payload['version']==1
           subprocess.run(['git','merge-base','--is-ancestor',payload['base_sha'],'HEAD'],check=True)
-          patch=gzip.decompress(base64.b64decode(payload['patch_gzip_base64'],validate=True))
+          assert payload['chunks']==[f'scripts/.compact-candidate-part-{i}.b64' for i in range(4)]
+          encoded=''.join(pathlib.Path(p).read_text().strip() for p in payload['chunks'])
+          assert len(encoded)<200000
+          patch=gzip.decompress(base64.b64decode(encoded,validate=True))
           assert len(patch)<1000000
           assert hashlib.sha256(patch).hexdigest()==payload['patch_sha256']
           file=pathlib.Path('/tmp/gt-compact-candidate.patch');file.write_bytes(patch)
@@ -61,7 +64,7 @@ jobs:
           test "$GITHUB_REF" = 'refs/heads/feat/compact-two-column-pilot-20260927'
           git config user.name 'GOOD TIMES preview builder'
           git config user.email 'good-times-preview@users.noreply.github.com'
-          git rm scripts/.compact-pilot-candidate.json .github/workflows/compact-candidate-apply.yml
+          git rm scripts/.compact-pilot-candidate.json scripts/.compact-candidate-part-*.b64 .github/workflows/compact-candidate-apply.yml
           git commit -m 'GOOD TIMES: implement owner-approved compact Nightlife preview with scoped search, reliable states and tests'
           git push origin HEAD:refs/heads/feat/compact-two-column-pilot-20260927
           git rev-parse HEAD >> "$GITHUB_STEP_SUMMARY"
