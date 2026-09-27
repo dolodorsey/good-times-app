@@ -81,3 +81,7 @@ Forbidden: opening as settings dump, sensitive-data exposure, silent city-contex
 
 ## Anti-half-ass rule
 If a feature cannot meet its screen contract and applicable gates, keep it behind a feature flag. GOOD TIMES does not expose a weaker half-built version solely to say the feature exists.
+
+
+## Owner-approved compact pilot — 2026-09-27
+For the isolated preview pilot, read `docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.md`. Its compact presentation supersedes oversized hero requirements only within the compiled pilot; all taxonomy, truth, privacy, release and paused-scheduler protections remain binding.

@@ -10,6 +10,9 @@ function splitVendorChunk(moduleId) {
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __GT_COMPACT_PILOT__: JSON.stringify(process.env.VERCEL_ENV !== 'production' && (process.env.GT_COMPACT_PILOT === '1' || (process.env.VERCEL_ENV === 'preview' && process.env.VERCEL_GIT_COMMIT_REF === 'feat/compact-two-column-pilot-20260927'))),
+  },
   build: {
     outDir: 'dist',
     target: 'es2022',
