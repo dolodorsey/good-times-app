@@ -41,7 +41,8 @@ test('GOOD TIMES health requires both exact service planes', async () => {
   assert.equal(JSON.parse(calls[1].options?.body || '{}').p_city, 'atlanta')
   assert.match(String(calls[0].options?.headers?.apikey || ''), /^eyJ/)
   assert.equal(calls[0].options?.headers?.Authorization, `Bearer ${calls[0].options?.headers?.apikey}`)
-  assert.match(String(calls[1].options?.headers?.apikey || ''), /^eyJ/)
+  assert.match(String(calls[1].options?.headers?.apikey || ''), /^sb_publishable_/)
+  assert.doesNotMatch(String(calls[1].options?.headers?.apikey || ''), /^sb_secret_/)
   assert.equal(calls[1].options?.headers?.Authorization, `Bearer ${calls[1].options?.headers?.apikey}`)
 })
 
