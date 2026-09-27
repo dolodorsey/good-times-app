@@ -1,0 +1,53 @@
+name: Compact Pilot Evidence
+on:
+  push:
+    branches: [feat/compact-two-column-pilot-20260927]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: compact-pilot-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  evidence:
+    if: github.ref == 'refs/heads/feat/compact-two-column-pilot-20260927'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Export exact tracked source for isolated build workspace
+        run: |
+          mkdir -p /tmp/gt-source
+          git archive --format=tar HEAD | tar -xf - -C /tmp/gt-source
+          printf '%s\n' "$GITHUB_SHA" > /tmp/gt-source/SOURCE_COMMIT.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compact-pilot-source-${{ github.sha }}
+          path: /tmp/gt-source/
+          include-hidden-files: true
+          retention-days: 7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - name: Existing test and build gates
+        run: npm run build
+      - name: Compact pilot browser checks when present
+        run: |
+          if [ -f scripts/compact-pilot-evidence.mjs ]; then
+            npx playwright install --with-deps chromium
+            node scripts/compact-pilot-evidence.mjs
+          else
+            echo 'Pilot baseline checkout only; candidate browser checks not yet implemented.'
+          fi
+      - name: Upload rendered evidence when present
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compact-pilot-evidence-${{ github.sha }}
+          path: test-artifacts/compact-pilot/
+          if-no-files-found: ignore
+          retention-days: 14
