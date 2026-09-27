@@ -6,10 +6,15 @@ name: Refresh Atlanta fallback snapshot
 # a PostgREST stall returns 503 AND fails the release test gate.
 #
 # main is protected (PR required; required checks: verify, geometry; 0 approvals).
-# This workflow therefore never pushes to main: it refreshes on a claude/ branch,
-# opens/updates a PR, dispatches the required checks on the exact head SHA,
-# waits for them, and squash-merges that exact SHA. Any failure opens an issue.
-# Requires repo setting: "Allow GitHub Actions to create and approve pull requests".
+# This workflow never pushes to main: it refreshes on a claude/ branch, opens or
+# updates a PR, waits for GitHub's own required checks on that exact SHA, and
+# squash-merges it. Any failure opens an issue.
+#
+# Requires repo secret SNAPSHOT_BOT_TOKEN (fine-grained PAT scoped to this repo:
+# Contents RW, Pull requests RW). GitHub does not start pull_request workflows
+# for pushes/PRs made with the built-in GITHUB_TOKEN, and checks started via
+# workflow_dispatch do not count toward a PR's required checks (verified
+# 2026-09-27 on PR #161), so the built-in token cannot complete this loop.
 
 on:
   schedule:
@@ -17,10 +22,7 @@ on:
   workflow_dispatch: {}
 
 permissions:
-  contents: write
-  pull-requests: write
-  actions: write
-  checks: read
+  contents: read
   issues: write
 
 concurrency:
@@ -29,17 +31,22 @@ concurrency:
 
 env:
   BRANCH: claude/atlanta-snapshot-refresh
-  GH_TOKEN: ${{ github.token }}
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
+      - name: Require bot token
+        env:
+          BOT: ${{ secrets.SNAPSHOT_BOT_TOKEN }}
+        run: |
+          if [ -z "$BOT" ]; then echo "::error::SNAPSHOT_BOT_TOKEN secret is not set; see header of this workflow"; exit 1; fi
       - uses: actions/checkout@v4
         with:
           ref: main
           fetch-depth: 0
+          token: ${{ secrets.SNAPSHOT_BOT_TOKEN }}
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -61,6 +68,8 @@ jobs:
       - name: Open or update refresh PR
         id: pr
         if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.SNAPSHOT_BOT_TOKEN }}
         run: |
           git config user.name "good-times-snapshot-bot"
           git config user.email "good-times-snapshot-bot@users.noreply.github.com"
@@ -77,32 +86,20 @@ jobs:
             PR=$(gh pr list --head "$BRANCH" --state open --json number -q '.[0].number')
           fi
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"; echo "pr=$PR" >> "$GITHUB_OUTPUT"
-      - name: Dispatch required checks on the refresh commit
-        if: steps.diff.outputs.changed == 'true'
-        run: |
-          gh workflow run ui-regression.yml --ref "$BRANCH"
-          gh workflow run repair-customer-shell.yml --ref "$BRANCH"
-          gh workflow run repair-live-runtime.yml --ref "$BRANCH"
       - name: Wait for required checks, then merge the exact SHA
         if: steps.diff.outputs.changed == 'true'
         env:
+          GH_TOKEN: ${{ secrets.SNAPSHOT_BOT_TOKEN }}
           SHA: ${{ steps.pr.outputs.sha }}
           PR: ${{ steps.pr.outputs.pr }}
         run: |
-          for i in $(seq 1 80); do
-            RUNS=$(gh api "repos/$GITHUB_REPOSITORY/commits/$SHA/check-runs?per_page=100" \
-              -q '[.check_runs[] | select(.name=="verify" or .name=="geometry") | {name, status, conclusion}]')
-            OK=$(echo "$RUNS" | jq '[.[]|select(.name=="geometry" and .conclusion=="success")]|length>0 and ([.[]|select(.name=="verify")]|length>0) and ([.[]|select(.name=="verify" and .status!="completed")]|length==0) and ([.[]|select(.name=="verify" and .conclusion!="success" and .conclusion!="skipped")]|length==0)')
-            BAD=$(echo "$RUNS" | jq '[.[]|select(.status=="completed" and (.conclusion=="failure" or .conclusion=="cancelled" or .conclusion=="timed_out"))]|length')
-            echo "$(date -u +%T) ok=$OK bad=$BAD runs=$RUNS"
-            if [ "$BAD" != "0" ]; then echo "Required check failed"; exit 1; fi
-            if [ "$OK" = "true" ]; then break; fi
-            if [ "$i" = "80" ]; then echo "Timed out waiting for required checks"; exit 1; fi
-            sleep 30
-          done
+          sleep 30   # let pull_request workflows register their required checks
+          gh pr checks "$PR" --required --watch --interval 30 --fail-fast
           gh pr merge "$PR" --squash --match-head-commit "$SHA"
       - name: Report failure
         if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           TITLE="Atlanta fallback snapshot refresh failed"
           BODY="Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID — the embedded fallback expires 36h after its last refresh. Check /api/health fallback_snapshot_armed / fallback_snapshot_age_hours."
