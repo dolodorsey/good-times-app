@@ -1,0 +1,88 @@
+name: GOOD TIMES compact pilot one-time build
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+concurrency:
+  group: gt-compact-pilot-one-time-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  compact-pilot:
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'build/gt-compact-nightlife-20260927'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    env:
+      BASE_SHA: c0972ac1b6ff30e93a9fed34ac08b9f9544f36f0
+      FINAL_BRANCH: upgrade/gt-compact-nightlife-20260927
+      GT_UI_HEALTH_FIXTURE: healthy
+      API_ORIGIN: http://127.0.0.1:9
+      PORT: '4180'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Check unchanged baseline
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$BASE_SHA"
+          mkdir -p ui-artifacts/compact-pilot
+      - name: Install project and browser dependencies
+        run: |
+          set -euo pipefail
+          npm ci --legacy-peer-deps
+          npx --no-install playwright-core install --with-deps chromium
+          echo "GT_UI_CHROME_PATH=$(node --input-type=module -e 'import {chromium} from "playwright-core"; console.log(chromium.executablePath())')" >> "$GITHUB_ENV"
+      - name: Record baseline build and actual baseline screens
+        run: |
+          set -euo pipefail
+          npm run build 2>&1 | tee ui-artifacts/compact-pilot/baseline-build.log
+          node scripts/serve-dist.mjs > ui-artifacts/compact-pilot/baseline-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:4180/ >/dev/null && break || sleep 1; done
+          GT_COMPACT_UI_BASE=http://127.0.0.1:4180 GT_COMPACT_BASELINE=1 GT_COMPACT_ARTIFACTS=ui-artifacts/compact-pilot/baseline node --test scripts/compact-nightlife-ui.test.mjs 2>&1 | tee ui-artifacts/compact-pilot/baseline-browser.log
+      - name: Materialize and commit the actual final candidate source
+        run: |
+          set -euo pipefail
+          node scripts/materialize-compact-pilot.cjs
+          git reset --mixed "$BASE_SHA"
+          git config user.name 'GOOD TIMES implementation bot'
+          git config user.email 'good-times-implementation@users.noreply.github.com'
+          git add src/features/experience/compact-directory-query.js src/features/experience/compact-directory.js src/features/experience/CompactTaxonomyBrowser.jsx src/features/experience/good-times-compact-pilot.css src/features/experience/GoodTimesCommandAppV4.jsx src/features/experience/ExploreTaxonomyBrowser.jsx scripts/compact-directory-query.test.mjs scripts/compact-nightlife-ui.test.mjs vite.config.js docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.md AGENTS.md src/features/experience/AGENTS.md docs/GOOD_TIMES_PRODUCT_UI_CONSTITUTION.md docs/GOOD_TIMES_SCREEN_CONTRACTS.md
+          git diff --cached --check
+          git commit -m 'GOOD TIMES: implement opt-in compact Nightlife pilot with bounded venue search and guarded release'
+          git rev-parse HEAD | tee ui-artifacts/compact-pilot/candidate-sha.txt
+          git diff --stat "$BASE_SHA" HEAD | tee ui-artifacts/compact-pilot/candidate-diff.txt
+      - name: Build and test exact candidate; render compact journeys
+        run: |
+          set -euo pipefail
+          export VITE_VERCEL_GIT_COMMIT_SHA="$(git rev-parse HEAD)"
+          npm run build 2>&1 | tee ui-artifacts/compact-pilot/candidate-build.log
+          node scripts/serve-dist.mjs > ui-artifacts/compact-pilot/candidate-server.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for n in $(seq 1 30); do curl -fsS http://127.0.0.1:4180/ >/dev/null && break || sleep 1; done
+          GT_COMPACT_UI_BASE=http://127.0.0.1:4180 GT_COMPACT_ARTIFACTS=ui-artifacts/compact-pilot/candidate node --test scripts/compact-nightlife-ui.test.mjs 2>&1 | tee ui-artifacts/compact-pilot/candidate-browser.log
+      - name: Publish candidate branch only; never main
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/main | cut -f1)" = "$BASE_SHA"
+          test -z "$(git ls-remote origin "refs/heads/$FINAL_BRANCH")"
+          git diff --quiet "$BASE_SHA" HEAD -- .github vercel.json
+          git push origin "HEAD:refs/heads/$FINAL_BRANCH"
+          printf 'Candidate branch: `%s`\n\nExact SHA: `%s`\n\nFixture browser tests only; independent visual/live-account acceptance and existing PR checks remain required. Production unchanged.\n' "$FINAL_BRANCH" "$(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+      - name: Preserve individual screenshots, logs and metrics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compact-pilot-evidence-${{ github.run_id }}
+          path: ui-artifacts/compact-pilot
+          retention-days: 14
