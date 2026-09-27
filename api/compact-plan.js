@@ -4,7 +4,7 @@ import {parseScope} from './compact-event-query.js'
 import {readEventPage} from './discovery-events.js'
 import {publicDetails} from './compact-detail.js'
 import {dateNumber,timeMinutes} from '../src/features/experience/good-times-event-clock.js'
-import {generateSuggestedPlan,validatePlanInput,planWarnings,rankPlanVenues,hoursContain} from './compact-plan-rules.js'
+import {generateSuggestedPlan,validatePlanInput,planWarnings,rankPlanVenues,hoursContain,eventMeetsRequirements} from './compact-plan-rules.js'
 const venueFields='id,name,city_key,address,neighborhood,side_of_town,category_key,subcategory,hero_image,website,booking_link,phone,hours,hours_summary,price_range,culture_score,quality_score,amenity_tags,dietary_tags,age_range,verification_status,freshness_expires_at'
 async function venues(ids=[]){if(ids.some(id=>!uuid(id))||ids.length>8)throw Object.assign(new Error('Invalid place identifiers.'),{status:400});return contentRead(`gt_venues?select=${venueFields}&city_key=eq.atlanta&status=eq.active&is_verified=eq.true&verification_status=eq.verified_current&freshness_expires_at=gt.${encodeURIComponent(new Date().toISOString())}${ids.length?`&id=in.(${ids.join(',')})`:''}&order=quality_score.desc.nullslast,id.asc&limit=${ids.length||300}`)}
 const invalid=message=>Object.assign(new Error(message),{status:400})
@@ -28,6 +28,7 @@ export default async function handler(req,res){try{
    if(d===null||m===null)throw invalid('Each stop needs a valid date and time.')
    const offset=(d-dateNumber(spec.date))*1440+m
    if(offset<spec.startMinute||offset>=spec.endMinute||offset<=prior)throw invalid('Stop times must be chronological and inside your selected window.')
+   if(e&&!eventMeetsRequirements(e,spec))throw invalid('The selected event does not meet your verified requirements.');
    if(v&&hoursContain(v,date,m)===false)throw invalid('A selected place is closed at its proposed time.')
    prior=offset;stops.push({id:raw.id,type:v?'venue':'event',name:v?.name||e.title,venue:v?.name||e.venue_name,address:v?.address||e.venue_address,neighborhood:v?.neighborhood||null,date,time,role:String(raw.role||'Stop').slice(0,40),image_url:v?.hero_image||e.image_url,website:v?.website||null,booking_link:v?.booking_link||null,ticket_url:e?.ticket_url||null,phone:v?.phone||null,locked:Boolean(raw.locked),status:'SUGGESTED',hours_verified:v?hoursContain(v,date,m)===true:false})
   }

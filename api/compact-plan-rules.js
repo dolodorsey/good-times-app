@@ -6,8 +6,12 @@ export function validatePlanInput(input={},now=Date.now()){
  const finish=end<=start?end+1440:end
  if(finish-start>12*60)throw new Error('Keep each plan within 12 hours.')
  if(!Number.isInteger(people)||people<1||people>50)throw new Error('Choose between 1 and 50 people.')
+ if(input.vibes!==undefined&&(!Array.isArray(input.vibes)||input.vibes.length>4||input.vibes.some(x=>!['grown','turnt','date','live','food','culture','rooftop','explore','sports','family'].includes(x))))throw new Error('Choose up to four supported vibes.');
+ if(input.needs!==undefined&&(!Array.isArray(input.needs)||input.needs.some(x=>!['wheelchair_accessible','vegetarian','vegan'].includes(x))))throw new Error('A requested requirement is not supported; it has not been dropped.');
+ if(input.budget!==undefined&&!['any','value','mid','premium'].includes(input.budget))throw new Error('Choose a supported spending preference.');
+ const age=input.age===undefined||input.age===null||input.age===''?null:Number(input.age);if(age!==null&&(!Number.isInteger(age)||age<0||age>120))throw new Error('Enter a valid youngest guest age.');
  const vibes=Array.isArray(input.vibes)?[...new Set(input.vibes)].filter(x=>['grown','turnt','date','live','food','culture','rooftop','explore','sports','family'].includes(x)).slice(0,4):[]
- return{date,start:input.start||'19:00',end:input.end||'01:00',startMinute:start,endMinute:finish,people,vibes,lead:vibes.includes(input.lead)?input.lead:vibes[0]||'explore',area:String(input.area||'').trim().slice(0,80),budget:['any','value','mid','premium'].includes(input.budget)?input.budget:'any',event:typeof input.event==='string'?input.event:null,pinned:typeof input.pinned==='string'?input.pinned:null,needs:Array.isArray(input.needs)?input.needs.filter(v=>['wheelchair_accessible','vegetarian','vegan'].includes(v)):[],age:input.age?Number(input.age):null}
+ return{date,start:input.start||'19:00',end:input.end||'01:00',startMinute:start,endMinute:finish,people,vibes,lead:vibes.includes(input.lead)?input.lead:vibes[0]||'explore',area:String(input.area||'').trim().slice(0,80),budget:['any','value','mid','premium'].includes(input.budget)?input.budget:'any',event:typeof input.event==='string'?input.event:null,pinned:typeof input.pinned==='string'?input.pinned:null,needs:Array.isArray(input.needs)?input.needs.filter(v=>['wheelchair_accessible','vegetarian','vegan'].includes(v)):[],age}
 }
 const TYPES={food:['restaurant','fine_dining','brunch','food_hall','coffee','wine_bar'],turnt:['nightclub','lounge','bar','hookah','rooftop'],date:['restaurant','wine_bar','lounge','rooftop'],grown:['lounge','wine_bar','restaurant'],culture:['culture','museum','gallery','event_venue'],live:['jazz','event_venue'],rooftop:['rooftop'],sports:['sports_bar'],family:['attraction','museum','aquarium','zoo','entertainment'],explore:['culture','entertainment','attraction']}
 function type(v){return String(v.venue_category_key||v.category_key||'').toLowerCase()}
@@ -23,10 +27,13 @@ export function hoursContain(v,date,start,duration=60){
 export function rankPlanVenues(venues,input){return venues.filter(v=>{
  if(input.area&&![v.neighborhood,v.side_of_town].some(x=>String(x||'').trim().toLowerCase()===input.area.toLowerCase()))return false
  if(input.needs.some(n=>![...(v.amenity_tags||[]),...(v.dietary_tags||[])].includes(n)))return false
- if(input.lead==='family'&&['nightclub','hookah','lounge'].includes(type(v)))return false
- if(input.age&&Number.parseInt(v.age_range,10)>input.age)return false
+ const family=input.vibes.includes('family')||input.lead==='family';if(family&&['nightclub','hookah','lounge','adult_entertainment','strip_club'].includes(type(v)))return false
+ const ageRule=minimumAge(v.age_range);if(input.age!==null&&(ageRule!==null?ageRule>input.age:input.age<18))return false
+ if(family&&ageRule!==null&&ageRule>=18)return false
  return true
  }).sort((a,b)=>{const score=v=>Number(v.culture_score??v.quality_score??0)+(TYPES[input.lead]?.includes(type(v))?12:0)+input.vibes.filter(k=>TYPES[k]?.includes(type(v))).length*3;return score(b)-score(a)||String(a.id).localeCompare(String(b.id))})}
+export function minimumAge(value){const s=String(value??'').trim().toLowerCase();if(/^(all ages|all-ages|family friendly)$/.test(s))return 0;const m=s.match(/^(\d{1,3})(?:\s*\+|\s*(?:and|or) older)?$/);return m?Number(m[1]):null}
+export function eventMeetsRequirements(e,spec){if(e.city_key&&e.city_key!=='atlanta')return false;const family=spec.vibes.includes('family')||spec.lead==='family';if(family&&e.category_key==='nightlife')return false;const age=minimumAge(e.age_requirement);if(family&&age!==null&&age>=18)return false;if(spec.age!==null&&(age!==null?age>spec.age:spec.age<18))return false;if(spec.needs.some(n=>![...(e.amenity_tags||[]),...(e.dietary_tags||[])].includes(n)))return false;return true}
 const time=m=>`${String(Math.floor(m%1440/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`
 const shift=(d,n)=>new Date((dateNumber(d)+n)*86400000).toISOString().slice(0,10)
 export function generateSuggestedPlan({input,venues,events,id,now=Date.now()}){
@@ -35,9 +42,9 @@ export function generateSuggestedPlan({input,venues,events,id,now=Date.now()}){
  const addVenue=(v,role)=>{if(!v||cursor+60>spec.endMinute)return false;const day=shift(spec.date,Math.floor(cursor/1440)),hours=hoursContain(v,day,cursor%1440);if(hours===false)return false;stops.push({id:`venue:${v.id}`,type:'venue',name:v.name,venue:v.name,address:v.address,neighborhood:v.neighborhood,date:day,time:time(cursor),role,status:'SUGGESTED',image_url:v.hero_image,website:v.website,booking_link:v.booking_link,phone:v.phone,price_range:v.price_range,locked:spec.pinned===v.id,timing_basis:'Suggested 60-minute stop; not a reservation',hours_verified:hours===true});if(hours!==true)warnings.push(`Check operating hours for ${v.name}.`);cursor+=75;return true}
  const pinned=spec.pinned?pool.find(v=>v.id===spec.pinned):null
  if(spec.pinned&&!pinned)throw new Error('That place no longer meets this plan’s area or verified requirements. Change the filters or pick another place.')
- if(pinned&&!addVenue(pinned,'Your selected place'))throw new Error('The selected place is closed during this time or cannot fit the plan. Choose another time; it has not been replaced.')
- else{const food=pool.find(v=>TYPES.food.includes(type(v))&&hoursContain(v,spec.date,cursor)!==false);addVenue(food||pool.find(v=>hoursContain(v,spec.date,cursor)!==false),'Start')}
- const matching=events.filter(e=>e.event_date===spec.date&&timeMinutes(e.event_time)!==null&&timeMinutes(e.event_time)>=cursor&&timeMinutes(e.event_time)<=spec.endMinute-45&&(!spec.area||`${e.neighborhood||''} ${e.venue_address||''}`.toLowerCase().includes(spec.area.toLowerCase()))&&(!spec.age||!Number.parseInt(e.age_requirement,10)||Number.parseInt(e.age_requirement,10)<=spec.age))
+ if(pinned){if(!addVenue(pinned,'Your selected place'))throw new Error('The selected place is closed during this time or cannot fit the plan. Choose another time; it has not been replaced.')}
+ else if(!spec.event){const food=pool.find(v=>TYPES.food.includes(type(v))&&hoursContain(v,spec.date,cursor)!==false);addVenue(food||pool.find(v=>hoursContain(v,spec.date,cursor)!==false),'Start')}
+ const matching=events.filter(e=>eventMeetsRequirements(e,spec)&&e.event_date===spec.date&&timeMinutes(e.event_time)!==null&&timeMinutes(e.event_time)>=cursor&&timeMinutes(e.event_time)<=spec.endMinute-45&&(!spec.area||`${e.neighborhood||''} ${e.venue_address||''}`.toLowerCase().includes(spec.area.toLowerCase()))&&(!spec.age||!Number.parseInt(e.age_requirement,10)||Number.parseInt(e.age_requirement,10)<=spec.age))
  const anchor=spec.event?matching.find(e=>e.event_key===spec.event):matching.find(e=>spec.vibes.includes('live')?e.category_key==='concerts_live_music':spec.vibes.includes('sports')?e.category_key==='sports_watch':spec.lead==='family'?e.category_key==='family_kids':true)
  if(spec.event&&!anchor)throw new Error('The selected event does not fit this date or time window. Change the plan times; it has not been replaced.')
  if(anchor){stops.push({id:anchor.event_key,type:'event',name:anchor.title,venue:anchor.venue_name,date:anchor.event_date,time:anchor.event_time,role:'Main event',image_url:anchor.image_url,ticket_url:anchor.ticket_url,status:'SUGGESTED',timing_basis:'Published start; event end is not verified',locked:true});warnings.push(`Check the end time for ${anchor.title} before adding a later stop.`)}

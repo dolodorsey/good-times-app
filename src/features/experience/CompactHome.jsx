@@ -1,4 +1,5 @@
 import React,{useMemo,useState}from'react'
+import CompactSponsored from './CompactSponsored.jsx'
 import CompactEventCard from'./CompactEventCard.jsx'
 import CompactVenueCard from'./CompactVenueCard.jsx'
 import CompactEventCollection from'./CompactEventCollection.jsx'
@@ -20,6 +21,7 @@ export default function CompactHome({events,venues,taxonomy,savedKeys,onEvent,on
   {mode!=='for-you'?<CompactEventCollection key={mode} mode={mode} taxonomy={taxonomy} savedKeys={savedKeys} onOpen={onEvent} onSave={onSave} now={now}/>:<>
   {first.length?section(tonight.length?'Tonight in Atlanta':'Next up in Atlanta',()=>onCollection({mode:tonight.length?'tonight':'upcoming'}),eventGrid(first)):section('Places worth exploring',()=>onDiscover(''),<div className="gt-complete-grid">{places.map(v=><CompactVenueCard key={v.id} venue={v} saved={savedKeys.has(`venue:${v.id}`)} onOpen={()=>onVenue(v)} onSave={()=>onSave('venue',v.id)}/>)}</div>)}
   {next.length>0&&section('More to look forward to',()=>onCollection({mode:'upcoming'}),eventGrid(next))}
+  <CompactSponsored placement="home_between_sections"/>
   <button className="gt-complete-inline-cta" onClick={onPlan}><span><strong>Build your night</strong><small>Your choices. One useful plan.</small></span><b>＋</b></button>
   <button className="gt-complete-inline-cta" onClick={onSports}><span><strong>Atlanta sports</strong><small>Teams · games · places to watch</small></span><b>↗</b></button>
   {groups.map(({key,list})=>{return list.length?<React.Fragment key={key}>{section(categoryLabel(key,taxonomy),()=>onCollection({category:key}),eventGrid(list))}</React.Fragment>:null})}
