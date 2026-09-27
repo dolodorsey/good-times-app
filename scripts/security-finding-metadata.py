@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Metadata-only security triage: no environment credentials and no raw reports."""
+"""Metadata-only security triage: no environment-key inspection or raw reports."""
 import base64
 import json
 import os
@@ -35,7 +35,7 @@ def metadata(finding, scope):
         try:
             payload = value.split('.')[1]
             claims = json.loads(base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4)))
-            classes.append('anon-jwt' if claims.get('role') == 'anon' else 'PRIVILEGED-OR-OTHER-JWT')
+            classes.append('anon-jwt' if isinstance(claims, dict) and claims.get('role') == 'anon' else 'PRIVILEGED-OR-OTHER-JWT')
         except (ValueError, TypeError, UnicodeError):
             classes.append('MALFORMED-JWT')
     if finding['RuleID'] == 'generic-api-key' and PUBLIC.search(selected):
@@ -48,6 +48,7 @@ def metadata(finding, scope):
 def main():
     if subprocess.check_output(['git', 'rev-parse', '--is-shallow-repository'], text=True).strip() != 'false':
         raise RuntimeError('Full history is required')
+    configured = Path('.gitleaksignore').exists()
     with tempfile.TemporaryDirectory(prefix='gt-redacted-', dir=os.environ.get('RUNNER_TEMP')) as directory:
         for scope in ['history', 'current']:
             report = Path(directory) / (scope + '.json')
@@ -58,8 +59,8 @@ def main():
                 raise RuntimeError('Scanner error; refusing to treat it as success')
             findings = json.loads(report.read_text())
             safe = [{'fingerprint': f.get('Fingerprint'), 'file': f['File'], 'line': f['StartLine'], 'classification': metadata(f, scope)} for f in findings]
-            print(json.dumps({'scope': scope, 'count': len(findings), 'findings': safe}, indent=2))
-    print('Metadata only; no suppressions applied, no credential validation or rotation claimed.')
+            print(json.dumps({'scope': scope, 'configured_fingerprint_exceptions': configured, 'count': len(findings), 'findings': safe}, indent=2))
+    print('Diagnostic classification only. Configured fingerprint exceptions, when present, apply. No credential revocation or clean-security certification claimed.')
 
 
 if __name__ == '__main__':

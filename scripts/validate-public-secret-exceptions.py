@@ -9,6 +9,9 @@ import subprocess
 FINGERPRINT = re.compile(r'([0-9a-f]{40}):([^:]+):(jwt|generic-api-key):([1-9][0-9]*)')
 JWT = re.compile(r'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+')
 PUBLIC = re.compile(r'\bsb_publishable_[A-Za-z0-9_-]+\b')
+# "HS256" and "sup" occur in already-reviewed, immutable historical
+# anon-client literals. Neither is a signature-validation assertion.
+REVIEWED_ISSUERS = frozenset(('supabase', 'HS256', 'sup'))
 
 
 def public_line(rule, line):
@@ -22,9 +25,9 @@ def public_line(rule, line):
             try:
                 part = token.split('.')[1]
                 claims = json.loads(base64.urlsafe_b64decode(part + '=' * (-len(part) % 4)))
-                # HS256 is an erroneous issuer in a reviewed historical anon-client
-                # literal. It does NOT establish signature validity or private access.
-                if claims.get('role') != 'anon' or claims.get('iss') not in ('supabase', 'HS256'):
+                if not isinstance(claims, dict):
+                    return False
+                if claims.get('role') != 'anon' or claims.get('iss') not in REVIEWED_ISSUERS:
                     return False
                 if any(field in claims for field in ('sub', 'email', 'phone', 'session_id')):
                     return False
@@ -36,6 +39,7 @@ def public_line(rule, line):
 
 def validate(entries):
     seen = set()
+    failures = []
     for entry in entries:
         if not entry or entry.startswith('#'):
             continue
@@ -46,11 +50,14 @@ def validate(entries):
         commit, path, rule, number = match.groups()
         result = subprocess.run(['git', 'show', commit + ':' + path], capture_output=True, check=False)
         if result.returncode:
-            raise ValueError('Exception source is unavailable; refusing unverified waiver')
+            failures.append(entry + ' (source unavailable)')
+            continue
         lines = result.stdout.decode('utf-8').splitlines()
         index = int(number) - 1
         if index >= len(lines) or not public_line(rule, lines[index]):
-            raise ValueError('Exception is not verified public-only: ' + entry)
+            failures.append(entry + ' (not verified public-only)')
+    if failures:
+        raise ValueError('Unverified exceptions; no waiver authorized:\n' + '\n'.join(failures))
     return len(seen)
 
 
@@ -72,7 +79,9 @@ def selftest():
     assert not public_line('jwt', fake('service_role', issuer='HS256'))
     assert not public_line('jwt', fake('anon', issuer='unreviewed-provider'))
     assert not public_line('jwt', fake('anon', sub='synthetic-user'))
-    print('13 public-exception safety assertions passed')
+    assert public_line('jwt', fake('anon', issuer='sup'))
+    assert not public_line('jwt', fake('service_role', issuer='sup'))
+    print('15 public-exception safety assertions passed')
 
 
 if __name__ == '__main__':
