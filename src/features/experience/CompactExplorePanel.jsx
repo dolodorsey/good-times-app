@@ -1,3 +1,4 @@
+import CompactEventCollection from './CompactEventCollection.jsx'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { loadExploreCounts, loadExplorePage, loadExploreTaxonomy } from '../intelligence/client.js'
 import { exploreSignature, knownPlaceCount, uniqueScopedPlaces, validCoordinate } from '../intelligence/explore-page.js'
@@ -8,7 +9,7 @@ const normalize = category => ({ ...category, subcategoryRows: category.subcateg
 function countText(value) { return value == null ? 'Browse places' : `${value} ${value === 1 ? 'place' : 'places'}` }
 function jumpToResults() { requestAnimationFrame(() => document.querySelector('.gt-compact-result-header')?.scrollIntoView({ block: 'start' })) }
 
-export default function CompactExplorePanel({ taxonomy = [], cityName, query = '', onQuery, selectedCategory, selectedSubcategory, onCategory, onSubcategory, directoryOpen, onDirectoryOpen, mapMode, onMapMode, renderVenue }) {
+export default function CompactExplorePanel({ taxonomy = [], cityName, query = '', onQuery, selectedCategory, selectedSubcategory, onCategory, onSubcategory, directoryOpen, onDirectoryOpen, mapMode, onMapMode, renderVenue, complete=false, eventsProps={} }) {
   const [counts, setCounts] = useState([]), [countError, setCountError] = useState(false)
   const [retryTaxonomy, setRetryTaxonomy] = useState(null), [catalogError, setCatalogError] = useState(''), [catalogBusy, setCatalogBusy] = useState(false)
   const categoryRows = useMemo(() => (retryTaxonomy || taxonomy).map(normalize), [taxonomy, retryTaxonomy])
@@ -58,6 +59,8 @@ export default function CompactExplorePanel({ taxonomy = [], cityName, query = '
   const [lat, lng] = coordinates
   const mapURL = `https://www.openstreetmap.org/export/embed.html?bbox=${[lng - .018, lat - .012, lng + .018, lat + .012].join('%2C')}&layer=mapnik${mappedItem ? `&marker=${lat}%2C${lng}` : ''}`
   const scopeCount = !query.trim() && selectedCategory ? knownPlaceCount(counts, selectedCategory, selectedSubcategory || null) : null
+  const eventFirst=complete&&selectedCategory&&['concerts_live_music','festivals_major_activations','sports_watch','comedy_performing_arts','seasonal_holiday'].includes(selectedCategory)
+  const eventCollection=complete&&showResults?<CompactEventCollection category={selectedCategory||''} subcategory={selectedSubcategory||''} query={settledQuery} embedded {...eventsProps}/>:null
   const loading = changingQuery || pageState.status === 'loading'
   const refreshCatalog = async () => { setCatalogBusy(true); setCatalogError(''); try { const rows = await loadExploreTaxonomy(); setRetryTaxonomy(rows); if (!rows.length) setCatalogError('No categories are available right now.') } catch { setCatalogError('Could not load categories. Please retry.') } finally { setCatalogBusy(false) } }
   return <section className="gt2-explore-browser gt-compact-explore" aria-label="Explore Atlanta places">
@@ -79,6 +82,7 @@ export default function CompactExplorePanel({ taxonomy = [], cityName, query = '
       </details>
     </>}
     {showResults && <>
+      {eventFirst&&eventCollection}
       <header className="gt-compact-result-header"><div><h2>{selectedLabel || activeCategory?.name || 'Search results'}</h2><p role="status">{loading ? 'Searching places…' : pageState.status === 'error' ? 'Could not refresh places' : scopeCount != null ? `${countText(scopeCount)} · ${items.length} shown` : `${items.length} ${items.length === 1 ? 'place' : 'places'} shown${pageState.nextCursor ? ' · more to explore' : ''}`}</p></div><button onClick={() => setRetry(n => n + 1)} aria-label="Refresh places" title="Refresh places">↻</button></header>
       <div className="gt-compact-result-tools"><label><span className="gt-compact-sr">Sort places</span><select value={sort} onChange={e => setSort(e.target.value)}><option value="quality">Quality first</option><option value="name">Name A–Z</option></select></label><div className="gt2-explore-toggle"><button className={!mapMode ? 'active' : ''} aria-pressed={!mapMode} onClick={() => onMapMode(false)}>Directory</button><button className={mapMode ? 'active' : ''} aria-pressed={Boolean(mapMode)} onClick={() => onMapMode(true)}>Map</button></div></div>
       {countError && <p className="gt-compact-note">Category totals could not refresh. Showing loaded places only.</p>}
@@ -91,6 +95,7 @@ export default function CompactExplorePanel({ taxonomy = [], cityName, query = '
           {pageState.error && <p className="gt-compact-note" role="alert">{pageState.error} Your loaded places are still here.</p>}
           {pageState.nextCursor && <button className="gt-compact-load-more" disabled={pageState.status === 'loading-more'} onClick={loadMore}>{pageState.status === 'loading-more' ? 'Loading…' : pageState.status === 'more-error' ? 'Retry more places' : 'Load more places'}</button>}
         </>}
+      {!eventFirst&&eventCollection}
     </>}
   </section>
 }

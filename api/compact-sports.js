@@ -1,0 +1,10 @@
+import {contentRead,send,assertMethod} from './compact-content.js'
+import {selectedCityClock} from '../src/features/experience/good-times-event-clock.js'
+export const TEAMS=[
+ {id:'falcons',name:'Falcons',full:'Atlanta Falcons',league:'NFL',url:'https://www.atlantafalcons.com/schedule/'},
+ {id:'hawks',name:'Hawks',full:'Atlanta Hawks',league:'NBA',url:'https://www.nba.com/hawks/schedule'},
+ {id:'braves',name:'Braves',full:'Atlanta Braves',league:'MLB',url:'https://www.mlb.com/braves/schedule'},
+ {id:'dream',name:'Dream',full:'Atlanta Dream',league:'WNBA',url:'https://dream.wnba.com/schedule/'},
+ {id:'united',name:'United',full:'Atlanta United',league:'MLS',url:'https://www.atlutd.com/schedule/'}]
+export function safeGame(g,now=Date.now()){const age=now-Date.parse(g.updated_at||'');if(g.city_key!=='atlanta'||!Number.isFinite(age)||age<0||age>72*3600000)return null;if(['cancelled','canceled','postponed','suspended'].includes(String(g.status).toLowerCase()))return null;const live=['live','in_progress','inprogress'].includes(g.status)&&age<=60000;return{...g,home_score:live||g.status==='final'?g.home_score:null,away_score:live||g.status==='final'?g.away_score:null,status:live?'live':g.status==='final'?'final':'scheduled',score_verified:live||g.status==='final',as_of:g.updated_at}}
+export default async function handler(req,res){if(!assertMethod(req,res,['GET']))return;try{const date=selectedCityClock('atlanta').date;const rows=await contentRead(`gt_sports_games?city_key=eq.atlanta&game_date=gte.${date}&updated_at=gt.${encodeURIComponent(new Date(Date.now()-72*3600000).toISOString())}&order=game_date.asc,game_time.asc,id.asc&limit=64`);return send(res,200,{ok:true,teams:TEAMS,games:rows.map(g=>safeGame(g)).filter(Boolean),as_of:new Date().toISOString(),notice:'Scores are shown only when a fresh game update is available. Official schedules remain available for every team.'},'public, s-maxage=30')}catch{return send(res,200,{ok:true,teams:TEAMS,games:[],degraded:true,notice:'Game updates could not refresh. Open an official team schedule or retry.'})}}
