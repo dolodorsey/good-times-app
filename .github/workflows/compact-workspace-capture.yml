@@ -1,0 +1,43 @@
+name: Compact Workspace Capture
+on:
+  pull_request:
+    types: [synchronize, opened, reopened]
+    paths: ['.github/workflows/compact-workspace-capture.yml']
+permissions:
+  contents: read
+jobs:
+  capture:
+    if: github.event.pull_request.head.ref == 'feat/compact-two-column-pilot-20260927'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install exact locked dependencies
+        run: npm ci --legacy-peer-deps
+      - name: Capture source, comparison and offline development tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/gt-workspace/candidate /tmp/gt-workspace/other /tmp/gt-workspace/main /tmp/gt-workspace/toolchain/bin
+          git archive HEAD | tar -x -C /tmp/gt-workspace/candidate
+          git archive ad316dd2daf566a315813ecf217745fff2ae4ef5 | tar -x -C /tmp/gt-workspace/other
+          git archive c0972ac1b6ff30e93a9fed34ac08b9f9544f36f0 | tar -x -C /tmp/gt-workspace/main
+          cp -a node_modules /tmp/gt-workspace/candidate/
+          cp "$(command -v node)" /tmp/gt-workspace/toolchain/bin/node
+          git rev-parse HEAD > /tmp/gt-workspace/candidate-sha.txt
+          git ls-remote origin refs/heads/main > /tmp/gt-workspace/main-ref.txt
+          git diff --stat ad316dd2daf566a315813ecf217745fff2ae4ef5 HEAD > /tmp/gt-workspace/comparison.txt
+          tar -czf /tmp/good-times-development-workspace.tgz -C /tmp/gt-workspace .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: compact-development-workspace
+          path: /tmp/good-times-development-workspace.tgz
+          retention-days: 1
