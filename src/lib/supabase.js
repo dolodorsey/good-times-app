@@ -18,7 +18,10 @@ function decodeRef(value) {
   } catch { return null }
 }
 function validProjectKey(value, expectedRef) {
-  return typeof value === 'string' && value.length > 40 && decodeRef(value) === expectedRef
+  if (typeof value !== 'string' || value.length < 40) return false
+  if (value.startsWith('sb_secret_')) return false
+  if (value.startsWith('sb_publishable_')) return true
+  return decodeRef(value) === expectedRef
 }
 
 export const GT_SUPABASE_URL = validProjectUrl(env.VITE_GT_SUPABASE_URL,'czocqfaovfpjweayniuw') ? env.VITE_GT_SUPABASE_URL : CANONICAL_GT_URL
