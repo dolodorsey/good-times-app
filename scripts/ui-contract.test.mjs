@@ -6,13 +6,14 @@ const source=readFileSync(new URL('../src/features/experience/GoodTimesCommandAp
 const css=readFileSync(new URL('../src/features/experience/good-times-v4.css',import.meta.url),'utf8')
 const main=readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8')
 
-const canonicalNav="const NAV=[['home','⌂','Home'],['discover','⌕','Discover'],['plan','＋','Plan'],['saved','▣','Saved'],['profile','◎','Profile']]"
+const canonicalNav="const NAV=[['home','⌂','Home'],['places','⌕','Places'],['plan','＋','Plan'],['entertainment','◇','Entertainment'],['profile','◎','Profile']]"
 
 test('GOOD TIMES permanent bottom navigation cannot regress',()=>{
-  assert.ok(source.includes(canonicalNav),'V4 must keep Home / Discover / Plan / Saved / Profile in canonical order')
+  assert.ok(source.includes(canonicalNav),'V4 must keep Home / Places / Plan / Entertainment / Profile in canonical order')
   const navLine=source.split('\n').find(line=>line.startsWith('const NAV='))||''
   assert.equal(navLine.includes("'radar'"),false,'Radar must not replace Plan in the permanent bottom navigation')
-  assert.equal(navLine.includes("'vault'"),false,'Vault is the editorial Saved surface, not a permanent nav label')
+  assert.equal(navLine.includes("'saved'"),false,'Saved must live inside Profile → My GOOD TIMES, not permanent navigation')
+  assert.equal(navLine.includes("'vault'"),false,'Vault must not replace My GOOD TIMES')
   assert.equal(navLine.includes("'concierge'"),false,'Concierge is the Plan experience, not a permanent nav label')
 })
 
@@ -22,7 +23,7 @@ test('V4 is the routed consumer authority',()=>{
 })
 
 test('V4 preserves the protected product language',()=>{
-  for(const phrase of ['A Better','Tonight.','Discover','Plan','My Night.','Everything','you kept.','Never hear','about it late.']){
+  for(const phrase of ['A Better','Tonight.','Places','Entertainment','Plan','My Night.','My GOOD TIMES','Never hear','about it late.']){
     assert.ok(source.includes(phrase),`protected editorial phrase missing: ${phrase}`)
   }
 })
