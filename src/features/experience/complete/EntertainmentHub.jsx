@@ -2,18 +2,18 @@ import React,{useMemo,useState} from 'react'
 import {eventIsThisWeekend,eventIsTonight,eventDaysAway} from '../good-times-event-clock.js'
 import {CollectionGrid,Sports} from './Collections.jsx'
 import {Section,State} from './Cards.jsx'
-import {labelFor} from './model.js'
+import {gtAssetUrl} from '../good-times-assets.js'
 
 const LANES=[
- ['nightlife','Nightlife','Parties, club nights, rooftops, after-hours','events'],
- ['nightlife','Bars & Lounges','Bars, lounges, hookah and social nightlife venues','venues'],
- ['concerts_live_music','Concerts','Artists, tours, live music','events'],
- ['festivals_major_activations','Festivals + Events','Festivals, activations, major city moments','events'],
- ['sports_watch','Sports','Games, scores, watch parties','sports'],
- ['comedy_performing_arts','Comedy + Live','Comedy, theater, performing arts','events'],
- ['games_interactive','Interactive','Bowling, games, VR, escape rooms','events'],
- ['family_kids','Family','Kids, family events, discovery','events'],
- ['attractions_experiences','Attractions','Museums, exhibits, attractions','events'],
+ ['nightlife','Nightlife','Parties, club nights, rooftops, after-hours','events','gt-cat-nightlife.webp'],
+ ['nightlife','Bars & Lounges','Bars, lounges, hookah and social nightlife venues','venues','gt-cat-nightlife.webp'],
+ ['concerts_live_music','Concerts','Artists, tours, live music','events','gt-cat-music.webp'],
+ ['festivals_major_activations','Festivals + Events','Festivals, activations, major city moments','events','gt-cat-culture.webp'],
+ ['sports_watch','Sports','Games, scores, watch parties','sports','gt-cat-sports.webp'],
+ ['comedy_performing_arts','Comedy + Live','Comedy, theater, performing arts','events','gt-cat-culture.webp'],
+ ['games_interactive','Interactive','Bowling, games, VR, escape rooms','events','gt-cat-adventure.webp'],
+ ['family_kids','Family','Kids, family events, discovery','events','gt-cat-adventure.webp'],
+ ['attractions_experiences','Attractions','Museums, exhibits, attractions','events','gt-cat-adventure.webp'],
 ]
 
 export default function EntertainmentHub({
@@ -44,8 +44,8 @@ export default function EntertainmentHub({
     </nav>
 
     <div className="gtc-entertainment-lanes">
-      {LANES.map(([key,label,desc,kind])=>
-        <button key={label} className="gtc-entertainment-lane" onClick={()=>kind==='sports'?onOpenSports():kind==='venues'?onOpenVenues(key):onOpenCategory(key)}>
+      {LANES.map(([key,label,desc,kind,art])=>
+        <button key={label} className="gtc-entertainment-lane" style={{backgroundImage:`linear-gradient(90deg,rgba(5,6,7,.92),rgba(5,6,7,.48)),url("${gtAssetUrl(art,'good-times-backgrounds')}")`}} onClick={()=>kind==='sports'?onOpenSports():kind==='venues'?onOpenVenues(key):onOpenCategory(key)}>
           <span><strong>{label}</strong><small>{desc}</small></span><b aria-hidden="true">↗</b>
         </button>
       )}
