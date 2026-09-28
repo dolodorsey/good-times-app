@@ -1,3 +1,4 @@
+import {publicApiHeaders} from '../../lib/public-api-headers.js'
 import { requestExplorePage } from './explore-page.js'
 import {
   GT_SUPABASE_ANON_KEY,
@@ -12,11 +13,7 @@ const gtHeaders = (token = GT_SUPABASE_ANON_KEY) => ({
   Authorization: `Bearer ${token}`,
   'Content-Type': 'application/json',
 })
-const gatewayHeaders = {
-  apikey: KHG_SUPABASE_ANON_KEY,
-  Authorization: `Bearer ${KHG_SUPABASE_ANON_KEY}`,
-  'Content-Type': 'application/json',
-}
+const gatewayHeaders = publicApiHeaders(KHG_SUPABASE_ANON_KEY, { 'Content-Type': 'application/json' })
 
 async function fetchJson(url, options = {}) {
   const controller = new AbortController()

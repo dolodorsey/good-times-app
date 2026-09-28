@@ -1,3 +1,4 @@
+import {publicApiHeaders} from '../src/lib/public-api-headers.js'
 /** Generates a suggested plan from public eligible content; does not reserve, purchase or persist. */
 import {KHG_SUPABASE_URL,KHG_SUPABASE_ANON_KEY,GT_SUPABASE_URL,GT_SUPABASE_ANON_KEY} from '../src/lib/supabase.js'
 import {browse} from './browse.js'
@@ -12,7 +13,7 @@ export async function generatePlan(input,{fetcher=globalThis.fetch,now=Date.now(
  params.set('select',params.get('select').replace(',good_times_score',''))
  if(p.area)params.set('neighborhood','ilike.'+p.area.replace(/[%*]/g,'').slice(0,70))
  if(p.budget)params.set('price_range','eq.'+p.budget)
- const [eventData,response]=await Promise.all([browse('/api/browse?'+new URLSearchParams({from:p.date,to:shiftDate(p.date,1),limit:'48'}),{fetcher,now}),fetcher(`${KHG_SUPABASE_URL}/rest/v1/gt_venues?${params}`,{headers:{apikey:KHG_SUPABASE_ANON_KEY,Authorization:`Bearer ${KHG_SUPABASE_ANON_KEY}`},signal:AbortSignal.timeout(6500)})])
+ const [eventData,response]=await Promise.all([browse('/api/browse?'+new URLSearchParams({from:p.date,to:shiftDate(p.date,1),limit:'48'}),{fetcher,now}),fetcher(`${KHG_SUPABASE_URL}/rest/v1/gt_venues?${params}`,{headers:publicApiHeaders(KHG_SUPABASE_ANON_KEY),signal:AbortSignal.timeout(6500)})])
  if(!response.ok)throw new Error('Could not verify places for this plan. Retry.')
  const venues=await response.json();if(!Array.isArray(venues))throw new Error('Invalid venue response.')
  // A named anchor is fetched exactly rather than being lost beyond the recommendation page.

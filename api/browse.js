@@ -1,3 +1,4 @@
+import {publicApiHeaders} from '../src/lib/public-api-headers.js'
 /** Read-only, bounded customer collections. Uses the existing public RLS/content gates.
  * No ingestion, credential discovery, account writes, schedule activation or raw SQL.
  */
@@ -51,7 +52,7 @@ export function mapShow(row,now=Date.now()) {
 }
 async function rows(table,params,fetcher) {
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),6500)
- try{const response=await fetcher(`${KHG_SUPABASE_URL}/rest/v1/${table}?${params}`,{method:'GET',headers:{apikey:KHG_SUPABASE_ANON_KEY,Authorization:`Bearer ${KHG_SUPABASE_ANON_KEY}`,Accept:'application/json'},cache:'no-store',signal:controller.signal});if(!response.ok)throw new Error('The collection could not be refreshed.');const data=await response.json();if(!Array.isArray(data))throw new Error('Invalid collection response.');return data}finally{clearTimeout(timer)}
+ try{const response=await fetcher(`${KHG_SUPABASE_URL}/rest/v1/${table}?${params}`,{method:'GET',headers:publicApiHeaders(KHG_SUPABASE_ANON_KEY),cache:'no-store',signal:controller.signal});if(!response.ok)throw new Error('The collection could not be refreshed.');const data=await response.json();if(!Array.isArray(data))throw new Error('Invalid collection response.');return data}finally{clearTimeout(timer)}
 }
 export async function browse(url,{fetcher=globalThis.fetch,now=Date.now()}={}) {
  const scope=browseScope(url,now),cursor=cursorRead(new URL(url,'https://thegoodtimesworldwide.com').searchParams.get('cursor'),scope)
