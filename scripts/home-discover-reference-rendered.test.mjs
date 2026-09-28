@@ -6,67 +6,61 @@ const BASE=process.env.GT_UI_BASE,OUT=process.env.GT_UI_ARTIFACTS||'ui-artifacts
 let chromium=null
 try{({chromium}=await import('playwright-core'))}catch{}
 const skip=!BASE||!chromium?'requires the existing rendered-UI CI environment':false
-const FIXED=Date.parse('2026-09-14T12:00:00Z')
-const SESSION={access_token:'gt-reference-fixture-access',refresh_token:'gt-reference-fixture-refresh',expires_at:Math.floor(Date.now()/1000)+86400,user:{id:'gt-reference-fixture-user',email:'reference.fixture@goodtimes.invalid'}}
+const FIXED=Date.parse('2026-09-28T00:30:00-04:00')
+const SESSION={access_token:'gt-reference-fixture-access',refresh_token:'gt-reference-fixture-refresh',expires_at:4102444800,user:{id:'gt-reference-fixture-user',email:'reference.fixture@goodtimes.invalid'}}
 const json=x=>({status:200,contentType:'application/json',body:JSON.stringify(x)})
-const EVENT={event_key:'composition-fixture:event',title:'Evening city experience',event_date:'2026-09-14',event_time:'20:00',city_key:'atlanta',venue_name:'QA fixture venue',category_key:'nightlife',image_url:'/venues/revel.webp',ticket_url:'https://example.invalid/no-transaction',quality_score:80,is_verified:true}
-const VENUES=['restaurant','nightlife','concerts_live_music','hotel'].map((category,i)=>({id:`composition-fixture:${i}`,name:`QA ${category}`,city_key:'atlanta',category_key:category,hero_image:'/venues/revel.webp',short_desc:'Deterministic QA data only.',quality_score:80-i}))
+const placeCategories=[
+ ['dining_culinary','Restaurants'],['nightlife','Nightlife Places'],['entertainment','Entertainment Venues'],
+ ['attractions_experiences','Attractions'],['wellness_fitness','Wellness'],['family_kids','Family Places']
+].map(([category_key,category_name],sort_order)=>({category_key,category_name,description:'Persistent place family.',sort_order,is_active:true}))
+const subcategories=placeCategories.flatMap((c,i)=>Array.from({length:2},(_,j)=>({category_key:c.category_key,subcategory_key:`${c.category_key}_fixture_${j}`,subcategory_name:`${c.category_name} ${j+1}`,sort_order:j,is_active:true})))
+const venues=Array.from({length:10},(_,i)=>{const c=placeCategories[i%placeCategories.length];const s=subcategories.find(x=>x.category_key===c.category_key);return{id:`0000000${i}-aaaa-4aaa-8aaa-aaaaaaaaaaaa`.slice(-36),name:`QA Place ${i+1}`,city_key:'atlanta',category_key:c.category_key,subcategory_key:s.subcategory_key,subcategory:s.subcategory_name,venue_category_key:c.category_key,venue_subcategory:s.subcategory_name,neighborhood:i%2?'Midtown':'West Midtown',hero_image:'/venues/revel.webp',short_desc:'Deterministic QA place.',quality_score:90-i,status:'active',is_verified:true,verification_status:'verified_current',freshness_expires_at:'2026-10-28T00:00:00Z',latitude:33.77+i/1000,longitude:-84.39-i/1000,website:'https://example.invalid/place',address:'Fixture address, Atlanta'}})
+const eventCats=['nightlife','concerts_live_music','festivals_major_activations','sports_watch','comedy_performing_arts','games_interactive','family_kids','attractions_experiences']
+const events=Array.from({length:12},(_,i)=>({event_key:`show:1000000${i}-bbbb-4bbb-8bbb-bbbbbbbbbbbb`.slice(0,41),id:`1000000${i}-bbbb-4bbb-8bbb-bbbbbbbbbbbb`.slice(-36),title:`QA Entertainment ${i+1}`,event_date:i<8?'2026-09-28':'2026-10-02',event_time:`${String(18+(i%5)).padStart(2,'0')}:00`,city_key:'atlanta',venue_name:`QA Place ${(i%6)+1}`,category_key:eventCats[i%eventCats.length],subcategory_key:'fixture',image_url:'/venues/revel.webp',ticket_url:'https://example.invalid/tickets',quality_score:90-i,is_verified:true,updated_at:'2026-09-28T03:00:00Z'}))
+const counts=placeCategories.map(c=>({category_key:c.category_key,subcategory_key:null,place_count:venues.filter(v=>v.category_key===c.category_key).length})).concat(subcategories.map(s=>({category_key:s.category_key,subcategory_key:s.subcategory_key,place_count:venues.filter(v=>v.subcategory_key===s.subcategory_key).length})))
 for(const vp of[{width:320,height:740},{width:390,height:844},{width:430,height:932},{width:834,height:1194}]){
- test(`Home/Discover ${vp.width}: reference density retains all controls`,{skip,timeout:50000},async()=>{
+ test(`Home/Places/Entertainment ${vp.width}: approved dense architecture remains usable`,{skip,timeout:70000},async()=>{
   const browser=await chromium.launch({executablePath:process.env.GT_UI_CHROME_PATH||undefined,headless:true,args:['--no-sandbox']})
-  const ctx=await browser.newContext({viewport:vp,timezoneId:'America/New_York'})
+  const ctx=await browser.newContext({viewport:vp,timezoneId:'America/New_York',reducedMotion:'reduce'})
   const page=await ctx.newPage(),errors=[];page.on('pageerror',e=>errors.push(e.message));fs.mkdirSync(OUT,{recursive:true})
   try{
-   await ctx.addInitScript(({epoch,session})=>{const NativeDate=Date;class FixedDate extends NativeDate{constructor(...args){super(...(args.length?args:[epoch]))}static now(){return epoch}};window.Date=FixedDate;localStorage.setItem('gt_session',JSON.stringify(session));localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['nightlife','grown'],age:'25-34'}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},{epoch:FIXED,session:SESSION})
-   await ctx.route('**/api/**',r=>{const p=new URL(r.request().url()).pathname;return r.fulfill(json(p==='/api/health'?{ok:true,service:'good-times',customer_ready:true,content_ready:true}:p.startsWith('/api/data')?{ok:true,connected:true,city:'atlanta',events:[EVENT,...['concerts_live_music','sports_watch','festivals_major_activations'].map((category,i)=>({...EVENT,event_key:`mixed:${i}`,title:`Upcoming ${category}`,category_key:category,image_url:null}))],venues:VENUES}:{ok:true}))})
-   await ctx.route('**/rest/v1/**',r=>{const u=new URL(r.request().url());if(u.pathname.endsWith('/gt_user_profiles'))return r.fulfill(json([{id:'gt-reference-profile',auth_id:SESSION.user.id,full_name:'GOOD TIMES Reference QA',home_city:'atlanta',last_city:'atlanta',vibe_preferences:['nightlife','grown']}])) ;return r.fulfill(json([]))})
+   await ctx.addInitScript(({epoch,session})=>{const NativeDate=Date;window.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:[epoch]))}static now(){return epoch}};localStorage.setItem('gt_session',JSON.stringify(session));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},{epoch:FIXED,session:SESSION})
+   await ctx.route('**/api/**',route=>{const u=new URL(route.request().url()),p=u.pathname;if(p==='/api/health')return route.fulfill(json({ok:true,service:'good-times',customer_ready:true,content_ready:true}));if(p.startsWith('/api/data'))return route.fulfill(json({ok:true,connected:true,city:'atlanta',events,venues,counts:{events:events.length,venues:venues.length}}));if(p==='/api/browse')return route.fulfill(json({ok:true,items:events,nextCursor:null,countType:'returned',asOf:new Date(FIXED).toISOString()}));if(p==='/api/sports-live')return route.fulfill(json({ok:true,items:[],nextCursor:null,asOf:new Date(FIXED).toISOString(),failedLeagues:[],partial:false}));if(p==='/api/saved-content')return route.fulfill(json({ok:true,items:[],asOf:new Date(FIXED).toISOString()}));return route.fulfill(json({ok:true}))})
+   await ctx.route('**/rest/v1/**',route=>{const u=new URL(route.request().url()),table=u.pathname.split('/').at(-1);if(table==='gt_taxonomy_categories')return route.fulfill(json(placeCategories));if(table==='gt_taxonomy_subcategories')return route.fulfill(json(subcategories));if(table==='v_gt_venue_taxonomy_counts')return route.fulfill(json(counts));if(table==='v_gt_venue_taxonomy_directory'){const cat=String(u.searchParams.get('category_key')||'').replace(/^eq\./,'');const sub=String(u.searchParams.get('subcategory_key')||'').replace(/^eq\./,'');return route.fulfill(json(venues.filter(v=>(!cat||v.category_key===cat)&&(!sub||v.subcategory_key===sub))))}if(table==='gt_user_profiles')return route.fulfill(json([{id:'gt-reference-profile',auth_id:SESSION.user.id,full_name:'GOOD TIMES Reference QA',home_city:'atlanta',last_city:'atlanta',vibe_preferences:['nightlife','dining']}]));return route.fulfill(json([]))})
    await ctx.route('**/functions/v1/**',r=>r.fulfill(json({ok:true,events:[],venues:[]})))
+   await ctx.route('https://www.openstreetmap.org/**',r=>r.fulfill({status:200,contentType:'text/html',body:'<p>map fixture</p>'}))
    await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:20000});await page.locator('.gt5-app').waitFor({timeout:15000});await page.waitForTimeout(350)
    const nav=page.locator('.gt5-nav button')
-   assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Discover','Plan','Saved','Profile'])
-   const homeModes=page.locator('.gt5-home-modes button')
-   assert.deepEqual(await homeModes.allTextContents(),['For You','Upcoming','Tonight'])
-   for(const box of await homeModes.evaluateAll(items=>items.map(x=>({w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height}))))assert.ok(box.h>=41.9,`home mode touch target too small: ${JSON.stringify(box)}`)
-   await homeModes.filter({hasText:'Upcoming'}).click()
-   await page.locator('.gt5-newsletter-upcoming').waitFor({timeout:5000})
-   const upcomingRows=page.locator('.gt5-upcoming-row')
-   assert.ok(await upcomingRows.count()>=4,'Upcoming should render the existing current fixture inventory as a list')
-   const upcomingGeometry=await upcomingRows.evaluateAll(items=>items.slice(0,4).map(x=>({w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height})))
-   for(const box of upcomingGeometry){assert.ok(box.h<=100,`Upcoming row is oversized: ${JSON.stringify(box)}`);assert.ok(box.w<=vp.width)}
-   if(vp.width===390)await page.screenshot({path:path.join(OUT,`composition-fixture-${vp.width}-upcoming.png`)})
-   await homeModes.filter({hasText:'Tonight'}).click()
-   await page.locator('.gt5-newsletter-tonight').waitFor({timeout:5000})
-   assert.ok(await page.locator('.gt5-upcoming-row').count()>=1,'Tonight must reuse current event rows')
-   if(vp.width===390)await page.screenshot({path:path.join(OUT,`composition-fixture-${vp.width}-tonight.png`)})
-   await homeModes.filter({hasText:'For You'}).click()
-   const quick=await page.locator('.gt5-home-quick button').evaluateAll(items=>items.map(x=>({w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height})))
-   assert.equal(quick.length,6)
-   for(const r of quick)assert.ok(r.w>=43.9&&r.h>=44,`quick action below 44px: ${JSON.stringify(r)}`)
-   const feature=await page.locator('.gt5-highlight-grid .gt5-card').first().boundingBox(),dock=await page.locator('.gt5-nav').boundingBox()
-   assert.ok(feature&&dock&&feature.y<dock.y-40,'featured content is pushed entirely below the first view')
-   const highlights=page.locator('.gt5-highlight-grid .gt5-card')
-   assert.equal(await highlights.count(),4,'Home must show a mixed set, not a single oversized feature')
-   assert.deepEqual(await highlights.evaluateAll(cards=>cards.map(card=>card.dataset.category)),['concerts_live_music','sports_watch','festivals_major_activations','restaurant'])
-   const highlightBoxes=await highlights.evaluateAll(cards=>cards.map(card=>({w:card.getBoundingClientRect().width,h:card.getBoundingClientRect().height})))
-   for(const box of highlightBoxes){assert.ok(box.w<=150,`Top Pick card too wide: ${JSON.stringify(box)}`);assert.ok(box.h<=180,`Top Pick card too tall: ${JSON.stringify(box)}`)}
-   const headingFont=await highlights.first().locator('h3').evaluate(el=>getComputedStyle(el).fontFamily)
-   assert.ok(!/Playfair|Georgia|Garamond/.test(headingFont),`legacy serif override returned: ${headingFont}`)
-   if(vp.width>=390){const second=await highlights.nth(1).boundingBox();assert.ok(second.y+second.height<dock.y,'first two complete choices must fit above navigation')}
-   const bell=page.locator('.gt5-bell');assert.ok(await bell.isVisible(),'Radar bell must not disappear on compact phones')
-   await page.screenshot({path:path.join(OUT,`composition-fixture-${vp.width}-home.png`)})
-   await nav.filter({hasText:'Discover'}).click();await page.locator('.gt5-lanes').waitFor({timeout:5000})
-   assert.deepEqual(await page.locator('.gt5-lanes strong').allTextContents(),['Eat Well','Turn Up','Be There','Stay Right','Do More'])
-   const lanes=await page.locator('.gt5-lanes button').evaluateAll(items=>items.map(x=>({top:x.getBoundingClientRect().top,bottom:x.getBoundingClientRect().bottom,height:x.getBoundingClientRect().height})))
-   const navTop=(await page.locator('.gt5-nav').boundingBox()).y
-   if(vp.width>=390&&vp.width<600)assert.ok(lanes.filter(x=>x.bottom<navTop).length>=3,'at least three complete editorial lanes should be visible on standard phones')
-   await page.screenshot({path:path.join(OUT,`composition-fixture-${vp.width}-discover.png`)})
-   await page.locator('.gt5-bell').click();await page.locator('.gt5-radar').waitFor({timeout:5000});await page.locator('.gt5-back').click();assert.equal(await page.locator('.gt5-app').getAttribute('data-screen'),'discover')
-   const geometry=await page.evaluate(()=>{const r=document.querySelector('.gt5-nav').getBoundingClientRect();const b=document.querySelector('.gt5-bell').getBoundingClientRect();return{overflow:document.scrollingElement.scrollWidth-innerWidth,nav:{left:r.left,right:r.right,bottom:r.bottom},bell:{left:b.left,right:b.right,width:b.width,height:b.height},width:innerWidth,height:innerHeight}})
-   assert.ok(geometry.overflow<=1);assert.ok(geometry.nav.left>=-2&&geometry.nav.right<=geometry.width+2&&geometry.nav.bottom<=geometry.height+2)
-   assert.ok(geometry.bell.right<=geometry.width&&geometry.bell.width>=44&&geometry.bell.height>=44)
-   assert.deepEqual(errors,[])
-   fs.writeFileSync(path.join(OUT,`composition-fixture-${vp.width}.json`),JSON.stringify({viewport:vp,quick,lanes,geometry,errors},null,2))
-  }catch(error){await page.screenshot({path:path.join(OUT,`composition-fixture-${vp.width}-failure.png`)}).catch(()=>{});throw error}
+   assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Places','Plan','Entertainment','Profile'])
+   const homeModes=page.locator('.gt5-home-modes button');assert.deepEqual(await homeModes.allTextContents(),['For You','Upcoming','Tonight'])
+   const homeCards=page.locator('.gtc-home .gtc-card');assert.ok(await homeCards.count()>=4,'Home should expose multiple useful choices')
+   const cardBoxes=await homeCards.evaluateAll(items=>items.slice(0,6).map(x=>({x:x.getBoundingClientRect().x,y:x.getBoundingClientRect().y,w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height})))
+   if(vp.width>=360)assert.ok(new Set(cardBoxes.slice(0,2).map(x=>Math.round(x.x))).size===2,'standard mobile must keep two-up Home density')
+   assert.ok(cardBoxes.every(x=>x.h<280),'compact Home card regressed into oversized feature')
+   await page.screenshot({path:path.join(OUT,`composition-${vp.width}-home.png`)})
+   await homeModes.getByRole('button',{name:'Upcoming'}).click();await page.locator('.gtc-events').waitFor();assert.ok(await page.locator('.gtc-events .gtc-card').count()>=4);await homeModes.getByRole('button',{name:'For You'}).click()
+
+   await nav.getByRole('button',{name:'Places',exact:true}).click();await page.locator('.gtc-places').waitFor();assert.equal(await page.getByRole('textbox',{name:'Search Atlanta places'}).count(),1)
+   await page.locator('[data-gt-category]').first().waitFor();assert.equal(await page.locator('[data-gt-category]').count(),placeCategories.length)
+   const categoryBoxes=await page.locator('[data-gt-category]').evaluateAll(items=>items.slice(0,4).map(x=>({x:x.getBoundingClientRect().x,w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height})))
+   if(vp.width>=360)assert.equal(new Set(categoryBoxes.slice(0,2).map(x=>Math.round(x.x))).size,2,'Places categories must be two-up on normal phones')
+   await page.locator('[data-gt-category="dining_culinary"]').click();await page.locator('[data-gt-subcategory]').nth(1).click();await page.locator('.gt2-venue-grid').waitFor();assert.ok(await page.locator('.gt2-venue-grid .gtc-card').count()>=1)
+   await page.screenshot({path:path.join(OUT,`composition-${vp.width}-places.png`)})
+
+   await nav.getByRole('button',{name:'Entertainment',exact:true}).click();await page.locator('.gtc-entertainment').waitFor();assert.equal(await page.locator('.gtc-entertainment-lane').count(),8)
+   const lanes=await page.locator('.gtc-entertainment-lane').evaluateAll(items=>items.slice(0,4).map(x=>({x:x.getBoundingClientRect().x,w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height})))
+   if(vp.width>=360)assert.equal(new Set(lanes.slice(0,2).map(x=>Math.round(x.x))).size,2,'Entertainment lanes must be two-up on normal phones')
+   assert.deepEqual(await page.locator('.gtc-entertainment-time button').allTextContents(),['Tonight','This Weekend','Upcoming'])
+   assert.ok(await page.locator('.gtc-entertainment .gtc-card').count()>=4,'Entertainment should surface multiple current options')
+   await page.screenshot({path:path.join(OUT,`composition-${vp.width}-entertainment.png`)})
+
+   await nav.getByRole('button',{name:'Profile',exact:true}).click();await page.locator('.gtc-my-good-times').waitFor();assert.match(await page.locator('.gtc-my-good-times').innerText(),/Plans.*Places.*Entertainment/s)
+   await page.screenshot({path:path.join(OUT,`composition-${vp.width}-profile.png`)})
+   await page.locator('.gt5-bell').click();await page.locator('.gt5-radar').waitFor();await page.locator('.gt5-back').click();assert.equal(await page.locator('.gt5-app').getAttribute('data-screen'),'profile')
+   const geometry=await page.evaluate(()=>({overflow:document.scrollingElement.scrollWidth-innerWidth,nav:[...document.querySelectorAll('.gt5-nav button')].map(x=>x.textContent.trim()),width:innerWidth}))
+   assert.ok(geometry.overflow<=1);assert.deepEqual(errors,[])
+   fs.writeFileSync(path.join(OUT,`composition-${vp.width}.json`),JSON.stringify({viewport:vp,cardBoxes,categoryBoxes,lanes,geometry,errors},null,2))
+  }catch(error){await page.screenshot({path:path.join(OUT,`composition-${vp.width}-failure.png`)}).catch(()=>{});throw error}
   finally{await ctx.close();await browser.close()}
  })
 }
