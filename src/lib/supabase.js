@@ -20,14 +20,16 @@ function decodeRef(value) {
 function validProjectKey(value, expectedRef) {
   if (typeof value !== 'string' || value.length < 40) return false
   if (value.startsWith('sb_secret_')) return false
-  if (value.startsWith('sb_publishable_')) return true
   return decodeRef(value) === expectedRef
+}
+function validPublishableKey(value) {
+  return typeof value === 'string' && /^sb_publishable_[A-Za-z0-9_-]+$/.test(value)
 }
 
 export const GT_SUPABASE_URL = validProjectUrl(env.VITE_GT_SUPABASE_URL,'czocqfaovfpjweayniuw') ? env.VITE_GT_SUPABASE_URL : CANONICAL_GT_URL
 export const GT_SUPABASE_ANON_KEY = validProjectKey(env.VITE_GT_SUPABASE_ANON_KEY,'czocqfaovfpjweayniuw') ? env.VITE_GT_SUPABASE_ANON_KEY : CANONICAL_GT_ANON_KEY
 export const KHG_SUPABASE_URL = validProjectUrl(env.VITE_KHG_SUPABASE_URL,'dzlmtvodpyhetvektfuo') ? env.VITE_KHG_SUPABASE_URL : CANONICAL_KHG_URL
-export const KHG_SUPABASE_ANON_KEY = validProjectKey(env.VITE_KHG_SUPABASE_ANON_KEY,'dzlmtvodpyhetvektfuo') ? env.VITE_KHG_SUPABASE_ANON_KEY : CANONICAL_KHG_ANON_KEY
+export const KHG_SUPABASE_ANON_KEY = validPublishableKey(env.VITE_KHG_SUPABASE_ANON_KEY) ? env.VITE_KHG_SUPABASE_ANON_KEY : CANONICAL_KHG_ANON_KEY
 
 export const SB = `${GT_SUPABASE_URL}/rest/v1`
 export const SK = GT_SUPABASE_ANON_KEY
