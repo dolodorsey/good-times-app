@@ -5,18 +5,19 @@ import {Section,State} from './Cards.jsx'
 import {labelFor} from './model.js'
 
 const LANES=[
- ['nightlife','Nightlife','Clubs, lounges, rooftops, parties'],
- ['concerts_live_music','Concerts','Artists, tours, live music'],
- ['festivals_major_activations','Festivals + Events','Festivals, activations, major city moments'],
- ['sports_watch','Sports','Games, scores, watch parties'],
- ['comedy_performing_arts','Comedy + Live','Comedy, theater, performing arts'],
- ['games_interactive','Interactive','Bowling, games, VR, escape rooms'],
- ['family_kids','Family','Kids, family events, discovery'],
- ['attractions_experiences','Attractions','Museums, exhibits, attractions'],
+ ['nightlife','Nightlife','Parties, club nights, rooftops, after-hours','events'],
+ ['nightlife','Bars & Lounges','Bars, lounges, hookah and social nightlife venues','venues'],
+ ['concerts_live_music','Concerts','Artists, tours, live music','events'],
+ ['festivals_major_activations','Festivals + Events','Festivals, activations, major city moments','events'],
+ ['sports_watch','Sports','Games, scores, watch parties','sports'],
+ ['comedy_performing_arts','Comedy + Live','Comedy, theater, performing arts','events'],
+ ['games_interactive','Interactive','Bowling, games, VR, escape rooms','events'],
+ ['family_kids','Family','Kids, family events, discovery','events'],
+ ['attractions_experiences','Attractions','Museums, exhibits, attractions','events'],
 ]
 
 export default function EntertainmentHub({
-  events=[],now=Date.now(),savedKeys,onEvent,onSave,onOpenCategory,onOpenSports,onPlan
+  events=[],now=Date.now(),savedKeys,onEvent,onSave,onOpenCategory,onOpenVenues,onOpenSports,onPlan
 }){
   const [mode,setMode]=useState('tonight')
   const scoped=useMemo(()=>{
@@ -43,8 +44,8 @@ export default function EntertainmentHub({
     </nav>
 
     <div className="gtc-entertainment-lanes">
-      {LANES.map(([key,label,desc])=>
-        <button key={key} className="gtc-entertainment-lane" onClick={()=>key==='sports_watch'?onOpenSports():onOpenCategory(key)}>
+      {LANES.map(([key,label,desc,kind])=>
+        <button key={label} className="gtc-entertainment-lane" onClick={()=>kind==='sports'?onOpenSports():kind==='venues'?onOpenVenues(key):onOpenCategory(key)}>
           <span><strong>{label}</strong><small>{desc}</small></span><b aria-hidden="true">↗</b>
         </button>
       )}
