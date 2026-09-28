@@ -5,6 +5,7 @@ import CompleteDetails,{Saved as CompleteSaved} from './complete/Details.jsx'
 import EntertainmentHub from './complete/EntertainmentHub.jsx'
 import RestaurantExplorer from './complete/RestaurantExplorer.jsx'
 import GlobalSearch from './complete/GlobalSearch.jsx'
+import ProfileHub from './complete/ProfileHub.jsx'
 import {ExperienceCard as CompleteCard} from './complete/Cards.jsx'
 import {correctDisplayEvents} from './complete/taxonomy.js'
 import { COMPACT_PILOT } from './compact-pilot-flag.js'
@@ -371,7 +372,9 @@ export default function GoodTimesCommandAppV4({onAuth=null}){
         {savedView==='saved'&&(saved.length?<><Section kicker="SAVED EVENTS" title={`${events.filter(e=>savedKeys.has(`event:${e.event_key}`)).length} experiences`}>{events.filter(e=>savedKeys.has(`event:${e.event_key}`)).map(e=><EventCard city={city} now={clockNow} key={e.event_key} event={e} saved onOpen={()=>openEvent(e)} onSave={()=>toggleSave('event',e.event_key)}/>)}</Section><Section kicker="SAVED PLACES" title={`${venues.filter(v=>savedKeys.has(`venue:${v.id}`)).length} places`}>{venues.filter(v=>savedKeys.has(`venue:${v.id}`)).map(v=><VenueCard key={v.id} venue={v} saved onOpen={()=>openVenue(v)} onSave={()=>toggleSave('venue',v.id)}/>)}</Section></>:<Empty title="Nothing saved yet" body="Save places and experiences worth remembering." action={<button className="gt5-primary" onClick={()=>goTab('places')}>Explore Places</button>}/>) }
       </section>}
 
-      {tab==='profile'&&<section className="gt5-screen gt5-profile"><Hero eyebrow="MY GOOD TIMES" title={profile?.full_name||session?.user?.user_metadata?.full_name||'Your Good Times'} subtitle={session?'Your plans, saved places, saved entertainment and preferences.':'Browse freely. Sign in when you want to save, follow and personalize.'} image={heroMedia} className="gt5-compact-hero"/>
+      {COMPLETE_UPGRADE&&tab==='profile'&&<ProfileHub session={session} profile={profile} intelligence={intelligence} city={city} cityLabel={cityLabel(city)} cityOptions={cityOptions} saved={saved} plans={plans} events={events} venues={venues} onCity={changeCity} onEvent={openEvent} onVenue={openVenue} onSave={toggleSave} onPlan={setSelectedPlan} onPlaces={()=>goTab('places')} onEntertainment={()=>goTab('entertainment')} onBuild={()=>goTab('plan')} follows={follows} onRadar={()=>goTab('radar')} onPreferences={openPreferences} onAuth={onAuth} onLogout={()=>{clearSession();window.location.reload()}}/>}
+
+      {!COMPLETE_UPGRADE&&tab==='profile'&&<section className="gt5-screen gt5-profile"><Hero eyebrow="MY GOOD TIMES" title={profile?.full_name||session?.user?.user_metadata?.full_name||'Your Good Times'} subtitle={session?'Your plans, saved places, saved entertainment and preferences.':'Browse freely. Sign in when you want to save, follow and personalize.'} image={heroMedia} className="gt5-compact-hero"/>
         {COMPLETE_UPGRADE&&<CompleteSaved session={session} items={saved} plans={plans} events={events} venues={venues} onEvent={openEvent} onVenue={openVenue} onSave={toggleSave} onPlan={setSelectedPlan} onExplore={()=>goTab('places')} onEntertainment={()=>goTab('entertainment')} onBuild={()=>goTab('plan')}/>}
         <section className="gt5-profile-city"><div><span><GoodTimesIcon glyph="⌖"/></span><p><strong>{cityLabel(city)}</strong><small>Your preferred city</small></p></div><select value={city} onChange={e=>void changeCity(e.target.value)}>{cityOptions.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></section>
         <section className="gt5-member"><span>GOOD PEOPLE<br/>BETTER NIGHTS</span><div><small>{session?'GT MEMBER':'MAKE IT YOURS'}</small><strong>Elevated experiences, everywhere you go.</strong></div></section>
