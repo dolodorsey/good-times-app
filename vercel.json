@@ -4,45 +4,103 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "rewrites": [
-    { "source": "/admin", "destination": "/api/not-found" },
-    { "source": "/admin.html", "destination": "/api/not-found" },
-    { "source": "/api/data", "destination": "/api/data-live" },
-    { "source": "/api/data-fast", "destination": "/api/data-live" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/admin",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/admin.html",
+      "destination": "/api/not-found"
+    },
+    {
+      "source": "/api/data",
+      "destination": "/api/data-live"
+    },
+    {
+      "source": "/api/data-fast",
+      "destination": "/api/data-live"
+    },
+    {
+      "source": "/sms",
+      "destination": "/sms.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/sms-terms",
+      "destination": "/sms-terms.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ],
   "headers": [
     {
       "source": "/api/(.*)",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "https://localhost" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET, HEAD, OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "Accept, Content-Type, Authorization" },
-        { "key": "Vary", "value": "Origin" }
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "https://localhost"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, HEAD, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "Accept, Content-Type, Authorization"
+        },
+        {
+          "key": "Vary",
+          "value": "Origin"
+        }
       ]
     },
     {
       "source": "/api/data-fast",
       "headers": [
-        { "key": "Vercel-CDN-Cache-Control", "value": "max-age=30, stale-while-revalidate=120" }
+        {
+          "key": "Vercel-CDN-Cache-Control",
+          "value": "max-age=30, stale-while-revalidate=120"
+        }
       ]
     },
     {
       "source": "/api/data-live",
       "headers": [
-        { "key": "Vercel-CDN-Cache-Control", "value": "max-age=30, stale-while-revalidate=120" }
+        {
+          "key": "Vercel-CDN-Cache-Control",
+          "value": "max-age=30, stale-while-revalidate=120"
+        }
       ]
     },
     {
       "source": "/api/data",
       "headers": [
-        { "key": "Vercel-CDN-Cache-Control", "value": "max-age=30, stale-while-revalidate=120" }
+        {
+          "key": "Vercel-CDN-Cache-Control",
+          "value": "max-age=30, stale-while-revalidate=120"
+        }
       ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
       ]
     }
   ]
