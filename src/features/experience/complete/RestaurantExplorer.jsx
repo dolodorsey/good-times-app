@@ -17,11 +17,13 @@ const QUICK=[
 ]
 const GROUPS=[
  ['Level','service_level',[['quick_service','Quick Service'],['fast_casual','Fast Casual'],['casual','Casual'],['upscale_casual','Upscale Casual'],['upscale','Upscale'],['fine_dining','Fine Dining'],['luxury_dining','Luxury']]],
+ ['Cuisine','cuisine_tags',[['seafood','Seafood'],['steakhouse','Steakhouse'],['sushi','Sushi'],['italian','Italian'],['mexican','Mexican'],['caribbean','Caribbean'],['japanese','Japanese'],['indian','Indian'],['thai','Thai'],['chinese','Chinese']]],
  ['Meal','meal_tags',[['breakfast','Breakfast'],['brunch','Brunch'],['lunch','Lunch'],['happy_hour','Happy Hour'],['dinner','Dinner'],['late_night','Late Night'],['dessert','Dessert']]],
  ['Occasion','occasion_tags',[['date_night','Date Night'],['birthday','Birthday'],['business_dinner','Business Dinner'],['girls_night','Girls Night'],['group_dining','Group Dining'],['family_dining','Family']]],
  ['Vibe','restaurant_vibe_tags',[['rooftop','Rooftop'],['romantic','Romantic'],['high_energy','High Energy'],['intimate','Intimate'],['luxury','Luxury']]],
  ['Features','feature_tags',[['hookah','Hookah'],['live_music','Live Music'],['outdoor_seating','Outdoor Seating'],['private_dining','Private Dining'],['full_bar','Full Bar']]],
  ['Dietary','dietary_tags',[['vegan','Vegan'],['vegetarian','Vegetarian'],['gluten_free','Gluten-Free'],['halal','Halal'],['kosher','Kosher']]],
+ ['Ownership','ownership_tags',[['black_owned','Black-Owned'],['woman_owned','Woman-Owned'],['celebrity_owned','Celebrity-Owned']]],
 ]
 const list=x=>Array.isArray(x)?x:[]
 const pretty=x=>String(x||'').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase())
