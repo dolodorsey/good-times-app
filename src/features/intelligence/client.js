@@ -160,7 +160,7 @@ export async function loadUserIntelligenceProfile(session = readSession()) {
   return rows?.[0] || null
 }
 
-export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}) {
+export async function loadCanonicalEvents(city = 'atlanta', { limit = 500, throwOnError = false } = {}) {
   const normalizedCity = normalizeCity(city)
   try {
     const payload = await loadSameOriginData(normalizedCity)
@@ -168,6 +168,7 @@ export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}
   } catch (gatewayError) {
     // Do not bypass the server freshness/customer-readiness gate with a direct event feed.
     console.warn('[GOOD TIMES live data] Same-origin event gateway failed; event inventory is hidden until the verified gateway recovers.', gatewayError)
+    if (throwOnError) throw gatewayError
     return []
   }
 }

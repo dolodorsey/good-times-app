@@ -6,9 +6,9 @@ import GoodTimesIcon from './GoodTimesIcon.jsx'
 const categoryGlyph = key => ({ nightlife: '◇', concerts_live_music: '♫', sports_watch: '◉', dining_culinary: '🍴', family_kids: '◎', seasonal_holiday: '✦', wellness_fitness: '♡', arts_museums_culture: '▱' })[key] || '✦'
 const normalize = category => ({ ...category, subcategoryRows: category.subcategoryRows || (category.subcategories || []).map((s, index) => ({ subcategory_key: s.subcategory_key || s.id, subcategory_name: s.subcategory_name || s.name, sort_order: s.sort_order ?? index })) })
 function countText(value) { return value == null ? 'Browse places' : `${value} ${value === 1 ? 'place' : 'places'}` }
-function jumpToResults() { requestAnimationFrame(() => document.querySelector('.gt-compact-result-header')?.scrollIntoView({ block: 'start' })) }
+function jumpToResults() { requestAnimationFrame(() => document.querySelector('.gtc-event-results-start,.gt-compact-result-header')?.scrollIntoView({ block: 'start' })) }
 
-export default function CompactExplorePanel({ taxonomy = [], cityName, query = '', onQuery, selectedCategory, selectedSubcategory, onCategory, onSubcategory, directoryOpen, onDirectoryOpen, mapMode, onMapMode, renderVenue }) {
+export default function CompactExplorePanel({ taxonomy = [], cityName, query = '', onQuery, selectedCategory, selectedSubcategory, onCategory, onSubcategory, directoryOpen, onDirectoryOpen, mapMode, onMapMode, renderVenue, renderEvents = null, eventsFirst = false }) {
   const [counts, setCounts] = useState([]), [countError, setCountError] = useState(false)
   const [retryTaxonomy, setRetryTaxonomy] = useState(null), [catalogError, setCatalogError] = useState(''), [catalogBusy, setCatalogBusy] = useState(false)
   const categoryRows = useMemo(() => (retryTaxonomy || taxonomy).map(normalize), [taxonomy, retryTaxonomy])
@@ -79,7 +79,8 @@ export default function CompactExplorePanel({ taxonomy = [], cityName, query = '
       </details>
     </>}
     {showResults && <>
-      <header className="gt-compact-result-header"><div><h2>{selectedLabel || activeCategory?.name || 'Search results'}</h2><p role="status">{loading ? 'Searching places…' : pageState.status === 'error' ? 'Could not refresh places' : scopeCount != null ? `${countText(scopeCount)} · ${items.length} shown` : `${items.length} ${items.length === 1 ? 'place' : 'places'} shown${pageState.nextCursor ? ' · more to explore' : ''}`}</p></div><button onClick={() => setRetry(n => n + 1)} aria-label="Refresh places" title="Refresh places">↻</button></header>
+      {renderEvents && eventsFirst && <div className="gtc-event-results-start">{renderEvents()}</div>}
+      <header className="gt-compact-result-header"><div><h2>{renderEvents?'Places':selectedLabel || activeCategory?.name || 'Search results'}</h2><p role="status">{loading ? 'Searching places…' : pageState.status === 'error' ? 'Could not refresh places' : scopeCount != null ? `${countText(scopeCount)} · ${items.length} shown` : `${items.length} ${items.length === 1 ? 'place' : 'places'} shown${pageState.nextCursor ? ' · more to explore' : ''}`}</p></div><button onClick={() => setRetry(n => n + 1)} aria-label="Refresh places" title="Refresh places">↻</button></header>
       <div className="gt-compact-result-tools"><label><span className="gt-compact-sr">Sort places</span><select value={sort} onChange={e => setSort(e.target.value)}><option value="quality">Quality first</option><option value="name">Name A–Z</option></select></label><div className="gt2-explore-toggle"><button className={!mapMode ? 'active' : ''} aria-pressed={!mapMode} onClick={() => onMapMode(false)}>Directory</button><button className={mapMode ? 'active' : ''} aria-pressed={Boolean(mapMode)} onClick={() => onMapMode(true)}>Map</button></div></div>
       {countError && <p className="gt-compact-note">Category totals could not refresh. Showing loaded places only.</p>}
       {loading ? <div className="gt-compact-skeleton-grid" aria-label="Loading places" aria-busy="true">{[0,1,2,3].map(n => <div key={n} />)}</div>
@@ -91,6 +92,7 @@ export default function CompactExplorePanel({ taxonomy = [], cityName, query = '
           {pageState.error && <p className="gt-compact-note" role="alert">{pageState.error} Your loaded places are still here.</p>}
           {pageState.nextCursor && <button className="gt-compact-load-more" disabled={pageState.status === 'loading-more'} onClick={loadMore}>{pageState.status === 'loading-more' ? 'Loading…' : pageState.status === 'more-error' ? 'Retry more places' : 'Load more places'}</button>}
         </>}
+      {renderEvents && !eventsFirst && renderEvents()}
     </>}
   </section>
 }

@@ -5,7 +5,7 @@ import {selectedCityClock} from '../good-times-event-clock.js'
 import {homeCollections,labelFor,displayDate,displayTime,shiftDate,unique,occurrenceUsable,eveningUsable,list} from './model.js'
 const keyFor=i=>`${i.event_key?'event':'venue'}:${i.event_key||i.id}`
 export function CollectionGrid({items,savedKeys,onEvent,onVenue,onSave}){return <div className="gtc-grid">{unique(items).map(i=><ExperienceCard key={i.event_key||i.id} item={i} kind={i.event_key?'event':'venue'} saved={savedKeys.has(keyFor(i))} onOpen={()=>i.event_key?onEvent(i):onVenue(i)} onSave={()=>onSave(i.event_key?'event':'venue',i.event_key||i.id)}/>)}</div>}
-export function Home({events,venues,profile,savedKeys,onEvent,onVenue,onSave,onExplore,onPlan,mode,onMode,now,loading,error,onRetry}){
+export function Home({events,venues,profile,savedKeys,onEvent,onVenue,onSave,onExplore,onPlan,mode,onMode,now,loading,error,onRetry,sponsored=null}){
  const c=selectedCityClock('atlanta',now),groups=homeCollections(events,venues,now,profile?.vibe_preferences),[q,setQ]=useState('')
  return <section className="gtc-home"><div className="gtc-search"><input aria-label="Search Atlanta" placeholder="Events, places, neighborhoods…" value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')onExplore(null,q)}}/><button aria-label="Search" onClick={()=>onExplore(null,q)}>⌕</button></div><nav className="gtc-tabs gt5-home-modes" aria-label="GOOD TIMES Home views">{[['for-you','For You'],['upcoming','Upcoming'],['tonight','Tonight']].map(([id,label])=><button key={id} className={id===mode?'active':''} aria-pressed={id===mode} onClick={()=>onMode(id)}>{label}</button>)}</nav>
  {mode!=='for-you'?<EventCollection key={mode} mode={mode} now={now} initialEvents={events} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>:<>
@@ -16,7 +16,7 @@ export function Home({events,venues,profile,savedKeys,onEvent,onVenue,onSave,onE
  {groups.next.length>0&&<Section title="Next up" action={<button onClick={()=>onMode('upcoming')}>Full calendar ↗</button>}><CollectionGrid items={groups.next} {...{savedKeys,onEvent,onVenue,onSave}}/></Section>}
  {!groups.picks.length&&!groups.next.length&&!groups.tonight.length&&<State title="Find your next good time" body="Browse the full Atlanta collection, or retry current recommendations." action={<><button onClick={()=>onExplore()}>Explore Atlanta</button><button onClick={onRetry}>Refresh</button></>}/>}
  <button className="gtc-plan-band" onClick={onPlan}><span><strong>Make a night of it.</strong><small>Pick your vibe. Build your plan.</small></span><span aria-hidden="true">＋</span></button>
- <div className="gtc-collection-links">{['concerts_live_music','sports_watch','festivals_major_activations','family_kids'].map(k=><button key={k} onClick={()=>onExplore(k)}>{labelFor(k)} <span>↗</span></button>)}</div>
+ {sponsored}<div className="gtc-collection-links">{['concerts_live_music','sports_watch','festivals_major_activations','family_kids'].map(k=><button key={k} onClick={()=>onExplore(k)}>{labelFor(k)} <span>↗</span></button>)}</div>
  </>}
  </>}
  </section>
