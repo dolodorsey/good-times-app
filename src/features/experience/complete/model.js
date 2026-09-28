@@ -1,4 +1,4 @@
-import {dateNumber, selectedCityClock, timeMinutes, eventIsDiscoverable, eventIsTonight} from '../good-times-event-clock.js'
+import {dateNumber, selectedCityClock, timeMinutes, eventIsDiscoverable, eventIsTonight, eventIsThisWeekend} from '../good-times-event-clock.js'
 export const LABELS = Object.freeze({nightlife:'Nightlife',concerts_live_music:'Concerts & Live Music',sports_watch:'Sports & Watch',festivals_major_activations:'Festivals & Major Activations',dining_culinary:'Food & Drink',entertainment:'Entertainment',comedy_performing_arts:'Comedy & Performing Arts',family_kids:'Family & Kids',arts_museums_culture:'Arts, Museums & Culture',wellness_fitness:'Wellness & Fitness',day_parties_brunch:'Day Parties & Brunch',seasonal_holiday:'Seasonal & Holiday'})
 export const labelFor = key => LABELS[key] || String(key || 'Experience').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase())
 export const list = value => Array.isArray(value) ? value : []
@@ -13,6 +13,25 @@ export function shiftDate(date,n) {if(dateNumber(date)===null)return null;const 
 export function cleanTitle(value) {return String(value||'Experience').replace(/&amp;/g,'&').replace(/&#0?39;|&apos;/g,"'").replace(/&quot;/g,'"').replace(/\s+/g,' ').trim()}
 export function occurrenceUsable(event,now=Date.now()) {if(!eventIsDiscoverable(event,'atlanta',now))return false;const c=selectedCityClock('atlanta',now),m=timeMinutes(event.event_time);return event.event_date!==c.date||m===null||m>=c.minute||Boolean(event.event_end_time||event.end_time)}
 export function eveningUsable(event,now=Date.now()) {return occurrenceUsable(event,now)&&eventIsTonight(event,'atlanta',now)}
+export function homeDashboard(events,now=Date.now()) {
+ const c=selectedCityClock('atlanta',now),eligible=unique(events).filter(e=>occurrenceUsable(e,now))
+ const serviceOffset=c.serviceDate!==c.date?1440:0,nowMinute=c.minute+serviceOffset
+ const happeningNow=eligible.filter(e=>{
+  if(e.event_date!==c.serviceDate)return false
+  const start=timeMinutes(e.event_time),end=timeMinutes(e.event_end_time||e.end_time)
+  if(start===null||end===null)return false
+  const endMinute=end<=start?end+1440:end
+  return start<=nowMinute&&nowMinute<=endMinute
+ }).slice(0,4)
+ const startingSoon=eligible.filter(e=>{
+  if(e.event_date!==c.date)return false
+  const start=timeMinutes(e.event_time)
+  return start!==null&&start>=c.minute&&start<=c.minute+180
+ }).slice(0,4)
+ const thisWeekend=eligible.filter(e=>eventIsThisWeekend(e,'atlanta',now)).slice(0,4)
+ const daypart=c.minute<660?'day':c.minute<1020?'afternoon':c.minute<1320?'evening':'late'
+ return {happeningNow,startingSoon,thisWeekend,daypart}
+}
 export function homeCollections(events,venues,now=Date.now(),preferences=[]) {
  const eligible=unique(events).filter(e=>occurrenceUsable(e,now)), used=new Set();
  const take=(rows,n=4)=>rows.filter(r=>!used.has(identity(r))).slice(0,n).map(r=>{used.add(identity(r));return r})
