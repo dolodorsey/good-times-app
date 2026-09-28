@@ -250,3 +250,30 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-places{
 .gt5-complete .gtc-home-utility small{display:block;margin-top:4px;color:#999b98;font:400 9px/1.2 var(--gt5-sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .gt5-complete .gtc-home-utility button:first-child{border-color:rgba(248,212,106,.42);}
 @media(max-width:350px){.gt5-complete .gtc-home-utility{gap:4px}.gt5-complete .gtc-home-utility strong{font-size:11px}.gt5-complete .gtc-home-utility small{font-size:8px}}
+
+/* My GOOD TIMES profile hub */
+.gt5-complete .gtc-profile-hub{width:100%;padding:14px 0 24px!important;max-width:980px!important;margin:0 auto!important;}
+.gt5-complete .gtc-profile-intro{padding:12px 2px 4px;}
+.gt5-complete .gtc-profile-intro small{font:650 10px/1 var(--gt5-sans);letter-spacing:.14em;color:#f8d46a;}
+.gt5-complete .gtc-profile-intro h1{font:500 30px/1.05 var(--gt5-serif);margin:8px 0 7px;letter-spacing:-.025em;}
+.gt5-complete .gtc-profile-intro p{max-width:620px;margin:0;color:#aaa8a3;font:400 13px/1.5 var(--gt5-sans);}
+.gt5-complete .gtc-profile-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;padding:3px;margin:12px 0;border:1px solid var(--gtc-line);border-radius:12px;background:#0a0c0e;}
+.gt5-complete .gtc-profile-tabs button{min-width:0;min-height:44px;padding:7px 5px;border-radius:9px;color:#aaa8a3;font:650 12px/1.2 var(--gt5-sans);}
+.gt5-complete .gtc-profile-tabs button.active{background:#f8d46a;color:#090a0b;}
+.gt5-complete .gtc-profile-panel{padding:14px;border:1px solid var(--gtc-line);border-radius:14px;background:#0d0f11;}
+.gt5-complete .gtc-profile-panel>header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.gt5-complete .gtc-profile-panel>header small{display:block;color:#f8d46a;font-size:10px;letter-spacing:.12em;}
+.gt5-complete .gtc-profile-panel>header h2{margin:4px 0 0;font:650 18px/1.25 var(--gt5-sans);}
+.gt5-complete .gtc-profile-panel>header button{min-height:44px;color:#f8d46a;font-size:12px;}
+.gt5-complete .gtc-profile-panel>p{color:#aaa8a3;font:400 13px/1.5 var(--gt5-sans);}
+.gt5-complete .gtc-follow-list{display:grid;gap:8px;}
+.gt5-complete .gtc-follow-list article{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px;border:1px solid var(--gtc-line);border-radius:10px;background:#101214;}
+.gt5-complete .gtc-follow-list strong{font-size:14px}.gt5-complete .gtc-follow-list small{display:block;margin-top:3px;color:#999;font-size:11px}.gt5-complete .gtc-follow-list em{font-style:normal;color:#e5cf8b;font-size:11px;}
+.gt5-complete .gtc-profile-empty{padding:18px 4px;text-align:center}.gt5-complete .gtc-profile-empty strong{font-size:16px}.gt5-complete .gtc-profile-empty p{color:#999;font-size:12px;line-height:1.5}.gt5-complete .gtc-profile-empty button{min-height:44px;color:#f8d46a;font-weight:650;}
+.gt5-complete .gtc-profile-action,.gt5-complete .gtc-profile-city-select,.gt5-complete .gtc-profile-actions>a{display:flex;align-items:center;gap:10px;width:100%;min-height:62px;padding:10px;border:1px solid var(--gtc-line);border-radius:10px;background:#101214;color:#f5f2ea;text-align:left;text-decoration:none;}
+.gt5-complete .gtc-profile-action>span,.gt5-complete .gtc-profile-city-select>span,.gt5-complete .gtc-profile-actions>a>span{flex:1;min-width:0;}
+.gt5-complete .gtc-profile-action strong,.gt5-complete .gtc-profile-city-select strong,.gt5-complete .gtc-profile-actions strong{font-size:14px}.gt5-complete .gtc-profile-action small,.gt5-complete .gtc-profile-city-select small,.gt5-complete .gtc-profile-actions small{display:block;margin-top:4px;color:#9fa09d;font-size:11px;}
+.gt5-complete .gtc-profile-city-select{margin-top:10px}.gt5-complete .gtc-profile-city-select select{min-height:44px;max-width:150px;background:#0b0d0e;color:#f5f2ea;border:1px solid var(--gtc-line);border-radius:9px;padding:6px;color-scheme:dark;}
+.gt5-complete .gtc-profile-actions{display:grid;gap:8px}.gt5-complete .gtc-profile-logout{margin-top:16px;min-height:44px;width:100%;border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#c8c8c4;}
+.gt5-complete .gtc-profile-hub .gtc-my-good-times{margin-top:0;}
+@media(max-width:370px){.gt5-complete .gtc-profile-tabs button{font-size:10px;padding:6px 3px}.gt5-complete .gtc-profile-panel{padding:11px}}
