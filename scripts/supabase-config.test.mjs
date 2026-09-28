@@ -23,7 +23,11 @@ test('queries auth and content databases through their correct clients', async (
   assert.deepEqual(await khgF('gt_shows?limit=1', fetchImpl), [{ id: 'verified' }])
   assert.match(calls[0].url, /czocqfaovfpjweayniuw/)
   assert.match(calls[1].url, /dzlmtvodpyhetvektfuo/)
-  assert.ok(calls.every(({ options }) => options.headers.apikey && options.headers.Authorization))
+  assert.ok(calls.every(({ options }) => options.headers.apikey))
+  assert.equal(calls[0].options.headers.Authorization, `Bearer ${calls[0].options.headers.apikey}`)
+  assert.equal(calls[1].options.headers.Authorization, undefined)
+  assert.match(calls[1].options.headers.apikey, /^sb_publishable_/)
+  assert.doesNotMatch(calls[1].options.headers.apikey, /^sb_secret_/)
 })
 
 test('fails closed to an empty collection when a public read is rejected', async () => {

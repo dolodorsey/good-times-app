@@ -14,7 +14,9 @@ const CONTENT_ANON_KEY = KHG_SUPABASE_ANON_KEY
 const HEALTH_TIMEOUT_MS = 4500
 
 function headers(key) {
-  return { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' }
+  const value = { apikey: key, Accept: 'application/json' }
+  if (!String(key).startsWith('sb_publishable_')) value.Authorization = `Bearer ${key}`
+  return value
 }
 
 async function probe(url, key, query, fetchImpl) {
