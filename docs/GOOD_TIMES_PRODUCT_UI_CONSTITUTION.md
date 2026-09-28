@@ -145,3 +145,7 @@ Would this feel appropriate if Apple featured it tomorrow? Would a user trust it
 ## September 17 customer-directed enhancement
 
 The owner explicitly requested compact headers and heroes, brighter truthful imagery, controlled category colors, denser useful cards, polished existing ad placements, and interactive Plan/Shake. Preserve the five-tab navigation and existing page structure. The earlier percentage palette distribution is a historical reference, not a reason to retain the dull presentation. Use the shared customer-enhancement tokens (coral, teal, lilac, blue); retain gold for primary/selected actions. Verify each page top-to-bottom at phone and tablet sizes with screenshots and interaction evidence. Category illustrations are allowed on category/mood choices; never pass them off as a named venue's photo.
+
+
+## Owner-approved compact pilot — 2026-09-27
+For the isolated preview pilot, read `docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.md`. Its compact presentation supersedes oversized hero requirements only within the compiled pilot; all taxonomy, truth, privacy, release and paused-scheduler protections remain binding.

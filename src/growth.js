@@ -151,7 +151,7 @@ export async function recordGrowthEvent(eventName, metadata={}) {
         keepalive:true,
         headers:{
           apikey:KHG_SUPABASE_ANON_KEY,
-          Authorization:`Bearer ${KHG_SUPABASE_ANON_KEY}`,
+          ...(KHG_SUPABASE_ANON_KEY.startsWith('sb_publishable_')?{}:{Authorization:`Bearer ${KHG_SUPABASE_ANON_KEY}`}),
           'Content-Type':'application/json',
           Prefer:'return=minimal',
         },

@@ -88,7 +88,10 @@ for(const vp of viewports){
         assert.ok(profile.main.scrollHeight>profile.main.clientHeight,`long Profile must scroll inside the app instead of being clipped; geometry=${JSON.stringify(profile)}`)
         assert.match(profile.main.overflowY,/auto|scroll/)
       }
-      assert.match(profile.profile.text,/Log Out/i)
+      assert.match(profile.profile.text,/Library/i)
+      assert.match(profile.profile.text,/Account/i)
+      await page.locator('.gtc-profile-tabs').getByRole('button',{name:'Account',exact:true}).click()
+      await page.getByRole('button',{name:'Log Out',exact:true}).waitFor({state:'visible',timeout:5000})
       assert.deepEqual(errors,[])
     }finally{
       await context.close();await browser.close()

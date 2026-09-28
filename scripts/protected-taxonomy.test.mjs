@@ -1,112 +1,79 @@
-/** GOOD TIMES product-preservation gate. Fixtures never reach a production origin. */
+/** GOOD TIMES product-preservation gate for the owner-approved Places / Entertainment split. */
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
-const read = file => fs.readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+const read=file=>fs.readFileSync(new URL(`../${file}`,import.meta.url),'utf8')
 
-test('canonical app must render the established taxonomy with all state handlers', () => {
-  const source = read('src/features/experience/GoodTimesCommandAppV4.jsx')
-  const mount = source.match(/<ExploreTaxonomyBrowser\b[\s\S]*?\/>/)
-  assert.ok(mount, 'P1: full taxonomy browser removed; a shallow filter list is not a replacement')
-  for (const binding of ['taxonomy={taxonomy}', 'selectedCategory={selectedCategory}', 'selectedSubcategory={selectedSubcategory}', 'onCategory={setSelectedCategory}', 'onSubcategory={setSelectedSubcategory}', 'directoryOpen={directoryOpen}', 'onDirectoryOpen={setDirectoryOpen}', 'mapMode={mapMode}', 'onMapMode={setMapMode}']) {
-    assert.ok(mount[0].includes(binding), `Protected taxonomy binding missing: ${binding}`)
-  }
-  assert.match(source, /loadExploreTaxonomy\(/)
-})
-test('category and subcategory data remain authoritative and complete', () => {
-  const client = read('src/features/intelligence/client.js')
-  const browser = read('src/features/experience/ExploreTaxonomyBrowser.jsx')
-  for (const source of ['gt_taxonomy_categories?', 'gt_taxonomy_subcategories?', 'v_gt_venue_taxonomy_directory?', 'v_gt_venue_taxonomy_counts?']) assert.ok(client.includes(source), `Canonical data source removed: ${source}`)
-  assert.match(client, /is_active=eq\.true/)
-  assert.match(browser, /categoryRows\.map\(/)
-  assert.match(browser, /subcategoryRows\.map\(/)
-  assert.doesNotMatch(browser, /(?:categoryRows|subcategoryRows)\.slice\(/, 'Do not truncate the standard taxonomy')
-  assert.match(browser, /This lane remains visible/)
+test('canonical app keeps the complete taxonomy source while Places and Entertainment own separate surfaces',()=>{
+ const source=read('src/features/experience/GoodTimesCommandAppV4.jsx')
+ const mounts=[...source.matchAll(/<ExploreTaxonomyBrowser\b[\s\S]*?\/>/g)].map(m=>m[0])
+ assert.ok(mounts.length,'P1: taxonomy browser removed')
+ const places=mounts.find(x=>x.includes('taxonomy={placesTaxonomy}'))||''
+ for(const binding of['taxonomy={placesTaxonomy}','selectedCategory={selectedCategory}','selectedSubcategory={selectedSubcategory}','onCategory={setSelectedCategory}','onSubcategory={setSelectedSubcategory}','directoryOpen={directoryOpen}','onDirectoryOpen={setDirectoryOpen}','mapMode={mapMode}','onMapMode={setMapMode}'])assert.ok(places.includes(binding),`Protected Places binding missing: ${binding}`)
+ assert.match(source,/loadExploreTaxonomy\(/)
+ assert.match(source,/const placesTaxonomy=useMemo\(\(\)=>taxonomy\.filter/)
+ assert.match(source,/EntertainmentHub/)
+ assert.match(source,/RestaurantExplorer/)
+ assert.match(source,/const NAV=\[\['home','⌂','Home'\],\['places','⌕','Places'\],\['plan','＋','Plan'\],\['entertainment','◇','Entertainment'\],\['profile','◎','Profile'\]\]/)
 })
 
-const BASE = process.env.GT_UI_BASE
-let chromium
-try { ({ chromium } = await import('playwright-core')) } catch {}
-const skip = !BASE || !chromium ? 'requires the established rendered UI job; static checks still run' : false
-const epoch = Date.parse('2026-09-25T16:00:00Z')
-// Deliberately unknown IDs: a hardcoded shortlist cannot pass this contract.
-const categories = Array.from({ length: 26 }, (_, i) => ({ category_key: `guard_category_${i}`, category_name: `Catalog section ${i + 1}`, sort_order: i, is_active: true }))
-const subcategories = categories.flatMap((cat, i) => Array.from({ length: i === 25 ? 3 : 2 }, (_, j) => ({ category_key: cat.category_key, subcategory_key: `guard_sub_${i}_${j}`, subcategory_name: `Section ${i + 1} option ${j + 1}`, sort_order: j, is_active: true })))
-const venues = subcategories.filter(row => row.subcategory_key !== 'guard_sub_25_2').map((row, i) => ({ id: `guard_venue_${i}`, name: `Catalog place ${i + 1}`, city_key: 'atlanta', category_key: row.category_key, subcategory_key: row.subcategory_key, subcategory: row.subcategory_name, neighborhood: 'Midtown', short_desc: 'Isolated regression fixture, not a live recommendation.', hero_image: '/venues/revel.webp', address: 'Fixture address only', latitude: 33.78, longitude: -84.38, quality_score: 90, is_verified: true }))
-const counts = categories.map(cat => ({ category_key: cat.category_key, subcategory_key: null, place_count: venues.filter(v => v.category_key === cat.category_key).length })).concat(subcategories.map(sub => ({ category_key: sub.category_key, subcategory_key: sub.subcategory_key, place_count: venues.filter(v => v.subcategory_key === sub.subcategory_key).length })))
-const events = [{ event_key: 'guard-event', title: 'Regression fixture only', city_key: 'atlanta', category_key: 'concerts_live_music', event_date: '2026-09-25', event_time: '20:00', venue_name: 'Fixture venue', image_url: '/venues/revel.webp', quality_score: 90, is_verified: true }]
-const json = body => ({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
-for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 1000 }]) {
-  test(`all dynamic category/subcategory journeys stay usable at ${viewport.width}px`, { skip, timeout: 120000 }, async () => {
-    assert.ok(['localhost', '127.0.0.1'].includes(new URL(BASE).hostname), 'Fixtures must never target production')
-    const browser = await chromium.launch({ headless: true, executablePath: process.env.GT_UI_CHROME_PATH || undefined, args: ['--no-sandbox'] })
-    const context = await browser.newContext({ viewport, reducedMotion: 'reduce', timezoneId: 'America/New_York' })
-    const page = await context.newPage(), errors = [], requests = [], traversed = []
-    const dir = path.join(process.env.GT_UI_ARTIFACTS || 'ui-artifacts', 'protected-taxonomy', String(viewport.width))
-    fs.mkdirSync(dir, { recursive: true })
-    page.on('pageerror', e => errors.push(e.message))
-    const capture = name => page.screenshot({ path: path.join(dir, `${name}.png`), animations: 'disabled' })
-    try {
-      await context.addInitScript(epoch => {
-        const NativeDate = Date
-        window.Date = class extends NativeDate { constructor(...args) { super(...(args.length ? args : [epoch])) } static now() { return epoch } }
-        localStorage.setItem('gt_session', JSON.stringify({ access_token: 'isolated-taxonomy-fixture', user: { id: 'isolated-taxonomy-user' }, expires_at: 4102444800 }))
-        sessionStorage.setItem('gt_premium_launch', '1'); sessionStorage.setItem('gt_splash_shown', '1')
-      }, epoch)
-      await context.route('**/auth/v1/**', route => route.fulfill(json({ external: { google: true } })))
-      await context.route('**/api/**', route => { const p = new URL(route.request().url()).pathname; return route.fulfill(json(p === '/api/health' ? { ok: true, service: 'good-times', customer_ready: true, content_ready: true } : p.startsWith('/api/data') ? { ok: true, connected: true, degraded: false, city: 'atlanta', events, venues: [], counts: { events: 1, venues: 0 } } : { ok: true })) })
-      await context.route('**/rest/v1/**', route => {
-        const u = new URL(route.request().url()), table = u.pathname.split('/').at(-1)
-        requests.push({ table, query: u.search })
-        if (table === 'gt_taxonomy_categories') return route.fulfill(json(categories))
-        if (table === 'gt_taxonomy_subcategories') return route.fulfill(json(subcategories))
-        if (table === 'v_gt_venue_taxonomy_counts') return route.fulfill(json(counts))
-        if (table === 'v_gt_venue_taxonomy_directory') { const key = String(u.searchParams.get('category_key') || '').replace(/^eq\./, ''); return route.fulfill(json(venues.filter(v => !key || v.category_key === key))) }
-        return route.fulfill(json([]))
-      })
-      await context.route('**/functions/v1/**', route => route.fulfill(json({ ok: true, events: [], venues: [] })))
-      await context.route('https://www.openstreetmap.org/**', route => route.fulfill({ status: 200, contentType: 'text/html', body: '<p>Isolated map fixture</p>' }))
-      await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 20000 })
-      await page.locator('.gt5-nav').getByRole('button', { name: 'Discover', exact: true }).click()
-      await page.locator('[data-gt-category="guard_category_25"]').waitFor({ timeout: 15000 })
-      assert.deepEqual(await page.locator('[data-gt-category]').evaluateAll(nodes => nodes.map(n => n.dataset.gtCategory)), categories.map(c => c.category_key))
-      assert.deepEqual(await page.locator('[data-gt-category] strong').allTextContents(), categories.map(c => c.category_name))
-      await capture('all-categories')
-      for (const cat of categories) {
-        await page.locator(`[data-gt-category="${cat.category_key}"]`).click()
-        const grid = page.locator(`[data-gt-subcategories="${cat.category_key}"]`)
-        await grid.waitFor()
-        const subs = subcategories.filter(s => s.category_key === cat.category_key)
-        assert.deepEqual(await grid.locator('button strong').allTextContents(), [`All ${cat.category_name}`, ...subs.map(s => s.subcategory_name)])
-        const sub = subs[0], venue = venues.find(v => v.subcategory_key === sub.subcategory_key)
-        await grid.getByRole('button', { name: new RegExp(sub.subcategory_name) }).click()
-        await page.locator('.gt2-venue-grid h3').filter({ hasText: venue.name }).waitFor()
-        assert.deepEqual(await page.locator('.gt2-venue-grid h3').allTextContents(), [venue.name])
-        traversed.push(cat.category_key)
-        if (cat.category_key === 'guard_category_25') {
-          await capture('subcategory-directory')
-          await page.locator('.gt2-venue-grid .gt5-venue').first().click()
-          await page.locator('.gt5-detail').waitFor()
-          await page.locator('.gt5-detail-back').click()
-          assert.equal(await grid.locator('button.active strong').innerText(), sub.subcategory_name, 'Detail return lost subcategory')
-          await page.locator('.gt2-explore-toggle').getByRole('button', { name: 'Map', exact: true }).click()
-          await page.locator('.gt2-map-frame').waitFor()
-          await capture('subcategory-map')
-          await page.locator('.gt2-explore-toggle').getByRole('button', { name: 'Directory', exact: true }).click()
-          await grid.getByRole('button', { name: new RegExp(subs[2].subcategory_name) }).click()
-          await page.getByRole('heading', { name: 'No verified matches yet' }).waitFor()
-          assert.equal(await grid.locator('button strong').count(), 4, 'Empty subcategory removed')
-          await capture('empty-subcategory-retained')
-        }
-        await page.getByRole('button', { name: '‹ All categories', exact: true }).click()
-        await page.locator('[data-gt-category="guard_category_25"]').waitFor()
-      }
-      assert.equal(traversed.length, categories.length)
-      assert.deepEqual(errors, [])
-      for (const name of ['gt_taxonomy_categories', 'gt_taxonomy_subcategories', 'v_gt_venue_taxonomy_directory']) assert.ok(requests.some(r => r.table === name), `Missing source request ${name}`)
-      fs.writeFileSync(path.join(dir, 'evidence.json'), JSON.stringify({ scope: 'isolated fixture; not production authentication or real catalog count', viewport, categories_checked: categories.length, subcategory_labels_checked: subcategories.length, journeys_checked: traversed.length, map_checked: true, detail_return_checked: true, empty_subcategory_retained: true, errors, requests }, null, 2))
-    } catch (error) { await capture('failure').catch(() => {}); throw error }
-    finally { await context.close(); await browser.close() }
-  })
+test('category and subcategory sources stay authoritative instead of becoming a hardcoded replacement',()=>{
+ const client=read('src/features/intelligence/client.js'),browser=read('src/features/experience/ExploreTaxonomyBrowser.jsx')
+ for(const source of['gt_taxonomy_categories?','gt_taxonomy_subcategories?','v_gt_venue_taxonomy_directory?','v_gt_venue_taxonomy_counts?'])assert.ok(client.includes(source),`Canonical source removed: ${source}`)
+ assert.match(client,/is_active=eq\.true/)
+ assert.match(browser,/categoryRows\.map\(/);assert.match(browser,/subcategoryRows\.map\(/)
+ assert.doesNotMatch(browser,/(?:categoryRows|subcategoryRows)\.slice\(/,'Do not truncate dynamic taxonomy')
+ assert.match(browser,/This lane remains visible/)
+})
+
+const BASE=process.env.GT_UI_BASE
+let chromium;try{({chromium}=await import('playwright-core'))}catch{}
+const skip=!BASE||!chromium?'requires rendered UI CI; static checks still run':false
+const epoch=Date.parse('2026-09-28T00:30:00-04:00')
+const FAMILIES=[
+ ['dining_culinary','Restaurants'],
+ ['travel_staycations','Hotels & Stays'],
+ ['attractions_experiences','Attractions'],
+ ['wellness_fitness','Wellness'],
+ ['fashion_beauty_shopping','Shopping'],
+ ['family_kids','Family Places'],
+]
+const categories=FAMILIES.map(([category_key,category_name],sort_order)=>({category_key,category_name,sort_order,is_active:true}))
+const subcategories=categories.flatMap((cat,i)=>Array.from({length:i===5?3:2},(_,j)=>({category_key:cat.category_key,subcategory_key:`guard_sub_${i}_${j}`,subcategory_name:`${cat.category_name} option ${j+1}`,sort_order:j,is_active:true})))
+const venues=subcategories.filter(s=>s.subcategory_key!=='guard_sub_5_2').map((s,i)=>({id:`600000${String(i).padStart(2,'0')}-6666-4666-8666-666666666666`,name:`Catalog place ${i+1}`,city_key:'atlanta',category_key:s.category_key,subcategory_key:s.subcategory_key,subcategory:s.subcategory_name,venue_category_key:s.category_key,venue_subcategory:s.subcategory_name,neighborhood:'Midtown',short_desc:'Isolated regression fixture.',hero_image:'/venues/revel.webp',address:'Fixture address only',latitude:33.78,longitude:-84.38,quality_score:90-i,status:'active',is_verified:true,verification_status:'verified_current',freshness_expires_at:'2026-10-28T00:00:00Z',website:'https://example.invalid/place'}))
+const counts=categories.map(c=>({category_key:c.category_key,subcategory_key:null,place_count:venues.filter(v=>v.category_key===c.category_key).length})).concat(subcategories.map(s=>({category_key:s.category_key,subcategory_key:s.subcategory_key,place_count:venues.filter(v=>v.subcategory_key===s.subcategory_key).length})))
+const events=[{event_key:'show:77777777-7777-4777-8777-777777777777',id:'77777777-7777-4777-8777-777777777777',title:'Regression entertainment fixture',city_key:'atlanta',category_key:'concerts_live_music',event_date:'2026-09-28',event_time:'20:00',venue_name:'Fixture venue',image_url:'/venues/revel.webp',ticket_url:'https://example.invalid/ticket',quality_score:90,is_verified:true,updated_at:'2026-09-28T03:00:00Z'}]
+const json=body=>({status:200,contentType:'application/json',body:JSON.stringify(body)})
+for(const viewport of[{width:390,height:844},{width:1440,height:1000}]){
+ test(`Places families, restaurant facets and Entertainment remain usable at ${viewport.width}px`,{skip,timeout:120000},async()=>{
+  assert.ok(['localhost','127.0.0.1'].includes(new URL(BASE).hostname),'Fixtures must never target production')
+  const browser=await chromium.launch({headless:true,executablePath:process.env.GT_UI_CHROME_PATH||undefined,args:['--no-sandbox']})
+  const context=await browser.newContext({viewport,reducedMotion:'reduce',timezoneId:'America/New_York'}),page=await context.newPage(),errors=[],requests=[],traversed=[]
+  const dir=path.join(process.env.GT_UI_ARTIFACTS||'ui-artifacts','protected-taxonomy',String(viewport.width));fs.mkdirSync(dir,{recursive:true});page.on('pageerror',e=>errors.push(e.message))
+  const capture=name=>page.screenshot({path:path.join(dir,`${name}.png`),animations:'disabled'})
+  try{
+   await context.addInitScript(epoch=>{const D=Date;window.Date=class extends D{constructor(...a){super(...(a.length?a:[epoch]))}static now(){return epoch}};localStorage.setItem('gt_session',JSON.stringify({access_token:'isolated-taxonomy-fixture',user:{id:'11111111-1111-4111-8111-111111111111'},expires_at:4102444800}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},epoch)
+   await context.route('**/auth/v1/**',r=>r.fulfill(json({external:{google:true}})))
+   await context.route('**/api/**',r=>{const p=new URL(r.request().url()).pathname;if(p==='/api/health')return r.fulfill(json({ok:true,service:'good-times',customer_ready:true,content_ready:true}));if(p.startsWith('/api/data'))return r.fulfill(json({ok:true,connected:true,degraded:false,city:'atlanta',events,venues:[],counts:{events:1,venues:0}}));if(p==='/api/browse')return r.fulfill(json({ok:true,items:events,nextCursor:null,asOf:new Date(epoch).toISOString()}));return r.fulfill(json({ok:true}))})
+   await context.route('**/rest/v1/**',r=>{const u=new URL(r.request().url()),t=u.pathname.split('/').at(-1);requests.push({table:t,query:u.search});if(t==='gt_taxonomy_categories')return r.fulfill(json(categories));if(t==='gt_taxonomy_subcategories')return r.fulfill(json(subcategories));if(t==='v_gt_venue_taxonomy_counts')return r.fulfill(json(counts));if(t==='v_gt_venue_taxonomy_directory'){const key=String(u.searchParams.get('category_key')||'').replace(/^eq\./,''),sub=String(u.searchParams.get('subcategory_key')||'').replace(/^eq\./,'');return r.fulfill(json(venues.filter(v=>(!key||v.category_key===key)&&(!sub||v.subcategory_key===sub))))}if(t==='v_gt_restaurant_entities')return r.fulfill(json(venues.filter(v=>v.category_key==='dining_culinary').map(v=>({...v,service_level:'upscale',cuisine_tags:['seafood'],occasion_tags:['date_night'],meal_tags:['dinner'],restaurant_vibe_tags:['high_energy'],feature_tags:['full_bar'],dietary_tags:[],ownership_tags:[],profile_confidence:90,needs_review:false}))));if(t==='gt_user_profiles')return r.fulfill(json([{id:'22222222-2222-4222-8222-222222222222',auth_id:'11111111-1111-4111-8111-111111111111',full_name:'Taxonomy QA'}]));return r.fulfill(json([]))})
+   await context.route('**/functions/v1/**',r=>r.fulfill(json({ok:true,events:[],venues:[]})))
+   await context.route('https://www.openstreetmap.org/**',r=>r.fulfill({status:200,contentType:'text/html',body:'<p>map fixture</p>'}))
+   await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:20000});await page.locator('.gt5-nav').getByRole('button',{name:'Places',exact:true}).click();await page.locator('.gtc-place-lanes').waitFor({timeout:15000})
+   assert.deepEqual(await page.locator('.gtc-place-lanes strong').allTextContents(),FAMILIES.map(x=>x[1]));await capture('all-place-families')
+   for(const [key,label] of FAMILIES){
+    if(key==='dining_culinary'){
+     await page.getByRole('button',{name:new RegExp('^Restaurants')}).click();await page.locator('.gtc-restaurants').waitFor();assert.ok(await page.locator('.gtc-restaurant-quick button').count()>=9);await page.locator('.gtc-restaurants .gtc-card').first().waitFor({timeout:10000});assert.ok(await page.locator('.gtc-restaurants .gtc-card').count()>=1);traversed.push(key);await page.getByRole('button',{name:'Back to Places'}).click();await page.locator('.gtc-place-lanes').waitFor();continue
+    }
+    await page.getByRole('button',{name:new RegExp('^'+label)}).click();const grid=page.locator(`[data-gt-subcategories="${key}"]`);await grid.waitFor();const subs=subcategories.filter(s=>s.category_key===key);assert.deepEqual(await grid.locator('button strong').allTextContents(),[`All ${label}`,...subs.map(s=>s.subcategory_name)])
+    const sub=subs[0],venue=venues.find(v=>v.subcategory_key===sub.subcategory_key);await grid.getByRole('button',{name:new RegExp(sub.subcategory_name)}).click();await page.locator('.gt2-venue-grid h3').filter({hasText:venue.name}).waitFor();traversed.push(key)
+    if(key==='family_kids'){await capture('family-directory');await page.locator('.gt2-venue-grid .gtc-card-open').first().click();await page.locator('.gtc-detail').waitFor();await page.getByRole('button',{name:'Back to results'}).click();assert.match(await page.locator('.gt-compact-subcategories summary').innerText(),new RegExp(sub.subcategory_name),'Detail return lost selected subcategory summary');assert.ok(await page.locator('.gt2-venue-grid h3').filter({hasText:venue.name}).count()>=1,'Detail return lost retained result set');await page.locator('.gt2-explore-toggle').getByRole('button',{name:'Map',exact:true}).click();await page.locator('.gt2-map-frame').waitFor();await capture('family-map');await page.locator('.gt2-explore-toggle').getByRole('button',{name:'Directory',exact:true}).click();await page.locator('.gt-compact-subcategories summary').click();await grid.getByRole('button',{name:new RegExp(subs[2].subcategory_name)}).click();await page.getByRole('heading',{name:'No verified matches yet'}).waitFor();assert.equal(await grid.locator('button strong').count(),4,'Empty subcategory removed')}
+    await page.getByRole('button',{name:'‹ All categories',exact:true}).click();await page.locator('.gtc-place-lanes').waitFor()
+   }
+   assert.equal(traversed.length,FAMILIES.length)
+   await page.locator('.gt5-nav').getByRole('button',{name:'Entertainment',exact:true}).click();await page.locator('.gtc-entertainment').waitFor();assert.equal(await page.locator('.gtc-entertainment-lane').count(),9);assert.ok((await page.locator('.gtc-entertainment-lane').first().evaluate(e=>getComputedStyle(e).backgroundImage))!=='none')
+   assert.deepEqual(errors,[]);for(const name of['gt_taxonomy_categories','gt_taxonomy_subcategories','v_gt_venue_taxonomy_directory'])assert.ok(requests.some(r=>r.table===name),`Missing source request ${name}`)
+   fs.writeFileSync(path.join(dir,'evidence.json'),JSON.stringify({scope:'isolated fixture; not production auth/catalog proof',viewport,place_families_checked:FAMILIES.length,journeys_checked:traversed.length,restaurant_facets_checked:true,entertainment_lanes_checked:9,map_checked:true,detail_return_checked:true,empty_subcategory_retained:true,errors,requests},null,2))
+  }catch(e){await capture('failure').catch(()=>{});throw e}finally{await context.close();await browser.close()}
+ })
 }

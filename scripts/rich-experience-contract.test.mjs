@@ -23,20 +23,20 @@ test('V4 CSS is the final protected consumer visual authority', () => {
   assert.ok(v4 > v3, 'V4 CSS must load last as protected visual authority')
 })
 
-test('permanent navigation is Home Discover Plan Saved Profile', () => {
+test('permanent navigation is Home Places Plan Entertainment Profile', () => {
   const source = read('src/features/experience/GoodTimesCommandAppV4.jsx')
   const navLine = source.split('\n').find(line => line.startsWith('const NAV=')) || ''
-  for (const label of ['Home','Discover','Plan','Saved','Profile']) assert.match(navLine, new RegExp(`'${label}'`))
+  for (const label of ['Home','Places','Plan','Entertainment','Profile']) assert.match(navLine, new RegExp(`'${label}'`))
   assert.doesNotMatch(navLine, /'Radar'/)
   assert.doesNotMatch(navLine, /'Vault'/)
   assert.doesNotMatch(navLine, /'Concierge'/)
   assert.match(source, /className={`\$\{tab===id\?'active':''\} \$\{id==='plan'\?'plan':''\}`}/)
 })
 
-test('Discover keeps taxonomy drilldown behind editorial discovery lanes', () => {
+test('Places keeps taxonomy drilldown while Entertainment is a separate destination', () => {
   const source = read('src/features/experience/GoodTimesCommandAppV4.jsx')
   const browser = read('src/features/experience/ExploreTaxonomyBrowser.jsx')
-  for (const lane of ['Eat Well','Turn Up','Be There','Stay Right','Do More']) assert.match(source, new RegExp(lane))
+  for (const marker of ['placesTaxonomy','EntertainmentHub','ExploreTaxonomyBrowser']) assert.match(source, new RegExp(marker))
   assert.match(source, /ExploreTaxonomyBrowser/)
   assert.match(source, /selectedCategory=/)
   assert.match(source, /selectedSubcategory=/)
@@ -89,7 +89,7 @@ test('generated itinerary uses explicit status data instead of manufacturing con
 test('V4 screen formula and protected responsive shell are encoded', () => {
   const source = read('src/features/experience/GoodTimesCommandAppV4.jsx')
   const css = read('src/features/experience/good-times-v4.css')
-  for (const phrase of ['A Better','Discover','Plan','Everything','Never hear']) assert.match(source, new RegExp(phrase))
+  for (const phrase of ['A Better','Places','Entertainment','Plan','My GOOD TIMES','Never hear']) assert.match(source, new RegExp(phrase))
   assert.match(css, /\.gt5-main\{[^}]*overflow-y:auto/)
   assert.match(css, /\.gt5-nav\{[^}]*position:absolute/)
   assert.match(css, /@media\(max-width:390px\)/)
