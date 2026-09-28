@@ -25,16 +25,16 @@ test('authenticated bootstrap routes members into the integrated GOOD TIMES V4 a
 })
 
 test('signed-in navigation uses five protected customer jobs', () => {
-  mustContain(app, ["['home','⌂','Home']","['discover','⌕','Discover']","['plan','＋','Plan']","['saved','▣','Saved']","['profile','◎','Profile']"])
+  mustContain(app, ["['home','⌂','Home']","['places','⌕','Places']","['plan','＋','Plan']","['entertainment','◇','Entertainment']","['profile','◎','Profile']"])
   const navLine=app.split('\n').find(line=>line.startsWith('const NAV='))||''
   assert.doesNotMatch(navLine,/radar/i)
   assert.doesNotMatch(navLine,/vault/i)
   assert.doesNotMatch(navLine,/concierge/i)
-  mustContain(app,["savedView==='plans'","savedView==='saved'"])
+  mustContain(app,["<CompleteSaved","onExplore={()=>goTab('places')}","onEntertainment={()=>goTab('entertainment')}"])
 })
 
-test('Discover preserves real category and subcategory traversal behind editorial lanes', () => {
-  mustContain(app,['Eat Well','Turn Up','Be There','Stay Right','Do More','ExploreTaxonomyBrowser','selectedCategory','selectedSubcategory','onCategory={setSelectedCategory}','onSubcategory={setSelectedSubcategory}'])
+test('Places preserves real category and subcategory traversal while Entertainment stays separate', () => {
+  mustContain(app,['ExploreTaxonomyBrowser','placesTaxonomy','EntertainmentHub','selectedCategory','selectedSubcategory','onCategory={setSelectedCategory}','onSubcategory={setSelectedSubcategory}'])
   mustContain(taxonomyBrowser,['SUBCATEGORIES','loadExploreDirectory','onSubcategory?.(subcategory.subcategory_key)','All categories'])
 })
 
