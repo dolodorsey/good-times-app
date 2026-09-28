@@ -61,8 +61,10 @@ test('legacy GOOD TIMES auth and modern KHG content credentials stay intentional
   assert.match(valueFrom(SOURCE, 'CANONICAL_KHG_ANON_KEY'), /^sb_publishable_/)
 })
 
-test('env key validator accepts publishable keys and rejects secret keys', () => {
-  assert.match(SOURCE, /value\.startsWith\('sb_publishable_'\)/)
+test('KHG env override accepts publishable keys only', () => {
+  assert.match(SOURCE, /function validPublishableKey\(value\)/)
+  assert.match(SOURCE, /\^sb_publishable_/)
+  assert.match(SOURCE, /KHG_SUPABASE_ANON_KEY = validPublishableKey\(env\.VITE_KHG_SUPABASE_ANON_KEY\)/)
   assert.match(SOURCE, /value\.startsWith\('sb_secret_'\).*return false/)
 })
 
