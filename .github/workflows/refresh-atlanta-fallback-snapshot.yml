@@ -123,8 +123,9 @@ jobs:
           set -euo pipefail
           MERGE_SHA=""
           for i in $(seq 1 60); do
-            git fetch --force origin main "pull/$PR/merge" || true
+            git fetch --force origin main || true
             CURRENT_BASE=$(git rev-parse origin/main)
+            git fetch --force origin "pull/$PR/merge" || true
             CANDIDATE=$(git rev-parse FETCH_HEAD 2>/dev/null || true)
             if [ "$CURRENT_BASE" != "$BASE_SHA" ]; then
               echo "::error::main moved during refresh: expected $BASE_SHA, found $CURRENT_BASE"
