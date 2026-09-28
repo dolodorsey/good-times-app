@@ -30,7 +30,7 @@ test('signed-in navigation uses five protected customer jobs', () => {
   assert.doesNotMatch(navLine,/radar/i)
   assert.doesNotMatch(navLine,/vault/i)
   assert.doesNotMatch(navLine,/concierge/i)
-  mustContain(app,["<CompleteSaved","onExplore={()=>goTab('places')}","onEntertainment={()=>goTab('entertainment')}"])
+  mustContain(app,["<ProfileHub","onPlaces={()=>goTab('places')}","onEntertainment={()=>goTab('entertainment')}"])
 })
 
 test('Places preserves real category and subcategory traversal while Entertainment stays separate', () => {
