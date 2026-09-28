@@ -219,6 +219,10 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-places{
 .gt5-complete .gtc-place-lanes strong{display:block;font:650 15px/1.2 var(--gt5-sans);}
 .gt5-complete .gtc-place-lanes small{display:block;margin-top:5px;font:400 11px/1.35 var(--gt5-sans);color:#aeadac;}
 .gt5-complete .gtc-place-lanes b{color:#f8d46a;font-size:18px;font-weight:500;}
+.gt5-complete .gtc-place-preview{margin:16px 0 22px;}
+.gt5-complete .gtc-place-preview>header{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:0 0 10px;}
+.gt5-complete .gtc-place-preview>header h2{margin:0;font:650 18px/1.2 var(--gt5-sans);letter-spacing:-.015em;}
+.gt5-complete .gtc-place-preview>header small{display:block;margin-top:4px;color:#9fa09d;font:400 11px/1.35 var(--gt5-sans);}
 .gt5-complete .gtc-restaurants{width:100%;padding:0 0 10px;}
 .gt5-complete .gtc-restaurant-quick{display:flex;gap:7px;overflow:auto;padding:1px 0 8px;scrollbar-width:none;}
 .gt5-complete .gtc-restaurant-quick::-webkit-scrollbar{display:none;}

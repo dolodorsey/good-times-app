@@ -19,10 +19,11 @@ Every major module must create **Desire + Context + Relevance + Trust + Action**
 The design language is cinematic context, not simply black and gold. Prefer a recognizable environment + human subject + experiential action. Use verified real imagery when it represents a specific venue/event.
 
 - Home: current city + social energy + immediate possibility.
-- Discover: exploration, culture, dining, nightlife, stays, experiences.
+- Places: persistent destinations, dining, stays, attractions, wellness, shopping, and family places.
+- Entertainment: time-based nightlife, concerts, festivals, sports, comedy, live programming, and experiences.
 - Plan: chemistry, aspiration, friends, dates, celebrations.
 - Radar: urgency and city pulse.
-- Saved: memory and aspiration.
+- My GOOD TIMES (inside Profile): memory, aspiration, saved places, saved entertainment, and plans.
 - Profile: membership and identity.
 - Venue/Event detail: the actual verified entity.
 - Itinerary: emotional summary of the completed plan.
@@ -30,9 +31,9 @@ The design language is cinematic context, not simply black and gold. Prefer a re
 ## 4. Permanent navigation constitution
 Bottom navigation is exactly:
 
-**Home / Discover / Plan / Saved / Profile**
+**Home / Places / Plan / Entertainment / Profile**
 
-Plan is the elevated center action. Never reorder these items or rename them by screen. Radar is a first-class destination reached from the bell, City Radar strip, Home modules, deep links, and notification controls; it never replaces Plan in permanent navigation.
+Plan is the elevated center action. Never reorder these items or rename them by screen. Saved is no longer a permanent tab; saved places, entertainment and plans live in Profile → My GOOD TIMES. Radar is a first-class destination reached from the bell, City Radar strip, Home modules, deep links, and notification controls; it never replaces Plan in permanent navigation.
 
 Detail screens preserve origin, scroll, query/filter state, city and date when returning.
 
@@ -91,8 +92,11 @@ Never let stock imagery impersonate a real entity. Fallback: verified primary �
 ### Home
 Answers: **What is worth doing right now?** Dynamic by city, time, weekday, user and major local moments. Not an endless directory.
 
-### Discover
-Answers: **Let me intentionally explore.** Editorial lanes: **Eat Well / Turn Up / Be There / Stay Right / Do More**. Full taxonomy remains behind the lanes.
+### Places
+Answers: **Let me intentionally explore persistent destinations.** Places is restaurant-first and entity-driven, with deep facets for cuisine, service level, occasion, meal, vibe, interests / ownership, features, dietary needs, pricing, neighborhood and ranking. Full taxonomy remains available behind the compact lanes and Grid / List / Map browse modes.
+
+### Entertainment
+Answers: **What is happening, what is live, and what is worth doing?** Entertainment is time-first and activity-driven: Tonight, This Weekend, Upcoming, nightlife programming, concerts, live music, festivals/events, sports, comedy/performing arts, interactive, family, and attractions/experiences. Events reference canonical entities rather than duplicating places.
 
 ### Tonight / Now
 Only current, actionable, correct-city, quality inventory. Suppress expired/cancelled/impossible/stale results.
@@ -106,8 +110,8 @@ Turns natural intent into an executable experience. AI may interpret, rank, expl
 ### Itinerary
 A chronological plan, not a recommendation list. Statuses: SUGGESTED / SELECTED / HELD / REQUESTED / CONFIRMED / TICKETED / WAITLIST / ACTION REQUIRED / CANCELLED / COMPLETED. Never show CONFIRMED without backing state.
 
-### Saved
-Memory layer for places/events plus complete plans.
+### My GOOD TIMES (Profile)
+Memory layer for saved places, saved entertainment, complete plans, recently viewed, following, preferences, notifications, history, and backed ticket/reservation state. Saved behavior is moved, not deleted.
 
 ### Radar
 City intelligence with provenance, timestamps, expiry, confidence, audience logic, dedupe and rate limiting.
@@ -144,8 +148,11 @@ Would this feel appropriate if Apple featured it tomorrow? Would a user trust it
 
 ## September 17 customer-directed enhancement
 
-The owner explicitly requested compact headers and heroes, brighter truthful imagery, controlled category colors, denser useful cards, polished existing ad placements, and interactive Plan/Shake. Preserve the five-tab navigation and existing page structure. The earlier percentage palette distribution is a historical reference, not a reason to retain the dull presentation. Use the shared customer-enhancement tokens (coral, teal, lilac, blue); retain gold for primary/selected actions. Verify each page top-to-bottom at phone and tablet sizes with screenshots and interaction evidence. Category illustrations are allowed on category/mood choices; never pass them off as a named venue's photo.
+The owner explicitly requested compact headers and heroes, brighter truthful imagery, controlled category colors, denser useful cards, polished existing ad placements, and interactive Plan/Shake. Preserve the protected five-tab structure; the September 28 owner-approved navigation naming is Home / Places / Plan / Entertainment / Profile, with Saved moved into Profile → My GOOD TIMES. The earlier percentage palette distribution is a historical reference, not a reason to retain the dull presentation. Use the shared customer-enhancement tokens (coral, teal, lilac, blue); retain gold for primary/selected actions. Verify each page top-to-bottom at phone and tablet sizes with screenshots and interaction evidence. Category illustrations are allowed on category/mood choices; never pass them off as a named venue's photo.
 
 
 ## Owner-approved compact pilot — 2026-09-27
 For the isolated preview pilot, read `docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.md`. Its compact presentation supersedes oversized hero requirements only within the compiled pilot; all taxonomy, truth, privacy, release and paused-scheduler protections remain binding.
+
+## September 28, 2026 owner-approved information architecture
+The canonical primary navigation is **Home / Places / Plan / Entertainment / Profile**. `Discover` is now the persistent-entity `Places` system; time-based happenings live in `Entertainment`; saved state lives in `Profile → My GOOD TIMES`. This supersedes earlier navigation wording without reducing the protected taxonomy, truth, accessibility, responsiveness, or release requirements.

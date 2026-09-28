@@ -29,7 +29,7 @@ A coding agent may not reinterpret GOOD TIMES from a single ticket. The governan
 
 ## Protected UI contract
 
-1. **Permanent bottom navigation is exactly Home / Discover / Plan / Saved / Profile.** Plan is the elevated center action. Never replace Plan with Radar, rename Saved to Vault in permanent navigation, or mutate order per screen.
+1. **Permanent primary navigation is exactly Home / Places / Plan / Entertainment / Profile.** Plan is the elevated center action. Saved behavior lives inside Profile → My GOOD TIMES. Never replace Plan with Radar, restore Discover/Saved as primary tabs, or mutate order per screen.
 2. **Radar is a feature/destination, not a permanent bottom-nav replacement.** Enter it from the bell, City Radar strip, Home modules, deep links, and Profile alert controls.
 3. **The app shell must not break.** Content scrolls; primary bottom navigation stays anchored outside the scroll pane. Respect iOS/Android safe areas.
 4. **Primary screen formula:** SCENE → PROMISE → INTELLIGENCE → DECISION → ACTION.
@@ -39,7 +39,7 @@ A coding agent may not reinterpret GOOD TIMES from a single ticket. The governan
 
 ## Data / intelligence hard rules
 
-1. **Explore remains taxonomy-driven.** Load active categories from `gt_taxonomy_categories`, subcategories from `gt_taxonomy_subcategories`, and places from `v_gt_venue_taxonomy_directory`. Emotional lanes such as Eat Well / Turn Up / Be There / Stay Right / Do More are the front door, not a replacement for the deep taxonomy.
+1. **Places remains taxonomy-driven.** Load active categories from `gt_taxonomy_categories`, subcategories from `gt_taxonomy_subcategories`, and places from `v_gt_venue_taxonomy_directory`. Compact entity lanes are the front door, not a replacement for the deep taxonomy. Entertainment remains time/event-driven and references canonical entities instead of duplicating places.
 2. **Build My Night is core.** Preserve natural-language Concierge plus guided/custom planning. It must build source-backed itineraries from current verified inventory.
 3. **Never invent venue or event information.** Website, phone, image, date, venue, hours, price, ticket state, availability, category, and confirmation require source evidence or an approved deterministic rule.
 4. **Never claim CONFIRMED/AVAILABLE/TICKETED without backing state.** Plan membership alone is not confirmation.
@@ -112,7 +112,7 @@ Never use stock photography to impersonate a real venue/event when truthful veri
 ```text
 src/main.jsx
   └─ GoodTimesCommandAppV4.jsx             canonical consumer experience
-       ├─ permanent Home / Discover / Plan / Saved / Profile nav
+       ├─ permanent Home / Places / Plan / Entertainment / Profile nav
        ├─ Radar destination from City Radar/bell
        ├─ source-backed Venue/Event detail overlays
        ├─ Plan/Concierge + generated itinerary
