@@ -2,7 +2,7 @@ name: GOOD TIMES final complete release candidate
 on:
   push:
     branches: [release/gt-complete-compact-20260927]
-    paths: [scripts/complete-final-edit-once.py, .github/workflows/complete-final-check-once.yml]
+    paths: [scripts/complete-final-edit-once.py, scripts/complete-scoreboard-date-fix.py, .github/workflows/complete-final-check-once.yml]
 permissions:
   contents: write
 jobs:
@@ -23,7 +23,8 @@ jobs:
           set -euo pipefail
           test "$(git ls-remote origin refs/heads/release/gt-complete-compact-20260927 | cut -f1)" = "$GITHUB_SHA"
           python scripts/complete-final-edit-once.py
-          git rm scripts/complete-final-edit-once.py .github/workflows/complete-final-check-once.yml
+          python scripts/complete-scoreboard-date-fix.py
+          git rm scripts/complete-final-edit-once.py scripts/complete-scoreboard-date-fix.py .github/workflows/complete-final-check-once.yml
           git config user.name 'GOOD TIMES build'
           git config user.email 'good-times-build@users.noreply.github.com'
           git add src api scripts .github/workflows/ui-regression.yml vite.config.js AGENTS.md docs
@@ -35,7 +36,7 @@ jobs:
         run: npm run build > ui-artifacts/complete-upgrade/build.log 2>&1
       - name: Diagnose registered provider response without credentials or account access
         run: |
-          node --input-type=module -e "import fs from 'node:fs';import {sportsLive} from './api/sports-live.js';const r=await sportsLive('/api/sports-live');fs.writeFileSync('ui-artifacts/complete-upgrade/sports-diagnostic.json',JSON.stringify({ok:r.ok,scope:r.scope,items:r.items.length,diagnostics:r.diagnostics},null,2));"
+          node --input-type=module -e "import fs from 'node:fs';import {sportsLive} from './api/sports-live.js';const r=await sportsLive('/api/sports-live');fs.writeFileSync('ui-artifacts/complete-upgrade/sports-diagnostic.json',JSON.stringify({ok:r.ok,scope:r.scope,items:r.items.length,diagnostics:r.diagnostics},null,2));" > ui-artifacts/complete-upgrade/provider-diagnostic.log 2>&1
       - name: Validate actual public content and registered sports provider
         env:
           GT_UI_QA_SESSION: ${{ secrets.GT_UI_QA_SESSION }}
