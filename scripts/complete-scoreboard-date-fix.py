@@ -1,9 +1,13 @@
 from pathlib import Path
 p=Path('api/sports-live.js');s=p.read_text()
-# Provider rejected all range queries with HTTP 400. Use a single selected-day contract, not a retry storm or alternate host.
 old="to:shiftDate(date,7)";assert s.count(old)==1;s=s.replace(old,'to:date')
 old="scope.date.replaceAll('-','')+'-'+scope.to.replaceAll('-','')";assert s.count(old)==1;s=s.replace(old,"scope.date.replaceAll('-','')")
 old="if(!r.ok)return {league,items:[],ok:false,httpStatus,errorClass:'HTTP'};";assert s.count(old)==1;s=s.replace(old,"if(!r.ok){const detail=httpStatus===400?(await r.text()).slice(0,400):null;console.warn('Sports provider read failed',{league,httpStatus,detail});return {league,items:[],ok:false,httpStatus,errorClass:'HTTP'}};")
 p.write_text(s)
 p=Path('src/features/experience/complete/Collections.jsx');s=p.read_text();assert 'Week starting' in s;p.write_text(s.replace('Week starting','Game date'))
-print('Sports uses one selected Atlanta-local game date and a bounded diagnostic for malformed provider requests.')
+p=Path('scripts/complete-upgrade-evidence.mjs');s=p.read_text()
+old="const BASE=process.env.GT_COMPLETE_UI_BASE||'http://127.0.0.1:4190'";assert s.count(old)==1;s=s.replace(old,"const BASE=process.env.GT_COMPLETE_UI_BASE||(process.env.GT_COMPLETE_BROWSER==='webkit'?'http://127.0.0.1:4191':'http://127.0.0.1:4190')")
+old="page.setDefaultTimeout(12000);page.on('pageerror',e=>errors.push(e.message));";assert s.count(old)==1;s=s.replace(old,"const network=[];page.on('request',r=>{if(network.length<60){const u=new URL(r.url());network.push({phase:'request',path:u.origin+u.pathname})}});page.on('response',r=>{if(network.length<60){const u=new URL(r.url());network.push({phase:'response',path:u.origin+u.pathname,status:r.status()})}});page.on('requestfailed',r=>{if(network.length<60)network.push({phase:'failed',error:r.failure()?.errorText})});page.setDefaultTimeout(12000);page.on('pageerror',e=>errors.push(e.message));")
+old="report.errors.push({width,error:error.message,stack:error.stack});";assert s.count(old)==1;s=s.replace(old,"report.errors.push({width,error:error.message,stack:error.stack,network,pageErrors:errors});")
+p.write_text(s)
+print('Single-date provider contract, independent engine server ports and failure diagnostics applied. Layout/action/security assertions retained.')
