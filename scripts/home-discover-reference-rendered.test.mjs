@@ -38,9 +38,9 @@ for(const vp of[{width:320,height:740},{width:390,height:844},{width:430,height:
    if(vp.width>=360)assert.ok(new Set(cardBoxes.slice(0,2).map(x=>Math.round(x.x))).size===2,'standard mobile must keep two-up Home density')
    assert.ok(cardBoxes.every(x=>x.h<280),'compact Home card regressed into oversized feature')
    await page.screenshot({path:path.join(OUT,`composition-${vp.width}-home.png`)})
-   await homeModes.getByRole('button',{name:'Upcoming'}).click();await page.locator('.gtc-events').waitFor();assert.ok(await page.locator('.gtc-events .gtc-card').count()>=4);await homeModes.getByRole('button',{name:'For You'}).click()
+   await homeModes.filter({hasText:/^Upcoming$/}).click();await page.locator('.gtc-events').waitFor();assert.ok(await page.locator('.gtc-events .gtc-card').count()>=4);await homeModes.filter({hasText:/^For You$/}).click()
 
-   await nav.getByRole('button',{name:'Places',exact:true}).click();await page.locator('.gtc-places').waitFor();assert.equal(await page.getByRole('textbox',{name:'Search Atlanta places'}).count(),1)
+   await nav.filter({hasText:/^Places$/}).click();await page.locator('.gtc-places').waitFor();assert.equal(await page.getByRole('textbox',{name:'Search Atlanta places'}).count(),1)
    assert.equal(await page.locator('.gtc-place-lanes>button').count(),6)
    const categoryBoxes=await page.locator('.gtc-place-lanes>button').evaluateAll(items=>items.slice(0,4).map(x=>({x:x.getBoundingClientRect().x,w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height,bg:getComputedStyle(x).backgroundImage})))
    if(vp.width>=360)assert.equal(new Set(categoryBoxes.slice(0,2).map(x=>Math.round(x.x))).size,2,'Places categories must be two-up on normal phones')
@@ -48,14 +48,14 @@ for(const vp of[{width:320,height:740},{width:390,height:844},{width:430,height:
    await page.getByRole('button',{name:/Restaurants/}).click();await page.locator('.gtc-restaurants').waitFor();assert.ok(await page.locator('.gtc-restaurant-quick button').count()>=9);assert.ok(await page.locator('.gtc-restaurants .gtc-card').count()>=1)
    await page.screenshot({path:path.join(OUT,`composition-${vp.width}-places.png`)})
 
-   await nav.getByRole('button',{name:'Entertainment',exact:true}).click();await page.locator('.gtc-entertainment').waitFor();assert.equal(await page.locator('.gtc-entertainment-lane').count(),9)
+   await nav.filter({hasText:/^Entertainment$/}).click();await page.locator('.gtc-entertainment').waitFor();assert.equal(await page.locator('.gtc-entertainment-lane').count(),9)
    const lanes=await page.locator('.gtc-entertainment-lane').evaluateAll(items=>items.slice(0,4).map(x=>({x:x.getBoundingClientRect().x,w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height})))
    if(vp.width>=360)assert.equal(new Set(lanes.slice(0,2).map(x=>Math.round(x.x))).size,2,'Entertainment lanes must be two-up on normal phones')
    assert.deepEqual(await page.locator('.gtc-entertainment-time button').allTextContents(),['Tonight','This Weekend','Upcoming'])
    assert.ok(await page.locator('.gtc-entertainment .gtc-card').count()>=4,'Entertainment should surface multiple current options')
    await page.screenshot({path:path.join(OUT,`composition-${vp.width}-entertainment.png`)})
 
-   await nav.getByRole('button',{name:'Profile',exact:true}).click();await page.locator('.gtc-my-good-times').waitFor();assert.match(await page.locator('.gtc-my-good-times').innerText(),/Plans.*Places.*Entertainment/s)
+   await nav.filter({hasText:/^Profile$/}).click();await page.locator('.gtc-my-good-times').waitFor();assert.match(await page.locator('.gtc-my-good-times').innerText(),/Plans.*Places.*Entertainment/s)
    await page.screenshot({path:path.join(OUT,`composition-${vp.width}-profile.png`)})
    await page.locator('.gt5-bell').click();await page.locator('.gt5-radar').waitFor();await page.locator('.gt5-back').click();assert.equal(await page.locator('.gt5-app').getAttribute('data-screen'),'profile')
    const geometry=await page.evaluate(()=>({overflow:document.scrollingElement.scrollWidth-innerWidth,nav:[...document.querySelectorAll('.gt5-nav button')].map(x=>x.textContent.trim()),width:innerWidth}))
