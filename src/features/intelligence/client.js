@@ -1,3 +1,5 @@
+import {publicApiHeaders} from '../../lib/public-api-headers.js'
+import { requestExplorePage } from './explore-page.js'
 import {
   GT_SUPABASE_ANON_KEY,
   GT_SUPABASE_URL,
@@ -11,11 +13,7 @@ const gtHeaders = (token = GT_SUPABASE_ANON_KEY) => ({
   Authorization: `Bearer ${token}`,
   'Content-Type': 'application/json',
 })
-const gatewayHeaders = {
-  apikey: KHG_SUPABASE_ANON_KEY,
-  Authorization: `Bearer ${KHG_SUPABASE_ANON_KEY}`,
-  'Content-Type': 'application/json',
-}
+const gatewayHeaders = publicApiHeaders(KHG_SUPABASE_ANON_KEY, { 'Content-Type': 'application/json' })
 
 async function fetchJson(url, options = {}) {
   const controller = new AbortController()
@@ -136,6 +134,11 @@ export async function loadExploreDirectory(city = 'atlanta', { limit = 2500, cat
   )
 }
 
+/** Bounded full-corpus place search, separate from Home inventory. */
+export function loadExplorePage(city = 'atlanta', options = {}, request = {}) {
+  return requestExplorePage(KHG_SUPABASE_URL, gatewayHeaders, { ...options, city: normalizeCity(city) }, request)
+}
+
 export async function loadGoodTimesProfile(session = readSession()) {
   if (!session?.access_token || !session?.user?.id) return null
   const rows = await fetchJson(
@@ -154,7 +157,7 @@ export async function loadUserIntelligenceProfile(session = readSession()) {
   return rows?.[0] || null
 }
 
-export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}) {
+export async function loadCanonicalEvents(city = 'atlanta', { limit = 500, throwOnError = false } = {}) {
   const normalizedCity = normalizeCity(city)
   try {
     const payload = await loadSameOriginData(normalizedCity)
@@ -162,6 +165,7 @@ export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}
   } catch (gatewayError) {
     // Do not bypass the server freshness/customer-readiness gate with a direct event feed.
     console.warn('[GOOD TIMES live data] Same-origin event gateway failed; event inventory is hidden until the verified gateway recovers.', gatewayError)
+    if (throwOnError) throw gatewayError
     return []
   }
 }
@@ -225,7 +229,7 @@ export async function unsaveItem({ profileId, itemType, itemId }, session = read
   await fetchJson(
     `${GT_SUPABASE_URL}/rest/v1/gt_saved_items?user_id=eq.${encodeURIComponent(profileId)}&item_type=eq.${encodeURIComponent(itemType)}&item_id=eq.${encodeURIComponent(String(itemId))}`,
     { method: 'DELETE', headers: { ...gtHeaders(session.access_token), Prefer: 'return=minimal' } },
-  ).catch(() => null)
+  )
 }
 
 export async function loadItineraries(session = readSession()) {
