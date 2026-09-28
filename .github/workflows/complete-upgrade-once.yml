@@ -2,7 +2,7 @@ name: GOOD TIMES complete upgrade source integration
 on:
   push:
     branches: [release/gt-complete-compact-20260927]
-    paths: [scripts/complete-root-edits.json, scripts/complete-source-integration-once.py, .github/workflows/complete-upgrade-once.yml]
+    paths: [scripts/complete-root-edits.json, scripts/complete-source-integration-once.py, scripts/complete-render-repairs.py, .github/workflows/complete-upgrade-once.yml]
 permissions:
   contents: write
 concurrency:
@@ -28,11 +28,12 @@ jobs:
           set -euo pipefail
           test "$(git ls-remote origin refs/heads/release/gt-complete-compact-20260927 | cut -f1)" = "$GITHUB_SHA"
           python scripts/complete-source-integration-once.py
-          git rm scripts/complete-root-edits.json scripts/complete-source-integration-once.py .github/workflows/complete-upgrade-once.yml
+          python scripts/complete-render-repairs.py
+          git rm scripts/complete-root-edits.json scripts/complete-source-integration-once.py scripts/complete-render-repairs.py .github/workflows/complete-upgrade-once.yml
           git rm --ignore-unmatch .github/workflows/compact-workspace-capture.yml
           git config user.name 'GOOD TIMES build'
           git config user.email 'good-times-build@users.noreply.github.com'
-          git add src api index.html vite.config.js vercel.json
+          git add src api scripts index.html vite.config.js vercel.json
           git commit -m 'GOOD TIMES: integrate compact Home Discover events sports details and planner into canonical app'
           mkdir -p ui-artifacts/complete-upgrade
           git rev-parse HEAD > ui-artifacts/complete-upgrade/tested-sha.txt
