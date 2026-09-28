@@ -93,6 +93,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          BASE_SHA=$(git rev-parse HEAD)
           git config user.name "good-times-snapshot-bot"
           git config user.email "good-times-snapshot-bot@users.noreply.github.com"
           git checkout -B "$BRANCH"
@@ -106,33 +107,49 @@ jobs:
             PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
           fi
           echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
 
-      - name: Materialize exact PR merge candidate
+      - name: Materialize exact current PR merge candidate
         id: merge
         if: steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           PR: ${{ steps.pr.outputs.pr }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
+          BASE_SHA: ${{ steps.pr.outputs.base_sha }}
         run: |
           set -euo pipefail
           MERGE_SHA=""
-          for i in $(seq 1 30); do
-            if git fetch --force origin "pull/$PR/merge"; then
-              MERGE_SHA=$(git rev-parse FETCH_HEAD)
-              [ -n "$MERGE_SHA" ] && break
+          for i in $(seq 1 60); do
+            git fetch --force origin main "pull/$PR/merge" || true
+            CURRENT_BASE=$(git rev-parse origin/main)
+            CANDIDATE=$(git rev-parse FETCH_HEAD 2>/dev/null || true)
+            if [ "$CURRENT_BASE" != "$BASE_SHA" ]; then
+              echo "::error::main moved during refresh: expected $BASE_SHA, found $CURRENT_BASE"
+              exit 1
+            fi
+            if [ -n "$CANDIDATE" ]; then
+              PARENTS=$(git show -s --format=%P "$CANDIDATE")
+              FIRST=$(printf '%s' "$PARENTS" | awk '{print $1}')
+              SECOND=$(printf '%s' "$PARENTS" | awk '{print $2}')
+              if [ "$FIRST" = "$BASE_SHA" ] && [ "$SECOND" = "$HEAD_SHA" ]; then
+                MERGE_SHA="$CANDIDATE"
+                break
+              fi
+              echo "merge ref not current yet: candidate=$CANDIDATE parents=$PARENTS expected=$BASE_SHA+$HEAD_SHA"
             fi
             sleep 2
           done
           if [ -z "$MERGE_SHA" ]; then
-            echo "::error::Unable to resolve refs/pull/$PR/merge"
+            echo "::error::Unable to resolve current refs/pull/$PR/merge for exact base/head"
             exit 1
           fi
           git branch -f "$CHECK_BRANCH" "$MERGE_SHA"
           git push -f origin "$CHECK_BRANCH"
           echo "merge_sha=$MERGE_SHA" >> "$GITHUB_OUTPUT"
-          echo "Resolved PR $PR merge candidate $MERGE_SHA"
+          echo "Resolved current PR $PR merge candidate $MERGE_SHA for $BASE_SHA + $HEAD_SHA"
 
       - name: Dispatch canonical checks on PR head and merge candidate
         if: steps.diff.outputs.changed == 'true'
@@ -225,9 +242,16 @@ jobs:
           PR: ${{ steps.pr.outputs.pr }}
         run: |
           set -euo pipefail
-          CURRENT=$(gh pr view "$PR" --json headRefOid --jq .headRefOid)
-          if [ "$CURRENT" != "$HEAD_SHA" ]; then
-            echo "::error::PR head changed: expected $HEAD_SHA, found $CURRENT"
+          STATE=$(gh pr view "$PR" --json headRefOid,baseRefOid --jq '{head:.headRefOid,base:.baseRefOid}')
+          CURRENT_HEAD=$(printf '%s' "$STATE" | jq -r .head)
+          CURRENT_BASE=$(printf '%s' "$STATE" | jq -r .base)
+          EXPECTED_BASE="${{ steps.pr.outputs.base_sha }}"
+          if [ "$CURRENT_HEAD" != "$HEAD_SHA" ]; then
+            echo "::error::PR head changed: expected $HEAD_SHA, found $CURRENT_HEAD"
+            exit 1
+          fi
+          if [ "$CURRENT_BASE" != "$EXPECTED_BASE" ]; then
+            echo "::error::PR base changed: expected $EXPECTED_BASE, found $CURRENT_BASE"
             exit 1
           fi
           gh pr merge "$PR" --squash --match-head-commit "$HEAD_SHA"
