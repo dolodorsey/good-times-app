@@ -61,9 +61,10 @@ test('mobile V4 keeps utilities inside the canonical app shell and Profile usabl
     await page.locator('.gt5-nav button').filter({hasText:'Profile'}).click()
     await page.locator('.gt5-profile').waitFor({state:'visible',timeout:4000})
     assert.match(await page.locator('.gt5-profile').innerText(),/Utility QA/i)
-    assert.equal(await page.locator('.gt5-profile select').inputValue(),'atlanta')
+    await page.locator('.gtc-profile-tabs').getByRole('button',{name:'Preferences',exact:true}).click()
+    assert.equal(await page.locator('.gtc-profile-city-select select').inputValue(),'atlanta')
     await page.locator('.gt5-nav button').filter({hasText:'Home'}).click()
-    await page.locator('.gt5-home-hero').waitFor({state:'visible',timeout:4000})
+    await page.locator('.gtc-home').waitFor({state:'visible',timeout:4000})
 
     const bell=page.locator('.gt5-bell')
     if(await bell.isVisible())await bell.click()
