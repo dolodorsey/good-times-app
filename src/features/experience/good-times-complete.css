@@ -277,3 +277,19 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-places{
 .gt5-complete .gtc-profile-actions{display:grid;gap:8px}.gt5-complete .gtc-profile-logout{margin-top:16px;min-height:44px;width:100%;border:1px solid rgba(255,255,255,.18);border-radius:10px;color:#c8c8c4;}
 .gt5-complete .gtc-profile-hub .gtc-my-good-times{margin-top:0;}
 @media(max-width:370px){.gt5-complete .gtc-profile-tabs button{font-size:10px;padding:6px 3px}.gt5-complete .gtc-profile-panel{padding:11px}}
+
+/* True desktop shell: navigation rail + fluid workspace. Mobile and iPad keep bottom navigation. */
+@media(min-width:1100px){
+ html body.gt-complete-mode #root{width:min(1440px,calc(100% - 28px))!important;height:calc(100dvh - 28px)!important;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen]{display:grid!important;grid-template-columns:210px minmax(0,1fr)!important;grid-template-rows:64px minmax(0,1fr)!important;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt5-topbar{grid-column:1/3!important;grid-row:1!important;height:64px!important;min-height:64px!important;position:relative!important;border-bottom:1px solid rgba(248,212,106,.18);padding:8px 18px!important;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt5-main{grid-column:2!important;grid-row:2!important;min-width:0!important;min-height:0!important;padding:0 26px 28px!important;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt5-nav{grid-column:1!important;grid-row:2!important;align-self:stretch!important;width:100%!important;max-width:none!important;height:auto!important;min-height:0!important;margin:0!important;padding:18px 12px!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;gap:6px!important;border-top:0!important;border-right:1px solid rgba(248,212,106,.18)!important;background:linear-gradient(180deg,#090b0c,#050607)!important;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt5-nav button{width:100%!important;height:52px!important;min-height:52px!important;display:grid!important;grid-template-columns:34px minmax(0,1fr)!important;align-items:center!important;justify-items:start!important;gap:8px!important;padding:7px 10px!important;border-radius:10px!important;text-align:left!important;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt5-nav button>span{width:30px!important;height:30px!important;min-width:30px!important;display:grid!important;place-items:center!important;margin:0!important;transform:none!important;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt5-nav button.plan>span{width:30px!important;height:30px!important;min-width:30px!important;transform:none!important;margin:0!important;background:#f8d46a!important;color:#090a0b!important;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt5-nav small{font:650 13px/1.2 var(--gt5-sans)!important;text-align:left!important;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt5-nav button.active{background:#151713!important;border:1px solid rgba(248,212,106,.22)!important;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt5-nav button.active small{color:#f8d46a!important;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-global-search{max-width:none!important;}
+}
