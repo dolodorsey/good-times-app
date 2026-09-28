@@ -52,7 +52,7 @@ for(const vp of[{width:320,height:740},{width:390,height:844},{width:430,height:
    const lanes=await page.locator('.gtc-entertainment-lane').evaluateAll(items=>items.slice(0,4).map(x=>({x:x.getBoundingClientRect().x,w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height})))
    if(vp.width>=360)assert.equal(new Set(lanes.slice(0,2).map(x=>Math.round(x.x))).size,2,'Entertainment lanes must be two-up on normal phones')
    assert.deepEqual(await page.locator('.gtc-entertainment-time button').allTextContents(),['Tonight','This Weekend','Upcoming'])
-   assert.ok(await page.locator('.gtc-entertainment .gtc-card').count()>=4,'Entertainment should surface multiple current options')
+   await page.locator('.gtc-entertainment-time button').filter({hasText:/^Upcoming$/}).click();await page.locator('.gtc-entertainment .gtc-card').first().waitFor({timeout:10000});assert.ok(await page.locator('.gtc-entertainment .gtc-card').count()>=4,'Upcoming Entertainment should surface multiple verified fixture options')
    await page.screenshot({path:path.join(OUT,`composition-${vp.width}-entertainment.png`)})
 
    await nav.filter({hasText:/^Profile$/}).click();await page.locator('.gtc-my-good-times').waitFor();assert.match(await page.locator('.gtc-my-good-times').innerText(),/Plans.*Places.*Entertainment/s)
