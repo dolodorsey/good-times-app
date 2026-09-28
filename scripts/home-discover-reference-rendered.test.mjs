@@ -45,7 +45,7 @@ for(const vp of[{width:320,height:740},{width:390,height:844},{width:430,height:
    const categoryBoxes=await page.locator('.gtc-place-lanes>button').evaluateAll(items=>items.slice(0,4).map(x=>({x:x.getBoundingClientRect().x,w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height,bg:getComputedStyle(x).backgroundImage})))
    if(vp.width>=360)assert.equal(new Set(categoryBoxes.slice(0,2).map(x=>Math.round(x.x))).size,2,'Places categories must be two-up on normal phones')
    assert.ok(categoryBoxes.every(x=>x.bg&&x.bg!=='none'),'Places entry lanes must remain photographic')
-   await page.getByRole('button',{name:/Restaurants/}).click();await page.locator('.gtc-restaurants').waitFor();assert.ok(await page.locator('.gtc-restaurant-quick button').count()>=9);assert.ok(await page.locator('.gtc-restaurants .gtc-card').count()>=1)
+   await page.getByRole('button',{name:/Restaurants/}).click();await page.locator('.gtc-restaurants').waitFor();assert.ok(await page.locator('.gtc-restaurant-quick button').count()>=9);await page.locator('.gtc-restaurants .gtc-card').first().waitFor({timeout:10000});assert.ok(await page.locator('.gtc-restaurants .gtc-card').count()>=1)
    await page.screenshot({path:path.join(OUT,`composition-${vp.width}-places.png`)})
 
    await nav.filter({hasText:/^Entertainment$/}).click();await page.locator('.gtc-entertainment').waitFor();assert.equal(await page.locator('.gtc-entertainment-lane').count(),9)
