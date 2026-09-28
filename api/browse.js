@@ -8,6 +8,7 @@ import {correctDisplayEvents} from '../src/features/experience/complete/taxonomy
 import {eventTimeFields} from './event-time-display.js'
 import {selectedCityClock,dateNumber,eventIsDiscoverable} from '../src/features/experience/good-times-event-clock.js'
 import {safeLink,safeImage,occurrenceUsable,shiftDate} from '../src/features/experience/complete/model.js'
+import {RESTAURANT_PROFILE_FIELDS,normalizeRestaurantProfile} from '../src/features/experience/complete/restaurant-facts.js'
 const KEY=/^[A-Za-z0-9_-]{1,100}$/
 const SHOW_FIELDS='id,city_key,artist_id,venue_id,event_name,event_type,genre,show_date,show_time,doors_time,venue_name,venue_address,image_url,ticket_url,ticket_price_min,ticket_price_max,is_free,is_sold_out,age_requirement,description,organizer,source,source_url,status,quality_score,good_times_score,display_priority,is_featured,is_curated,category_key_v2,subcategory_key_v2,updated_at'
 const VENUE_FIELDS='id,city_key,name,neighborhood,category_key,subcategory,address,latitude,longitude,phone,website,short_desc,long_desc,hero_image,photos,booking_link,hours,hours_summary,dress_code,price_range,age_range,status,is_verified,verification_status,verified_at,freshness_expires_at,is_stock_photo,photo_credit,vibe_tags,amenity_tags,dietary_tags,is_black_owned'
@@ -50,8 +51,8 @@ export function mapShow(row,now=Date.now()) {
  const event={event_key:'show:'+row.id,id:row.id,city_key:'atlanta',source_table:'gt_shows',source_id:row.id,title:row.event_name,event_date:row.show_date,...eventTimeFields(row),category_key:strongest,subcategory_key:row.subcategory_key_v2||taxonomy.subcategory,venue_id:row.venue_id,venue_name:row.venue_name,venue_address:row.venue_address,image_url:safeImage(row.image_url),ticket_url:safeLink(row.ticket_url),source_url:safeLink(row.source_url),source_name:row.source,description:row.description,organizer:row.organizer,is_free:row.is_free===true,age_requirement:row.age_requirement,is_featured:row.is_featured,is_curated:row.is_curated,quality_score:row.quality_score,good_times_score:row.good_times_score,updated_at:row.updated_at,is_verified:row.status==='confirmed'}
  const fixed=correctDisplayEvents([event])[0];return fixed.category_key&&eventIsDiscoverable(fixed,'atlanta',now)?fixed:null
 }
-async function rows(table,params,fetcher) {
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),6500)
+async function rows(table,params,fetcher,timeoutMs=6500) {
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs)
  try{const response=await fetcher(`${KHG_SUPABASE_URL}/rest/v1/${table}?${params}`,{method:'GET',headers:publicApiHeaders(KHG_SUPABASE_ANON_KEY),cache:'no-store',signal:controller.signal});if(!response.ok)throw new Error('The collection could not be refreshed.');const data=await response.json();if(!Array.isArray(data))throw new Error('Invalid collection response.');return data}finally{clearTimeout(timer)}
 }
 export async function browse(url,{fetcher=globalThis.fetch,now=Date.now()}={}) {
@@ -59,7 +60,19 @@ export async function browse(url,{fetcher=globalThis.fetch,now=Date.now()}={}) {
  if(scope.kind==='venue') {
   if(!scope.id||!/^[a-f0-9-]{36}$/i.test(scope.id))throw new Error('Invalid venue identity.')
   const params=new URLSearchParams({select:VENUE_FIELDS,id:'eq.'+scope.id,city_key:'eq.atlanta',status:'eq.active',is_verified:'eq.true',verification_status:'eq.verified_current',freshness_expires_at:'gt.'+new Date(now).toISOString(),limit:'1'})
-  return {ok:true,items:await rows('gt_venues',params,fetcher),nextCursor:null,countType:'returned',asOf:new Date(now).toISOString()}
+  const data=await rows('gt_venues',params,fetcher)
+  const items=data.filter(v=>typeof v.id==='string'&&v.id.toLowerCase()===scope.id.toLowerCase()&&v.city_key==='atlanta'&&v.status==='active'&&v.is_verified===true&&v.verification_status==='verified_current'&&Date.parse(v.freshness_expires_at)>now).slice(0,1)
+  // Optional metadata never defeats venue eligibility or hides usable base details on failure.
+  if(items.length){
+   let profile=null,profileState='missing'
+   try{
+    const profiles=await rows('gt_restaurant_profiles',new URLSearchParams({select:RESTAURANT_PROFILE_FIELDS,entity_id:'eq.'+items[0].id,limit:'1'}),fetcher,1800)
+    profile=normalizeRestaurantProfile(profiles[0],items[0].id)
+    if(profile)profileState='ready'
+   }catch{profileState='unavailable'}
+   items[0]={...items[0],restaurant_profile:profile,restaurant_profile_state:profileState}
+  }
+  return {ok:true,items,nextCursor:null,countType:'returned',asOf:new Date(now).toISOString()}
  }
  if(scope.kind==='sports') {
   const params=new URLSearchParams({select:'id,league,home_team,home_abbr,away_team,away_abbr,game_date,game_time,venue,city_key,status,home_score,away_score,home_logo,away_logo,is_home_game,updated_at',city_key:'eq.atlanta',game_date:'gte.'+scope.from,updated_at:'gte.'+new Date(now-72*3600000).toISOString(),order:'game_date.asc,id.asc',limit:'100'})
