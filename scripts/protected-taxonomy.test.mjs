@@ -7,12 +7,16 @@ const read = file => fs.readFileSync(new URL(`../${file}`, import.meta.url), 'ut
 
 test('canonical app must render the established taxonomy with all state handlers', () => {
   const source = read('src/features/experience/GoodTimesCommandAppV4.jsx')
-  const mount = source.match(/<ExploreTaxonomyBrowser\b[\s\S]*?\/>/)
-  assert.ok(mount, 'P1: full taxonomy browser removed; a shallow filter list is not a replacement')
-  for (const binding of ['taxonomy={taxonomy}', 'selectedCategory={selectedCategory}', 'selectedSubcategory={selectedSubcategory}', 'onCategory={setSelectedCategory}', 'onSubcategory={setSelectedSubcategory}', 'directoryOpen={directoryOpen}', 'onDirectoryOpen={setDirectoryOpen}', 'mapMode={mapMode}', 'onMapMode={setMapMode}']) {
-    assert.ok(mount[0].includes(binding), `Protected taxonomy binding missing: ${binding}`)
+  const mounts = [...source.matchAll(/<ExploreTaxonomyBrowser\b[\s\S]*?\/>/g)].map(m=>m[0])
+  assert.ok(mounts.length, 'P1: Places taxonomy browser removed; a shallow filter list is not a replacement')
+  const mount=mounts.find(x=>x.includes('taxonomy={placesTaxonomy}'))||''
+  for (const binding of ['taxonomy={placesTaxonomy}', 'selectedCategory={selectedCategory}', 'selectedSubcategory={selectedSubcategory}', 'onCategory={setSelectedCategory}', 'onSubcategory={setSelectedSubcategory}', 'directoryOpen={directoryOpen}', 'onDirectoryOpen={setDirectoryOpen}', 'mapMode={mapMode}', 'onMapMode={setMapMode}']) {
+    assert.ok(mount.includes(binding), `Protected Places taxonomy binding missing: ${binding}`)
   }
   assert.match(source, /loadExploreTaxonomy\(/)
+  assert.match(source, /const placesTaxonomy=useMemo\(\(\)=>taxonomy\.filter/)
+  assert.match(source, /EntertainmentHub/)
+  assert.match(source, /const NAV=\[\['home','⌂','Home'\],\['places','⌕','Places'\],\['plan','＋','Plan'\],\['entertainment','◇','Entertainment'\],\['profile','◎','Profile'\]\]/)
 })
 test('category and subcategory data remain authoritative and complete', () => {
   const client = read('src/features/intelligence/client.js')
@@ -30,10 +34,11 @@ let chromium
 try { ({ chromium } = await import('playwright-core')) } catch {}
 const skip = !BASE || !chromium ? 'requires the established rendered UI job; static checks still run' : false
 const epoch = Date.parse('2026-09-25T16:00:00Z')
-// Deliberately unknown IDs: a hardcoded shortlist cannot pass this contract.
-const categories = Array.from({ length: 26 }, (_, i) => ({ category_key: `guard_category_${i}`, category_name: `Catalog section ${i + 1}`, sort_order: i, is_active: true }))
-const subcategories = categories.flatMap((cat, i) => Array.from({ length: i === 25 ? 3 : 2 }, (_, j) => ({ category_key: cat.category_key, subcategory_key: `guard_sub_${i}_${j}`, subcategory_name: `Section ${i + 1} option ${j + 1}`, sort_order: j, is_active: true })))
-const venues = subcategories.filter(row => row.subcategory_key !== 'guard_sub_25_2').map((row, i) => ({ id: `guard_venue_${i}`, name: `Catalog place ${i + 1}`, city_key: 'atlanta', category_key: row.category_key, subcategory_key: row.subcategory_key, subcategory: row.subcategory_name, neighborhood: 'Midtown', short_desc: 'Isolated regression fixture, not a live recommendation.', hero_image: '/venues/revel.webp', address: 'Fixture address only', latitude: 33.78, longitude: -84.38, quality_score: 90, is_verified: true }))
+// Places intentionally receives only persistent-entity families; the complete source taxonomy remains loaded and untouched.
+const PLACE_KEYS=['dining_culinary','nightlife','entertainment','travel_staycations','attractions_experiences','wellness_fitness','fashion_beauty_shopping','family_kids','dating_social']
+const categories = PLACE_KEYS.map((category_key,i)=>({category_key,category_name:`Place family ${i+1}`,sort_order:i,is_active:true}))
+const subcategories = categories.flatMap((cat,i)=>Array.from({length:i===8?3:2},(_,j)=>({category_key:cat.category_key,subcategory_key:`guard_sub_${i}_${j}`,subcategory_name:`Place family ${i+1} option ${j+1}`,sort_order:j,is_active:true})))
+const venues = subcategories.filter(row => row.subcategory_key !== 'guard_sub_8_2').map((row, i) => ({ id: `guard_venue_${i}`, name: `Catalog place ${i + 1}`, city_key: 'atlanta', category_key: row.category_key, subcategory_key: row.subcategory_key, subcategory: row.subcategory_name, neighborhood: 'Midtown', short_desc: 'Isolated regression fixture, not a live recommendation.', hero_image: '/venues/revel.webp', address: 'Fixture address only', latitude: 33.78, longitude: -84.38, quality_score: 90, is_verified: true }))
 const counts = categories.map(cat => ({ category_key: cat.category_key, subcategory_key: null, place_count: venues.filter(v => v.category_key === cat.category_key).length })).concat(subcategories.map(sub => ({ category_key: sub.category_key, subcategory_key: sub.subcategory_key, place_count: venues.filter(v => v.subcategory_key === sub.subcategory_key).length })))
 const events = [{ event_key: 'guard-event', title: 'Regression fixture only', city_key: 'atlanta', category_key: 'concerts_live_music', event_date: '2026-09-25', event_time: '20:00', venue_name: 'Fixture venue', image_url: '/venues/revel.webp', quality_score: 90, is_verified: true }]
 const json = body => ({ status: 200, contentType: 'application/json', body: JSON.stringify(body) })
@@ -68,8 +73,8 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 1000
       await context.route('**/functions/v1/**', route => route.fulfill(json({ ok: true, events: [], venues: [] })))
       await context.route('https://www.openstreetmap.org/**', route => route.fulfill({ status: 200, contentType: 'text/html', body: '<p>Isolated map fixture</p>' }))
       await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 20000 })
-      await page.locator('.gt5-nav').getByRole('button', { name: 'Discover', exact: true }).click()
-      await page.locator('[data-gt-category="guard_category_25"]').waitFor({ timeout: 15000 })
+      await page.locator('.gt5-nav').getByRole('button', { name: 'Places', exact: true }).click()
+      await page.locator('[data-gt-category="dating_social"]').waitFor({ timeout: 15000 })
       assert.deepEqual(await page.locator('[data-gt-category]').evaluateAll(nodes => nodes.map(n => n.dataset.gtCategory)), categories.map(c => c.category_key))
       assert.deepEqual(await page.locator('[data-gt-category] strong').allTextContents(), categories.map(c => c.category_name))
       await capture('all-categories')
@@ -84,7 +89,7 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 1000
         await page.locator('.gt2-venue-grid h3').filter({ hasText: venue.name }).waitFor()
         assert.deepEqual(await page.locator('.gt2-venue-grid h3').allTextContents(), [venue.name])
         traversed.push(cat.category_key)
-        if (cat.category_key === 'guard_category_25') {
+        if (cat.category_key === 'dating_social') {
           await capture('subcategory-directory')
           await page.locator('.gt2-venue-grid .gt5-venue').first().click()
           await page.locator('.gt5-detail').waitFor()
@@ -100,12 +105,15 @@ for (const viewport of [{ width: 390, height: 844 }, { width: 1440, height: 1000
           await capture('empty-subcategory-retained')
         }
         await page.getByRole('button', { name: '‹ All categories', exact: true }).click()
-        await page.locator('[data-gt-category="guard_category_25"]').waitFor()
+        await page.locator('[data-gt-category="dating_social"]').waitFor()
       }
-      assert.equal(traversed.length, categories.length)
+      assert.equal(traversed.length, PLACE_KEYS.length)
+      await page.locator('.gt5-nav').getByRole('button',{name:'Entertainment',exact:true}).click()
+      await page.locator('.gtc-entertainment').waitFor()
+      assert.equal(await page.locator('.gtc-entertainment-lane').count(),8,'Entertainment top-level lanes must remain reachable after taxonomy split')
       assert.deepEqual(errors, [])
       for (const name of ['gt_taxonomy_categories', 'gt_taxonomy_subcategories', 'v_gt_venue_taxonomy_directory']) assert.ok(requests.some(r => r.table === name), `Missing source request ${name}`)
-      fs.writeFileSync(path.join(dir, 'evidence.json'), JSON.stringify({ scope: 'isolated fixture; not production authentication or real catalog count', viewport, categories_checked: categories.length, subcategory_labels_checked: subcategories.length, journeys_checked: traversed.length, map_checked: true, detail_return_checked: true, empty_subcategory_retained: true, errors, requests }, null, 2))
+      fs.writeFileSync(path.join(dir, 'evidence.json'), JSON.stringify({ scope: 'isolated fixture; not production authentication or real catalog count', viewport, places_categories_checked: categories.length, subcategory_labels_checked: subcategories.length, journeys_checked: traversed.length, entertainment_lanes_checked: 8, map_checked: true, detail_return_checked: true, empty_subcategory_retained: true, errors, requests }, null, 2))
     } catch (error) { await capture('failure').catch(() => {}); throw error }
     finally { await context.close(); await browser.close() }
   })
