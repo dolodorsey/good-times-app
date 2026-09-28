@@ -1,4 +1,4 @@
-import React,{useMemo,useState} from 'react'
+import React,{useEffect,useMemo,useState} from 'react'
 import {eventIsThisWeekend,eventIsTonight,eventDaysAway} from '../good-times-event-clock.js'
 import {CollectionGrid,Sports} from './Collections.jsx'
 import {Section,State} from './Cards.jsx'
@@ -17,9 +17,10 @@ const LANES=[
 ]
 
 export default function EntertainmentHub({
-  events=[],now=Date.now(),savedKeys,onEvent,onSave,onSearch,onOpenCategory,onOpenVenues,onOpenSports,onPlan
+  events=[],now=Date.now(),savedKeys,onEvent,onSave,onSearch,onOpenCategory,onOpenVenues,onOpenSports,onPlan,initialMode='tonight'
 }){
-  const [mode,setMode]=useState('tonight')
+  const [mode,setMode]=useState(initialMode)
+  useEffect(()=>{if(['tonight','weekend','upcoming'].includes(initialMode))setMode(initialMode)},[initialMode])
   const scoped=useMemo(()=>{
     const rows=events.filter(event=>{
       if(mode==='tonight')return eventIsTonight(event,'atlanta',now)
