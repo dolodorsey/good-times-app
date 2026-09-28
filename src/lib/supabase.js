@@ -3,7 +3,7 @@ const env = import.meta.env || {}
 const CANONICAL_GT_URL = 'https://czocqfaovfpjweayniuw.supabase.co'
 const CANONICAL_GT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6b2NxZmFvdmZwandlYXluaXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgzNzEzODAsImV4cCI6MjA4Mzk0NzM4MH0.6-3rmA9tZXHLVg5N6a_82rKA9Kvrj4gRrUUiSczovho'
 const CANONICAL_KHG_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
-const CANONICAL_KHG_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1ODQ4NjQsImV4cCI6MjA4NTE2MDg2NH0.qmnWB4aWdb7U8Iod9Hv8PQAOJO3AG0vYEGnPS--kfAo'
+const CANONICAL_KHG_ANON_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 
 function validProjectUrl(value, expectedRef) {
   if (!value) return false
@@ -18,13 +18,18 @@ function decodeRef(value) {
   } catch { return null }
 }
 function validProjectKey(value, expectedRef) {
-  return typeof value === 'string' && value.length > 40 && decodeRef(value) === expectedRef
+  if (typeof value !== 'string' || value.length < 40) return false
+  if (value.startsWith('sb_secret_')) return false
+  return decodeRef(value) === expectedRef
+}
+function validPublishableKey(value) {
+  return typeof value === 'string' && /^sb_publishable_[A-Za-z0-9_-]+$/.test(value)
 }
 
 export const GT_SUPABASE_URL = validProjectUrl(env.VITE_GT_SUPABASE_URL,'czocqfaovfpjweayniuw') ? env.VITE_GT_SUPABASE_URL : CANONICAL_GT_URL
 export const GT_SUPABASE_ANON_KEY = validProjectKey(env.VITE_GT_SUPABASE_ANON_KEY,'czocqfaovfpjweayniuw') ? env.VITE_GT_SUPABASE_ANON_KEY : CANONICAL_GT_ANON_KEY
 export const KHG_SUPABASE_URL = validProjectUrl(env.VITE_KHG_SUPABASE_URL,'dzlmtvodpyhetvektfuo') ? env.VITE_KHG_SUPABASE_URL : CANONICAL_KHG_URL
-export const KHG_SUPABASE_ANON_KEY = validProjectKey(env.VITE_KHG_SUPABASE_ANON_KEY,'dzlmtvodpyhetvektfuo') ? env.VITE_KHG_SUPABASE_ANON_KEY : CANONICAL_KHG_ANON_KEY
+export const KHG_SUPABASE_ANON_KEY = validPublishableKey(env.VITE_KHG_SUPABASE_ANON_KEY) ? env.VITE_KHG_SUPABASE_ANON_KEY : CANONICAL_KHG_ANON_KEY
 
 export const SB = `${GT_SUPABASE_URL}/rest/v1`
 export const SK = GT_SUPABASE_ANON_KEY
@@ -32,12 +37,18 @@ export const KHG_SB = `${KHG_SUPABASE_URL}/rest/v1`
 export const KHG_SK = KHG_SUPABASE_ANON_KEY
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
+function publicApiHeaders(key) {
+  const headers = { apikey: key, Accept: 'application/json' }
+  if (!String(key).startsWith('sb_publishable_')) headers.Authorization = `Bearer ${key}`
+  return headers
+}
+
 async function readJson(baseUrl, anonKey, query, fetchImpl = globalThis.fetch) {
   const url = `${baseUrl}/${query}`
   let lastError = null
   for (let attempt=0;attempt<2;attempt+=1) {
     try {
-      const response = await fetchImpl(url,{headers:{apikey:anonKey,Authorization:`Bearer ${anonKey}`,Accept:'application/json'},cache:'no-store'})
+      const response = await fetchImpl(url,{headers:publicApiHeaders(anonKey),cache:'no-store'})
       if (!response.ok) {
         const body=await response.text().catch(()=> '');lastError=new Error(`Supabase ${response.status}: ${body||response.statusText}`)
         if(response.status<500||attempt===1)break

@@ -1,0 +1,4 @@
+# GOOD TIMES public Supabase publishable-key migration.
+# Exact immutable fingerprints only. No private-key, JWT-rule, file, path, or future-commit waiver.
+072a744d11f6e7a439b26af4dc28a7f0beda8822:src/lib/supabase.js:generic-api-key:6
+1102adc303149dca3dc3b4e7d587c2299f8002ab:public/gt-runtime.js:generic-api-key:8

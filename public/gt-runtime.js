@@ -5,10 +5,10 @@
 
   const GATEWAY = "https://dzlmtvodpyhetvektfuo.supabase.co";
   const REST = `${GATEWAY}/rest/v1`;
-  const KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bG10dm9kcHloZXR2ZWt0ZnVvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk1ODQ4NjQsImV4cCI6MjA4NTE2MDg2NH0.qmnWB4aWdb7U8Iod9Hv8PQAOJO3AG0vYEGnPS--kfAo";
+  const KEY = "sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR";
   const originalFetch = window.fetch.bind(window);
   const today = () => new Date().toISOString().slice(0, 10);
-  const authHeaders = { apikey: KEY, Authorization: `Bearer ${KEY}` };
+  const authHeaders = { apikey: KEY };
 
   const readSession = () => {
     try { return JSON.parse(localStorage.getItem("gt_session") || "null"); } catch { return null; }

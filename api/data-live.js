@@ -32,7 +32,7 @@ const CITY_TIMEZONES=Object.freeze({
   scottsdale:'America/Phoenix',
 })
 
-function headers(){return{apikey:CONTENT_KEY,Authorization:`Bearer ${CONTENT_KEY}`,Accept:'application/json','Content-Type':'application/json'}}
+function headers(){return{apikey:CONTENT_KEY,Accept:'application/json','Content-Type':'application/json'}}
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
 function shiftISODate(value,days){const d=new Date(`${value}T12:00:00Z`);d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)}
 function clockPart(parts,type){return parts.find(part=>part.type===type)?.value||''}
