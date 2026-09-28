@@ -38,7 +38,7 @@ for(const vp of[{width:320,height:740},{width:390,height:844},{width:430,height:
    if(vp.width>=360)assert.ok(new Set(cardBoxes.slice(0,2).map(x=>Math.round(x.x))).size===2,'standard mobile must keep two-up Home density')
    assert.ok(cardBoxes.every(x=>x.h<280),'compact Home card regressed into oversized feature')
    await page.screenshot({path:path.join(OUT,`composition-${vp.width}-home.png`)})
-   await homeModes.filter({hasText:/^Upcoming$/}).click();await page.locator('.gtc-events').waitFor();assert.ok(await page.locator('.gtc-events .gtc-card').count()>=4);await homeModes.filter({hasText:/^For You$/}).click()
+   await homeModes.filter({hasText:/^Upcoming$/}).click();await page.locator('.gtc-events').waitFor();await page.locator('.gtc-events .gtc-card').nth(3).waitFor({state:'visible',timeout:10000});assert.ok(await page.locator('.gtc-events .gtc-card').count()>=4);await homeModes.filter({hasText:/^For You$/}).click()
 
    await nav.filter({hasText:/^Places$/}).click();await page.locator('.gtc-places').waitFor();assert.equal(await page.getByRole('textbox',{name:'Search Atlanta places'}).count(),1)
    assert.equal(await page.locator('.gtc-place-lanes>button').count(),6)
