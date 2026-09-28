@@ -145,3 +145,8 @@ Would this feel appropriate if Apple featured it tomorrow? Would a user trust it
 ## September 17 customer-directed enhancement
 
 The owner explicitly requested compact headers and heroes, brighter truthful imagery, controlled category colors, denser useful cards, polished existing ad placements, and interactive Plan/Shake. Preserve the five-tab navigation and existing page structure. The earlier percentage palette distribution is a historical reference, not a reason to retain the dull presentation. Use the shared customer-enhancement tokens (coral, teal, lilac, blue); retain gold for primary/selected actions. Verify each page top-to-bottom at phone and tablet sizes with screenshots and interaction evidence. Category illustrations are allowed on category/mood choices; never pass them off as a named venue's photo.
+
+
+## September 27, 2026 — approved compact pilot
+
+Read `docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.md` for this owner-authorized change. The opt-in preview replaces oversized Discover/category/subcategory presentation with a compact two-column variant. Full active taxonomy, empty types, Directory/Map, detail return, Save/Plan, five-tab navigation, source truth and existing release gates remain binding. Production defaults and scheduled jobs are unchanged. Generated mockup facts are not approved inventory. No browser or production acceptance is implied by code or CI alone.

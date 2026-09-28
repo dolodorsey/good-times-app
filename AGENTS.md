@@ -190,3 +190,8 @@ PRODUCTION VERIFIED
 - Leave incomplete work behind a flag rather than exposing a lower-quality state.
 
 **Last updated: September 23, 2026 — Atlanta-only launch scope + GOOD TIMES V4 Product/UI Constitution + Anti-Regression Production System.**
+
+
+## September 27, 2026 — approved compact pilot
+
+Read `docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.md` for this owner-authorized change. The opt-in preview replaces oversized Discover/category/subcategory presentation with a compact two-column variant. Full active taxonomy, empty types, Directory/Map, detail return, Save/Plan, five-tab navigation, source truth and existing release gates remain binding. Production defaults and scheduled jobs are unchanged. Generated mockup facts are not approved inventory. No browser or production acceptance is implied by code or CI alone.
