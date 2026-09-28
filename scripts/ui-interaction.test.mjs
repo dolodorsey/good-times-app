@@ -82,7 +82,8 @@ for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobi
       for(let i=0;i<3;i++){await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000});await page.locator('.gtc-my-good-times').waitFor({state:'visible',timeout:5000});await assertProfileScrollable(page);await nav.filter({hasText:'Home'}).click()}
 
       await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000})
-      const city=page.locator('.gt5-profile-city select')
+      await page.locator('.gtc-profile-tabs').getByRole('button',{name:'Preferences',exact:true}).click()
+      const city=page.locator('.gtc-profile-city-select select')
       assert.equal(await city.locator('option').count(),1,'Atlanta-only launch must expose exactly one public city option')
       assert.equal(await city.inputValue(),'atlanta')
       assert.equal(await city.locator('option').first().getAttribute('value'),'atlanta')
