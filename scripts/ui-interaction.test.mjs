@@ -65,13 +65,13 @@ for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobi
     const{ctx,page,errors}=await open(vp.width,vp.height,vp.mobile)
     try{
       const nav=page.locator('.gt5-nav button')
-      assert.equal(await nav.count(),5,'V4 navigation must contain five protected destinations')
-      assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Discover','Plan','Saved','Profile'])
+      assert.equal(await nav.count(),5,'V4 navigation must contain five protected destinations');assert.equal(await nav.filter({hasText:'Saved'}).count(),0,'Saved must not return as a permanent destination')
+      assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Places','Plan','Entertainment','Profile'])
       for(let round=0;round<3;round++)for(let i=0;i<5;i++){await nav.nth(i).click();await page.waitForTimeout(100);await assertOnscreen(page,'.gt5-nav')}
 
       await nav.filter({hasText:'Home'}).click()
       for(let i=0;i<3;i++){
-        const card=page.locator('.gt5-event').first();await card.waitFor({state:'visible',timeout:5000});await card.click()
+        const card=page.locator('.gtc-home .gtc-card').first();await card.waitFor({state:'visible',timeout:5000});await card.click()
         await page.locator('.gt5-overlay .gt5-detail').waitFor({state:'visible',timeout:5000})
         const overlay=await page.locator('.gt5-overlay').boundingBox();assert.ok(overlay&&overlay.width<=vp.width+4&&overlay.height<=vp.height+4,'detail overlay escaped viewport')
         await page.locator('.gt5-detail-back').click();await page.locator('.gt5-overlay').waitFor({state:'hidden',timeout:5000})
@@ -79,7 +79,7 @@ for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobi
 
       await openRadar(page);await assertOnscreen(page,'.gt5-nav');await page.locator('.gt5-back').click();await page.waitForTimeout(100)
 
-      for(let i=0;i<3;i++){await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000});await assertProfileScrollable(page);await nav.filter({hasText:'Home'}).click()}
+      for(let i=0;i<3;i++){await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000});await page.locator('.gtc-my-good-times').waitFor({state:'visible',timeout:5000});await assertProfileScrollable(page);await nav.filter({hasText:'Home'}).click()}
 
       await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000})
       const city=page.locator('.gt5-profile-city select')
