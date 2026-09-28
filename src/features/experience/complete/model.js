@@ -1,0 +1,31 @@
+import {dateNumber, selectedCityClock, timeMinutes, eventIsDiscoverable, eventIsTonight} from '../good-times-event-clock.js'
+export const LABELS = Object.freeze({nightlife:'Nightlife',concerts_live_music:'Concerts & Live Music',sports_watch:'Sports & Watch',festivals_major_activations:'Festivals & Major Activations',dining_culinary:'Food & Drink',entertainment:'Entertainment',comedy_performing_arts:'Comedy & Performing Arts',family_kids:'Family & Kids',arts_museums_culture:'Arts, Museums & Culture',wellness_fitness:'Wellness & Fitness',day_parties_brunch:'Day Parties & Brunch',seasonal_holiday:'Seasonal & Holiday'})
+export const labelFor = key => LABELS[key] || String(key || 'Experience').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase())
+export const list = value => Array.isArray(value) ? value : []
+export const identity = item => String(item?.event_key || item?.id || '')
+export const isEvent = item => Boolean(item?.event_key || item?.event_date)
+export function unique(rows) {const seen=new Set();return list(rows).filter(r=>{const id=identity(r);if(!id||seen.has(id))return false;seen.add(id);return true})}
+export function safeLink(value) {if(typeof value!=='string'||!value.trim())return null;try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)&&!u.username&&!u.password?u.href:null}catch{return null}}
+export function safeImage(value) {if(typeof value!=='string')return null;if(/^\/(?!\/)/.test(value))return value;const u=safeLink(value);return u&&!/images\.unsplash\.com|maps\.googleapis\.com|[?&]key=|good-times-backgrounds\/(?:gt-cat-|event-)/i.test(u)?u:null}
+export function displayDate(date,options={month:'short',day:'numeric',weekday:'short'}) {return dateNumber(date)===null?'Date to confirm':new Intl.DateTimeFormat('en-US',{...options,timeZone:'UTC'}).format(new Date(date+'T12:00:00Z'))}
+export function displayTime(time) {const n=timeMinutes(time);if(n===null)return 'Time to confirm';return `${Math.floor(n/60)%12||12}:${String(n%60).padStart(2,'0')} ${n>=720?'PM':'AM'}`}
+export function shiftDate(date,n) {if(dateNumber(date)===null)return null;const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
+export function cleanTitle(value) {return String(value||'Experience').replace(/&amp;/g,'&').replace(/&#0?39;|&apos;/g,"'").replace(/&quot;/g,'"').replace(/\s+/g,' ').trim()}
+export function occurrenceUsable(event,now=Date.now()) {if(!eventIsDiscoverable(event,'atlanta',now))return false;const c=selectedCityClock('atlanta',now),m=timeMinutes(event.event_time);return event.event_date!==c.date||m===null||m>=c.minute||Boolean(event.event_end_time||event.end_time)}
+export function eveningUsable(event,now=Date.now()) {return occurrenceUsable(event,now)&&eventIsTonight(event,'atlanta',now)}
+export function homeCollections(events,venues,now=Date.now(),preferences=[]) {
+ const eligible=unique(events).filter(e=>occurrenceUsable(e,now)), used=new Set();
+ const take=(rows,n=4)=>rows.filter(r=>!used.has(identity(r))).slice(0,n).map(r=>{used.add(identity(r));return r})
+ const tonight=take(eligible.filter(e=>eveningUsable(e,now)))
+ const rank=new Map(list(preferences).map((p,i)=>[String(p).toLowerCase(),preferences.length-i]))
+ const affinity=r=>[r.category_key,...list(r.vibe_tags)].reduce((n,p)=>n+(rank.get(String(p).toLowerCase())||0),0)
+ const picks=take([...eligible,...unique(venues)].sort((a,b)=>affinity(b)-affinity(a)||Number(b.quality_score||b.good_times_score||0)-Number(a.quality_score||a.good_times_score||0)))
+ const next=take([...eligible].sort((a,b)=>String(a.event_date).localeCompare(String(b.event_date))||String(a.event_time||'99:99').localeCompare(String(b.event_time||'99:99'))))
+ return {tonight,picks,next}
+}
+export function validStopStatus(stop) {const value=String(stop?.status||'SUGGESTED').toUpperCase();if(['CONFIRMED','TICKETED','HELD','REQUESTED','WAITLIST'].includes(value))return 'ACTION REQUIRED';return ['SUGGESTED','SELECTED','ACTION REQUIRED','CANCELLED','COMPLETED'].includes(value)?value:'SUGGESTED'}
+export function itineraryWarnings(plan) {const warnings=[];let previous=null;for(const stop of list(plan?.stops)){const minutes=timeMinutes(stop.time);const day=dateNumber(stop.date||plan.itinerary_date);const n=minutes===null||day===null?null:day*1440+minutes;if(n!==null&&previous!==null&&n<previous)warnings.push('The stop order conflicts with the selected times. Adjust the time or order before going.');if(n!==null)previous=n;if(stop.hours_verified!==true&&stop.type!=='event')warnings.push('Venue hours and availability still need confirmation.');if(stop.travel_verified!==true)warnings.push('Travel times are not confirmed. Leave a travel buffer between stops.')}return [...new Set(warnings)]}
+export function planText(plan) {return [plan.name||'My GOOD TIMES plan',`${displayDate(plan.itinerary_date)} · Atlanta`,...list(plan.stops).map((s,i)=>`${i+1}. ${displayTime(s.time)} — ${s.name} · ${validStopStatus(s)}`),'Recommendations only. Check hours and book separately.'].join('\n')}
+const escapeICS=s=>String(s||'').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;')
+export function calendarText(plan) {const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');const blocks=list(plan.stops).filter(s=>dateNumber(s.date||plan.itinerary_date)!==null&&timeMinutes(s.time)!==null).map((s,i)=>['BEGIN:VEVENT',`UID:${escapeICS(plan.id||'draft')}-${i}@thegoodtimesworldwide.com`,`DTSTAMP:${stamp}`,`DTSTART;TZID=America/New_York:${(s.date||plan.itinerary_date).replaceAll('-','')}T${s.time.slice(0,5).replace(':','')}00`,`SUMMARY:${escapeICS(s.name)}`,`LOCATION:${escapeICS(s.address||s.venue||'Atlanta')}`,`DESCRIPTION:${escapeICS('GOOD TIMES suggestion — not a reservation. '+(safeLink(s.ticket_url||s.booking_link||s.website)||''))}`,'END:VEVENT'].join('\r\n'));return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GOOD TIMES//Experience Plan//EN','CALSCALE:GREGORIAN',...blocks,'END:VCALENDAR',''].join('\r\n')}
+export function downloadCalendar(plan) {const blob=new Blob([calendarText(plan)],{type:'text/calendar;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='good-times-plan.ics';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}

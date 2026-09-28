@@ -1,0 +1,52 @@
+import React,{useEffect,useMemo,useState} from 'react'
+import {ExperienceCard,Section,State,Skeleton,ActionLink} from './Cards.jsx'
+import {useBrowse} from './useBrowse.js'
+import {selectedCityClock} from '../good-times-event-clock.js'
+import {homeCollections,labelFor,displayDate,displayTime,shiftDate,unique,occurrenceUsable,eveningUsable,list} from './model.js'
+const keyFor=i=>`${i.event_key?'event':'venue'}:${i.event_key||i.id}`
+export function CollectionGrid({items,savedKeys,onEvent,onVenue,onSave}){return <div className="gtc-grid">{unique(items).map(i=><ExperienceCard key={i.event_key||i.id} item={i} kind={i.event_key?'event':'venue'} saved={savedKeys.has(keyFor(i))} onOpen={()=>i.event_key?onEvent(i):onVenue(i)} onSave={()=>onSave(i.event_key?'event':'venue',i.event_key||i.id)}/>)}</div>}
+export function Home({events,venues,profile,savedKeys,onEvent,onVenue,onSave,onExplore,onPlan,mode,onMode,now,loading,error,onRetry}){
+ const c=selectedCityClock('atlanta',now),groups=homeCollections(events,venues,now,profile?.vibe_preferences),[q,setQ]=useState('')
+ return <section className="gtc-home"><div className="gtc-search"><input aria-label="Search Atlanta" placeholder="Events, places, neighborhoods…" value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')onExplore(null,q)}}/><button aria-label="Search" onClick={()=>onExplore(null,q)}>⌕</button></div><nav className="gtc-tabs gt5-home-modes" aria-label="GOOD TIMES Home views">{[['for-you','For You'],['upcoming','Upcoming'],['tonight','Tonight']].map(([id,label])=><button key={id} className={id===mode?'active':''} aria-pressed={id===mode} onClick={()=>onMode(id)}>{label}</button>)}</nav>
+ {mode!=='for-you'?<EventCollection key={mode} mode={mode} now={now} initialEvents={events} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>:<>
+ {error&&<State error title="Couldn’t refresh all recommendations" body={error} action={<button onClick={onRetry}>Retry</button>}/>}
+ {loading&&!events.length&&!venues.length?<Skeleton/>:<>
+ {groups.tonight.length>0&&<Section title={c.minute<240?'Still going · last night':'Tonight in Atlanta'} action={<button onClick={()=>onMode('tonight')}>See all ↗</button>}><CollectionGrid items={groups.tonight} {...{savedKeys,onEvent,onVenue,onSave}}/></Section>}
+ {groups.picks.length>0&&<Section title={list(profile?.vibe_preferences).length?'Your next good time':'Worth your time'} action={<button onClick={()=>onExplore()}>Explore ↗</button>}><CollectionGrid items={groups.picks} {...{savedKeys,onEvent,onVenue,onSave}}/></Section>}
+ {groups.next.length>0&&<Section title="Next up" action={<button onClick={()=>onMode('upcoming')}>Full calendar ↗</button>}><CollectionGrid items={groups.next} {...{savedKeys,onEvent,onVenue,onSave}}/></Section>}
+ {!groups.picks.length&&!groups.next.length&&!groups.tonight.length&&<State title="Find your next good time" body="Browse the full Atlanta collection, or retry current recommendations." action={<><button onClick={()=>onExplore()}>Explore Atlanta</button><button onClick={onRetry}>Refresh</button></>}/>}
+ <button className="gtc-plan-band" onClick={onPlan}><span><strong>Make a night of it.</strong><small>Pick your vibe. Build your plan.</small></span><span aria-hidden="true">＋</span></button>
+ <div className="gtc-collection-links">{['concerts_live_music','sports_watch','festivals_major_activations','family_kids'].map(k=><button key={k} onClick={()=>onExplore(k)}>{labelFor(k)} <span>↗</span></button>)}</div>
+ </>}
+ </>}
+ </section>
+}
+export function EventCollection({mode='upcoming',category=null,subcategory=null,query='',venueId=null,now=Date.now(),initialEvents=[],savedKeys,onEvent,onSave,inline=false,onClose=null}){
+ const c=selectedCityClock('atlanta',now),[date,setDate]=useState(mode==='tonight'?c.serviceDate:''),[sort,setSort]=useState('date'),[debounced,setDebounced]=useState(query)
+ useEffect(()=>{const t=setTimeout(()=>setDebounced(query),240);return()=>clearTimeout(t)},[query])
+ const windowDate=date||c.serviceDate,request={kind:'events',category,subcategory,query:debounced,from:windowDate,to:date?shiftDate(date,mode==='tonight'?1:0):shiftDate(c.date,180),venue_id:venueId,limit:24}
+ const result=useBrowse(request),hasData=result.status==='success'||result.status==='loading-more'||result.status==='more-error'
+ const fallback=result.status==='error'?list(initialEvents).filter(e=>(!category||e.category_key===category)&&(!subcategory||e.subcategory_key===subcategory)&&(!debounced||[e.title,e.venue_name].join(' ').toLowerCase().includes(debounced.toLowerCase()))&&(!venueId||e.venue_id===venueId)):[]
+ const rows=unique(hasData?result.items:fallback).filter(e=>{if(!occurrenceUsable(e,now))return false;if(mode==='tonight'){const anchor=date===c.serviceDate?now:new Date(date+'T22:00:00Z').getTime();return eveningUsable(e,anchor)}return !date||e.event_date===date}).sort((a,b)=>sort==='quality'?Number(b.good_times_score||b.quality_score||0)-Number(a.good_times_score||a.quality_score||0):String(a.event_date).localeCompare(String(b.event_date))||String(a.event_time||'99').localeCompare(String(b.event_time||'99'))||String(a.event_key).localeCompare(String(b.event_key)))
+ const title=venueId?'Upcoming here':mode==='tonight'?(date===c.serviceDate&&c.minute<240?'Still going · last night':'Tonight in Atlanta'):category?labelFor(category):'Upcoming in Atlanta'
+ const groupRows=inline?[[null,rows]]:[...rows.reduce((m,e)=>{const k=e.event_date;if(!m.has(k))m.set(k,[]);m.get(k).push(e);return m},new Map())]
+ return <section className={`gtc-events ${inline?'gtc-inline-events':''}`} aria-label={title}>
+ <header className="gtc-page-heading">{onClose&&<button onClick={onClose} aria-label="Back to Discover">←</button>}<div><h1>{title}</h1>{!inline&&<small>Atlanta local time · {rows.length} loaded{result.nextCursor?' · more available':''}</small>}</div></header>
+ {!inline&&<div className="gtc-controls"><label>Date<input type="date" min={c.serviceDate} value={date} onChange={e=>setDate(e.target.value)}/></label>{mode!=='tonight'&&date&&<button onClick={()=>setDate('')}>All upcoming</button>}<label>Sort<select value={sort} onChange={e=>setSort(e.target.value)}><option value="date">Date & time</option><option value="quality">Recommended on page</option></select></label></div>}
+ {mode==='tonight'&&c.minute<240&&date===c.serviceDate&&<p className="gtc-note">Showing the evening of {displayDate(c.serviceDate)}. <button onClick={()=>setDate(c.date)}>See tonight instead</button></p>}
+ {result.status==='loading'&&<Skeleton count={inline?2:4}/>}
+ {result.status==='error'&&<State error title="Couldn’t refresh events" body={fallback.length?'Showing already loaded items; current status may have changed.':result.error} action={<button onClick={result.reload}>Retry events</button>}/>}
+ {hasData&&!rows.length&&<State title={result.nextCursor?'No eligible events on this page':'No events match this selection'} body={result.nextCursor?'More records are available to check.':'Try another date or explore places. Nothing has been relabeled to fill this collection.'} action={result.nextCursor?<button onClick={result.more}>Check more events</button>:!inline?<button onClick={()=>setDate(mode==='tonight'?shiftDate(c.date,1):'')}>{mode==='tonight'?'Try tomorrow':'Clear date'}</button>:null}/>}
+ {groupRows.filter(([,items])=>items.length).map(([day,items])=><div key={day||'all'} className="gtc-date-group">{day&&<h2>{displayDate(day)}</h2>}<CollectionGrid items={items} {...{savedKeys,onEvent,onSave}}/></div>)}
+ {result.status==='more-error'&&<p role="alert">{result.error}</p>}{result.nextCursor&&rows.length>0&&<button className="gtc-load-more" onClick={result.more} disabled={result.status==='loading-more'}>{result.status==='loading-more'?'Loading…':'Show more events'}</button>}
+ </section>
+}
+const TEAMS=[['NFL','Falcons','https://www.atlantafalcons.com/schedule/'],['NBA','Hawks','https://www.nba.com/hawks/schedule'],['MLB','Braves','https://www.mlb.com/braves/schedule'],['WNBA','Dream','https://dream.wnba.com/schedule'],['MLS','Atlanta United','https://www.atlutd.com/schedule/']]
+export function Sports({now,savedKeys,onEvent,onSave,onBack,onPlaces}){
+ const [league,setLeague]=useState('All'),data=useBrowse({kind:'sports'}),games=data.items.filter(x=>league==='All'||x.league===league)
+ return <section className="gtc-sports"><header className="gtc-page-heading"><button onClick={onBack} aria-label="Back to Discover">←</button><div><h1>Sports & Watch</h1><small>Atlanta teams. Real game-day options.</small></div></header><div className="gtc-chips">{['All',...TEAMS.map(t=>t[0])].map(l=><button className={league===l?'active':''} aria-pressed={league===l} onClick={()=>setLeague(l)} key={l}>{l}</button>)}</div>
+ <Section title="Atlanta teams"><div className="gtc-team-grid">{TEAMS.filter(([l])=>league==='All'||l===league).map(([l,n,url])=><ActionLink href={url} key={l}><small>{l}</small><strong>{n}</strong><span>Official schedule</span></ActionLink>)}</div></Section>
+ <Section title="Provider schedules" subtext="Only recently updated games are shown. No unverified live scores.">{data.status==='loading'?<Skeleton/>:data.status==='error'?<State error title="Schedules could not refresh" action={<button onClick={data.reload}>Retry</button>}/>:!games.length?<State title="No fresh games in this feed" body="Use the official team schedules above. Ticketed local sports remain below."/>:<div className="gtc-grid">{games.map(g=><article className="gtc-matchup" key={g.id}><small>{g.league} · {g.is_home_game?'Home':'Away'}</small><h3>{g.home_team}<span>vs</span>{g.away_team}</h3><p>{displayDate(g.game_date)} · {displayTime(g.game_time)}</p><p>{g.venue}</p><small>Schedule checked {displayDate(g.updated_at?.slice(0,10))}</small></article>)}</div>}</Section>
+ <EventCollection category="sports_watch" {...{now,savedKeys,onEvent,onSave}} inline/><Section title="Places to watch" subtext="Screenings vary. Confirm the specific game with the venue."><button className="gtc-load-more" onClick={onPlaces}>Browse sports bars & watch experiences ↗</button></Section>
+ </section>
+}

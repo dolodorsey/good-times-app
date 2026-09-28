@@ -1,0 +1,60 @@
+name: GOOD TIMES complete upgrade source integration
+on:
+  push:
+    branches: [release/gt-complete-compact-20260927]
+    paths: [scripts/complete-root-edits.json, scripts/complete-source-integration-once.py, .github/workflows/complete-upgrade-once.yml]
+permissions:
+  contents: write
+concurrency:
+  group: gt-complete-source-integration
+  cancel-in-progress: false
+jobs:
+  integrate:
+    if: github.repository == 'dolodorsey/good-times-app'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Apply reviewed source edits and commit actual source before any build
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/release/gt-complete-compact-20260927 | cut -f1)" = "$GITHUB_SHA"
+          python scripts/complete-source-integration-once.py
+          git rm scripts/complete-root-edits.json scripts/complete-source-integration-once.py .github/workflows/complete-upgrade-once.yml
+          git rm --ignore-unmatch .github/workflows/compact-workspace-capture.yml
+          git config user.name 'GOOD TIMES build'
+          git config user.email 'good-times-build@users.noreply.github.com'
+          git add src api index.html vite.config.js vercel.json
+          git commit -m 'GOOD TIMES: integrate compact Home Discover events sports details and planner into canonical app'
+          mkdir -p ui-artifacts/complete-upgrade
+          git rev-parse HEAD > ui-artifacts/complete-upgrade/tested-sha.txt
+      - name: Install locked dependencies
+        run: npm ci --legacy-peer-deps
+      - name: Test and compile exact committed candidate
+        env:
+          GT_COMPLETE_UPGRADE: '1'
+        run: npm run build > ui-artifacts/complete-upgrade/build.log 2>&1
+      - name: Install browser
+        run: npx --no-install playwright-core install --with-deps chromium
+      - name: Exercise all compact screens on real browser viewports
+        run: node scripts/complete-upgrade-evidence.mjs > ui-artifacts/complete-upgrade/browser.log 2>&1
+      - name: Publish candidate branch only after successful checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git ls-remote origin refs/heads/release/gt-complete-compact-20260927 | cut -f1)" = "$GITHUB_SHA"
+          git push origin HEAD:refs/heads/release/gt-complete-compact-20260927
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: complete-upgrade-evidence-${{ github.run_id }}
+          path: ui-artifacts/complete-upgrade/
+          retention-days: 7
