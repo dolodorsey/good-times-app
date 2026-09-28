@@ -1,6 +1,6 @@
 import React,{useEffect,useMemo,useState} from 'react'
 import {loadExplorePage} from '../../intelligence/client.js'
-import {selectedCityClock} from '../good-times-event-clock.js'
+import {selectedCityClock,eventIsTonight,eventIsThisWeekend} from '../good-times-event-clock.js'
 import {shiftDate} from './model.js'
 import {useBrowse} from './useBrowse.js'
 import {CollectionGrid} from './Collections.jsx'
@@ -12,10 +12,11 @@ export default function GlobalSearch({initialQuery='',savedKeys,onEvent,onVenue,
  const intent=useMemo(()=>routeSearchIntent(debounced),[debounced]),clock=selectedCityClock('atlanta')
  useEffect(()=>{const t=setTimeout(()=>setDebounced(query.trim()),240);return()=>clearTimeout(t)},[query])
  useEffect(()=>{if(!debounced){setPlaces([]);setPlaceState('idle');return}const c=new AbortController();setPlaceState('loading');setPlaceError('');loadExplorePage('Atlanta',{query:debounced,limit:12,sort:'quality'},{signal:c.signal}).then(r=>{setPlaces(r.items||[]);setPlaceState('success')}).catch(e=>{if(!c.signal.aborted){setPlaces([]);setPlaceState('error');setPlaceError(e.message)}});return()=>c.abort()},[debounced])
- const events=useBrowse({kind:'events',query:debounced,category:intent.category||'',from:clock.serviceDate,to:shiftDate(clock.date,180),limit:18},Boolean(debounced))
- const showPlaces=mode==='best'||mode==='places',showEntertainment=mode==='best'||mode==='entertainment'
+ const rangeTo=intent.time==='tonight'?clock.date:intent.time==='weekend'?shiftDate(clock.date,7):shiftDate(clock.date,180)
+ const events=useBrowse({kind:'events',query:debounced,category:intent.category||'',from:clock.serviceDate,to:rangeTo,limit:18},Boolean(debounced))
+ const showPlaces=mode==='places'||mode==='best'&&intent.mode!=='entertainment',showEntertainment=mode==='entertainment'||mode==='best'&&intent.mode!=='places'
  const placeItems=showPlaces?places:[]
- const eventItems=showEntertainment?events.items:[]
+ const eventItems=showEntertainment?events.items.filter(e=>intent.time==='tonight'?eventIsTonight(e,'atlanta'):intent.time==='weekend'?eventIsThisWeekend(e,'atlanta'):true):[]
  return <section className="gtc-global-search">
   <header className="gtc-page-heading"><button onClick={onClose} aria-label="Back from search">←</button><div><h1>Search GOOD TIMES</h1><small>Places, entertainment, or both—without making you learn our taxonomy.</small></div></header>
   <div className="gtc-search"><input autoFocus aria-label="Search GOOD TIMES" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Seafood date night, clubs tonight, Hawks watch party…"/>{query&&<button aria-label="Clear search" onClick={()=>setQuery('')}>×</button>}</div>
