@@ -1,11 +1,17 @@
 name: Refresh Atlanta fallback snapshot
 
 # Keeps the verified Atlanta emergency snapshot fresh. main is protected by
-# required checks verify + geometry. This workflow uses only the built-in
-# GITHUB_TOKEN: it creates a data-only PR, dispatches the canonical quality/UI
-# workflows on the exact snapshot SHA, waits for them, publishes matching check
-# runs from the GitHub Actions app, confirms branch protection sees them, and
-# squash-merges only that SHA. No long-lived bot PAT is required.
+# required checks verify + geometry. This workflow uses only GITHUB_TOKEN.
+#
+# Important: branch protection evaluates the PR merge-candidate SHA, not merely
+# the snapshot branch head. The workflow therefore:
+# 1) creates a data-only PR,
+# 2) materializes GitHub's refs/pull/<PR>/merge commit on a temporary check branch,
+# 3) dispatches the canonical verify + geometry workflows on THAT merge SHA,
+# 4) proves those native GitHub Actions checks passed on the merge SHA,
+# 5) squash-merges only if the PR head is still the exact snapshot SHA.
+#
+# No long-lived bot PAT and no branch-protection bypass are used.
 
 on:
   schedule:
@@ -16,10 +22,10 @@ on:
     paths:
       - '.github/workflows/refresh-atlanta-fallback-snapshot.yml'
       - '.github/workflows/premium-quality-gate.yml'
+      - '.github/workflows/ui-regression.yml'
 
 permissions:
   actions: write
-  checks: write
   contents: write
   issues: write
   pull-requests: write
@@ -30,6 +36,7 @@ concurrency:
 
 env:
   BRANCH: claude/atlanta-snapshot-refresh
+  CHECK_BRANCH: claude/atlanta-snapshot-merge-check
 
 jobs:
   refresh:
@@ -61,6 +68,7 @@ jobs:
       - name: Data-only diff guard
         id: diff
         run: |
+          set -euo pipefail
           CHANGED=$(git status --porcelain | awk '{print $2}')
           echo "changed: $CHANGED"
           if [ -z "$CHANGED" ]; then
@@ -91,49 +99,72 @@ jobs:
           git add api/atlanta-fallback-snapshot.js
           git commit -m "GOOD TIMES: refresh verified Atlanta fallback snapshot (data-only)"
           git push -f origin "$BRANCH"
-          SHA=$(git rev-parse HEAD)
+          HEAD_SHA=$(git rev-parse HEAD)
           PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')
           if [ -z "$PR" ]; then
-            gh pr create --base main --head "$BRANCH" \
-              --title "GOOD TIMES: refresh verified Atlanta fallback snapshot (automated, data-only)" \
-              --body "Automated data-only snapshot refresh. The workflow dispatches the canonical GOOD TIMES Quality Gate and UI regression workflows on this exact SHA, waits for both to pass, then publishes the protected verify + geometry checks and merges only this SHA."
+            gh pr create --base main --head "$BRANCH"               --title "GOOD TIMES: refresh verified Atlanta fallback snapshot (automated, data-only)"               --body "Automated data-only snapshot refresh. Canonical verify + geometry run against GitHub's actual PR merge-candidate SHA before exact-head merge."
             PR=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
           fi
-          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
           echo "pr=$PR" >> "$GITHUB_OUTPUT"
 
-      - name: Dispatch canonical verify and geometry workflows
+      - name: Materialize exact PR merge candidate
+        id: merge
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ steps.pr.outputs.pr }}
+        run: |
+          set -euo pipefail
+          MERGE_SHA=""
+          for i in $(seq 1 30); do
+            if git fetch --force origin "pull/$PR/merge"; then
+              MERGE_SHA=$(git rev-parse FETCH_HEAD)
+              [ -n "$MERGE_SHA" ] && break
+            fi
+            sleep 2
+          done
+          if [ -z "$MERGE_SHA" ]; then
+            echo "::error::Unable to resolve refs/pull/$PR/merge"
+            exit 1
+          fi
+          git branch -f "$CHECK_BRANCH" "$MERGE_SHA"
+          git push -f origin "$CHECK_BRANCH"
+          echo "merge_sha=$MERGE_SHA" >> "$GITHUB_OUTPUT"
+          echo "Resolved PR $PR merge candidate $MERGE_SHA"
+
+      - name: Dispatch canonical checks on merge candidate
         if: steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
-          gh workflow run premium-quality-gate.yml --ref "$BRANCH"
-          gh workflow run ui-regression.yml --ref "$BRANCH"
+          gh workflow run premium-quality-gate.yml --ref "$CHECK_BRANCH"
+          gh workflow run ui-regression.yml --ref "$CHECK_BRANCH"
 
-      - name: Wait for canonical workflows on exact SHA
+      - name: Wait for canonical merge-candidate workflows
         if: steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          SHA: ${{ steps.pr.outputs.sha }}
+          MERGE_SHA: ${{ steps.merge.outputs.merge_sha }}
         run: |
           set -euo pipefail
           wait_for_run() {
             wf="$1"
             id=""
-            for i in $(seq 1 40); do
-              id=$(gh run list --workflow "$wf" --branch "$BRANCH" --event workflow_dispatch --limit 30 \
-                --json databaseId,headSha --jq ".[] | select(.headSha == \"$SHA\") | .databaseId" | head -n1)
+            for i in $(seq 1 60); do
+              id=$(gh run list --workflow "$wf" --branch "$CHECK_BRANCH" --event workflow_dispatch --limit 30                 --json databaseId,headSha --jq ".[] | select(.headSha == \"$MERGE_SHA\") | .databaseId" | head -n1)
               [ -n "$id" ] && break
               sleep 5
             done
             if [ -z "$id" ]; then
-              echo "::error::No workflow_dispatch run found for $wf on $SHA"
+              echo "::error::No workflow_dispatch run found for $wf on merge SHA $MERGE_SHA"
               return 1
             fi
-            echo "watching $wf run $id for $SHA"
+            echo "watching $wf run $id for merge SHA $MERGE_SHA"
             gh run watch "$id" --exit-status
           }
           wait_for_run premium-quality-gate.yml &
@@ -143,34 +174,47 @@ jobs:
           wait "$VERIFY_PID"
           wait "$GEOMETRY_PID"
 
-      - name: Publish protected checks from successful canonical workflows
-        if: steps.diff.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          SHA: ${{ steps.pr.outputs.sha }}
-        run: |
-          set -euo pipefail
-          publish_check() {
-            name="$1"
-            jq -n --arg name "$name" --arg sha "$SHA" \
-              '{name:$name,head_sha:$sha,status:"completed",conclusion:"success",output:{title:($name+" canonical workflow passed"),summary:"Created by Refresh Atlanta fallback snapshot only after the corresponding canonical workflow_dispatch run passed on this exact SHA."}}' \
-              | gh api --method POST -H "Accept: application/vnd.github+json" \
-                  "repos/$GITHUB_REPOSITORY/check-runs" --input -
-          }
-          publish_check verify
-          publish_check geometry
-
-      - name: Confirm required checks and merge exact SHA
+      - name: Prove required checks exist on exact merge SHA
         if: steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          SHA: ${{ steps.pr.outputs.sha }}
+          MERGE_SHA: ${{ steps.merge.outputs.merge_sha }}
+        run: |
+          set -euo pipefail
+          check_success() {
+            NAME="$1"
+            RESULT=$(gh api -H "Accept: application/vnd.github+json"               "repos/$GITHUB_REPOSITORY/commits/$MERGE_SHA/check-runs"               --jq "[.check_runs[] | select(.name == \"$NAME\" and .app.slug == \"github-actions\") | {status,conclusion,completed_at}] | sort_by(.completed_at) | last")
+            echo "$NAME on $MERGE_SHA: $RESULT"
+            STATUS=$(printf '%s' "$RESULT" | jq -r '.status // ""')
+            CONCLUSION=$(printf '%s' "$RESULT" | jq -r '.conclusion // ""')
+            if [ "$STATUS" != "completed" ] || [ "$CONCLUSION" != "success" ]; then
+              echo "::error::$NAME is not successful on exact merge candidate $MERGE_SHA"
+              return 1
+            fi
+          }
+          check_success verify
+          check_success geometry
+
+      - name: Merge exact PR head after merge-candidate checks
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
           PR: ${{ steps.pr.outputs.pr }}
         run: |
           set -euo pipefail
-          gh pr checks "$PR" --required --watch --interval 10 --fail-fast
-          gh pr merge "$PR" --squash --match-head-commit "$SHA"
+          CURRENT=$(gh pr view "$PR" --json headRefOid --jq .headRefOid)
+          if [ "$CURRENT" != "$HEAD_SHA" ]; then
+            echo "::error::PR head changed: expected $HEAD_SHA, found $CURRENT"
+            exit 1
+          fi
+          gh pr merge "$PR" --squash --match-head-commit "$HEAD_SHA"
+
+      - name: Cleanup temporary merge-check branch
+        if: steps.diff.outputs.changed == 'true' && success()
+        run: git push origin --delete "$CHECK_BRANCH" || true
 
       - name: Report failure
         if: failure()
@@ -179,7 +223,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           TITLE="Atlanta fallback snapshot refresh failed"
-          BODY="Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID — automatic refresh did not complete. Check /api/health fallback_snapshot_armed / fallback_snapshot_age_hours and the canonical verify/geometry workflow runs."
+          BODY="Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID — automatic refresh did not complete. Check /api/health and the exact merge-candidate verify/geometry workflow runs."
           N=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number --jq '.[0].number // empty')
           if [ -n "$N" ]; then
             gh issue comment "$N" --body "$BODY"
