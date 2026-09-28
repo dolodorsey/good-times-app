@@ -134,67 +134,87 @@ jobs:
           echo "merge_sha=$MERGE_SHA" >> "$GITHUB_OUTPUT"
           echo "Resolved PR $PR merge candidate $MERGE_SHA"
 
-      - name: Dispatch canonical checks on merge candidate
+      - name: Dispatch canonical checks on PR head and merge candidate
         if: steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
+          gh workflow run premium-quality-gate.yml --ref "$BRANCH"
+          gh workflow run ui-regression.yml --ref "$BRANCH"
           gh workflow run premium-quality-gate.yml --ref "$CHECK_BRANCH"
           gh workflow run ui-regression.yml --ref "$CHECK_BRANCH"
 
-      - name: Wait for canonical merge-candidate workflows
+      - name: Wait for canonical workflows on both exact SHAs
         if: steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
           MERGE_SHA: ${{ steps.merge.outputs.merge_sha }}
         run: |
           set -euo pipefail
           wait_for_run() {
             wf="$1"
+            branch="$2"
+            sha="$3"
+            label="$4"
             id=""
             for i in $(seq 1 60); do
-              id=$(gh run list --workflow "$wf" --branch "$CHECK_BRANCH" --event workflow_dispatch --limit 30                 --json databaseId,headSha --jq ".[] | select(.headSha == \"$MERGE_SHA\") | .databaseId" | head -n1)
+              id=$(gh run list --workflow "$wf" --branch "$branch" --event workflow_dispatch --limit 40 \
+                --json databaseId,headSha --jq ".[] | select(.headSha == \"$sha\") | .databaseId" | head -n1)
               [ -n "$id" ] && break
               sleep 5
             done
             if [ -z "$id" ]; then
-              echo "::error::No workflow_dispatch run found for $wf on merge SHA $MERGE_SHA"
+              echo "::error::No workflow_dispatch run found for $wf on $label SHA $sha"
               return 1
             fi
-            echo "watching $wf run $id for merge SHA $MERGE_SHA"
+            echo "watching $wf run $id for $label SHA $sha"
             gh run watch "$id" --exit-status
           }
-          wait_for_run premium-quality-gate.yml &
-          VERIFY_PID=$!
-          wait_for_run ui-regression.yml &
-          GEOMETRY_PID=$!
-          wait "$VERIFY_PID"
-          wait "$GEOMETRY_PID"
+          wait_for_run premium-quality-gate.yml "$BRANCH" "$HEAD_SHA" head &
+          HEAD_VERIFY_PID=$!
+          wait_for_run ui-regression.yml "$BRANCH" "$HEAD_SHA" head &
+          HEAD_GEOMETRY_PID=$!
+          wait_for_run premium-quality-gate.yml "$CHECK_BRANCH" "$MERGE_SHA" merge-candidate &
+          MERGE_VERIFY_PID=$!
+          wait_for_run ui-regression.yml "$CHECK_BRANCH" "$MERGE_SHA" merge-candidate &
+          MERGE_GEOMETRY_PID=$!
+          wait "$HEAD_VERIFY_PID"
+          wait "$HEAD_GEOMETRY_PID"
+          wait "$MERGE_VERIFY_PID"
+          wait "$MERGE_GEOMETRY_PID"
 
-      - name: Prove required checks exist on exact merge SHA
+      - name: Prove required checks exist on PR head and exact merge SHA
         if: steps.diff.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ steps.pr.outputs.head_sha }}
           MERGE_SHA: ${{ steps.merge.outputs.merge_sha }}
         run: |
           set -euo pipefail
           check_success() {
-            NAME="$1"
-            RESULT=$(gh api -H "Accept: application/vnd.github+json"               "repos/$GITHUB_REPOSITORY/commits/$MERGE_SHA/check-runs"               --jq "[.check_runs[] | select(.name == \"$NAME\" and .app.slug == \"github-actions\") | {status,conclusion,completed_at}] | sort_by(.completed_at) | last")
-            echo "$NAME on $MERGE_SHA: $RESULT"
+            SHA="$1"
+            NAME="$2"
+            LABEL="$3"
+            RESULT=$(gh api -H "Accept: application/vnd.github+json" \
+              "repos/$GITHUB_REPOSITORY/commits/$SHA/check-runs" \
+              --jq "[.check_runs[] | select(.name == \"$NAME\" and .app.slug == \"github-actions\") | {status,conclusion,completed_at}] | sort_by(.completed_at) | last")
+            echo "$NAME on $LABEL $SHA: $RESULT"
             STATUS=$(printf '%s' "$RESULT" | jq -r '.status // ""')
             CONCLUSION=$(printf '%s' "$RESULT" | jq -r '.conclusion // ""')
             if [ "$STATUS" != "completed" ] || [ "$CONCLUSION" != "success" ]; then
-              echo "::error::$NAME is not successful on exact merge candidate $MERGE_SHA"
+              echo "::error::$NAME is not successful on $LABEL $SHA"
               return 1
             fi
           }
-          check_success verify
-          check_success geometry
+          check_success "$HEAD_SHA" verify head
+          check_success "$HEAD_SHA" geometry head
+          check_success "$MERGE_SHA" verify merge-candidate
+          check_success "$MERGE_SHA" geometry merge-candidate
 
       - name: Merge exact PR head after merge-candidate checks
         if: steps.diff.outputs.changed == 'true'
