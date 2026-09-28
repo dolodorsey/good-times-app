@@ -1,7 +1,7 @@
 import {COMPLETE_UPGRADE} from './complete/flag.js'
 import {Home as CompleteHome,EventCollection,Sports as CompleteSports} from './complete/Collections.jsx'
 import CompletePlanner,{Itinerary as CompleteItinerary} from './complete/Planner.jsx'
-import CompleteDetails,{Saved as CompleteSaved} from './complete/Details.jsx'
+import CompleteDetails from './complete/Details.jsx'
 import EntertainmentHub from './complete/EntertainmentHub.jsx'
 import RestaurantExplorer from './complete/RestaurantExplorer.jsx'
 import GlobalSearch from './complete/GlobalSearch.jsx'
