@@ -212,3 +212,26 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-places{
  .gt5-complete .gtc-entertainment-lane strong{font-size:14px;}
  .gt5-complete .gtc-my-good-times>.gtc-tabs button{font-size:11px!important;padding:5px 4px!important;}
 }
+
+/* Places entity lanes + restaurant intelligence */
+.gt5-complete .gtc-place-lanes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 16px;}
+.gt5-complete .gtc-place-lanes>button{min-width:0;min-height:82px;display:flex;align-items:center;justify-content:space-between;gap:8px;text-align:left;padding:12px;border:1px solid rgba(248,212,106,.22);border-radius:12px;background:linear-gradient(135deg,#151619,#0c0e10);color:#f5f2ea;}
+.gt5-complete .gtc-place-lanes strong{display:block;font:650 15px/1.2 var(--gt5-sans);}
+.gt5-complete .gtc-place-lanes small{display:block;margin-top:5px;font:400 11px/1.35 var(--gt5-sans);color:#aeadac;}
+.gt5-complete .gtc-place-lanes b{color:#f8d46a;font-size:18px;font-weight:500;}
+.gt5-complete .gtc-restaurants{width:100%;padding:0 0 10px;}
+.gt5-complete .gtc-restaurant-quick{display:flex;gap:7px;overflow:auto;padding:1px 0 8px;scrollbar-width:none;}
+.gt5-complete .gtc-restaurant-quick::-webkit-scrollbar{display:none;}
+.gt5-complete .gtc-restaurant-quick button,.gt5-complete .gtc-restaurant-filter-groups button{flex-shrink:0;min-height:42px;padding:8px 11px;border:1px solid var(--gtc-line);border-radius:999px;background:#0f1113;color:#d0cfca;font:600 12px/1 var(--gt5-sans);}
+.gt5-complete .gtc-restaurant-quick button.active,.gt5-complete .gtc-restaurant-filter-groups button.active{background:#f8d46a;color:#090a0b;border-color:#f8d46a;}
+.gt5-complete .gtc-restaurant-tools{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:44px;margin:2px 0 8px;font-size:12px;color:#aaa8a3;}
+.gt5-complete .gtc-restaurant-tools strong{color:#f5f2ea;}
+.gt5-complete .gtc-restaurant-tools button{min-height:44px;color:#f8d46a;padding:6px 2px;font-weight:600;}
+.gt5-complete .gtc-restaurant-filter-groups{display:grid;gap:10px;padding:10px;margin:0 0 12px;border:1px solid var(--gtc-line);border-radius:12px;background:#0d0f11;}
+.gt5-complete .gtc-restaurant-filter-groups section>strong{display:block;margin:0 0 7px;color:#e6d8ae;font-size:12px;}
+.gt5-complete .gtc-restaurant-filter-groups section>div{display:flex;gap:6px;overflow:auto;padding-bottom:2px;scrollbar-width:none;}
+.gt5-complete .gtc-entertainment-venues{width:100%;padding:12px 0 0;}
+@media(min-width:900px){
+ .gt5-complete .gtc-place-lanes{grid-template-columns:repeat(3,minmax(0,1fr));}
+ .gt5-complete .gtc-restaurant-filter-groups{grid-template-columns:repeat(2,minmax(0,1fr));}
+}
