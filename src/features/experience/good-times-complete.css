@@ -185,3 +185,30 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] {
 .gt5-complete .gtc-swap{border:1px solid #f8d46a;border-radius:12px;padding:12px;margin-top:16px;background:#111517}.gt5-complete .gtc-swap>header{display:flex;align-items:center;justify-content:space-between;gap:8px}.gt5-complete .gtc-swap button{min-height:44px;padding:10px;color:#f8d46a}.gt5-complete .gtc-swap-choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}.gt5-complete .gtc-swap-choices button{text-align:left;border:1px solid #3c3d38;border-radius:10px}.gt5-complete .gtc-swap-choices strong{display:block;font-size:14px}.gt5-complete .gtc-swap-choices small{display:block;color:#aaa8a3;font-size:12px;margin-top:4px}
 
 html body.gt-complete-mode #root .gt5-app.gt5-complete .gtc-paid-placement{display:grid!important;grid-template-columns:70px minmax(0,1fr)!important;gap:10px!important;min-height:0!important;height:auto!important;margin:16px 0!important;padding:12px!important;border-radius:12px!important;background:#101214!important;border:1px solid #51482e!important}html body.gt-complete-mode #root .gt5-app.gt5-complete .gtc-paid-placement>span{grid-column:1/-1;font-size:10px!important;color:#f8d46a!important}html body.gt-complete-mode #root .gt5-app.gt5-complete .gtc-paid-placement>img{position:static!important;width:70px!important;height:70px!important;object-fit:cover!important;border-radius:8px!important}html body.gt-complete-mode #root .gt5-app.gt5-complete .gtc-paid-placement strong{font:600 16px/1.3 var(--gt5-sans)!important}html body.gt-complete-mode #root .gt5-app.gt5-complete .gtc-paid-placement p{font-size:12px!important;line-height:1.4!important}html body.gt-complete-mode #root .gt5-app.gt5-complete .gtc-paid-placement>a{grid-column:1/-1;min-height:44px!important;display:flex!important;align-items:center!important;padding:8px 10px!important;font-size:13px!important}
+
+/* Places / Entertainment / My GOOD TIMES structural upgrade */
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-entertainment,
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-places{width:100%;padding:12px 0 0!important;max-width:none!important;}
+.gt5-complete .gtc-entertainment-time{position:sticky!important;top:0;z-index:6;backdrop-filter:blur(14px);background:rgba(8,10,11,.94)!important;}
+.gt5-complete .gtc-entertainment-lanes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 4px;}
+.gt5-complete .gtc-entertainment-lane{min-width:0;min-height:78px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px;text-align:left;border:1px solid rgba(248,212,106,.22);border-radius:12px;background:linear-gradient(135deg,#151619,#0d0f10);color:#f5f2ea;}
+.gt5-complete .gtc-entertainment-lane strong{display:block;font:650 15px/1.2 var(--gt5-sans);letter-spacing:-.015em;}
+.gt5-complete .gtc-entertainment-lane small{display:block;margin-top:5px;color:#aeadac;font:400 11px/1.35 var(--gt5-sans);}
+.gt5-complete .gtc-entertainment-lane>b{color:#f8d46a;font-size:18px;font-weight:500;flex-shrink:0;}
+.gt5-complete .gtc-my-good-times{margin:14px 0 20px;padding:14px!important;border:1px solid rgba(248,212,106,.22);border-radius:14px;background:#0b0d0f;}
+.gt5-complete .gtc-my-good-times>.gtc-page-heading{margin-bottom:6px;}
+.gt5-complete .gtc-my-good-times>.gtc-tabs{margin-top:4px!important;}
+.gt5-complete .gtc-my-good-times>.gtc-tabs button{font-size:12px!important;}
+.gt5-complete[data-screen="profile"] .gt5-profile-city{margin-top:18px;}
+.gt5-complete[data-screen="places"] .gt2-category-grid.gt-compact-category-grid{margin-top:10px;}
+.gt5-complete[data-screen="places"] .gt-compact-result-header small::before{content:"PLACES · ";color:#f8d46a;}
+@media(min-width:900px){
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-entertainment-lanes{grid-template-columns:repeat(4,minmax(0,1fr));}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-entertainment-lane{min-height:92px;padding:14px;}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-my-good-times{padding:18px!important;}
+}
+@media(max-width:370px){
+ .gt5-complete .gtc-entertainment-lane{min-height:72px;padding:9px;}
+ .gt5-complete .gtc-entertainment-lane strong{font-size:14px;}
+ .gt5-complete .gtc-my-good-times>.gtc-tabs button{font-size:11px!important;padding:5px 4px!important;}
+}
