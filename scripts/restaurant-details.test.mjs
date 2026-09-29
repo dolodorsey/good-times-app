@@ -130,7 +130,7 @@ for(const width of [320,390,834,1440])test('rendered restaurant facts / retry / 
   ]){
    await dialog.getByRole('button',{name:'Back to results',exact:true}).click()
    actionLink=url;state='ready';await open()
-   const link=dialog.getByRole('link',{name:label,exact:true});await link.waitFor()
+   const link=dialog.getByRole('link',{name:label+' ↗',exact:true});await link.waitFor()
    assert.equal(await link.getAttribute('href'),url)
    await page.screenshot({path:path.join(folder,file)})
    const actionOverflow=await dialog.evaluate(el=>({dialog:el.scrollWidth-el.clientWidth,body:document.documentElement.scrollWidth-innerWidth}))
