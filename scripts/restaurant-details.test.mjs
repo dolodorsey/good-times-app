@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import {browse} from '../api/browse.js'
 import {RESTAURANT_PROFILE_FIELDS,normalizeRestaurantProfile,restaurantFactRows,restaurantLabel} from '../src/features/experience/complete/restaurant-facts.js'
+import {restaurantActionLabel} from '../src/features/experience/complete/restaurant-actions.js'
 
 const now=Date.parse('2026-09-28T16:00:00Z')
 const id='679e93b9-2972-4daa-91b2-8775ab3db89e',other='07c94591-54b5-4094-8e3d-206db04782ef'
@@ -29,6 +30,30 @@ test('restaurant facts preserve the recorded service, cuisine, meal and ownershi
  const rows=Object.fromEntries(restaurantFactRows(normalizeRestaurantProfile(profile,id)))
  assert.equal(rows.Service,'Fast casual');assert.equal(rows.Cuisine,'Tapas');assert.equal(rows.Meals,'Breakfast · Lunch · Dinner');assert.equal(rows.Ownership,'Woman-owned')
  assert.equal(rows['Dietary options'],undefined)
+})
+const actionCases=[
+ [null,'Official website'],
+ [{},'Official website'],
+ [{booking_link:'https://resy.com/cities/atlanta-ga/venues/sargent'},'Reserve a table'],
+ [{booking_link:'https://www.opentable.com/r/sozou-atlanta'},'Reserve a table'],
+ [{booking_link:'https://order.toasttab.com/online/mister-burger-decatur'},'Order online'],
+ [{booking_link:'https://order.online/store/-35849887?hideModal=true'},'Order online'],
+ [{booking_link:'https://toastique.orderexperience.net/6a6826418b16e6cb9c008287/menu'},'Order online'],
+ [{booking_link:'https://boskcafeandwine.com/menu',website:'https://boskcafeandwine.com/',restaurant_profile:{feature_tags:['online_ordering']}},'Order online'],
+ [{booking_link:'https://boskcafeandwine.com/menu',website:'https://boskcafeandwine.com/'},'Check availability'],
+ [{booking_link:'https://evil.resy.com/cities/atlanta-ga/venues/sargent'},'Check availability'],
+ [{booking_link:'https://example.test/?next=https://order.toasttab.com/online/test'},'Check availability'],
+ [{booking_link:'javascript:alert(1)'},'Check availability'],
+ [{booking_link:'https://fake@resy.com/cities/atlanta-ga/venues/sargent'},'Check availability'],
+ [{booking_link:'https://www.cottoitalian.com/reservations'},'Check availability'],
+ [{booking_link:'https://resy.com/'},'Check availability']
+]
+for(const [i,[record,label]] of actionCases.entries())test('restaurant action label uses exact evidence '+i,()=>{
+ const before=JSON.stringify(record);assert.equal(restaurantActionLabel(record),label);assert.equal(JSON.stringify(record),before)
+})
+test('venue-hosted ordering requires the same venue and a recorded ordering feature',()=>{
+ assert.equal(restaurantActionLabel({booking_link:'https://other.test/menu',website:'https://venue.test/',restaurant_profile:{feature_tags:['online_ordering']}}),'Check availability')
+ assert.equal(restaurantActionLabel({booking_link:'https://venue.test/menu',website:'https://venue.test/',restaurant_profile:{feature_tags:'online_ordering'}}),'Check availability')
 })
 test('venue hydration is exact-ID, read-only, bounded and additive',async()=>{
  const calls=[]
@@ -62,12 +87,12 @@ for(const width of [320,390,834,1440])test('rendered restaurant facts / retry / 
  const browser=process.env.GT_UI_CHROME_PATH?await chromium.launch({executablePath:process.env.GT_UI_CHROME_PATH,headless:true,args:['--no-sandbox']}):await chromium.launch({channel:process.env.GT_UI_CHANNEL||'chrome',headless:true})
  const ctx=await browser.newContext({viewport:{width,height:width===1440?1000:900},isMobile:width<600,hasTouch:width<600})
  try{
-  let state='ready';const errors=[]
+  let state='ready',actionLink=null;const errors=[]
   const currentVenue={...venue,freshness_expires_at:new Date(Date.now()+86400000).toISOString()}
   const session={access_token:'gt-restaurant-fixture-access',refresh_token:'gt-restaurant-fixture-refresh',expires_at:Math.floor(Date.now()/1000)+86400,user:{id:'gt-restaurant-fixture-user',email:'restaurant.qa@goodtimes.invalid'}}
   await ctx.addInitScript(s=>{localStorage.setItem('gt_session',JSON.stringify(s));localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['food'],age:'25-34'}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},session)
   await ctx.route('**/api/data**',r=>r.fulfill(response({ok:true,connected:true,degraded:false,city:'atlanta',counts:{events:0,venues:1},events:[],venues:[currentVenue]})))
-  await ctx.route('**/api/browse**',r=>{const url=new URL(r.request().url());return r.fulfill(response({ok:true,items:url.searchParams.get('kind')==='venue'?[{...currentVenue,restaurant_profile:state==='ready'?normalizeRestaurantProfile(profile,id):null,restaurant_profile_state:state}]:[],nextCursor:null,countType:'returned'}))})
+  await ctx.route('**/api/browse**',r=>{const url=new URL(r.request().url());return r.fulfill(response({ok:true,items:url.searchParams.get('kind')==='venue'?[{...currentVenue,booking_link:actionLink,restaurant_profile:state==='ready'?normalizeRestaurantProfile(profile,id):null,restaurant_profile_state:state}]:[],nextCursor:null,countType:'returned'}))})
   await ctx.route('**/rest/v1/**',r=>{
    const table=new URL(r.request().url()).pathname.split('/').at(-1)
    const data=table==='gt_taxonomy_categories'?[{category_key:'dining_culinary',category_name:'Food & Drink',sort_order:1,is_active:true}]:table==='gt_taxonomy_subcategories'?[{category_key:'dining_culinary',subcategory_key:'restaurant_places',subcategory_name:'Restaurants',sort_order:1,is_active:true}]:table==='v_gt_venue_taxonomy_directory'?[{...currentVenue,category_name:'Food & Drink',taxonomy_confidence:95}]:table==='v_gt_venue_taxonomy_counts'?[{category_key:'dining_culinary',subcategory_key:'restaurant_places',place_count:1}]:table==='v_gt_restaurant_entities'?[{...currentVenue,...profile}]:table==='gt_user_profiles'?[{id:'qa-profile',auth_id:session.user.id,full_name:'Restaurant QA',home_city:'atlanta',last_city:'atlanta',vibe_preferences:['food']}]:[]
@@ -99,7 +124,19 @@ for(const width of [320,390,834,1440])test('rendered restaurant facts / retry / 
   await dialog.getByRole('button',{name:'Back to results',exact:true}).click()
   state='missing';await open();assert.equal(await dialog.locator('.gtc-detail-facts').getByText('Cuisine',{exact:true}).count(),0)
   assert.doesNotMatch(await dialog.innerText(),/undefined|\[object Object\]/)
+  for(const [label,url,file] of [
+   ['Order online','https://order.toasttab.com/online/mister-burger-decatur','04-order-action.png'],
+   ['Reserve a table','https://resy.com/cities/atlanta-ga/venues/sargent','05-reservation-action.png']
+  ]){
+   await dialog.getByRole('button',{name:'Back to results',exact:true}).click()
+   actionLink=url;state='ready';await open()
+   const link=dialog.getByRole('link',{name:label+' ↗',exact:true});await link.waitFor()
+   assert.equal(await link.getAttribute('href'),url)
+   await page.screenshot({path:path.join(folder,file)})
+   const actionOverflow=await dialog.evaluate(el=>({dialog:el.scrollWidth-el.clientWidth,body:document.documentElement.scrollWidth-innerWidth}))
+   assert.ok(actionOverflow.dialog<=2&&actionOverflow.body<=2,JSON.stringify(actionOverflow))
+  }
   assert.deepEqual(errors,[])
-  fs.writeFileSync(path.join(folder,'receipt.json'),JSON.stringify({width,scope:'loopback-layout-and-interaction-fixture',facts:true,retry:true,missing:true,back:true,overflow,errors},null,2))
+  fs.writeFileSync(path.join(folder,'receipt.json'),JSON.stringify({width,scope:'loopback-layout-and-interaction-fixture',facts:true,retry:true,missing:true,back:true,order_action:true,reservation_action:true,overflow,errors},null,2))
  }finally{await ctx.close();await browser.close()}
 })
