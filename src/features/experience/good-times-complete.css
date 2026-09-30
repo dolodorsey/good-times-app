@@ -356,3 +356,8 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-form se
 .gt5-complete .gtc-entertainment-venues .gt2-screen-heading>h1{
   text-transform:uppercase;
 }
+
+.gt5-complete .gtc-entertainment-venues .gt-compact-breadcrumb>span,
+.gt5-complete .gtc-entertainment-venues .gt-compact-subcategories>summary{
+  text-transform:uppercase;
+}
