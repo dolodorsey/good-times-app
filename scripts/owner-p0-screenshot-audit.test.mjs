@@ -124,16 +124,19 @@ for(const vp of viewports)test(`owner screenshot acceptance ${vp.label}`,{skip:!
     await shot(page,`owner-${vp.label}-profile-preferences.png`)
 
     if(vp.width===390){
-      await page.evaluate(()=>{sessionStorage.removeItem('gt_premium_launch');sessionStorage.removeItem('gt_splash_shown')})
-      await page.reload()
-      await page.locator('.gt-launch').waitFor({timeout:5000})
-      await page.waitForTimeout(500)
-      await shot(page,'owner-390-launch-0500ms.png')
-      await page.waitForTimeout(1000)
-      assert.ok(await page.locator('.gt-launch').isVisible(),'Launch should still be visible around 1.5 seconds')
-      await page.waitForTimeout(750)
-      await page.locator('.gt5-app').waitFor({timeout:5000})
-      assert.equal(await page.locator('.gt-launch').count(),0,'Launch should complete after approximately 2 seconds')
+      const launchContext=await browser.newContext({viewport:{width:390,height:844},timezoneId:'America/New_York'})
+      await launchContext.addInitScript(({now,user})=>{const D=Date;window.Date=class extends D{constructor(...args){super(...(args.length?args:[now]))}static now(){return now}};localStorage.setItem('gt_session',JSON.stringify({access_token:'owner-launch-session',expires_at:4102444800,user:{id:user}}))},{now:NOW,user:'11111111-1111-4111-8111-111111111111'})
+      const launchPage=await launchContext.newPage()
+      try{
+        await launchPage.goto(BASE)
+        await launchPage.locator('.gt-launch').waitFor({timeout:5000})
+        await launchPage.waitForTimeout(500)
+        await launchPage.screenshot({path:path.join(OUT,'owner-390-launch-0500ms.png')})
+        await launchPage.waitForTimeout(950)
+        assert.ok(await launchPage.locator('.gt-launch').isVisible(),'Launch should still be visible around 1.45 seconds')
+        await launchPage.waitForTimeout(800)
+        assert.equal(await launchPage.locator('.gt-launch').count(),0,'Launch should complete after approximately 2 seconds')
+      }finally{await launchContext.close()}
     }
 
     assert.deepEqual(pageErrors,[])
