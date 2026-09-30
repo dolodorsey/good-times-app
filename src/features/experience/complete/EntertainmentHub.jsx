@@ -55,7 +55,7 @@ export default function EntertainmentHub({
       </div>
     </header>
 
-    <div className="gtc-search"><input aria-label="Search Entertainment" placeholder="Clubs, concerts, festivals, sports, activities…" onKeyDown={e=>{if(e.key==='Enter'&&e.currentTarget.value.trim())onSearch?.(e.currentTarget.value)}}/><button aria-label="Search Entertainment globally" onClick={e=>{const input=e.currentTarget.previousElementSibling;if(input?.value.trim())onSearch?.(input.value)}}>⌕</button></div>
+    <div className="gtc-search"><input aria-label="Search Entertainment" placeholder="Clubs, concerts, sports, activities…" onKeyDown={e=>{if(e.key==='Enter'&&e.currentTarget.value.trim())onSearch?.(e.currentTarget.value)}}/><button aria-label="Search Entertainment globally" onClick={e=>{const input=e.currentTarget.previousElementSibling;if(input?.value.trim())onSearch?.(input.value)}}>⌕</button></div>
     <nav className="gtc-tabs gtc-entertainment-time" aria-label="Entertainment timing">
       {[['tonight','Tonight'],['weekend','This Weekend'],['upcoming','Upcoming']].map(([id,label])=>
         <button key={id} className={mode===id?'active':''} aria-pressed={mode===id} onClick={()=>setMode(id)}>{label}</button>
