@@ -32,14 +32,14 @@ export default async function handler(request,response){
       limit:'1',
     })
     const meta=await fetch(`${CONTENT_URL}/rest/v1/gt_venues?${query}`,{headers:contentHeaders(),cache:'no-store',signal:controller.signal})
-    if(!meta.ok)return send(response,404,'Photo unavailable')
+    if(!meta.ok){console.warn('[GOOD TIMES place photo]',{id,stage:'metadata',status:meta.status});return send(response,404,'Photo unavailable')}
     const rows=await meta.json().catch(()=>[])
     const photos=Array.isArray(rows?.[0]?.photos)?rows[0].photos:[]
     const source=photos.find(value=>GOOGLE_PHOTO.test(String(value||''))&&/[?&]photoreference=/.test(value)&&/[?&]key=/.test(value))
-    if(!source)return send(response,404,'Photo unavailable')
+    if(!source){console.warn('[GOOD TIMES place photo]',{id,stage:'source',photo_count:photos.length});return send(response,404,'Photo unavailable')}
 
     const upstream=await fetch(source,{redirect:'follow',signal:controller.signal,headers:{Accept:'image/avif,image/webp,image/jpeg,image/png,image/*;q=0.8','User-Agent':'GoodTimesPlacePhoto/1.0'}})
-    if(!upstream.ok)return send(response,404,'Photo unavailable')
+    if(!upstream.ok){console.warn('[GOOD TIMES place photo]',{id,stage:'upstream',status:upstream.status});return send(response,404,'Photo unavailable')}
     const type=upstream.headers.get('content-type')||''
     if(!type.startsWith('image/'))return send(response,415,'Photo unavailable')
     const length=Number(upstream.headers.get('content-length')||0)
