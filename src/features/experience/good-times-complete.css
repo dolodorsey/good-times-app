@@ -341,3 +341,13 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-form se
     min-height:44px;
   }
 }
+
+.gt5-complete .gtc-itinerary .gtc-detail-toolbar,
+.gt5-complete .gtc-itinerary .gtc-itinerary-back{
+  pointer-events:auto!important;
+}
+.gt5-complete .gtc-itinerary .gtc-itinerary-back{
+  position:relative!important;
+  z-index:30!important;
+  touch-action:manipulation;
+}
