@@ -12,6 +12,7 @@ import { COMPACT_PILOT } from './compact-pilot-flag.js'
 import CompactVenueCard from './CompactVenueCard.jsx'
 import React,{useCallback,useEffect,useMemo,useRef,useState}from'react'
 import{clearSession,readSession,updatePreferences}from'../auth/client.js'
+import{refreshStoredSession}from'../../gt-auth-session.js'
 import{askGoodTimesConcierge,cityLabel,cityOptions,loadCanonicalEvents,loadCanonicalVenues,loadExploreTaxonomy,loadGoodTimesProfile,loadItineraries,loadSavedItems,loadUserIntelligenceProfile,recordProductEvent,recordTasteSignal,saveItem,todayISO,unsaveItem}from'../intelligence/client.js'
 import ShakeRestaurantPanel from'./ShakeRestaurantPanel.jsx'
 import BuildMyNightPanel from'./BuildMyNightPanel.jsx'
@@ -217,8 +218,9 @@ function ThisWeekOverlay({city,events,venues,onClose,onEvent,onVenue,onExplore})
 }
 
 export default function GoodTimesCommandAppV4({onAuth=null}){
-  const session=useMemo(()=>readSession(),[])
+  const[session,setSession]=useState(()=>readSession())
   const[clockNow,setClockNow]=useState(()=>Date.now())
+  useEffect(()=>{let live=true;const sync=async()=>{const result=await refreshStoredSession().catch(()=>({session:readSession()}));if(!live)return;const next=result?.session||readSession();setSession(current=>current?.access_token===next?.access_token&&current?.expires_at===next?.expires_at?current:next)};void sync();const timer=window.setInterval(()=>void sync(),30000);const focus=()=>void sync();const visibility=()=>{if(document.visibilityState==='visible')void sync()};window.addEventListener('focus',focus);document.addEventListener('visibilitychange',visibility);return()=>{live=false;window.clearInterval(timer);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',visibility)}},[])
   useEffect(()=>{const tick=()=>setClockNow(Date.now());const timer=window.setInterval(tick,60000);document.addEventListener('visibilitychange',tick);window.addEventListener('focus',tick);return()=>{window.clearInterval(timer);document.removeEventListener('visibilitychange',tick);window.removeEventListener('focus',tick)}},[])
   const[profile,setProfile]=useState(null),[intelligence,setIntelligence]=useState(null),[events,setEvents]=useState([]),[venues,setVenues]=useState([]),[taxonomy,setTaxonomy]=useState([]),[saved,setSaved]=useState([]),[plans,setPlans]=useState([])
   const[city,setCity]=useState('atlanta'),[tab,setTab]=useState('home'),[loading,setLoading]=useState(true),[query,setQuery]=useState(''),[intent,setIntent]=useState('')
