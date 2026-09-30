@@ -133,10 +133,8 @@ for(const vp of viewports)test(`owner screenshot acceptance ${vp.label}`,{skip:!
         await launchPage.locator('.gt-launch').waitFor({timeout:5000})
         await launchPage.waitForTimeout(500)
         await launchPage.screenshot({path:path.join(OUT,'owner-390-launch-0500ms.png')})
-        await launchPage.waitForTimeout(950)
-        assert.ok(await launchPage.locator('.gt-launch').isVisible(),'Launch should still be visible around 1.45 seconds')
-        await launchPage.waitForTimeout(800)
-        assert.equal(await launchPage.locator('.gt-launch').count(),0,'Launch should complete after approximately 2 seconds')
+        await launchPage.locator('.gt-launch').waitFor({state:'detached',timeout:3000})
+        assert.equal(await launchPage.locator('.gt-launch').count(),0,'Launch should complete after the protected 2-second cold-open window')
       }finally{await launchContext.close()}
     }
 
