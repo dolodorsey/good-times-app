@@ -1,5 +1,5 @@
-const CONTENT_URL=process.env.KHG_SUPABASE_URL||'https://dzlmtvodpyhetvektfuo.supabase.co'
-const CONTENT_KEY=process.env.KHG_SUPABASE_ANON_KEY||'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
+const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
+const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 const MAX_BYTES=10_000_000
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const GOOGLE_PHOTO=/^https:\/\/maps\.googleapis\.com\/maps\/api\/place\/photo\?/i
