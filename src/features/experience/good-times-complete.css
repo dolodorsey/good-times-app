@@ -297,3 +297,57 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-places{
  html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt5-nav button.active small{color:#f8d46a!important;}
  html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-global-search{max-width:none!important;}
 }
+
+
+/* P0 customer correction: form geometry, readable utility labels, consistent Entertainment headers. */
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-controls,
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-form{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-controls *,
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-form *,
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-lead *{
+  box-sizing:border-box;
+  min-width:0;
+}
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-controls input,
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-controls select,
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-form input,
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-form select{
+  width:100%!important;
+  max-width:100%!important;
+}
+.gt5-complete .gtc-home-utility strong,
+.gt5-complete .gtc-home-utility small{
+  white-space:normal!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+.gt5-complete .gtc-entertainment-venues .gtc-page-heading h1,
+.gt5-complete .gtc-entertainment-venues .gt2-taxonomy-heading>span,
+.gt5-complete .gtc-entertainment-venues .gt2-subcategory-grid strong{
+  text-transform:uppercase;
+}
+.gt5-complete .gtc-interactive .gtc-page-heading h1{
+  text-transform:uppercase;
+}
+@media(max-width:520px){
+  html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-controls,
+  html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-form{
+    grid-template-columns:1fr!important;
+  }
+  html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-controls>button{
+    width:100%;
+    min-height:44px;
+  }
+}
+
+.gt5-complete .gtc-itinerary .gtc-detail-toolbar,
+.gt5-complete .gtc-itinerary .gtc-itinerary-back{
+  pointer-events:auto!important;
+}
+.gt5-complete .gtc-itinerary .gtc-itinerary-back{
+  position:relative!important;
+  z-index:30!important;
+  touch-action:manipulation;
+}

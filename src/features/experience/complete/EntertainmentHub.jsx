@@ -11,13 +11,30 @@ const LANES=[
  ['festivals_major_activations','Festivals + Events','Festivals, activations, major city moments','events','gt-cat-culture.webp'],
  ['sports_watch','Sports','Games, scores, watch parties','sports','gt-cat-sports.webp'],
  ['comedy_performing_arts','Comedy + Live','Comedy, theater, performing arts','events','gt-cat-culture.webp'],
- ['games_interactive','Interactive','Bowling, games, VR, escape rooms','events','gt-cat-adventure.webp'],
+ ['games_interactive','Interactive','Puttshack, darts, VR, racing, game shows, creative play','interactive','gt-cat-adventure.webp'],
  ['family_kids','Family','Kids, family events, discovery','events','gt-cat-adventure.webp'],
  ['attractions_experiences','Attractions','Museums, exhibits, attractions','events','gt-cat-adventure.webp'],
 ]
 
+const INTERACTIVE_MATCH=/puttshack|flight club|cosm|f1 arcade|andretti|topgolf|top golf|sandbox vr|great big game show|spin art|game show|mini golf|darts|vr|immersive|sim[_ -]?racing|karting|arcade|bowling|escape|splatter|rage room/i
+const interactiveVenue=v=>INTERACTIVE_MATCH.test([v?.name,v?.category_key,v?.subcategory,v?.venue_subcategory,...(v?.vibe_tags||[]),...(v?.search_tags||[])].filter(Boolean).join(' '))
+
+export function InteractiveCollection({venues=[],events=[],savedKeys,onEvent,onVenue,onSave,onBack}){
+  const places=useMemo(()=>venues.filter(interactiveVenue).sort((a,b)=>Number(b.quality_score||0)-Number(a.quality_score||0)||String(a.name).localeCompare(String(b.name))).slice(0,30),[venues])
+  const happenings=useMemo(()=>events.filter(e=>e.category_key==='games_interactive'||INTERACTIVE_MATCH.test([e.title,e.venue_name,e.subcategory_key].filter(Boolean).join(' '))).slice(0,16),[events])
+  return <section className="gtc-entertainment gtc-interactive">
+    <header className="gtc-page-heading"><button onClick={onBack} aria-label="Back to Entertainment">←</button><div><h1>Interactive</h1><small>Places to actually do something—games, immersive experiences, VR, racing, mini golf, creative play and live competition.</small></div></header>
+    <Section title="Interactive places" subtext="Persistent Atlanta-area destinations. Open a place for details, hours and booking links.">
+      {places.length?<CollectionGrid items={places} savedKeys={savedKeys} onVenue={onVenue} onSave={onSave}/>:<State title="Interactive places are still being completed" body="GOOD TIMES is filling this lane with real destinations rather than unrelated events."/>}
+    </Section>
+    <Section title="Interactive events" subtext="Dated programming stays separate from the permanent places above.">
+      {happenings.length?<CollectionGrid items={happenings} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>:<State title="No dated interactive events confirmed yet" body="The places above remain available even when no special event is scheduled."/>}
+    </Section>
+  </section>
+}
+
 export default function EntertainmentHub({
-  events=[],now=Date.now(),savedKeys,onEvent,onSave,onSearch,onOpenCategory,onOpenVenues,onOpenSports,onPlan,initialMode='tonight'
+  events=[],now=Date.now(),savedKeys,onEvent,onSave,onSearch,onOpenCategory,onOpenVenues,onOpenSports,onOpenInteractive,onPlan,initialMode='tonight'
 }){
   const [mode,setMode]=useState(initialMode)
   useEffect(()=>{if(['tonight','weekend','upcoming'].includes(initialMode))setMode(initialMode)},[initialMode])
@@ -47,7 +64,7 @@ export default function EntertainmentHub({
 
     <div className="gtc-entertainment-lanes">
       {LANES.map(([key,label,desc,kind,art])=>
-        <button key={label} className="gtc-entertainment-lane" style={{backgroundImage:`linear-gradient(90deg,rgba(5,6,7,.92),rgba(5,6,7,.48)),url("${gtAssetUrl(art,'good-times-backgrounds')}")`}} onClick={()=>kind==='sports'?onOpenSports():kind==='venues'?onOpenVenues(key):onOpenCategory(key)}>
+        <button key={label} className="gtc-entertainment-lane" style={{backgroundImage:`linear-gradient(90deg,rgba(5,6,7,.92),rgba(5,6,7,.48)),url("${gtAssetUrl(art,'good-times-backgrounds')}")`}} onClick={()=>kind==='sports'?onOpenSports():kind==='venues'?onOpenVenues(key):kind==='interactive'?onOpenInteractive?.():onOpenCategory(key)}>
           <span><strong>{label}</strong><small>{desc}</small></span><b aria-hidden="true">↗</b>
         </button>
       )}
