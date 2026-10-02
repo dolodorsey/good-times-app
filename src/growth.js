@@ -1,4 +1,4 @@
-import { KHG_SUPABASE_ANON_KEY, KHG_SUPABASE_URL } from './lib/supabase.js'
+import { GT_SUPABASE_ANON_KEY, GT_SUPABASE_URL, KHG_SUPABASE_ANON_KEY, KHG_SUPABASE_URL } from './lib/supabase.js'
 
 const ALLOWED_EVENTS = new Set([
   'landing_view','signup_cta','app_open','share_click','ticket_click','reservation_click','concierge_request','install_cta',
@@ -206,4 +206,29 @@ export function installGrowthTracking() {
     const classified = classifyClick(event.target)
     if (classified) { recordGrowthEvent(classified[0],classified[1]); maybeFirstAction(classified[0],classified[1]) }
   }, { capture:true, passive:true })
+}
+
+// Copy first-touch attribution and Home Screen install state onto the signed-in user's own
+// auth metadata so the CRM sync can tag the HighLevel contact (GT-IG, GT-IG-BIO, GT-INSTALLED...).
+export async function syncAttributionToAccount(session){
+  try{
+    const userId=session?.user?.id, token=session?.access_token
+    if(!userId||!token)return false
+    const data={}
+    const first=readAttribution().first
+    const attrKey=`gt_attr_synced:${userId}`
+    if(first?.source&&!getStored(attrKey)){
+      data.gt_attribution={first_source:first.source,first_medium:first.medium||'',first_campaign:first.campaign||'',first_content:first.content||'',first_touch_at:first.at||''}
+    }
+    const standalone=(()=>{try{return matchMedia('(display-mode: standalone)').matches||!!navigator.standalone}catch{return false}})()
+    const installKey=`gt_install_synced:${userId}`
+    if(standalone&&!getStored(installKey))data.gt_installed_at=new Date().toISOString()
+    if(!Object.keys(data).length)return false
+    data.gt_meta_updated_at=new Date().toISOString()
+    const response=await fetch(`${GT_SUPABASE_URL}/auth/v1/user`,{method:'PUT',headers:{apikey:GT_SUPABASE_ANON_KEY,Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({data})})
+    if(!response.ok)return false
+    if(data.gt_attribution)setStored(attrKey,'1')
+    if(data.gt_installed_at)setStored(installKey,'1')
+    return true
+  }catch{return false}
 }
