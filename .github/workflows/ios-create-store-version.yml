@@ -16,7 +16,7 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Validate App Store Connect credentials
         env:
@@ -141,7 +141,7 @@ jobs:
 
       - name: Preserve version evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GOOD-TIMES-app-store-version-${{ github.run_number }}
           path: ${{ runner.temp }}/good-times-app-store-version.json
