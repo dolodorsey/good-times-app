@@ -79,7 +79,14 @@ jobs:
             exit 0
           fi
 
-          CHANGED=$(git diff-tree --no-commit-id --name-only -r HEAD)
+          # Compare the tested release against its first parent. Plain diff-tree
+          # suppresses file output for merge commits, which previously caused
+          # real app merges to be misclassified as "no iOS application files changed".
+          if git rev-parse --verify HEAD^1 >/dev/null 2>&1; then
+            CHANGED=$(git diff --name-only HEAD^1 HEAD)
+          else
+            CHANGED=$(git diff-tree --root --no-commit-id --name-only -r HEAD)
+          fi
           printf '%s\n' "$CHANGED"
           if printf '%s\n' "$CHANGED" | grep -Eq '^(src/|public/|api/|scripts/|ios/|package\.json$|package-lock\.json$|capacitor\.config\.|vite\.config\.|index\.html$|\.github/workflows/ios-build\.yml$)'; then
             echo "should-build=true" >> "$GITHUB_OUTPUT"
