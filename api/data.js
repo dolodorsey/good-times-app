@@ -1,3 +1,6 @@
+import { eventFacts, SHOW_PUBLIC_FIELDS } from './event-facts.js'
+import { eventTimeFields } from './event-time-display.js'
+
 const CONTENT_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 const EVENT_FRESHNESS_MAX_HOURS = 72
@@ -8,11 +11,7 @@ const CITY_ALIASES = {
   dallas:'dallas', new_york:'new_york', 'new-york':'new_york', phoenix:'phoenix',
   scottsdale:'scottsdale', las_vegas:'las_vegas', 'las-vegas':'las_vegas',
 }
-const SHOW_SELECT = [
-  'id','event_name','event_type','genre','city_key','show_date','show_time','venue_name','ticket_url',
-  'image_url','organizer','display_priority','good_times_score','category_key_v2','subcategory_key_v2',
-  'is_featured','is_curated','updated_at',
-].join(',')
+const SHOW_SELECT = SHOW_PUBLIC_FIELDS
 const VENUE_SELECT = [
   'id','name','slug','city_key','neighborhood','side_of_town','category_key','subcategory','address',
   'latitude','longitude','phone','website','instagram_handle','short_desc','vibe_tags','best_for','best_time',
@@ -263,9 +262,11 @@ function mapShows(rows) {
   return rows.map((item, index) => {
     const taxonomy = inferCustomerTaxonomy(item)
     return {
+      ...eventFacts(item),
       event_key:`show:${item.id}`, source_table:'gt_shows', source_id:item.id, city_key:item.city_key,
-      title:decodeHtmlEntities(item.event_name), event_date:item.show_date, event_time:item.show_time, venue_name:decodeHtmlEntities(item.venue_name),
+      title:decodeHtmlEntities(item.event_name), event_date:item.show_date, ...eventTimeFields(item), venue_name:decodeHtmlEntities(item.venue_name),
       raw_type:item.event_type, raw_category:item.genre, ticket_url:item.ticket_url, image_url:safePublicImage(item.image_url),
+      description:decodeHtmlEntities(item.description),source_name:item.source,source_url:item.source_url,updated_at:item.updated_at,
       organizer:decodeHtmlEntities(item.organizer), display_priority:item.display_priority, good_times_score:item.good_times_score,
       category_key:taxonomy.category, subcategory_key:taxonomy.subcategory,
       is_featured:item.is_featured, is_curated:item.is_curated, rank_order:index + 1,

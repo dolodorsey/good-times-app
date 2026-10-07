@@ -6,6 +6,9 @@ on:
       - 'supabase/functions/gt-atlanta-venue-adapters/**'
       - 'supabase/functions/gt-atlanta-aisle5-adapter/**'
       - 'supabase/functions/gt-atlanta-eventbrite-refresh/**'
+      - 'supabase/functions/gt-atlanta-source-refresh/**'
+      - 'supabase/functions/gt-atlanta-priority-scout/**'
+      - 'supabase/functions/_shared/gt-source-occurrence.mjs'
       - 'supabase/migrations/2026080223*.sql'
       - 'supabase/rollbacks/2026080223*.sql'
       - 'supabase/migrations/20260803002500_normalize_good_times_explicit_categories.sql'
@@ -40,12 +43,15 @@ jobs:
           deno check --config supabase/functions/gt-atlanta-venue-adapters/deno.json supabase/functions/gt-atlanta-venue-adapters/index.ts
           deno check --config supabase/functions/gt-atlanta-aisle5-adapter/deno.json supabase/functions/gt-atlanta-aisle5-adapter/index.ts
           deno check --config supabase/functions/gt-atlanta-eventbrite-refresh/deno.json supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+          deno check --config supabase/functions/gt-atlanta-source-refresh/deno.json supabase/functions/gt-atlanta-source-refresh/index.ts
+          deno check supabase/functions/gt-atlanta-priority-scout/index.ts
       - name: Verify timezone safeguards
         run: |
           grep -q 'America/New_York' supabase/functions/gt-atlanta-venue-adapters/index.ts
           grep -q 'original_event_datetime' supabase/functions/gt-atlanta-venue-adapters/index.ts
           ! grep -q 'dateValue.toISOString().slice(0, 10)' supabase/functions/gt-atlanta-venue-adapters/index.ts
-          grep -q 'America/New_York' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
+          grep -q 'America/New_York' supabase/functions/_shared/gt-source-occurrence.mjs
+          grep -q '_shared/gt-source-occurrence.mjs' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
           ! grep -q 'date.toISOString().slice(0, 10)' supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
           grep -q 'America/New_York' supabase/functions/gt-atlanta-aisle5-adapter/index.ts
           ! grep -q 'toISOString().slice(0, 10)' supabase/functions/gt-atlanta-aisle5-adapter/index.ts
@@ -58,7 +64,7 @@ jobs:
           grep -q 'outside_atlanta_metro' "$file"
           grep -q 'non_georgia_region' "$file"
           grep -q 'physical_atlanta_required' "$file"
-          grep -q 'last_scrape_status: accepted > 0 ? "success" : "empty"' "$file"
+          grep -q 'last_scrape_status: identityConflicts ? "failed" : accepted > 0 ? "success" : "empty"' "$file"
       - name: Verify Aisle 5 parser safeguards
         run: |
           file='supabase/functions/gt-atlanta-aisle5-adapter/index.ts'

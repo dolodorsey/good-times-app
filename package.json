@@ -31,9 +31,10 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
-    "@capacitor/android": "^8.5.0",
+    "@capacitor/android": "^8.5.2",
     "@capacitor/cli": "^8.5.0",
-    "@capacitor/ios": "^8.5.0",
+    "@capacitor/ios": "^8.5.2",
+    "@electric-sql/pglite": "0.5.8",
     "@vitejs/plugin-react": "^6.0.5",
     "playwright-core": "^1.62.1",
     "vite": "^8.2.0"
