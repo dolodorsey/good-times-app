@@ -156,3 +156,7 @@ For the isolated preview pilot, read `docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.m
 
 ## September 28, 2026 owner-approved information architecture
 The canonical primary navigation is **Home / Places / Plan / Entertainment / Profile**. `Discover` is now the persistent-entity `Places` system; time-based happenings live in `Entertainment`; saved state lives in `Profile → My GOOD TIMES`. This supersedes earlier navigation wording without reducing the protected taxonomy, truth, accessibility, responsiveness, or release requirements.
+
+
+## October 7, 2026 owner-supplied 30-page contract
+The current task supersedes earlier primary-navigation labels/order with **Home / Discover / Entertainment / Plan / Profile**. Saved remains in Profile. Page 01 uses compact headers and dense typed Place/Event rails. Implement sequentially; Page 02 may not start until Page 01 passes live preview, visual, functional and state QA at 95/100 or higher. Existing taxonomy identities and all truth/security safeguards remain binding. This task is preview-only until the requested page gates pass.

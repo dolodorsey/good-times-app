@@ -8,7 +8,7 @@ const details=fs.readFileSync(new URL('../src/features/experience/complete/Detai
 const profileHub=fs.readFileSync(new URL('../src/features/experience/complete/ProfileHub.jsx',import.meta.url),'utf8')
 
 test('protected bottom navigation uses Places and Entertainment without adding a sixth tab',()=>{
-  assert.match(source,/const NAV=\[\['home','⌂','Home'\],\['places','⌕','Places'\],\['plan','＋','Plan'\],\['entertainment','◇','Entertainment'\],\['profile','◎','Profile'\]\]/)
+  assert.match(source,/const NAV=\[\['home','⌂','Home'\],\['places','⌕','Discover'\],\['entertainment','◇','Entertainment'\],\['plan','＋','Plan'\],\['profile','◎','Profile'\]\]/)
   const navLine=source.split('\n').find(x=>x.startsWith('const NAV='))||''
   assert.equal((navLine.match(/\],\[/g)||[]).length+1,5)
   assert.doesNotMatch(navLine,/'saved'/)

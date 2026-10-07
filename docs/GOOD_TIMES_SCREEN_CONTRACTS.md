@@ -95,3 +95,7 @@ For the isolated preview pilot, read `docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.m
 
 ## September 28, 2026 navigation supersession
 The owner-approved primary information architecture is **Home / Places / Plan / Entertainment / Profile**. Earlier references to Discover as the primary entity browser and Saved as a permanent tab are historical only. Their capabilities are preserved through Places, Entertainment, and Profile → My GOOD TIMES; the protected taxonomy, truth rules, responsiveness, accessibility, and release gates remain in force.
+
+
+## October 7, 2026 owner-supplied 30-page contract
+The current task supersedes earlier primary-navigation labels/order with **Home / Discover / Entertainment / Plan / Profile**. Saved remains in Profile. Page 01 uses compact headers and dense typed Place/Event rails. Implement sequentially; Page 02 may not start until Page 01 passes live preview, visual, functional and state QA at 95/100 or higher. Existing taxonomy identities and all truth/security safeguards remain binding. This task is preview-only until the requested page gates pass.

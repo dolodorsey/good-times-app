@@ -15,7 +15,7 @@ test('canonical app keeps the complete taxonomy source while Places and Entertai
  assert.match(source,/const placesTaxonomy=useMemo\(\(\)=>taxonomy\.filter/)
  assert.match(source,/EntertainmentHub/)
  assert.match(source,/RestaurantExplorer/)
- assert.match(source,/const NAV=\[\['home','⌂','Home'\],\['places','⌕','Places'\],\['plan','＋','Plan'\],\['entertainment','◇','Entertainment'\],\['profile','◎','Profile'\]\]/)
+ assert.match(source,/const NAV=\[\['home','⌂','Home'\],\['places','⌕','Discover'\],\['entertainment','◇','Entertainment'\],\['plan','＋','Plan'\],\['profile','◎','Profile'\]\]/)
 })
 
 test('category and subcategory sources stay authoritative instead of becoming a hardcoded replacement',()=>{
@@ -59,7 +59,7 @@ for(const viewport of[{width:390,height:844},{width:1440,height:1000}]){
    await context.route('**/rest/v1/**',r=>{const u=new URL(r.request().url()),t=u.pathname.split('/').at(-1);requests.push({table:t,query:u.search});if(t==='gt_taxonomy_categories')return r.fulfill(json(categories));if(t==='gt_taxonomy_subcategories')return r.fulfill(json(subcategories));if(t==='v_gt_venue_taxonomy_counts')return r.fulfill(json(counts));if(t==='v_gt_venue_taxonomy_directory'){const key=String(u.searchParams.get('category_key')||'').replace(/^eq\./,''),sub=String(u.searchParams.get('subcategory_key')||'').replace(/^eq\./,'');return r.fulfill(json(venues.filter(v=>(!key||v.category_key===key)&&(!sub||v.subcategory_key===sub))))}if(t==='v_gt_restaurant_entities')return r.fulfill(json(venues.filter(v=>v.category_key==='dining_culinary').map(v=>({...v,service_level:'upscale',cuisine_tags:['seafood'],occasion_tags:['date_night'],meal_tags:['dinner'],restaurant_vibe_tags:['high_energy'],feature_tags:['full_bar'],dietary_tags:[],ownership_tags:[],profile_confidence:90,needs_review:false}))));if(t==='gt_user_profiles')return r.fulfill(json([{id:'22222222-2222-4222-8222-222222222222',auth_id:'11111111-1111-4111-8111-111111111111',full_name:'Taxonomy QA'}]));return r.fulfill(json([]))})
    await context.route('**/functions/v1/**',r=>r.fulfill(json({ok:true,events:[],venues:[]})))
    await context.route('https://www.openstreetmap.org/**',r=>r.fulfill({status:200,contentType:'text/html',body:'<p>map fixture</p>'}))
-   await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:20000});await page.locator('.gt5-nav').getByRole('button',{name:'Places',exact:true}).click();await page.locator('.gtc-place-lanes').waitFor({timeout:15000})
+   await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:20000});await page.locator('.gt5-nav').getByRole('button',{name:'Discover',exact:true}).click();await page.locator('.gtc-place-lanes').waitFor({timeout:15000})
    assert.deepEqual(await page.locator('.gtc-place-lanes strong').allTextContents(),FAMILIES.map(x=>x[1]));await capture('all-place-families')
    for(const [key,label] of FAMILIES){
     if(key==='dining_culinary'){

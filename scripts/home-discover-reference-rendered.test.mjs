@@ -31,7 +31,7 @@ for(const vp of[{width:320,height:740},{width:390,height:844},{width:430,height:
    await ctx.route('https://www.openstreetmap.org/**',r=>r.fulfill({status:200,contentType:'text/html',body:'<p>map fixture</p>'}))
    await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:20000});await page.locator('.gt5-app').waitFor({timeout:15000});await page.waitForTimeout(350)
    const nav=page.locator('.gt5-nav button')
-   assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Places','Plan','Entertainment','Profile'])
+   assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Discover','Entertainment','Plan','Profile'])
    const homeModes=page.locator('.gt5-home-modes button');assert.deepEqual(await homeModes.allTextContents(),['For You','Upcoming','Tonight'])
    const homeCards=page.locator('.gtc-home .gtc-card');assert.ok(await homeCards.count()>=4,'Home should expose multiple useful choices')
    const cardBoxes=await homeCards.evaluateAll(items=>items.slice(0,6).map(x=>({x:x.getBoundingClientRect().x,y:x.getBoundingClientRect().y,w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height})))

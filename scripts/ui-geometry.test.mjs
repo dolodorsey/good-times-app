@@ -88,7 +88,7 @@ async function assertShell(page,errors,context){
   assert.deepEqual(g.oversizedOverlays,[],`${context}: full-screen overlay wider/taller than viewport`)
   assert.ok(g.app&&g.topbar&&g.nav&&g.main,`${context}: V4 shell is incomplete`)
   assert.ok(g.appOverflow<=4,`${context}: app shell clips ${g.appOverflow}px instead of delegating scroll to main`)
-  assert.deepEqual(g.labels,['Home','Places','Plan','Entertainment','Profile'],`${context}: protected V4 navigation changed`)
+  assert.deepEqual(g.labels,['Home','Discover','Entertainment','Plan','Profile'],`${context}: protected V4 navigation changed`)
   if(g.profile){
     assert.ok(g.profileHorizontallyContained,`${context}: Profile escaped the app scroll canvas`)
     if(g.profile.h>g.main.h+2){assert.ok(g.mainScrollHeight>g.mainClientHeight,`${context}: long Profile is clipped instead of scrollable`);assert.match(g.mainOverflowY||'',/auto|scroll/,`${context}: Profile scroll container is not enabled`)}
