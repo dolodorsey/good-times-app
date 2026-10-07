@@ -47,3 +47,13 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen="home"] {
 }
 html body.gt-complete-mode #root .gt5-app.gt5-complete .gt01-add-space{width:44px;height:44px;min-width:44px;display:grid;place-items:center;border:1px solid #695a37;border-radius:50%;color:#f3d48e;text-decoration:none;font-size:22px;}
 @media(max-width:359px){html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen="home"] .gt5-brand strong{font-size:13px!important;}html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen="home"] .gt5-city{font-size:10px!important;padding:0 4px!important;}html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen="home"] .gt01-rail-item{flex-basis:132px;}}
+@media(max-width:359px){
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen="home"]{
+  & .gt5-topbar{padding-left:10px!important;padding-right:10px!important;gap:4px!important;}
+  & .gt5-brand{min-width:0!important;width:auto!important;max-width:128px!important;gap:5px!important;flex:1!important;}
+  & .gt5-topbar .gt5-brand strong{font-size:11px!important;letter-spacing:.06em!important;white-space:nowrap!important;}
+  & .gt5-top-actions{flex:0 0 auto!important;gap:3px!important;}
+  & .gt5-city{max-width:72px!important;}
+  & .gt5-nav small{font-size:9px!important;}
+ }
+}
