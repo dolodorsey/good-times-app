@@ -91,6 +91,7 @@ for(const width of [320,390,834,1440])test('rendered restaurant facts / retry / 
   const currentVenue={...venue,freshness_expires_at:new Date(Date.now()+86400000).toISOString()}
   const session={access_token:'gt-restaurant-fixture-access',refresh_token:'gt-restaurant-fixture-refresh',expires_at:Math.floor(Date.now()/1000)+86400,user:{id:'gt-restaurant-fixture-user',email:'restaurant.qa@goodtimes.invalid'}}
   await ctx.addInitScript(s=>{localStorage.setItem('gt_session',JSON.stringify(s));localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['food'],age:'25-34'}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},session)
+  await ctx.route('**/api/health**',r=>r.fulfill(response({ok:true,service:'good-times',customer_ready:true,content_ready:true})))
   await ctx.route('**/api/data**',r=>r.fulfill(response({ok:true,connected:true,degraded:false,city:'atlanta',counts:{events:0,venues:1},events:[],venues:[currentVenue]})))
   await ctx.route('**/api/browse**',r=>{const url=new URL(r.request().url());return r.fulfill(response({ok:true,items:url.searchParams.get('kind')==='venue'?[{...currentVenue,booking_link:actionLink,restaurant_profile:state==='ready'?normalizeRestaurantProfile(profile,id):null,restaurant_profile_state:state}]:[],nextCursor:null,countType:'returned'}))})
   await ctx.route('**/rest/v1/**',r=>{
@@ -102,7 +103,7 @@ for(const width of [320,390,834,1440])test('rendered restaurant facts / retry / 
   await ctx.route('**/functions/v1/**',r=>r.fulfill(response({ok:true,events:[],venues:[currentVenue]})))
   const page=await ctx.newPage();page.on('pageerror',e=>errors.push(String(e)))
   await page.goto(BASE,{waitUntil:'domcontentloaded'});await page.locator('.gt5-nav').waitFor({timeout:30000})
-  await page.locator('.gt5-nav button').filter({hasText:'Places'}).click()
+  await page.locator('.gt5-nav button').filter({hasText:'Discover'}).click()
   const open=()=>page.getByRole('button',{name:'View Restaurant Detail QA',exact:true}).first().click()
   await open();const dialog=page.getByRole('dialog',{name:'Restaurant Detail QA',exact:true})
   await dialog.locator('.gtc-detail-facts').getByText('Tapas',{exact:true}).waitFor()
