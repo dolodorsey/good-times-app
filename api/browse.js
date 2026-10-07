@@ -6,11 +6,12 @@ import {KHG_SUPABASE_URL,KHG_SUPABASE_ANON_KEY} from '../src/lib/supabase.js'
 import {inferCustomerTaxonomy} from './data.js'
 import {correctDisplayEvents} from '../src/features/experience/complete/taxonomy.js'
 import {eventTimeFields} from './event-time-display.js'
+import {eventFacts,SHOW_PUBLIC_FIELDS} from './event-facts.js'
 import {selectedCityClock,dateNumber,eventIsDiscoverable} from '../src/features/experience/good-times-event-clock.js'
 import {safeLink,safeImage,occurrenceUsable,shiftDate} from '../src/features/experience/complete/model.js'
 import {RESTAURANT_PROFILE_FIELDS,normalizeRestaurantProfile} from '../src/features/experience/complete/restaurant-facts.js'
 const KEY=/^[A-Za-z0-9_-]{1,100}$/
-const SHOW_FIELDS='id,city_key,artist_id,venue_id,event_name,event_type,genre,show_date,show_time,doors_time,venue_name,venue_address,image_url,ticket_url,ticket_price_min,ticket_price_max,is_free,is_sold_out,age_requirement,description,organizer,source,source_url,status,quality_score,good_times_score,display_priority,is_featured,is_curated,category_key_v2,subcategory_key_v2,updated_at'
+const SHOW_FIELDS=SHOW_PUBLIC_FIELDS
 const VENUE_FIELDS='id,city_key,name,neighborhood,category_key,subcategory,address,latitude,longitude,phone,website,short_desc,long_desc,hero_image,photos,booking_link,hours,hours_summary,dress_code,price_range,age_range,status,is_verified,verification_status,verified_at,freshness_expires_at,is_stock_photo,photo_credit,vibe_tags,amenity_tags,dietary_tags,is_black_owned'
 const quote=s=>'"'+String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"'
 const textPattern=s=>'*'+s.replace(/[\\%_*]/g,x=>'\\'+x)+'*'
@@ -48,7 +49,7 @@ export function mapShow(row,now=Date.now()) {
  if(!safeLink(row.ticket_url||row.source_url))return null
  // Strong source taxonomy rules remain authoritative; do not inherit arena=concert.
  const strongest=['sports_watch','comedy_performing_arts','wellness_fitness'].includes(taxonomy.category)?taxonomy.category:category
- const event={event_key:'show:'+row.id,id:row.id,city_key:'atlanta',source_table:'gt_shows',source_id:row.id,title:row.event_name,event_date:row.show_date,...eventTimeFields(row),category_key:strongest,subcategory_key:row.subcategory_key_v2||taxonomy.subcategory,venue_id:row.venue_id,venue_name:row.venue_name,venue_address:row.venue_address,image_url:safeImage(row.image_url),ticket_url:safeLink(row.ticket_url),source_url:safeLink(row.source_url),source_name:row.source,description:row.description,organizer:row.organizer,is_free:row.is_free===true,age_requirement:row.age_requirement,is_featured:row.is_featured,is_curated:row.is_curated,quality_score:row.quality_score,good_times_score:row.good_times_score,updated_at:row.updated_at,is_verified:row.status==='confirmed'}
+ const event={...eventFacts(row),event_key:'show:'+row.id,id:row.id,city_key:'atlanta',source_table:'gt_shows',source_id:row.id,title:row.event_name,event_date:row.show_date,...eventTimeFields(row),category_key:strongest,subcategory_key:row.subcategory_key_v2||taxonomy.subcategory,venue_name:row.venue_name,image_url:safeImage(row.image_url),ticket_url:safeLink(row.ticket_url),source_url:safeLink(row.source_url),source_name:row.source,description:row.description,organizer:row.organizer,is_featured:row.is_featured,is_curated:row.is_curated,display_priority:row.display_priority,quality_score:row.quality_score,good_times_score:row.good_times_score,freshness_tier:row.freshness_tier,updated_at:row.updated_at,is_verified:row.status==='confirmed'}
  const fixed=correctDisplayEvents([event])[0];return fixed.category_key&&eventIsDiscoverable(fixed,'atlanta',now)?fixed:null
 }
 async function rows(table,params,fetcher,timeoutMs=6500) {

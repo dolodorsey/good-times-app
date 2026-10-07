@@ -7,6 +7,7 @@ import {
 } from './data.js'
 import { scoreGoodTimesEvent } from './good-times-intelligence.js'
 import { eventTimeFields, validClock } from './event-time-display.js'
+import { eventFacts } from './event-facts.js'
 import { dedupeEventOccurrences, inventoryCacheKey } from './event-occurrences.js'
 import ATLANTA_FALLBACK_SNAPSHOT from './atlanta-fallback-snapshot.js'
 
@@ -183,6 +184,7 @@ function customerReadyEvent(item,clock){
   return true
 }
 function mapEvents(rows){return rows.map((item,index)=>{const taxonomy=inferCustomerTaxonomy(item);return{
+  ...eventFacts(item),
   event_key:`show:${item.id}`,source_table:'gt_shows',source_id:item.id,city_key:item.city_key,
   title:decode(item.event_name),event_date:item.show_date,...eventTimeFields(item),venue_name:decode(item.venue_name),
   raw_type:item.event_type,raw_category:item.genre,description:decode(item.description),ticket_url:item.ticket_url,image_url:safeImage(item.image_url),organizer:decode(item.organizer),
