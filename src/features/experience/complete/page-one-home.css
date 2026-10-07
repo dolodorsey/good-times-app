@@ -57,3 +57,6 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete .gt01-add-space{width:44p
   & .gt5-nav small{font-size:9px!important;}
  }
 }
+
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen="home"] .gt01-home .gtc-loading{display:flex!important;overflow:hidden;gap:9px!important;}
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen="home"] .gt01-home .gtc-loading>div{flex:0 0 142px;min-height:230px;}

@@ -27,13 +27,13 @@ export default function PageOneHome({events,venues,profile,savedKeys,onEvent,onV
   <div className="gt01-context"><span>ATLANTA · {new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'}).format(now)}</span><button onClick={()=>onSearch('')} aria-label="Search Atlanta"><GoodTimesIcon name="search" size={18}/></button></div>
   <div className="gt01-intent-heading"><h1>What’s your mood?</h1><button onClick={onPlaces}>Explore all ↗</button></div>
   <div className="gt01-intents" aria-label="Choose your intent">{INTENTS.map(([label,category,icon],i)=><button key={label} style={{'--intent-accent':['#e8af62','#b999ec','#e990ab','#e37da4','#88b5f7','#ed9a6b','#73d2cf','#93c8ad','#b9afe7'][i]}} onClick={()=>onIntent(category,label)}><GoodTimesIcon name={icon} size={23}/><span>{label}</span></button>)}</div>
-  {error&&<State error title="Some recommendations couldn’t refresh" body={error} action={<button onClick={onRetry}>Retry feed</button>}/>}
-  {loading&&!places.length&&!current.length?<Skeleton count={4}/>:<>
+  {error&&<State error title="Some recommendations couldn’t refresh" body="Your feed is temporarily unavailable. Try again in a moment." action={<button onClick={onRetry}>Retry feed</button>}/>}
+  {loading&&!places.length&&!current.length?<><Section title="Right Now in ATL"><Skeleton count={3}/></Section><Section title="Tonight in Atlanta"><Skeleton count={3}/></Section></>:<>
    <Section title="Right Now in ATL" subtext="Places worth knowing. Check current hours before you go." action={<button onClick={onPlaces}>See all ↗</button>}>
     {places.length?<Rail items={diverseHomeItems(places,6)} {...cardProps}/>:<State title="Places are taking a moment" body="Explore Atlanta or retry the feed." action={<button onClick={onPlaces}>Discover places</button>}/>}
    </Section>
    <Section title="Tonight in Atlanta" action={<button onClick={()=>onEntertainment('tonight')}>See all ↗</button>}>
-    {tonight.length?<Rail items={tonight} {...cardProps}/>:<State title="No verified events for tonight yet" body="Explore upcoming dates or build a night around a place." action={<button onClick={()=>onEntertainment('upcoming')}>Upcoming events</button>}/>}
+    {tonight.length?<Rail items={tonight} {...cardProps}/>:<State title={error?"Tonight couldn’t refresh":"No verified events for tonight yet"} body="Explore upcoming dates or build a night around a place." action={<button onClick={()=>onEntertainment('upcoming')}>Upcoming events</button>}/>}
    </Section>
    <Section title="Build Tonight" subtext="Three ways to make it yours."><div className="gt01-planning">{[['guided','Build It','Pick the pieces','list'],['shake','Shake It','Find a surprise','sparkle'],['ask','Ask GOOD TIMES','Tell us your idea','chat']].map(([id,title,sub,icon])=><button key={id} className={`gt01-plan-${id}`} onClick={()=>onPlan(id)}><GoodTimesIcon name={icon} size={22}/><strong>{title}</strong><small>{sub}</small><span aria-hidden="true">↗</span></button>)}</div></Section>
    <Section title={list(profile?.vibe_preferences).length?'Picked for you':'GOOD TIMES Picks'} subtext={list(profile?.vibe_preferences).length?'Inspired by your saved preferences.':'A starting point for your next good time.'} action={<button onClick={onPreferences}>Personalize ↗</button>}>
