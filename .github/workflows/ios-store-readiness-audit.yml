@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
       - name: Audit localization and screenshot readiness
         env:
@@ -57,7 +57,7 @@ jobs:
           out=Path(os.environ['RUNNER_TEMP'])/'good-times-store-readiness.json'; out.write_text(json.dumps(evidence,indent=2),encoding='utf-8'); print(json.dumps(evidence,indent=2))
           PY
       - name: Preserve readiness evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GOOD-TIMES-store-readiness-${{ github.run_number }}
           path: ${{ runner.temp }}/good-times-store-readiness.json

@@ -16,11 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '24'
           cache: npm
@@ -47,7 +47,7 @@ jobs:
           mkdir -p /tmp/gt-source
           git archive --format=tar HEAD | tar -xf - -C /tmp/gt-source
           git rev-parse HEAD > /tmp/gt-source/SOURCE_COMMIT.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: compact-pilot-source-${{ github.event.pull_request.head.sha || github.sha }}
@@ -56,7 +56,7 @@ jobs:
           retention-days: 7
       - name: Upload actual browser evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: compact-pilot-evidence-${{ github.event.pull_request.head.sha || github.sha }}
           path: test-artifacts/compact-pilot/
