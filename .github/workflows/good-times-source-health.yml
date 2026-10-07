@@ -44,7 +44,7 @@ jobs:
           deno check --config supabase/functions/gt-atlanta-aisle5-adapter/deno.json supabase/functions/gt-atlanta-aisle5-adapter/index.ts
           deno check --config supabase/functions/gt-atlanta-eventbrite-refresh/deno.json supabase/functions/gt-atlanta-eventbrite-refresh/index.ts
           deno check --config supabase/functions/gt-atlanta-source-refresh/deno.json supabase/functions/gt-atlanta-source-refresh/index.ts
-          deno check supabase/functions/gt-atlanta-priority-scout/index.ts
+          deno check --node-modules-dir=auto supabase/functions/gt-atlanta-priority-scout/index.ts
       - name: Verify timezone safeguards
         run: |
           grep -q 'America/New_York' supabase/functions/gt-atlanta-venue-adapters/index.ts
