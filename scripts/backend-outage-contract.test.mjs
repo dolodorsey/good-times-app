@@ -58,6 +58,38 @@ test('GOOD TIMES health fails closed when the customer/auth plane is unavailable
   assert.equal(health.degraded, false)
 })
 
+test('GOOD TIMES health uses the Atlanta service date through midnight and daylight-saving transitions', async () => {
+  const cases = [
+    ['2026-10-07T03:59:59Z', '2026-10-06'],
+    ['2026-10-07T04:00:00Z', '2026-10-06'],
+    ['2026-10-07T07:59:59Z', '2026-10-06'],
+    ['2026-10-07T08:00:00Z', '2026-10-07'],
+    ['2026-11-01T05:30:00Z', '2026-10-31'],
+    ['2026-11-01T06:30:00Z', '2026-10-31'],
+    ['2026-11-01T09:00:00Z', '2026-11-01'],
+    ['2026-03-08T06:59:59Z', '2026-03-07'],
+    ['2026-03-08T07:00:00Z', '2026-03-07'],
+    ['2026-03-08T08:00:00Z', '2026-03-08'],
+  ]
+  for (const [instant, expectedDate] of cases) {
+    let requestedDate
+    const health = await getGoodTimesHealth(async (url, options = {}) => {
+      if (String(url).includes('/rpc/gt_public_live_inventory_cached')) {
+        const request = JSON.parse(options.body)
+        requestedDate = request.p_service_date
+        // The healthy cache belongs to the active night, including after midnight.
+        return requestedDate === expectedDate
+          ? jsonResponse({ events: [], venues: [] })
+          : jsonResponse({ error: 'service_date_miss' }, false, 503)
+      }
+      return jsonResponse([{ id: 'fixture' }])
+    }, new Date(instant))
+    assert.equal(requestedDate, expectedDate, instant)
+    assert.equal(health.content_ready, true, instant)
+    assert.equal(health.degraded, false, instant)
+  }
+})
+
 test('GOOD TIMES health stays available in degraded mode when the verified Atlanta snapshot protects a content-plane outage', async () => {
   const health = await getGoodTimesHealth(async (url) => {
     if (String(url).includes('czocqfaovfpjweayniuw')) return jsonResponse([{ id: 'fixture' }])
