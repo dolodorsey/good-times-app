@@ -5,6 +5,7 @@ const BASE=process.env.GT_UI_BASE
 const CHROME=process.env.GT_UI_CHROME_PATH
 const OUT=process.env.GT_UI_ARTIFACTS||'ui-artifacts'
 if(!BASE)throw new Error('GT_UI_BASE is required')
+if(!['localhost','127.0.0.1'].includes(new URL(BASE).hostname))throw new Error('Fixture screenshots require a local build')
 const {chromium}=await import('playwright-core')
 
 const SESSION={access_token:'gt-app-store-fixture-access',refresh_token:'gt-app-store-fixture-refresh',expires_at:Math.floor(Date.now()/1000)+86400,user:{id:'gt-app-store-fixture-user',email:'app.review@goodtimes.invalid'}}
@@ -37,16 +38,17 @@ try{
   for(const target of targets){
     const context=await browser.newContext({viewport:{width:target.width,height:target.height},deviceScaleFactor:target.scale})
     await context.addInitScript(session=>{localStorage.setItem('gt_session',JSON.stringify(session));localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['nightlife','grown'],age:'25-34'}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},SESSION)
+    await context.route('**/api/health',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,service:'good-times',customer_ready:true,content_ready:true})}))
     const page=await context.newPage()
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
     await page.waitForSelector('.gt5-app',{state:'visible',timeout:20000})
     await page.waitForSelector('.gtc-home',{state:'visible',timeout:20000})
     await capture(page,target,'01-home')
 
-    await openTab(page,'Places','.gtc-places')
-    await capture(page,target,'02-places')
+    await openTab(page,'Discover','.gtc-places')
+    await capture(page,target,'02-discover')
 
-    await openTab(page,'Plan','.gtc-planner')
+    await openTab(page,'Plan','[data-page="23"]')
     await capture(page,target,'03-plan')
 
     await openTab(page,'Entertainment','.gtc-entertainment')
