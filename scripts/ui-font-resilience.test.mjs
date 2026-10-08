@@ -67,7 +67,7 @@ test('the app still renders when the font host is unreachable', { skip }, async 
     const pageErrors = []
     page.on('pageerror', (error) => pageErrors.push(String(error).slice(0, 200)))
 
-    await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60_000 })
+    await ctx.route('**/api/health',r=>r.fulfill({json:{ok:true,service:'good-times',customer_ready:true,content_ready:true}}));await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60_000 })
     await settle(page)
 
     const mounted = await page.evaluate(() => {
@@ -137,7 +137,7 @@ test('no bundled stylesheet blocks rendering on a third-party font import', { sk
       if (body) stylesheets.push({ url: response.url(), body })
     })
 
-    await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60_000 })
+    await ctx.route('**/api/health',r=>r.fulfill({json:{ok:true,service:'good-times',customer_ready:true,content_ready:true}}));await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60_000 })
     await page.waitForTimeout(4_000)
 
     const offenders = stylesheets
@@ -171,7 +171,7 @@ test('images that reach the browser actually decode', { skip }, async () => {
       if (response.request().resourceType() === 'image' && response.ok()) delivered.add(response.url())
     })
 
-    await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60_000 })
+    await ctx.route('**/api/health',r=>r.fulfill({json:{ok:true,service:'good-times',customer_ready:true,content_ready:true}}));await page.goto(BASE, { waitUntil: 'domcontentloaded', timeout: 60_000 })
     await settle(page)
     await page.waitForTimeout(2_500)
 

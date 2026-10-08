@@ -48,7 +48,7 @@ test('mobile V4 keeps utilities inside the canonical app shell and Profile usabl
     await routes(ctx)
     const page=await ctx.newPage(),errors=[]
     page.on('pageerror',error=>errors.push(String(error)))
-    await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
+    await ctx.route('**/api/health',r=>r.fulfill({json:{ok:true,service:'good-times',customer_ready:true,content_ready:true}}));await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
     await page.waitForSelector('.gt5-app',{state:'visible',timeout:15000})
 
     const legacy=await page.evaluate(()=>['.gt-mobile-utilities','.gt-connect-fab','.gt-account-fab','.gt-party-pulse','.gt-utility-fab','[aria-label="Open GOOD TIMES utilities"]','[aria-label="Tickets and paid experiences"]','[aria-label="Open GOOD TIMES account"]','.gt4-nav','.gt2-nav'].filter(selector=>document.querySelector(selector)))

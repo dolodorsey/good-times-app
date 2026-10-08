@@ -42,7 +42,7 @@ async function open(width,height,mobile=false){
   await routes(ctx)
   const page=await ctx.newPage(),errors=[]
   page.on('pageerror',error=>errors.push(String(error)))
-  await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
+  await ctx.route('**/api/health',r=>r.fulfill({json:{ok:true,service:'good-times',customer_ready:true,content_ready:true}}));await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
   await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
   await page.waitForTimeout(900)
   return{ctx,page,errors}

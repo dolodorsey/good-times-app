@@ -127,7 +127,8 @@ for(const vp of viewports)test(`owner screenshot acceptance ${vp.label}`,{skip:!
       await launchContext.addInitScript(({now,user})=>{const D=Date;window.Date=class extends D{constructor(...args){super(...(args.length?args:[now]))}static now(){return now}};localStorage.setItem('gt_session',JSON.stringify({access_token:'owner-launch-session',expires_at:4102444800,user:{id:user}}))},{now:NOW,user:'11111111-1111-4111-8111-111111111111'})
       const launchPage=await launchContext.newPage()
       try{
-        await launchPage.goto(BASE)
+        await launchContext.route('**/api/health',r=>r.fulfill({json:{ok:true,service:'good-times',customer_ready:true,content_ready:true}}))
+        await launchPage.goto(BASE,{waitUntil:'domcontentloaded'})
         await launchPage.locator('.gt-launch').waitFor({timeout:5000})
         await launchPage.waitForTimeout(500)
         await launchPage.screenshot({path:path.join(OUT,'owner-390-launch-0500ms.png')})

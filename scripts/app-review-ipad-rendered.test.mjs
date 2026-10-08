@@ -29,6 +29,8 @@ for(const vp of viewports){
         user: { id: '00000000-0000-4000-8000-000000000001', email: 'ui-proof@goodtimes.invalid', user_metadata: { full_name: 'GOOD TIMES QA' } },
       }))
     })
+    assert.ok(['localhost','127.0.0.1'].includes(new URL(BASE).hostname),'Fixture sessions are loopback only')
+    await context.route('**/api/health',r=>r.fulfill({json:{ok:true,service:'good-times',customer_ready:true,content_ready:true}}))
     const page=await context.newPage()
     const errors=[]
     page.on('pageerror',error=>errors.push(String(error?.message||error)))

@@ -25,3 +25,4 @@ html body.gt-app-mode.gt5-mode.gt-complete-mode #root .gt5-app.gt5-complete .gt3
 html body.gt-app-mode.gt5-mode.gt-complete-mode #root .gt5-app.gt5-complete .gt30-chips label{display:flex;align-items:center;gap:6px;font-size:11px;color:#bbb2c4}
 html body.gt-app-mode.gt5-mode.gt-complete-mode #root .gt5-app.gt5-complete .gt30-chips select{background:#1a171f;color:#ddd0ee;border:1px solid #4a3a5d;border-radius:8px;padding:8px;font-size:11px;max-width:170px;min-height:36px}
 html body.gt-app-mode.gt5-mode.gt-complete-mode #root .gt5-app.gt5-complete .gt30-page .gt-compact-category-grid>button{background-image:var(--category-art)!important;background-size:cover!important;background-position:center!important}
+html body.gt-app-mode.gt5-mode.gt-complete-mode #root .gt5-app.gt5-complete .gt30-page[data-page="07"] .gtc-restaurants>.gtc-page-heading{display:none!important}
