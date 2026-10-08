@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Validate exact Gitleaks historical exceptions without printing secret values."""
-import base64, json, re, subprocess
+import base64, hashlib, json, re, subprocess
 from pathlib import Path
 
 FINGERPRINT = re.compile(r'([0-9a-f]{40}):([^:]+):(jwt|generic-api-key):([1-9][0-9]*)')
@@ -10,6 +10,15 @@ REVIEWED_ISSUERS = frozenset(('supabase','HS256','sup'))
 RETIRED_PRIVATE = frozenset({
     '17816714552bcb22947486e035c75df50ed54699:public/admin.html:jwt:143',
 })
+
+# Scanner false positive in the owner-provided prose contract. Only this immutable
+# commit/path/line AND the exact non-credential text are accepted.
+REVIEWED_PROSE = {'80f4fa0f73fd9cb61c9cee8f83ac4a14c7c7d872:docs/all-pages/20_Event_Detail.md:generic-api-key:18': (4142026660, 1939010864, 2837666815, 2813203476, 4236528740, 200692683, 981803160, 3997669070), '733de0880c41b125acc772b2875c2ea579971d91:scripts/validate-secret-exceptions.py:generic-api-key:18': (515855373, 2166474234, 213088171, 4291603288, 1821460145, 1818793157, 1582720848, 1052905127)}
+
+def reviewed_prose(entry,rule,line):
+    digest=hashlib.sha256(line.encode()).digest()
+    words=tuple(int.from_bytes(digest[i:i+4],'big') for i in range(0,32,4))
+    return rule == 'generic-api-key' and entry in REVIEWED_PROSE and words == REVIEWED_PROSE[entry]
 
 def claims(token):
     part=token.split('.')[1]
@@ -73,7 +82,7 @@ def validate(entries):
                 failures.append(entry + ' (retired-private source no longer matches exact expected identity)')
             else:
                 retired_count += 1
-        elif public_line(rule,line):
+        elif reviewed_prose(entry,rule,line) or public_line(rule,line):
             public_count += 1
         else:
             failures.append(entry + ' (not verified public and not approved retired-private fingerprint)')
@@ -96,7 +105,13 @@ def selftest():
     assert not retired_private_line('jwt',fake('anon',ref='dzlmtvodpyhetvektfuo'))
     assert not retired_private_line('jwt',fake('service_role',ref='other-project'))
     assert not FINGERPRINT.fullmatch('public/admin.html:jwt:143')
-    print('8 exception-validator safety assertions passed')
+    entry = next(iter(REVIEWED_PROSE))
+    commit,path,rule,number=FINGERPRINT.fullmatch(entry).groups()
+    prose=subprocess.check_output(['git','show',commit+':'+path]).decode().splitlines()[int(number)-1]
+    assert reviewed_prose(entry,'generic-api-key',prose)
+    assert not reviewed_prose(entry,'generic-api-key','sb_secret_synthetic_test_only')
+    assert not reviewed_prose('another-commit','generic-api-key',prose)
+    print('11 exception-validator safety assertions passed')
 
 if __name__ == '__main__':
     selftest()

@@ -10,6 +10,9 @@ const FIXED=Date.parse('2026-09-14T12:00:00Z')
 const PHOTO='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics/LOCATION_IMAGES/REVEL.webp'
 const rows=[['morning','Morning fixture','2026-09-14','09:00',99],['unknown','Unknown time fixture','2026-09-14',null,98],['evening','Evening fixture','2026-09-14','20:00',97],['tuesday','Tuesday fixture','2026-09-15','20:00',96],['friday','Friday fixture','2026-09-18','20:00',95],['nextmonday','Next Monday fixture','2026-09-21','20:00',94]]
 const EVENTS=rows.map(([id,title,date,time,score])=>({event_key:`time-fixture:${id}`,title,event_date:date,event_time:time,city_key:'atlanta',venue_name:'Calendar Test Venue',category_key:'concerts_live_music',image_url:PHOTO,ticket_url:'https://example.invalid/never-send',quality_score:score,is_verified:true}))
+async function assertCards(page,expected){
+ let actual=[],stable=0;for(let i=0;i<100;i++){actual=await page.locator('.gtc-entertainment .gtc-card h3').allTextContents();stable=JSON.stringify(actual)===JSON.stringify(expected)?stable+1:0;if(stable===5)break;await page.waitForTimeout(50)}assert.deepEqual(actual,expected);assert.ok(stable===5,'Results must remain stable after the collection refresh')
+}
 const json=x=>({status:200,contentType:'application/json',body:JSON.stringify(x)})
 for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,height:1194}]){
  test(`${vp.name}: Tonight and This Weekend render the correct fixture set`,{skip,timeout:45000},async()=>{
@@ -26,6 +29,7 @@ for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,he
    await context.route('**/api/**',route=>{
     const pathname=new URL(route.request().url()).pathname
     if(pathname==='/api/health')return route.fulfill(json({ok:true,service:'good-times',customer_ready:true,content_ready:true}))
+    if(pathname==='/api/browse'){const q=new URL(route.request().url()).searchParams;return route.fulfill(json({ok:true,items:EVENTS.filter(e=>e.event_date>=q.get('from')&&e.event_date<=q.get('to')),nextCursor:null}))}
     if(pathname.startsWith('/api/data'))return route.fulfill(json({ok:true,connected:true,degraded:false,city:'atlanta',events:EVENTS,venues:[],counts:{events:EVENTS.length,venues:0}}))
     return route.fulfill(json({ok:true}))
    })
@@ -35,15 +39,17 @@ for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,he
    await page.locator('.gt5-app').waitFor({state:'visible',timeout:15000})
    await page.waitForTimeout(600)
    const nav=page.locator('.gt5-nav button')
-   assert.deepEqual((await nav.allTextContents()).map(s=>s.replace(/^[^A-Za-z]+/,'').trim()),['Home','Places','Plan','Entertainment','Profile'])
+   assert.deepEqual((await nav.allTextContents()).map(s=>s.replace(/^[^A-Za-z]+/,'').trim()),['Home','Discover','Entertainment','Plan','Profile'])
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-home.png`)})
    await nav.filter({hasText:'Entertainment'}).click()
    await page.locator('.gtc-entertainment').waitFor()
-   assert.deepEqual(await page.locator('.gtc-entertainment-time button').allTextContents(),['Tonight','This Weekend','Upcoming'])
-   assert.deepEqual(await page.locator('.gtc-entertainment .gtc-card h3').allTextContents(),['Evening fixture'])
+   assert.deepEqual(await page.locator('[aria-label="Time window"] button').allTextContents(),['All','Tonight','This Weekend','Upcoming','This Month'])
+   await page.locator('[aria-label="Time window"]').getByRole('button',{name:'Tonight',exact:true}).click();await page.getByRole('heading',{name:'Evening fixture',exact:true}).waitFor()
+   await assertCards(page,['Evening fixture'])
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-tonight.png`)})
-   await page.locator('.gtc-entertainment-time').getByRole('button',{name:'This Weekend',exact:true}).click()
-   assert.deepEqual(await page.locator('.gtc-entertainment .gtc-card h3').allTextContents(),['Friday fixture'])
+   await Promise.all([page.waitForResponse(r=>r.url().includes('/api/browse?')&&new URL(r.url()).searchParams.get('from')==='2026-09-18'),page.locator('[aria-label="Time window"]').getByRole('button',{name:'This Weekend',exact:true}).click()])
+   await page.getByRole('heading',{name:'Friday fixture',exact:true}).waitFor()
+   await assertCards(page,['Friday fixture'])
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-weekend.png`)})
    assert.deepEqual(errors,[])
   }catch(error){

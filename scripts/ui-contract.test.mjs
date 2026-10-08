@@ -6,10 +6,10 @@ const source=readFileSync(new URL('../src/features/experience/GoodTimesCommandAp
 const css=readFileSync(new URL('../src/features/experience/good-times-v4.css',import.meta.url),'utf8')
 const main=readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8')
 
-const canonicalNav="const NAV=[['home','⌂','Home'],['places','⌕','Places'],['plan','＋','Plan'],['entertainment','◇','Entertainment'],['profile','◎','Profile']]"
+const canonicalNav="const NAV=[['home','⌂','Home'],['places','⌕','Discover'],['entertainment','◇','Entertainment'],['plan','＋','Plan'],['profile','◎','Profile']]"
 
 test('GOOD TIMES permanent bottom navigation cannot regress',()=>{
-  assert.ok(source.includes(canonicalNav),'V4 must keep Home / Places / Plan / Entertainment / Profile in canonical order')
+  assert.ok(source.includes(canonicalNav),'V4 must keep Home / Discover / Entertainment / Plan / Profile in canonical order')
   const navLine=source.split('\n').find(line=>line.startsWith('const NAV='))||''
   assert.equal(navLine.includes("'radar'"),false,'Radar must not replace Plan in the permanent bottom navigation')
   assert.equal(navLine.includes("'saved'"),false,'Saved must live inside Profile → My GOOD TIMES, not permanent navigation')

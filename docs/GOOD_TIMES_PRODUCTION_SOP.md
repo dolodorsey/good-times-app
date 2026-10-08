@@ -113,3 +113,7 @@ P0/P1 block release.
 - Known issues:
 - Owners:
 - Final status: `PRODUCTION VERIFIED` / `NOT VERIFIED`
+
+
+## October 7, 2026 owner-supplied 30-page contract
+The current task supersedes earlier primary-navigation labels/order with **Home / Discover / Entertainment / Plan / Profile**. Saved remains in Profile. Page 01 uses compact headers and dense typed Place/Event rails. Implement sequentially; Page 02 may not start until Page 01 passes live preview, visual, functional and state QA at 95/100 or higher. Existing taxonomy identities and all truth/security safeguards remain binding. This task is preview-only until the requested page gates pass.

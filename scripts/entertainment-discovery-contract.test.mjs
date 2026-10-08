@@ -8,7 +8,7 @@ const details=fs.readFileSync(new URL('../src/features/experience/complete/Detai
 const profileHub=fs.readFileSync(new URL('../src/features/experience/complete/ProfileHub.jsx',import.meta.url),'utf8')
 
 test('protected bottom navigation uses Places and Entertainment without adding a sixth tab',()=>{
-  assert.match(source,/const NAV=\[\['home','⌂','Home'\],\['places','⌕','Places'\],\['plan','＋','Plan'\],\['entertainment','◇','Entertainment'\],\['profile','◎','Profile'\]\]/)
+  assert.match(source,/const NAV=\[\['home','⌂','Home'\],\['places','⌕','Discover'\],\['entertainment','◇','Entertainment'\],\['plan','＋','Plan'\],\['profile','◎','Profile'\]\]/)
   const navLine=source.split('\n').find(x=>x.startsWith('const NAV='))||''
   assert.equal((navLine.match(/\],\[/g)||[]).length+1,5)
   assert.doesNotMatch(navLine,/'saved'/)
@@ -18,8 +18,8 @@ test('Places is persistent-entity discovery and does not render event results in
   assert.match(source,/const PLACE_CATEGORY_KEYS=new Set/)
   assert.match(source,/const placesTaxonomy=useMemo/)
   assert.match(source,/COMPLETE_UPGRADE&&tab==='places'/)
-  assert.match(source,/eventsFirst=\{false\}/)
-  assert.match(source,/Search Atlanta places/)
+  assert.match(fs.readFileSync('src/features/experience/complete/PlacesPages.jsx','utf8'),/eventsFirst=\{false\}/)
+  assert.match(fs.readFileSync('src/features/experience/complete/PlacesPages.jsx','utf8'),/Search Atlanta places/)
 })
 
 test('Entertainment is time-first and exposes the approved compact activity lanes',()=>{

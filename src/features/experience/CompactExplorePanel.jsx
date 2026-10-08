@@ -1,3 +1,5 @@
+import {categoryEditorialMedia} from './good-times-editorial-media.js'
+import PlacesMap from './complete/PlacesMap.jsx'
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { loadExploreCounts, loadExplorePage, loadExploreTaxonomy } from '../intelligence/client.js'
 import { exploreSignature, knownPlaceCount, uniqueScopedPlaces, validCoordinate } from '../intelligence/explore-page.js'
@@ -65,7 +67,7 @@ export default function CompactExplorePanel({ taxonomy = [], cityName, query = '
       <div className="gt-compact-section-heading"><h2>Find your kind of good time</h2><span>Atlanta</span></div>
       {!categoryRows.length && <div className="gt-compact-state" role="status"><h2>Categories unavailable</h2><p>{catalogError || 'The catalog has not loaded yet.'}</p><button onClick={refreshCatalog} disabled={catalogBusy}>{catalogBusy ? 'Loading…' : 'Retry categories'}</button></div>}
       <div className="gt2-category-grid gt-compact-category-grid">
-        {categoryRows.map(category => <button key={category.id} type="button" data-gt-category={category.id} onClick={() => chooseCategory(category.id)}><span className="gt-compact-category-icon"><GoodTimesIcon glyph={categoryGlyph(category.id)} /></span><strong>{category.name}</strong><small>{category.subcategoryRows.length} subcategories</small><span aria-hidden="true" className="gt-compact-arrow">›</span></button>)}
+        {categoryRows.map(category => <button key={category.id} type="button" data-gt-category={category.id} style={{'--category-art':`linear-gradient(90deg,rgba(8,8,10,.9),rgba(8,8,10,.65)),url("${categoryEditorialMedia(category.id,[],'atlanta')}")`,backgroundSize:'cover',backgroundPosition:'center'}} onClick={() => chooseCategory(category.id)}><span className="gt-compact-category-icon"><GoodTimesIcon glyph={categoryGlyph(category.id)} /></span><strong>{category.name}</strong><small>{category.subcategoryRows.length} subcategories</small><span aria-hidden="true" className="gt-compact-arrow">›</span></button>)}
       </div>
     </>}
     {activeCategory && <>
@@ -87,7 +89,7 @@ export default function CompactExplorePanel({ taxonomy = [], cityName, query = '
         : pageState.status === 'error' ? <div className="gt-compact-state" role="alert"><h2>Couldn’t load these places</h2><p>{pageState.error}</p><button onClick={() => setRetry(n => n + 1)}>Retry places</button></div>
         : items.length === 0 ? <div className="gt2-empty gt-compact-state"><h2>No verified matches yet</h2><p>This lane remains visible. Try another subcategory or clear your search.</p>{query && <button onClick={() => onQuery('')}>Clear search</button>}<button onClick={() => { onSubcategory(null); onDirectoryOpen(false); onQuery('') }}>Browse subcategories</button></div>
         : <>
-          {mapMode && <section className="gt-compact-map" aria-label="Map of loaded places"><div className="gt2-map-frame"><iframe title={`${mappedItem?.name || cityName} area map`} src={mapURL} loading="lazy" /></div><p>{mapped.length} of {items.length} loaded places have coordinates. {mappedItem ? `Pin: ${mappedItem.name}.` : 'No place pins are available.'}</p><label>Center on<select aria-label="Center map on place" value={mappedItem?.id || ''} onChange={e => setMapId(e.target.value)}>{mapped.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}</select></label></section>}
+          {mapMode && <PlacesMap venues={items} renderVenue={renderVenue}/>}
           <div className="gt2-venue-grid gt-compact-results">{items.map(venue => renderVenue(venue, false))}</div>
           {pageState.error && <p className="gt-compact-note" role="alert">{pageState.error} Your loaded places are still here.</p>}
           {pageState.nextCursor && <button className="gt-compact-load-more" disabled={pageState.status === 'loading-more'} onClick={loadMore}>{pageState.status === 'loading-more' ? 'Loading…' : pageState.status === 'more-error' ? 'Retry more places' : 'Load more places'}</button>}

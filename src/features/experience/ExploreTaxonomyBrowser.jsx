@@ -1,3 +1,4 @@
+import PlacesMap from './complete/PlacesMap.jsx'
 import CompactExplorePanel from './CompactExplorePanel.jsx'
 import React, { useEffect, useMemo, useState } from 'react'
 import { loadExploreCounts, loadExploreDirectory } from '../intelligence/client.js'
@@ -201,10 +202,7 @@ function LegacyExploreTaxonomyBrowser({
 
       {categoryLoading && !categoryDirectory.length ? <div className="gt2-empty"><span>✦</span><h2>Loading verified places</h2><p>Pulling the complete {activeCategory.name} directory for {cityName}.</p></div>
       : categoryError && !filteredRows.length ? <div className="gt2-empty"><span>!</span><h2>Directory temporarily unavailable</h2><p>{categoryError}</p></div>
-      : mapMode ? <div className="gt2-map-view">
-        <div className="gt2-map-frame"><iframe title={`${cityName} map`} src="https://www.openstreetmap.org/export/embed.html?bbox=-84.62%2C33.60%2C-84.15%2C34.02&layer=mapnik"/><div className="gt2-map-veil"/><div className="gt2-map-count">⌖ {filteredRows.filter(venue => venue.latitude != null && venue.longitude != null).length} map-ready places</div></div>
-        <div className="gt2-horizontal">{filteredRows.slice(0, 20).map(venue => renderVenue?.(venue, true))}</div>
-      </div> : filteredRows.length ? <div className="gt2-venue-grid">{filteredRows.map(venue => renderVenue?.(venue, false))}</div> : <div className="gt2-empty"><span>⌕</span><h2>No verified matches yet</h2><p>Try another subcategory or clear the search. This lane remains visible while its sourcing agent fills it.</p></div>}</>}
+      : mapMode ? <PlacesMap venues={filteredRows} renderVenue={renderVenue}/> : filteredRows.length ? <div className="gt2-venue-grid">{filteredRows.map(venue => renderVenue?.(venue, false))}</div> : <div className="gt2-empty"><span>⌕</span><h2>No verified matches yet</h2><p>Try another subcategory or clear the search. This lane remains visible while its sourcing agent fills it.</p></div>}</>}
     </>}
   </section>
 }

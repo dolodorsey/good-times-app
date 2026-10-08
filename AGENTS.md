@@ -194,3 +194,10 @@ PRODUCTION VERIFIED
 
 ## Owner-approved compact pilot — 2026-09-27
 For the isolated preview pilot, read `docs/GOOD_TIMES_COMPACT_PILOT_2026-09-27.md`. Its compact presentation supersedes oversized hero requirements only within the compiled pilot; all taxonomy, truth, privacy, release and paused-scheduler protections remain binding.
+
+
+## October 7, 2026 owner-supplied 30-page contract
+The current task supersedes earlier primary-navigation labels/order with **Home / Discover / Entertainment / Plan / Profile**. Saved remains in Profile. Page 01 uses compact headers and dense typed Place/Event rails. Implement sequentially; Page 02 may not start until Page 01 passes live preview, visual, functional and state QA at 95/100 or higher. Existing taxonomy identities and all truth/security safeguards remain binding. This task is preview-only until the requested page gates pass.
+
+## Owner review sequence — October 7, 2026
+The owner explicitly requested “do all pages. then i will review. good so far.” This supersedes the Page 01-only execution gate. Implement and verify all 30 screens in the same isolated preview; owner review follows the complete review pass. Taxonomy, truth, privacy and production release requirements remain in force. A review pass is not a claim that every backend-dependent requirement has received live acceptance.

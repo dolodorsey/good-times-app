@@ -25,7 +25,7 @@ test('authenticated bootstrap routes members into the integrated GOOD TIMES V4 a
 })
 
 test('signed-in navigation uses five protected customer jobs', () => {
-  mustContain(app, ["['home','⌂','Home']","['places','⌕','Places']","['plan','＋','Plan']","['entertainment','◇','Entertainment']","['profile','◎','Profile']"])
+  mustContain(app, ["['home','⌂','Home']","['places','⌕','Discover']","['plan','＋','Plan']","['entertainment','◇','Entertainment']","['profile','◎','Profile']"])
   const navLine=app.split('\n').find(line=>line.startsWith('const NAV='))||''
   assert.doesNotMatch(navLine,/radar/i)
   assert.doesNotMatch(navLine,/vault/i)

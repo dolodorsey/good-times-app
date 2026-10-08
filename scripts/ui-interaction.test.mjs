@@ -42,7 +42,7 @@ async function open(width,height,mobile=false){
   await routes(ctx)
   const page=await ctx.newPage(),errors=[]
   page.on('pageerror',error=>errors.push(String(error)))
-  await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
+  await ctx.route('**/api/health',r=>r.fulfill({json:{ok:true,service:'good-times',customer_ready:true,content_ready:true}}));await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
   await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
   await page.waitForTimeout(900)
   return{ctx,page,errors}
@@ -58,7 +58,7 @@ async function assertProfileScrollable(page){
   assert.ok(result.profileLeft>=result.mainLeft-2&&result.profileRight<=result.mainRight+2,'Profile escaped the app horizontally')
   if(result.profileHeight>result.mainHeight+2){assert.ok(result.scrollHeight>result.clientHeight,'Long Profile is clipped');assert.match(result.overflowY,/auto|scroll/)}
 }
-async function openRadar(page){const bell=page.locator('.gt5-bell');if(await bell.isVisible())await bell.click();else await page.locator('.gt5-radar-strip').click();await page.locator('.gt5-radar').waitFor({state:'visible',timeout:5000})}
+async function openRadar(page){const bell=page.locator('.gt5-bell');if(await bell.isVisible())await bell.click();else await page.locator('.gt5-radar-strip').click();await page.locator('[data-page="28"]').waitFor({state:'visible',timeout:5000})}
 
 for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobile',width:390,height:844,mobile:true}]){
   test(`[${vp.name}] repeated V4 navigation, detail, Radar and Profile interactions stay stable`,{skip,timeout:90000},async()=>{
@@ -66,7 +66,7 @@ for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobi
     try{
       const nav=page.locator('.gt5-nav button')
       assert.equal(await nav.count(),5,'V4 navigation must contain five protected destinations');assert.equal(await nav.filter({hasText:'Saved'}).count(),0,'Saved must not return as a permanent destination')
-      assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Places','Plan','Entertainment','Profile'])
+      assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Discover','Entertainment','Plan','Profile'])
       for(let round=0;round<3;round++)for(let i=0;i<5;i++){await nav.nth(i).click();await page.waitForTimeout(100);await assertOnscreen(page,'.gt5-nav')}
 
       await nav.filter({hasText:'Home'}).click()
@@ -77,9 +77,9 @@ for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobi
         await page.locator('.gt5-detail-back').click();await page.locator('.gt5-overlay').waitFor({state:'hidden',timeout:5000})
       }
 
-      await openRadar(page);await assertOnscreen(page,'.gt5-nav');await page.locator('.gt5-back').click();await page.waitForTimeout(100)
+      await openRadar(page);await assertOnscreen(page,'.gt5-nav');await page.getByRole('button',{name:'← Back',exact:true}).click();await page.waitForTimeout(100)
 
-      for(let i=0;i<3;i++){await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000});await page.locator('.gtc-my-good-times').waitFor({state:'visible',timeout:5000});await assertProfileScrollable(page);await nav.filter({hasText:'Home'}).click()}
+      for(let i=0;i<3;i++){await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000});await page.getByRole('button',{name:'Library',exact:true}).click();await page.locator('.gtc-my-good-times').waitFor({state:'visible',timeout:5000});await assertProfileScrollable(page);await nav.filter({hasText:'Home'}).click()}
 
       await nav.filter({hasText:'Profile'}).click();await page.locator('.gt5-profile').waitFor({state:'visible',timeout:5000})
       await page.locator('.gtc-profile-tabs').getByRole('button',{name:'Preferences',exact:true}).click()

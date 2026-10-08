@@ -1,3 +1,5 @@
+import PlacesMap from './PlacesMap.jsx'
+import {ExperienceCard} from './Cards.jsx'
 import React,{useEffect,useMemo,useRef,useState} from 'react'
 import {KHG_SUPABASE_URL,KHG_SUPABASE_ANON_KEY} from '../../../lib/supabase.js'
 import {publicApiHeaders} from '../../../lib/public-api-headers.js'
@@ -39,20 +41,21 @@ function buildParams({query,field,value,limit=48}){
  return p
 }
 
-export default function RestaurantExplorer({savedKeys,onVenue,onSave,onBack,initialQuery=''}) {
+export default function RestaurantExplorer({savedKeys,onVenue,onSave,onBack,onAddPlan,initialQuery=''}) {
+ const [map,setMap]=useState(false),[retry,setRetry]=useState(0)
  const [query,setQuery]=useState(initialQuery),[filter,setFilter]=useState(null),[rows,setRows]=useState([]),[status,setStatus]=useState('loading'),[error,setError]=useState(''),[advanced,setAdvanced]=useState(false),seq=useRef(0)
- useEffect(()=>{const id=++seq.current,c=new AbortController(),timer=setTimeout(async()=>{setStatus('loading');setError('');try{const p=buildParams({query,field:filter?.field,value:filter?.value});const r=await fetch(`${KHG_SUPABASE_URL}/rest/v1/v_gt_restaurant_entities?${p}`,{headers:publicApiHeaders(KHG_SUPABASE_ANON_KEY),signal:c.signal,cache:'no-store'});if(!r.ok)throw new Error('Restaurants could not refresh.');const body=await r.json();if(!Array.isArray(body))throw new Error('Restaurant response was invalid.');if(id===seq.current){setRows(body.map(asVenue));setStatus('success')}}catch(e){if(!c.signal.aborted&&id===seq.current){setRows([]);setStatus('error');setError(e.message)}}},220);return()=>{clearTimeout(timer);c.abort()}},[query,filter?.field,filter?.value])
+ useEffect(()=>{const id=++seq.current,c=new AbortController(),timer=setTimeout(async()=>{setStatus('loading');setError('');try{const p=buildParams({query,field:filter?.field,value:filter?.value});const r=await fetch(`${KHG_SUPABASE_URL}/rest/v1/v_gt_restaurant_entities?${p}`,{headers:publicApiHeaders(KHG_SUPABASE_ANON_KEY),signal:c.signal,cache:'no-store'});if(!r.ok)throw new Error('Restaurants could not refresh.');const body=await r.json();if(!Array.isArray(body))throw new Error('Restaurant response was invalid.');if(id===seq.current){setRows(body.map(asVenue));setStatus('success')}}catch(e){if(!c.signal.aborted&&id===seq.current){setRows([]);setStatus('error');setError(e.message)}}},220);return()=>{clearTimeout(timer);c.abort()}},[query,filter?.field,filter?.value,retry])
  const saved=new Set([...savedKeys].filter(k=>k.startsWith('venue:')))
  return <section className="gtc-restaurants">
   <header className="gtc-page-heading"><button onClick={onBack} aria-label="Back to Places">←</button><div><h1>Restaurants</h1><small>Everyday to fine dining—browse by what actually fits the occasion.</small></div></header>
   <div className="gtc-search"><input aria-label="Search restaurants" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cuisine, restaurant, neighborhood…"/>{query&&<button aria-label="Clear restaurant search" onClick={()=>setQuery('')}>×</button>}</div>
   <div className="gtc-restaurant-quick" aria-label="Restaurant interests">{QUICK.map(([value,label,field])=><button key={value} aria-pressed={filter?.value===value} className={filter?.value===value?'active':''} onClick={()=>setFilter(filter?.value===value?null:{field,value,label})}>{label}</button>)}</div>
-  <div className="gtc-restaurant-tools"><span>{status==='success'?<><strong>{rows.length}</strong> loaded{filter?<> · {filter.label}</>:null}</>:'Finding the right places…'}</span><button onClick={()=>setAdvanced(x=>!x)} aria-expanded={advanced}>Filters {advanced?'−':'＋'}</button></div>
+  <button onClick={()=>setMap(!map)}>{map?'List':'Map'}</button><div className="gtc-restaurant-tools"><span>{status==='success'?<><strong>{rows.length}</strong> loaded{filter?<> · {filter.label}</>:null}</>:'Finding the right places…'}</span><button onClick={()=>setAdvanced(x=>!x)} aria-expanded={advanced}>Filters {advanced?'−':'＋'}</button></div>
   {advanced&&<div className="gtc-restaurant-filter-groups">{GROUPS.map(([label,field,items])=><section key={label}><strong>{label}</strong><div>{items.map(([value,name])=><button key={value} className={filter?.value===value?'active':''} aria-pressed={filter?.value===value} onClick={()=>setFilter(filter?.value===value?null:{field,value,label:name})}>{name}</button>)}</div></section>)}</div>}
   {status==='loading'&&<Skeleton count={4}/>}
-  {status==='error'&&<State error title="Restaurants could not refresh" body={error} action={<button onClick={()=>setFilter(x=>x?{...x}:null)}>Retry</button>}/>}
+  {status==='error'&&<State error title="Restaurants could not refresh" body={error} action={<button onClick={()=>setRetry(x=>x+1)}>Retry</button>}/>}
   {status==='success'&&!rows.length&&<State title="Nothing verified for that exact interest yet" body="Clear the filter or search another cuisine, neighborhood or occasion. GOOD TIMES will not fill this with unrelated restaurants." action={<button onClick={()=>{setFilter(null);setQuery('')}}>Clear filters</button>}/>}
-  {rows.length>0&&<CollectionGrid items={rows} savedKeys={saved} onVenue={onVenue} onSave={onSave}/>}
+  {rows.length>0&&(map?<PlacesMap venues={rows} renderVenue={v=><ExperienceCard item={v} kind="venue" onOpen={()=>onVenue(v)} onSave={()=>onSave('venue',v.id)} saved={saved.has('venue:'+v.id)}/>}/>:<CollectionGrid items={rows} savedKeys={saved} onVenue={onVenue} onSave={onSave}/>)}
   <p className="gtc-note">Restaurant facets are evidence-driven. Listings missing a facet remain eligible for general browsing while enrichment continues.</p>
  </section>
 }

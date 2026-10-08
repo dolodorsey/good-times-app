@@ -12,7 +12,7 @@ export function normalizePlanInput(input={},now=Date.now()){
  const vibes=[...new Set(list(input.vibes))].filter(v=>MOODS.some(([id])=>id===v)).slice(0,4)
  const area=String(input.area||'').trim().slice(0,70),budget=['','$','$$','$$$','$$$$'].includes(input.budget)?input.budget:''
  const id=String(input.anchorId||'');if(id&&!/^(show:|venue:)?[a-f0-9-]{36}$/i.test(id))throw new Error('The selected stop has an unsupported identity. Choose it again from the current collection.')
- return {date,start,end,startMinute:sm,endMinute,people,vibes,area,budget,allowUnknownHours:input.allowUnknownHours===true,adultOnly:input.adultOnly===true,anchorId:id||null}
+ return {date,start,end,startMinute:sm,endMinute,people,vibes,area,budget,allowUnknownHours:input.allowUnknownHours===true,adultOnly:input.adultOnly===true,anchorId:id||null,source_method:['build','shake','ask','manual'].includes(input.source_method)?input.source_method:'build',excludeNightlife:input.excludeNightlife===true}
 }
 const normalize=s=>String(s||'').toLowerCase().trim()
 function seededIndex(seed,salt,size){if(size<=1)return 0;const text=String(seed||'draft')+'|'+salt;let h=2166136261;for(let i=0;i<text.length;i++){h^=text.charCodeAt(i);h=Math.imul(h,16777619)}return Math.abs(h>>>0)%size}
@@ -40,7 +40,7 @@ export function composePlan(raw,{events=[],venues=[],now=Date.now(),requestId='d
  const avoided=new Set(list(raw?.avoidIds).map(x=>String(x||'').replace(/^venue:/,'')).filter(Boolean).slice(0,20))
  const score=x=>Number(x.good_times_score??x.quality_score??0)
  const eventRows=unique(events).filter(e=>e.city_key==='atlanta'&&occurrenceUsable(e,now)&&e.event_date>=p.date&&e.event_date<=shiftDate(p.date,1)&&(!p.area||normalize(e.neighborhood||venues.find(v=>v.id===e.venue_id)?.neighborhood).includes(normalize(p.area)))&&(p.adultOnly||!/(21\+|18\+|21 and|adult only)/i.test(e.age_requirement||''))).sort((a,b)=>score(b)-score(a))
- const venueRows=unique(venues).sort((a,b)=>score(b)-score(a)),candidates=[...eventRows,...venueRows]
+ const venueRows=unique(venues).filter(v=>!p.excludeNightlife||!/nightclub|nightlife/i.test([v.category_key,v.subcategory].join(' '))).sort((a,b)=>score(b)-score(a)),candidates=[...eventRows,...venueRows]
  const anchor=p.anchorId?candidates.find(x=>identity(x)===p.anchorId||`venue:${x.id}`===p.anchorId||`show:${x.id}`===p.anchorId):null
  if(p.anchorId&&!anchor)return {ok:true,plan:null,conflicts:['The selected anchor is no longer in the current eligible inventory. Choose another anchor.']}
  const tag=x=>normalize([x.category_key,x.subcategory,...list(x.vibe_tags)].join(' '))
@@ -60,6 +60,6 @@ export function composePlan(raw,{events=[],venues=[],now=Date.now(),requestId='d
  if(!stops.length)return {ok:true,plan:null,conflicts:['No current options satisfy the selected constraints. Try another date/area/price band, or explicitly include places whose hours still need confirmation.']}
  warnings.push('Travel has not been verified; 30-minute planning buffers are allowances, not route estimates.','Price bands apply to places, not ticket prices or guaranteed per-person costs. Check ticket costs, booking and availability separately.')
  if(stops.length<3)warnings.push('Fewer stops were returned rather than relaxing your requirements.')
- return {ok:true,plan:{id:requestId,name:'Your Atlanta night',city_id:'atlanta',itinerary_date:p.date,stops,group_size:p.people,status:'draft',created_by:'user',vibe_profile:p,metadata:{source:'good-times-compact-planner',warnings:[...new Set(warnings)],generated_at:new Date(now).toISOString(),version:2,diversity_seed:String(requestId)}},conflicts:[]}
+ return {ok:true,plan:{id:requestId,name:'Your Atlanta night',city_id:'atlanta',itinerary_date:p.date,stops,group_size:p.people,status:'draft',created_by:'user',vibe_profile:p,metadata:{source:'good-times-compact-planner',source_method:p.source_method,warnings:[...new Set(warnings)],generated_at:new Date(now).toISOString(),version:2,diversity_seed:String(requestId)}},conflicts:[]}
 }
 export function editStops(plan,action,index,value){const stops=list(plan.stops).map(s=>({...s}));if(index<0||index>=stops.length)throw new Error('Stop not found.');if(action==='lock')stops[index].locked=!stops[index].locked;else if(stops[index].locked)throw new Error('Unlock this stop before changing it.');else if(action==='remove')stops.splice(index,1);else if(action==='up'||action==='down'){const to=index+(action==='up'?-1:1);if(to<0||to>=stops.length)return plan;if(stops[to].locked)throw new Error('The neighboring stop is locked.');[stops[to],stops[index]]=[stops[index],stops[to]]}else if(action==='time'){if(timeMinutes(value)===null)throw new Error('Choose a valid time.');if(stops[index].type==='event')throw new Error('A published event start cannot be edited.');stops[index].time=value;stops[index].time_basis='user_selected'}return {...plan,stops}}

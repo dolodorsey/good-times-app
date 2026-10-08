@@ -44,6 +44,7 @@ const COUNTS=[
 const json=value=>({status:200,contentType:'application/json',body:JSON.stringify(value)})
 
 async function installRoutes(ctx){
+  await ctx.route('**/api/health',r=>r.fulfill(json({ok:true,service:'good-times',customer_ready:true,content_ready:true})))
   await ctx.route('**/api/data**',route=>route.fulfill(json({ok:true,connected:true,degraded:false,city:'atlanta',counts:{events:EVENTS.length,venues:VENUES.length},events:EVENTS,venues:VENUES})))
   await ctx.route('**/rest/v1/gt_asset_manifest**',route=>route.fulfill(json(MANIFEST)))
   await ctx.route('**/rest/v1/gt_taxonomy_categories**',route=>route.fulfill(json(CATEGORIES)))
@@ -69,12 +70,12 @@ async function prove(width,height,name){
   try{
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
     await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
-    await page.locator('.gt5-nav button').filter({hasText:'Places'}).click()
+    await page.locator('.gt5-nav button').filter({hasText:'Discover'}).click()
     await page.waitForSelector('.gtc-places',{state:'visible',timeout:10000})
-    await page.waitForSelector('.gtc-place-lanes>button',{timeout:15000})
-    const lanes=await page.evaluate(()=>[...document.querySelectorAll('.gtc-place-lanes>button')].map(card=>({label:String(card.querySelector('strong')?.textContent||'').trim(),background:getComputedStyle(card).backgroundImage})))
+    await page.waitForSelector('.gt-compact-category-grid>button',{timeout:15000})
+    const lanes=await page.evaluate(()=>[...document.querySelectorAll('.gt-compact-category-grid>button')].map(card=>({label:String(card.querySelector('strong')?.textContent||'').trim(),background:getComputedStyle(card).backgroundImage})))
     await page.screenshot({path:path.join(OUT,`${name}__signed-in-v4-places-creative.png`),fullPage:true})
-    assert.deepEqual(lanes.map(x=>x.label),['Restaurants','Hotels & Stays','Attractions','Wellness','Shopping','Family Places'])
+    assert.deepEqual(lanes.map(x=>x.label),CATEGORIES.map(c=>c.category_name))
     assert.ok(lanes.every(row=>row.background&&row.background!=='none'),'every Places entry lane must remain image-backed')
     assert.ok(lanes.some(row=>row.background.includes('good-times-backgrounds')||row.background.includes('brand-graphics')||row.background.includes('/venues/')),'Places lanes must use approved GOOD TIMES or reviewed venue media')
     assert.deepEqual(errors,[],'uncaught page errors')

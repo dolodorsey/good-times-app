@@ -1,6 +1,10 @@
 import React from 'react'
 // Inline vectors keep navigation legible when an OS/font does not contain a glyph.
 const PATHS = {
+  cocktail: 'M3 3h18l-9 9L3 3Zm9 9v9m-5 0h10',
+  sports: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M2 12h20M12 2v20M5 5c9 1 13 5 14 14M19 5C10 6 6 10 5 19',
+  list: 'M8 5h13M8 12h13M8 19h13M3 5h.01M3 12h.01M3 19h.01',
+  chat: 'M21 11a9 8 0 0 1-9 8H7l-5 3 2-7a8 8 0 1 1 17-4M7 10h.01M12 10h.01M17 10h.01',
   home: 'M3 10 12 3l9 7M5 9v12h5v-7h4v7h5V9',
   search: 'M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15m5.5-2 5 5',
   plus: 'M12 4v16M4 12h16',
