@@ -11,6 +11,16 @@ RETIRED_PRIVATE = frozenset({
     '17816714552bcb22947486e035c75df50ed54699:public/admin.html:jwt:143',
 })
 
+# Scanner false positive in the owner-provided prose contract. Only this immutable
+# commit/path/line AND the exact non-credential text are accepted.
+REVIEWED_PROSE = {
+    '80f4fa0f73fd9cb61c9cee8f83ac4a14c7c7d872:docs/all-pages/20_Event_Detail.md:generic-api-key:18':
+        '- Adaptive access CTA: Tickets/RSVP/Guest List/Free/Sold Out/Resale.',
+}
+
+def reviewed_prose(entry,rule,line):
+    return rule == 'generic-api-key' and entry in REVIEWED_PROSE and line == REVIEWED_PROSE[entry]
+
 def claims(token):
     part=token.split('.')[1]
     return json.loads(base64.urlsafe_b64decode(part + '=' * (-len(part) % 4)))
@@ -73,7 +83,7 @@ def validate(entries):
                 failures.append(entry + ' (retired-private source no longer matches exact expected identity)')
             else:
                 retired_count += 1
-        elif public_line(rule,line):
+        elif reviewed_prose(entry,rule,line) or public_line(rule,line):
             public_count += 1
         else:
             failures.append(entry + ' (not verified public and not approved retired-private fingerprint)')
@@ -96,7 +106,11 @@ def selftest():
     assert not retired_private_line('jwt',fake('anon',ref='dzlmtvodpyhetvektfuo'))
     assert not retired_private_line('jwt',fake('service_role',ref='other-project'))
     assert not FINGERPRINT.fullmatch('public/admin.html:jwt:143')
-    print('8 exception-validator safety assertions passed')
+    entry = next(iter(REVIEWED_PROSE))
+    assert reviewed_prose(entry,'generic-api-key',REVIEWED_PROSE[entry])
+    assert not reviewed_prose(entry,'generic-api-key','sb_secret_synthetic_test_only')
+    assert not reviewed_prose('another-commit','generic-api-key',REVIEWED_PROSE[entry])
+    print('11 exception-validator safety assertions passed')
 
 if __name__ == '__main__':
     selftest()
