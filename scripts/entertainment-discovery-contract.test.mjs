@@ -18,8 +18,8 @@ test('Places is persistent-entity discovery and does not render event results in
   assert.match(source,/const PLACE_CATEGORY_KEYS=new Set/)
   assert.match(source,/const placesTaxonomy=useMemo/)
   assert.match(source,/COMPLETE_UPGRADE&&tab==='places'/)
-  assert.match(source,/eventsFirst=\{false\}/)
-  assert.match(source,/Search Atlanta places/)
+  assert.match(fs.readFileSync('src/features/experience/complete/PlacesPages.jsx','utf8'),/eventsFirst=\{false\}/)
+  assert.match(fs.readFileSync('src/features/experience/complete/PlacesPages.jsx','utf8'),/Search Atlanta places/)
 })
 
 test('Entertainment is time-first and exposes the approved compact activity lanes',()=>{

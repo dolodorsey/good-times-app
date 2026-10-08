@@ -7,7 +7,7 @@ import {homePlaceSelection,diverseHomeItems} from './home-feed.js'
 import './page-one-home.css'
 
 const INTENTS=[['Food','dining_culinary','dining'],['Drinks','nightlife','cocktail'],['Date Night','dining_culinary','heart'],['Turn Up','nightlife','music'],['Live Music','concerts_live_music','music'],['Sports','sports_watch','sports'],['Interactive','entertainment','sparkle'],['Chill','wellness_fitness','sparkle'],['Something Different','arts_museums_culture','sparkle']]
-const MODES=[['for-you','For You'],['tonight','Tonight'],['week','This Week'],['weekend','Weekend'],['upcoming','Upcoming']]
+const MODES=[['for-you','For You'],['tonight','Tonight'],['sports','Sports'],['weekend','Weekend'],['upcoming','Upcoming']]
 
 function Rail({items,...props}){return <div className="gt01-rail">{items.map(item=><div className="gt01-rail-item" key={`${item.event_key?'event':'venue'}:${item.event_key||item.id}`}><ExperienceCard item={item} kind={item.event_key?'event':'venue'} saved={props.savedKeys.has(`${item.event_key?'event':'venue'}:${item.event_key||item.id}`)} onOpen={()=>item.event_key?props.onEvent(item):props.onVenue(item)} onSave={()=>props.onSave(item.event_key?'event':'venue',item.event_key||item.id)}/><button className="gt01-add-plan" onClick={()=>props.onAddPlan(item)} aria-label={`Add ${item.title||item.name} to plan`}>＋ Plan</button></div>)}</div>}
 
@@ -20,8 +20,7 @@ export default function PageOneHome({events,venues,profile,savedKeys,onEvent,onV
  const sports=diverseHomeItems(current.filter(e=>e.category_key==='sports_watch'),4)
  const different=diverseHomeItems(places.filter(v=>/entertainment|interactive|arts|museum|attraction|experience/.test(`${v.category_key} ${v.subcategory}`)),6)
  const cardProps={savedKeys,onEvent,onVenue,onSave,onAddPlan}
- // Other Home destinations reuse existing routes; this task implements only For You.
- const chooseMode=id=>{if(id==='for-you')onMode(id);else if(id==='week')document.getElementById('gt01-this-week')?.scrollIntoView({behavior:'smooth',block:'start'});else if(id==='weekend')onEntertainment('weekend');else onEntertainment(id)}
+ const chooseMode=id=>onMode(id)
  return <section className="gtc-home gt01-home" aria-label="Home For You">
   <nav className="gt01-feed-tabs gt5-home-modes" aria-label="GOOD TIMES Home views">{MODES.map(([id,label])=><button key={id} aria-pressed={id===mode} className={id===mode?'active':''} onClick={()=>chooseMode(id)}>{label}</button>)}</nav>
   <div className="gt01-context"><span>ATLANTA · {new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',timeZone:'America/New_York'}).format(now)}</span><button onClick={()=>onSearch('')} aria-label="Search Atlanta"><GoodTimesIcon name="search" size={18}/></button></div>

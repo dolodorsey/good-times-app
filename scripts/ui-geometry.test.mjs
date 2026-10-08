@@ -32,6 +32,8 @@ if(!skip){
   browser=process.env.GT_UI_CHROME_PATH?await chromium.launch({executablePath:process.env.GT_UI_CHROME_PATH,headless:true,args:['--no-sandbox']}):await chromium.launch({channel:process.env.GT_UI_CHANNEL||'chrome',headless:true})
 }
 async function installFixtureRoutes(ctx){
+  await ctx.route('**/api/health',r=>r.fulfill(json({ok:true,service:'good-times',customer_ready:true,content_ready:true})))
+  await ctx.route('**/api/browse**',r=>r.fulfill(json({ok:true,items:EVENTS,nextCursor:null})))
   await ctx.route('**/api/data**',route=>route.fulfill(json({ok:true,connected:true,degraded:false,city:'atlanta',counts:{events:EVENTS.length,venues:VENUES.length},events:EVENTS,venues:VENUES})))
   await ctx.route('**/rest/v1/gt_taxonomy_categories**',route=>route.fulfill(json(CATEGORIES)))
   await ctx.route('**/rest/v1/gt_taxonomy_subcategories**',route=>route.fulfill(json(SUBCATEGORIES)))
@@ -49,6 +51,7 @@ async function installFixtureRoutes(ctx){
 }
 async function open(vp,signedIn){
   const ctx=await browser.newContext({viewport:{width:vp.width,height:vp.height},isMobile:vp.mobile,hasTouch:vp.mobile})
+  await ctx.route('**/api/health',r=>r.fulfill(json({ok:true,service:'good-times',customer_ready:true,content_ready:true})))
   if(signedIn){
     await ctx.addInitScript(s=>{localStorage.setItem('gt_session',JSON.stringify(s));localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['nightlife','grown'],age:'25-34'}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},SESSION)
     await installFixtureRoutes(ctx)
@@ -100,7 +103,7 @@ async function openRadar(page){
   const bell=page.locator('.gt5-bell')
   if(await bell.isVisible())await bell.click()
   else await page.locator('.gt5-radar-strip').click()
-  await page.locator('.gt5-radar').waitFor({state:'visible',timeout:5000})
+  await page.locator('[data-page="28"]').waitFor({state:'visible',timeout:5000})
 }
 
 for(const vp of VIEWPORTS){
@@ -133,11 +136,11 @@ for(const vp of VIEWPORTS){
     try{
       await assertShell(page,errors,`${vp.name} member home`)
       await page.screenshot({path:path.join(OUT,`${vp.name}__signed-in-v4-home.png`),fullPage:false})
-      const destinations=[['Places','.gtc-places'],['Plan','.gtc-planner'],['Entertainment','.gtc-entertainment'],['Profile','.gt5-profile'],['Home','.gtc-home']]
+      const destinations=[['Discover','.gtc-places'],['Plan','[data-page="23"]'],['Entertainment','.gtc-entertainment'],['Profile','.gt5-profile'],['Home','.gtc-home']]
       for(const[label,selector]of destinations){await page.locator('.gt5-nav button').filter({hasText:label}).click();await page.locator(selector).waitFor({state:'visible',timeout:10000});await assertShell(page,errors,`${vp.name} ${label}`)}
-      await openRadar(page);await assertShell(page,errors,`${vp.name} Radar`);await page.locator('.gt5-back').click()
+      await openRadar(page);await assertShell(page,errors,`${vp.name} Radar`);await page.getByRole('button',{name:'← Back',exact:true}).click()
       const card=page.locator('.gt5-event').first();if(await card.count()){await card.click();await page.locator('.gt5-detail').waitFor({state:'visible',timeout:5000});const detail=await page.locator('.gt5-detail').first().boundingBox();assert.ok(detail&&detail.width<=vp.width+4,`${vp.name}: detail too wide`);await page.locator('.gt5-detail-back').click()}
-      await page.locator('.gt5-nav button').filter({hasText:'Profile'}).click();const profileText=await page.locator('.gt5-profile').innerText();assert.match(profileText,/GOOD TIMES QA/i);assert.match(profileText,/My GOOD TIMES/i);assert.ok(await page.locator('.gtc-my-good-times').count(),`${vp.name}: saved library did not move into Profile`)
+      await page.locator('.gt5-nav button').filter({hasText:'Profile'}).click();const profileText=await page.locator('.gt5-profile').innerText();assert.match(profileText,/GOOD TIMES QA/i);assert.match(profileText,/My GOOD TIMES/i);await page.getByRole('button',{name:'Library',exact:true}).click();assert.ok(await page.locator('.gtc-my-good-times').count(),`${vp.name}: saved library did not move into Profile`)
       await assertShell(page,errors,`${vp.name} final`)
     }finally{await ctx.close()}
   })
