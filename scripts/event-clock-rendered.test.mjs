@@ -26,6 +26,7 @@ for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,he
    await context.route('**/api/**',route=>{
     const pathname=new URL(route.request().url()).pathname
     if(pathname==='/api/health')return route.fulfill(json({ok:true,service:'good-times',customer_ready:true,content_ready:true}))
+    if(pathname==='/api/browse'){const q=new URL(route.request().url()).searchParams;return route.fulfill(json({ok:true,items:EVENTS.filter(e=>e.event_date>=q.get('from')&&e.event_date<=q.get('to')),nextCursor:null}))}
     if(pathname.startsWith('/api/data'))return route.fulfill(json({ok:true,connected:true,degraded:false,city:'atlanta',events:EVENTS,venues:[],counts:{events:EVENTS.length,venues:0}}))
     return route.fulfill(json({ok:true}))
    })
@@ -43,7 +44,7 @@ for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,he
    await page.locator('[aria-label="Time window"]').getByRole('button',{name:'Tonight',exact:true}).click();await page.getByRole('heading',{name:'Evening fixture',exact:true}).waitFor()
    assert.deepEqual(await page.locator('.gtc-entertainment .gtc-card h3').allTextContents(),['Evening fixture'])
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-tonight.png`)})
-   await page.locator('[aria-label="Time window"]').getByRole('button',{name:'This Weekend',exact:true}).click()
+   await Promise.all([page.waitForResponse(r=>r.url().includes('/api/browse?')&&new URL(r.url()).searchParams.get('from')==='2026-09-18'),page.locator('[aria-label="Time window"]').getByRole('button',{name:'This Weekend',exact:true}).click()])
    await page.getByRole('heading',{name:'Friday fixture',exact:true}).waitFor()
    assert.deepEqual(await page.locator('.gtc-entertainment .gtc-card h3').allTextContents(),['Friday fixture'])
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-weekend.png`)})
