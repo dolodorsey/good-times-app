@@ -69,8 +69,8 @@ test('mobile V4 keeps utilities inside the canonical app shell and Profile usabl
     const bell=page.locator('.gt5-bell')
     if(await bell.isVisible())await bell.click()
     else await page.locator('.gt5-radar-strip').click()
-    await page.locator('.gt5-radar').waitFor({state:'visible',timeout:4000})
-    await page.locator('.gt5-back').click()
+    await page.locator('[data-page="28"]').waitFor({state:'visible',timeout:4000})
+    await page.getByRole('button',{name:'← Back',exact:true}).click()
     await assertInViewport(page,'.gt5-nav')
 
     assert.deepEqual(errors,[],'uncaught page errors')
