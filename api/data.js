@@ -122,6 +122,8 @@ export function inferCustomerTaxonomy(item) {
   const title = normalizeText(item?.event_name || item?.title || '')
   if (/\bbingo\b/.test(title)) return { category:null, subcategory:null }
   if (/ghost tours?|haunted (?:walking )?tours?/.test(title)) return { category:'attractions_experiences', subcategory:'tours_sightseeing' }
+  // Venue evidence: redlightcafe.squarespace.com/events/sloshed-at-the-swamp-encore-acting-under-the-influence-oct-9-2026
+  if (/sloshed at the swamp/.test(title) && /acting under the influence/.test(title) && /red light caf/.test(normalizeText(item?.venue_name || ''))) return { category:'comedy_performing_arts', subcategory:'theater' }
 
   if (/\b(5k|10k|marathon|run club|fun run|road race)\b/.test(text)) return { category:'wellness_fitness', subcategory:'runs_races' }
   if (/film tv tour|film tour|studio tour|sightseeing tour|walking tour|city tour/.test(text)) return { category:'attractions_experiences', subcategory:'tours_sightseeing' }

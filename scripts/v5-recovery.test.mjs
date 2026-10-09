@@ -50,3 +50,7 @@ test('Ask cheaper respects existing numeric limits and moves one price band',()=
  const r=parsePlanIntent('cheaper',{...prefs,budgetMax:100,budgetBasis:'group'},now)
  assert.equal(r.values.budget,'$$');assert.equal(r.values.budgetMax,100);assert.equal(r.values.budgetBasis,'group');assert.ok(r.notes.some(x=>x.includes('numeric limit')))
 })
+test('source-backed theatre identity overrides Sports and concert legacy types together with subcategory',()=>{
+ for(const category of ['sports_watch','concerts_live_music']){const e=mapShow(show(77,{event_name:'“Sloshed at the Swamp (Encore!)” by Acting Under the Influence',venue_name:'Red Light Cafe',category_key_v2:category,subcategory_key_v2:'pro_home_games'}),now);assert.equal(e.category_key,'comedy_performing_arts');assert.equal(e.subcategory_key,'theater')}
+ const tour=mapShow(show(78,{event_name:'FrightNight Ghost Tours',subcategory_key_v2:'arena_concerts'}),now);assert.equal(tour.category_key,'attractions_experiences');assert.equal(tour.subcategory_key,'tours_sightseeing')
+})
