@@ -16,7 +16,6 @@ const SHOW_FIELDS=SHOW_PUBLIC_FIELDS
 const VENUE_FIELDS='id,city_key,name,neighborhood,category_key,subcategory,address,latitude,longitude,phone,website,short_desc,long_desc,hero_image,photos,booking_link,hours,hours_summary,dress_code,price_range,age_range,status,is_verified,verification_status,verified_at,freshness_expires_at,is_stock_photo,photo_credit,vibe_tags,amenity_tags,dietary_tags,is_black_owned'
 const quote=s=>'"'+String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"'
 const textPattern=s=>'*'+s.replace(/[\\%_*]/g,x=>'\\'+x)+'*'
-const typeHints={nightlife:['nightlife'],concerts_live_music:['concert'],sports_watch:['sports'],comedy_performing_arts:['comedy','play'],festivals_major_activations:['festival'],day_parties_brunch:['brunch']}
 export function browseScope(url,now=Date.now()) {
  const p=new URL(url,'https://thegoodtimesworldwide.com').searchParams,c=selectedCityClock('atlanta',now)
  if(p.has('city')&&p.get('city')!=='atlanta')throw new Error('Atlanta is the current launch city.')
@@ -39,8 +38,8 @@ export function showQuery(scope,cursor,now=Date.now()) {
  if(scope.id){const id=scope.id.replace(/^show:/,'');if(!/^[a-f0-9-]{36}$/i.test(id))throw new Error('Invalid event identity.');params.set('id','eq.'+id)}
  if(scope.venueId){if(!/^[a-f0-9-]{36}$/i.test(scope.venueId))throw new Error('Invalid venue identity.');params.set('venue_id','eq.'+scope.venueId)}
  if(scope.query)clauses.push('or('+['event_name','venue_name','genre','description'].map(f=>`${f}.ilike.${quote(textPattern(scope.query))}`).join(',')+')')
- if(scope.category){const types=typeHints[scope.category];clauses.push(types?`or(category_key_v2.eq.${scope.category},and(category_key_v2.is.null,event_type.in.(${types.join(',')})))`:`category_key_v2.eq.${scope.category}`)}
- if(scope.subcategory)clauses.push(`subcategory_key_v2.eq.${scope.subcategory}`)
+ // Filter category/subcategory after taxonomy correction, not against stale source labels.
+ // Public eligibility, dates and the bounded scan still apply to every raw page.
  if(cursor)clauses.push(`or(show_date.gt.${cursor.date},and(show_date.eq.${cursor.date},id.gt.${quote(cursor.id)}))`)
  params.set('and','('+clauses.join(',')+')');return params
 }

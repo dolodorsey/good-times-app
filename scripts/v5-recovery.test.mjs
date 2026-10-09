@@ -54,3 +54,9 @@ test('source-backed theatre identity overrides Sports and concert legacy types t
  for(const category of ['sports_watch','concerts_live_music']){const e=mapShow(show(77,{event_name:'“Sloshed at the Swamp (Encore!)” by Acting Under the Influence',venue_name:'Red Light Cafe',category_key_v2:category,subcategory_key_v2:'pro_home_games'}),now);assert.equal(e.category_key,'comedy_performing_arts');assert.equal(e.subcategory_key,'theater')}
  const tour=mapShow(show(78,{event_name:'FrightNight Ghost Tours',subcategory_key_v2:'arena_concerts'}),now);assert.equal(tour.category_key,'attractions_experiences');assert.equal(tour.subcategory_key,'tours_sightseeing')
 })
+test('corrected events remain reachable through their category and subcategory filters',async()=>{
+ const raw=show(79,{event_name:'FrightNight Ghost Tours',category_key_v2:'concerts_live_music',subcategory_key_v2:'arena_concerts'})
+ const result=await browse('/api/browse?category=attractions_experiences&subcategory=tours_sightseeing',{now,fetcher:async url=>{const q=new URL(url).searchParams.get('and');assert.doesNotMatch(q,/category_key_v2|subcategory_key_v2/);return json([raw])}})
+ assert.equal(result.items.length,1);assert.equal(result.items[0].subcategory_key,'tours_sightseeing')
+ const wrong=await browse('/api/browse?category=concerts_live_music',{now,fetcher:async()=>json([raw])});assert.equal(wrong.items.length,0)
+})
