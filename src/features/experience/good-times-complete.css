@@ -120,8 +120,8 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] {
  & .gtc-mood-grid>button.active{border-color:#f8d46a;}
  & .gtc-mood-grid>button.active>b{background:#f8d46a;color:#0a0c0d;}
  & .gtc-lead{margin:12px 0;}
- & .gtc-builder-actions{position:sticky;bottom:-20px;z-index:9;display:grid;grid-template-columns:90px 1fr;gap:10px;padding:12px 0 20px;background:linear-gradient(0deg,#050607 85%,#05060700);margin-top:16px;}
- & .gtc-builder-actions button,& .gtc-primary{min-height:48px;padding:10px 14px;border-radius:10px;border:1px solid var(--gtc-line);background:#121416;font:650 14px/1.2 var(--gt5-sans);}
+ & .gtc-builder-actions{position:static;display:grid;grid-template-columns:90px 1fr;gap:10px;padding:12px 0 20px;background:linear-gradient(0deg,#050607 85%,#05060700);margin-top:16px;}
+ & .gtc-builder-actions button,& .gtc-primary,& .gtc-secondary{min-height:48px;padding:10px 14px;border-radius:10px;border:1px solid var(--gtc-line);background:#121416;font:650 14px/1.2 var(--gt5-sans);}
  & .gtc-check{display:flex;gap:10px;align-items:flex-start;padding:12px 0;font-size:14px;line-height:1.5;}
  & .gtc-check input{width:22px;height:22px;flex-shrink:0;margin:2px 0;accent-color:#f8d46a;}
  & .gtc-review{display:grid;gap:8px;margin-top:14px;}
@@ -131,6 +131,9 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] {
  & .gtc-review button>span:last-child{font-size:12px;color:#f8d46a;}
  & .gtc-anchor{display:flex;justify-content:space-between;align-items:center;gap:8px;border:1px solid var(--gt5-line);border-radius:10px;padding:8px;font-size:12px;}
  & .gtc-anchor button{min-height:44px;color:#f8d46a;}
+ & [data-family="ask"]>.gtc-primary,& [data-family="ask"]>.gtc-secondary{display:block;width:100%;margin:8px 0;}
+ & [data-family="ask"] .gtc-ask-prompts{flex-wrap:wrap;}
+ & [data-family="ask"] .gtc-ask-prompts button{white-space:normal;text-align:left;max-width:100%;}
  & .gtc-ask-label{display:block;font-size:12px;margin:12px 0;color:#b4b4af;}
  & .gtc-ask-label textarea{display:block;width:100%;resize:vertical;min-height:120px;background:#101214;border:1px solid var(--gtc-line);border-radius:12px;color:#f5f2ea;padding:12px;font:400 16px/1.4 var(--gt5-sans);margin-top:8px;}
  & .gtc-plan-name{display:block;width:100%;padding:4px 0;background:none;border:0;border-bottom:1px solid var(--gtc-line);border-radius:0;font:500 28px/1.2 var(--gt5-serif);color:#f5f2ea;}
@@ -148,6 +151,10 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] {
  & .gtc-stop-body p{font-size:12px!important;margin:5px 0!important;}
  & .gtc-stop-body small{font-size:10px;color:#c5bc9e;display:block;}
  & .gtc-stop-body a{display:inline-flex;align-items:center;min-height:44px;font-size:12px;color:#f8d46a;line-height:1.3;text-decoration:none;}
+ & .gtc-stop-links{display:flex;flex-direction:column;align-items:flex-start;gap:4px;}
+ & .gtc-stop-edit>summary{min-height:44px;padding:12px;color:#e6cf83;cursor:pointer;font-size:13px;}
+ & .gtc-form textarea{width:100%;min-height:80px;background:#101214;color:#f5f2ea;border:1px solid var(--gtc-line);border-radius:10px;padding:8px;}
+ & .gtc-grid>.gtc-card:only-child{grid-column:1/-1;}
  & .gtc-stop-actions{display:flex;gap:6px;flex-wrap:wrap;padding:8px;border-top:1px solid var(--gtc-line);}
  & .gtc-stop-actions button{min-height:44px;padding:6px 8px;border:1px solid var(--gtc-line);border-radius:8px;font-size:12px;}
  & .gtc-stop-actions label{display:flex;align-items:center;gap:8px;font-size:11px;color:#aaa8a3;}

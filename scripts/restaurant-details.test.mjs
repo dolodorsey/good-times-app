@@ -103,7 +103,7 @@ for(const width of [320,390,834,1440])test('rendered restaurant facts / retry / 
   await ctx.route('**/functions/v1/**',r=>r.fulfill(response({ok:true,events:[],venues:[currentVenue]})))
   const page=await ctx.newPage();page.on('pageerror',e=>errors.push(String(e)))
   await page.goto(BASE,{waitUntil:'domcontentloaded'});await page.locator('.gt5-nav').waitFor({timeout:30000})
-  await page.locator('.gt5-nav button').filter({hasText:'Discover'}).click()
+  await page.locator('.gt5-nav button').filter({hasText:'Places'}).click()
   await page.getByRole('navigation',{name:'Place shortcuts'}).getByRole('button',{name:'Restaurants',exact:true}).click()
   const open=()=>page.getByRole('button',{name:'View Restaurant Detail QA',exact:true}).first().click()
   await open();const dialog=page.getByRole('dialog',{name:'Restaurant Detail QA',exact:true})

@@ -10,6 +10,7 @@ import {eventFacts,SHOW_PUBLIC_FIELDS} from './event-facts.js'
 import {selectedCityClock,dateNumber,eventIsDiscoverable} from '../src/features/experience/good-times-event-clock.js'
 import {safeLink,safeImage,occurrenceUsable,shiftDate} from '../src/features/experience/complete/model.js'
 import {RESTAURANT_PROFILE_FIELDS,normalizeRestaurantProfile} from '../src/features/experience/complete/restaurant-facts.js'
+import {filterDiscoveryEvents} from '../src/features/experience/complete/discovery-time.js'
 const KEY=/^[A-Za-z0-9_-]{1,100}$/
 const SHOW_FIELDS=SHOW_PUBLIC_FIELDS
 const VENUE_FIELDS='id,city_key,name,neighborhood,category_key,subcategory,address,latitude,longitude,phone,website,short_desc,long_desc,hero_image,photos,booking_link,hours,hours_summary,dress_code,price_range,age_range,status,is_verified,verification_status,verified_at,freshness_expires_at,is_stock_photo,photo_credit,vibe_tags,amenity_tags,dietary_tags,is_black_owned'
@@ -26,7 +27,8 @@ export function browseScope(url,now=Date.now()) {
  if(dateNumber(from)===null||dateNumber(to)===null||to<from||dateNumber(to)-dateNumber(from)>366)throw new Error('Invalid date range.')
  const query=(p.get('query')||'').trim().slice(0,120),limit=Math.min(48,Math.max(1,Number.parseInt(p.get('limit')||'24',10)||24))
  const id=p.get('id')||null;if(id&&!/^[a-zA-Z0-9:_-]{1,160}$/.test(id))throw new Error('Invalid item identity.')
- return {kind,city:'atlanta',category,subcategory,query,from,to,limit,id,venueId:p.get('venue_id')||null}
+ const mode=p.get('mode')||null;if(mode&&!['tonight','weekend','upcoming','month','week','next-week'].includes(mode))throw new Error('Invalid time window.')
+ return {kind,city:'atlanta',category,subcategory,query,from,to,limit,id,mode,venueId:p.get('venue_id')||null}
 }
 function signature(s){return JSON.stringify(s)}
 export function cursorRead(value,scope) {if(!value)return null;if(value.length>3000)throw new Error('Invalid cursor.');let c;try{c=JSON.parse(Buffer.from(value,'base64url').toString('utf8'))}catch{throw new Error('Invalid cursor.')}if(c.scope!==signature(scope)||!c.id||typeof c.id!=='string'||c.id.length>128||dateNumber(c.date)===null)throw new Error('Refresh this collection to continue.');return c}
@@ -48,9 +50,12 @@ export function mapShow(row,now=Date.now()) {
  if(!Number.isFinite(Date.parse(row.updated_at))||Date.parse(row.updated_at)<now-72*3600000)return null
  if(!safeLink(row.ticket_url||row.source_url))return null
  // Strong source taxonomy rules remain authoritative; do not inherit arena=concert.
- const strongest=['sports_watch','comedy_performing_arts','wellness_fitness'].includes(taxonomy.category)?taxonomy.category:category
+ if(!taxonomy.category)return null
+ const strongest=taxonomy.category||category
  const event={...eventFacts(row),event_key:'show:'+row.id,id:row.id,city_key:'atlanta',source_table:'gt_shows',source_id:row.id,title:row.event_name,event_date:row.show_date,...eventTimeFields(row),category_key:strongest,subcategory_key:row.subcategory_key_v2||taxonomy.subcategory,venue_name:row.venue_name,image_url:safeImage(row.image_url),ticket_url:safeLink(row.ticket_url),source_url:safeLink(row.source_url),source_name:row.source,description:row.description,organizer:row.organizer,is_featured:row.is_featured,is_curated:row.is_curated,display_priority:row.display_priority,quality_score:row.quality_score,good_times_score:row.good_times_score,freshness_tier:row.freshness_tier,updated_at:row.updated_at,is_verified:row.status==='confirmed'}
- const fixed=correctDisplayEvents([event])[0];return fixed.category_key&&eventIsDiscoverable(fixed,'atlanta',now)?fixed:null
+ const fixed=correctDisplayEvents([event])[0];if(!fixed)return null
+ fixed.is_verified=Number.isFinite(Date.parse(row.fact_verified_at))
+ return fixed.category_key&&eventIsDiscoverable(fixed,'atlanta',now)?fixed:null
 }
 async function rows(table,params,fetcher,timeoutMs=6500) {
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),timeoutMs)
@@ -78,11 +83,27 @@ export async function browse(url,{fetcher=globalThis.fetch,now=Date.now()}={}) {
  if(scope.kind==='sports') {
   const params=new URLSearchParams({select:'id,league,home_team,home_abbr,away_team,away_abbr,game_date,game_time,venue,city_key,status,home_score,away_score,home_logo,away_logo,is_home_game,updated_at',city_key:'eq.atlanta',game_date:'gte.'+scope.from,updated_at:'gte.'+new Date(now-72*3600000).toISOString(),order:'game_date.asc,id.asc',limit:'100'})
   const data=await rows('gt_sports_games',params,fetcher)
-  return {ok:true,items:data.filter(x=>x.game_date<=scope.to&&x.city_key==='atlanta'),nextCursor:null,countType:'returned',asOf:new Date(now).toISOString(),notice:'Only recently updated provider records are shown. Scores require a live provider timestamp.'}
+  return {ok:true,items:data.filter(x=>x.game_date>=scope.from&&x.game_date<=scope.to&&x.city_key==='atlanta'&&x.home_team&&x.away_team&&!/final|completed|cancel|postpon|ended/i.test(x.status||'')&&Number.isFinite(Date.parse(x.updated_at))&&Date.parse(x.updated_at)>=now-72*3600000),nextCursor:null,countType:'returned',asOf:new Date(now).toISOString(),notice:'Only recently updated provider records are shown. Scores require a live provider timestamp.'}
  }
- const data=await rows('gt_shows',showQuery(scope,cursor,now),fetcher),page=data.slice(0,scope.limit),seen=new Set()
- const items=page.map(x=>mapShow(x,now)).filter(e=>{if(!e||(scope.category&&e.category_key!==scope.category)||(scope.subcategory&&e.subcategory_key!==scope.subcategory))return false;const k=[e.title.toLowerCase(),e.venue_id||e.venue_name,e.event_date,e.event_time].join('|');if(seen.has(k))return false;seen.add(k);return true})
- return {ok:true,items,nextCursor:data.length>scope.limit&&page.length?cursorWrite(page.at(-1),scope):null,countType:'returned',asOf:new Date(now).toISOString(),scope,notice:!items.length&&data.length>scope.limit?'More source records are available to check.':null}
+ const seen=new Set(),items=[];let next=cursor,hasMore=false,scanned=0,pages=0,last=null
+ // Filtering a raw page can yield zero while later pages contain eligible
+ // events. Scan a bounded set, and retain the exact raw continuation point.
+ do {
+  const data=await rows('gt_shows',showQuery(scope,next,now),fetcher),page=data.slice(0,scope.limit)
+  pages++;hasMore=data.length>scope.limit
+  for(let i=0;i<page.length;i++){
+   const row=page[i];last=row;scanned++
+   const e=mapShow(row,now)
+   if(e&&(!scope.mode||filterDiscoveryEvents([e],{mode:scope.mode,now}).length)&&(!scope.category||e.category_key===scope.category)&&(!scope.subcategory||e.subcategory_key===scope.subcategory)){
+    const k=[e.title.toLowerCase(),e.venue_id||e.venue_name,e.event_date,e.event_time].join('|')
+    if(!seen.has(k)){seen.add(k);items.push(e)}
+   }
+   if(items.length===scope.limit){hasMore=hasMore||i<page.length-1;break}
+  }
+  if(!last||!page.length){hasMore=false;break}
+  next={id:last.id,date:last.show_date}
+ }while(hasMore&&items.length<scope.limit&&pages<6)
+ return {ok:true,items,nextCursor:hasMore?cursorWrite(last,scope):null,countType:'returned',asOf:new Date(now).toISOString(),scope,diagnostics:{scanned,returned:items.length,pages,exhausted:!hasMore},notice:!items.length&&hasMore?'More source records are available to check.':null}
 }
 export default async function handler(request,response) {
  response.setHeader('Content-Type','application/json; charset=utf-8');response.setHeader('Cache-Control','no-store');response.setHeader('X-Content-Type-Options','nosniff')

@@ -26,7 +26,7 @@ test('V4 CSS is the final protected consumer visual authority', () => {
 test('permanent navigation is Home Places Plan Entertainment Profile', () => {
   const source = read('src/features/experience/GoodTimesCommandAppV4.jsx')
   const navLine = source.split('\n').find(line => line.startsWith('const NAV=')) || ''
-  for (const label of ['Home','Discover','Entertainment','Plan','Profile']) assert.match(navLine, new RegExp(`'${label}'`))
+  for (const label of ['Home','Places','Plan','Entertainment','Profile']) assert.match(navLine, new RegExp(`'${label}'`))
   assert.doesNotMatch(navLine, /'Radar'/)
   assert.doesNotMatch(navLine, /'Vault'/)
   assert.doesNotMatch(navLine, /'Concierge'/)

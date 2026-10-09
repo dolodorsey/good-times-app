@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {dedupeEventOccurrences,occurrenceKey,inventoryCacheKey} from '../api/event-occurrences.js'
 import {validClock,eventTimeFields} from '../api/event-time-display.js'
 import handler from '../api/data-live.js'
+import snapshot from '../api/atlanta-fallback-snapshot.js'
 
 const event=(patch={})=>({id:'one',city_key:'atlanta',event_name:'A Named Headliner',venue_name:'Fox Theatre',show_date:'2026-10-02',show_time:'20:00',ticket_url:'https://example.com/season',good_times_score:65,...patch})
 
@@ -42,7 +43,10 @@ test('fallback cache identity includes city, night and both result limits',()=>{
   assert.equal(new Set(keys).size,5)
 })
 
-test('the real live handler preserves occurrences and cannot serve a differently sized fallback',async()=>{
+test('the real live handler preserves occurrences and cannot serve a differently sized fallback',async(t)=>{
+  // Exercise fresh and expired fallback windows deterministically; never extend
+  // production TTL simply because the checked-in emergency snapshot aged.
+  t.mock.timers.enable({apis:['Date'],now:Date.parse(snapshot.refreshed_at)+60000})
   const original=globalThis.fetch
   const day=new Date(Date.now()+10*86400000).toISOString().slice(0,10)
   const next=new Date(Date.now()+11*86400000).toISOString().slice(0,10)
@@ -64,5 +68,7 @@ test('the real live handler preserves occurrences and cannot serve a differently
     assert.equal(JSON.parse(recovered.body).degraded,true)
     assert.equal(recovered.headers['Cache-Control'],'no-store','Do not compound staleness at the CDN')
     const recoveredSmall=await call(1);assert.equal(JSON.parse(recoveredSmall.body).events.length,1)
+    t.mock.timers.tick(37*60*60*1000)
+    const expired=await call(2);assert.equal(expired.statusCode,503,'Expired embedded inventory must not be revived during an outage')
   }finally{globalThis.fetch=original;globalThis.__GT_DATA_LIVE_CACHE_V8__?.clear()}
 })

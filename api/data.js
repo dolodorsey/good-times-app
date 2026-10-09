@@ -117,6 +117,12 @@ export function inferCustomerTaxonomy(item) {
   const rawType = cleanKey(item?.event_type)
   const text = normalizeText(`${item?.event_type || ''} ${item?.genre || ''} ${item?.event_name || ''} ${item?.venue_name || ''}`)
 
+  // Activity identity outranks a provider's broad legacy type. Bingo is not a
+  // sports fixture; leave it for category review instead of inventing a lane.
+  const title = normalizeText(item?.event_name || item?.title || '')
+  if (/\bbingo\b/.test(title)) return { category:null, subcategory:null }
+  if (/ghost tours?|haunted (?:walking )?tours?/.test(title)) return { category:'attractions_experiences', subcategory:'tours_sightseeing' }
+
   if (/\b(5k|10k|marathon|run club|fun run|road race)\b/.test(text)) return { category:'wellness_fitness', subcategory:'runs_races' }
   if (/film tv tour|film tour|studio tour|sightseeing tour|walking tour|city tour/.test(text)) return { category:'attractions_experiences', subcategory:'tours_sightseeing' }
   if (/happy hour|cocktail night|wine tasting|wine down/.test(text)) return { category:'dining_culinary', subcategory:'wine_cocktails' }

@@ -55,7 +55,7 @@ function Progress({ step }) {
   </div>
 }
 
-export default function GoodTimesOnboarding({ onComplete }) {
+export default function GoodTimesOnboarding({ onComplete, onGuest }) {
   const [screen, setScreen] = useState('welcome')
   const [mode, setMode] = useState('signup')
   // Expose the step so the floating install pill only shows on the welcome screen, never over form CTAs.
@@ -134,6 +134,7 @@ export default function GoodTimesOnboarding({ onComplete }) {
       <p style={{ color: 'rgba(255,255,255,.58)', lineHeight: 1.6, margin: '0 0 34px' }}>Your city. Your vibe. Your night.<br />A free account keeps your saves, plans and recommendations with you.</p>
       <button style={primary()} onClick={() => { setMode('signup'); setScreen('auth') }}>Get Started</button>
       <button onClick={() => { setMode('signin'); setScreen('auth') }} style={{ ...primary(), marginTop: 12, color: GOLD, background: 'rgba(255,255,255,.06)', border: `1px solid ${GOLD}55` }}>I Already Have an Account</button>
+      {onGuest&&<button onClick={onGuest} style={{...primary(),marginTop:12,color:GOLD,background:'transparent'}}>Explore Atlanta as a guest</button>}
     </div>
   </div>
 

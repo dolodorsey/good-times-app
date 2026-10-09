@@ -7,7 +7,7 @@ const css=fs.readFileSync(new URL('../src/features/experience/good-times-approve
 const main=fs.readFileSync(new URL('../src/main.jsx',import.meta.url),'utf8')
 
 test('approved GOOD TIMES UI keeps the protected five-destination Places / Entertainment app contract',()=>{
-  assert.match(app,/const NAV=\[\['home','⌂','Home'\],\['places','⌕','Discover'\],\['entertainment','◇','Entertainment'\],\['plan','＋','Plan'\],\['profile','◎','Profile'\]\]/)
+  assert.match(app,/const NAV=\[\['home','⌂','Home'\],\['places','⌕','Places'\],\['plan','＋','Plan'\],\['entertainment','◇','Entertainment'\],\['profile','◎','Profile'\]\]/)
   assert.doesNotMatch(app,/\['upcoming'[^\]]*'Upcoming'\].*const NAV/)
   assert.match(app,/openEvent=e=>/)
   assert.match(app,/toggleSave=async\(type,id\)=>/)

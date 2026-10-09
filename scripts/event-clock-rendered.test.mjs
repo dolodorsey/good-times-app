@@ -39,7 +39,7 @@ for(const vp of [{name:'phone',width:390,height:844},{name:'tablet',width:834,he
    await page.locator('.gt5-app').waitFor({state:'visible',timeout:15000})
    await page.waitForTimeout(600)
    const nav=page.locator('.gt5-nav button')
-   assert.deepEqual((await nav.allTextContents()).map(s=>s.replace(/^[^A-Za-z]+/,'').trim()),['Home','Discover','Entertainment','Plan','Profile'])
+   assert.deepEqual((await nav.allTextContents()).map(s=>s.replace(/^[^A-Za-z]+/,'').trim()),['Home','Places','Plan','Entertainment','Profile'])
    await page.screenshot({path:path.join(OUT,`time-fixture-${vp.name}-home.png`)})
    await nav.filter({hasText:'Entertainment'}).click()
    await page.locator('.gtc-entertainment').waitFor()

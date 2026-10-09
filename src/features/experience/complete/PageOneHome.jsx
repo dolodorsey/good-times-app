@@ -1,3 +1,5 @@
+import {useBrowse} from './useBrowse.js'
+import {discoveryWindow} from './discovery-time.js'
 import React from 'react'
 import GoodTimesIcon from '../GoodTimesIcon.jsx'
 import {ExperienceCard,Section,State,Skeleton} from './Cards.jsx'
@@ -15,7 +17,8 @@ export default function PageOneHome({events,venues,profile,savedKeys,onEvent,onV
  const clock=selectedCityClock('atlanta',now)
  const current=list(events).filter(e=>occurrenceUsable(e,now))
  const places=homePlaceSelection(venues),groups=homeCollections(current,places,now,profile?.vibe_preferences)
- const tonight=diverseHomeItems(current.filter(e=>eveningUsable(e,now)),6)
+ const nightWindow=discoveryWindow('tonight',now),nightFeed=useBrowse({kind:'events',mode:'tonight',from:nightWindow.from,to:nightWindow.to,limit:24})
+ const tonight=diverseHomeItems((nightFeed.status==='success'?nightFeed.items:current).filter(e=>eveningUsable(e,now)),6)
  const week=diverseHomeItems(current.filter(e=>e.event_date>=clock.date&&e.event_date<=shiftDate(clock.date,6)),6)
  const sports=diverseHomeItems(current.filter(e=>e.category_key==='sports_watch'),4)
  const different=diverseHomeItems(places.filter(v=>/entertainment|interactive|arts|museum|attraction|experience/.test(`${v.category_key} ${v.subcategory}`)),6)
@@ -32,7 +35,7 @@ export default function PageOneHome({events,venues,profile,savedKeys,onEvent,onV
     {places.length?<Rail items={diverseHomeItems(places,6)} {...cardProps}/>:<State title="Places are taking a moment" body="Explore Atlanta or retry the feed." action={<button onClick={onPlaces}>Discover places</button>}/>}
    </Section>
    <Section title="Tonight in Atlanta" action={<button onClick={()=>onEntertainment('tonight')}>See all ↗</button>}>
-    {tonight.length?<Rail items={tonight} {...cardProps}/>:<State title={error?"Tonight couldn’t refresh":"No verified events for tonight yet"} body="Explore upcoming dates or build a night around a place." action={<button onClick={()=>onEntertainment('upcoming')}>Upcoming events</button>}/>}
+    {tonight.length?<Rail items={tonight} {...cardProps}/>:<State title={error||nightFeed.status==='error'?"Tonight couldn’t refresh":nightFeed.status==='loading'?"Checking tonight’s events…":nightFeed.nextCursor?"More tonight records need checking":"No eligible events for tonight yet"} body="Explore upcoming dates or build a night around a place." action={<button onClick={()=>onEntertainment('upcoming')}>Upcoming events</button>}/>}
    </Section>
    <Section title="Build Tonight" subtext="Three ways to make it yours."><div className="gt01-planning">{[['guided','Build It','Pick the pieces','list'],['shake','Shake It','Find a surprise','sparkle'],['ask','Ask GOOD TIMES','Tell us your idea','chat']].map(([id,title,sub,icon])=><button key={id} className={`gt01-plan-${id}`} onClick={()=>onPlan(id)}><GoodTimesIcon name={icon} size={22}/><strong>{title}</strong><small>{sub}</small><span aria-hidden="true">↗</span></button>)}</div></Section>
    <Section title={list(profile?.vibe_preferences).length?'Picked for you':'GOOD TIMES Picks'} subtext={list(profile?.vibe_preferences).length?'Inspired by your saved preferences.':'A starting point for your next good time.'} action={<button onClick={onPreferences}>Personalize ↗</button>}>
