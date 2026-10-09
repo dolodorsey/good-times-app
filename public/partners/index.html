@@ -89,6 +89,16 @@
       <button class="button primary" id="submit-claim" type="submit">Submit for official verification ↗</button>
       <p class="form-hint">No public listing changes occur until our team reviews and approves the submission.</p>
      </form>
+     <section class="form-panel" id="venue-editor">
+      <div class="step-heading"><span class="step-num">04</span><div><h3>Update your proposed venue profile</h3><p>Save draft changes for reviewer approval; your public listing stays unchanged until approved.</p></div></div>
+      <form id="profile-draft-form">
+       <label for="draft-claim">YOUR VENUE CLAIM</label><select id="draft-claim"></select>
+       <div class="input-grid"><div><label for="draft-website">OFFICIAL WEBSITE</label><input id="draft-website" type="url" maxlength="250" placeholder="https://"/></div><div><label for="draft-instagram">OFFICIAL INSTAGRAM HANDLE</label><input id="draft-instagram" maxlength="70" placeholder="@yourvenue"/></div><div><label for="draft-hours">BUSINESS HOURS / OPERATING NOTES</label><input id="draft-hours" maxlength="350" placeholder="e.g., Thursday–Sunday; hours verified by team"/></div><div><label for="draft-booking">OFFICIAL BOOKING LINK</label><input id="draft-booking" maxlength="250" type="url" placeholder="https://"/></div></div>
+       <label for="draft-description">VENUE DESCRIPTION / EXPERIENCE</label><textarea id="draft-description" maxlength="1500" rows="3" placeholder="Describe the experience accurately, with clear sourceable details"></textarea>
+       <button class="button outline" type="submit" id="save-profile">Save proposed profile edits ↗</button>
+       <p class="form-hint">Proposed hours and booking information are not live until verified by the GOOD TIMES team.</p>
+      </form>
+     </section>
      <div id="claim-list" class="claims-list"></div>
     </section>
 
