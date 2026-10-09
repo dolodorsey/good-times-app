@@ -211,7 +211,7 @@ async function saveProfileDraft(e){
  e.preventDefault()
  const claim=state.claims.find(x=>x.id===$('draft-claim').value)
  if(!claim){toast('Claim a venue first.',true);view('claim');return}
- if(!['pending_review','more_info'].includes(claim.status)){toast('This claim is under official review. Contact partner support for a published listing change.',true);return}
+ if(!['pending_review','more_info','verified'].includes(claim.status)){toast('This claim is under official review. Contact partner support for a published listing change.',true);return}
  const website=$('draft-website').value.trim()
  const booking=$('draft-booking').value.trim()
  for(const value of [website,booking]){if(value && !/^https:\/\/[^ ]+\.[^ ]+/.test(value)){toast('Links must start with https://',true);return}}
