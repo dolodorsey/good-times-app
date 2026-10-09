@@ -32,3 +32,21 @@ test('E2E-19 calendar retains actual next-day date and no booking claims',()=>{c
 test('E2E-21 persistence rejects a different account response',async()=>{const plan=composePlan(prefs,{now,venues:[venue(1)],requestId:uuid(20)}).plan;await assert.rejects(persistPlan(plan,{user:{id:uuid(90)},access_token:'fixture'},{fetcher:async()=>json([{...plan,user_id:uuid(91)}])}),/not confirmed/)})
 
 test('edited dwell conflicts and out-of-window stops stay visibly unready',()=>{const w=itineraryWarnings({itinerary_date:'2026-10-09',vibe_profile:{start:'19:00',end:'23:00'},stops:[{date:'2026-10-09',time:'22:00',duration_minutes:60},{date:'2026-10-09',time:'22:30',duration_minutes:90}]});assert.ok(w.some(x=>/overlap/.test(x)));assert.ok(w.some(x=>/outside/.test(x)))})
+
+test('Ask short corrections preserve unrelated choices and do not infer age consent',()=>{
+ const initial=parsePlanIntent('Dinner and live music for four people in Midtown, 7 PM to 1 AM',prefs,now).values
+ const noClubs=parsePlanIntent('no clubs',initial,now).values
+ assert.deepEqual(noClubs.vibes,['food','music']);assert.equal(noClubs.people,4);assert.equal(noClubs.start,'19:00')
+ const finish=parsePlanIntent('finish earlier at 11 PM',noClubs,now).values
+ assert.equal(finish.start,'19:00');assert.equal(finish.end,'23:00');assert.equal(finish.area,'Midtown');assert.equal(finish.excludeNightlife,true)
+ const add=parsePlanIntent('also a rooftop',finish,now).values
+ assert.deepEqual(add.vibes,['food','music','rooftop'])
+ assert.equal(parsePlanIntent('everyone is 21',add,now).values.adultOnly,false)
+})
+test('Ask invalid and ambiguous time corrections never silently change the window',()=>{
+ for(const request of ['start at 13 PM','finish at 9:90 PM','later']){const r=parsePlanIntent(request,prefs,now);assert.equal(r.values.start,prefs.start);assert.equal(r.values.end,prefs.end);assert.ok(r.notes.length)}
+})
+test('Ask cheaper respects existing numeric limits and moves one price band',()=>{
+ const r=parsePlanIntent('cheaper',{...prefs,budgetMax:100,budgetBasis:'group'},now)
+ assert.equal(r.values.budget,'$$');assert.equal(r.values.budgetMax,100);assert.equal(r.values.budgetBasis,'group');assert.ok(r.notes.some(x=>x.includes('numeric limit')))
+})
