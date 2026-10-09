@@ -105,7 +105,8 @@ function renderAll(){
  $('status-text').textContent=!state.session?.user?.id?'Connect your business to begin.':state.claims.some(x=>x.status==='verified')?'You have a verified partner claim.':state.claims.length?'Your venue application is in the review workflow.':'Email verified. Choose a venue and request official access.'
  $('status-label').textContent=!state.session?.user?.id?'NOT CONNECTED':state.claims.some(x=>x.status==='verified')?'VERIFIED':state.claims.length?'CLAIM SUBMITTED':'ACCOUNT VERIFIED'
  const claimOpts=state.claims.map(x=>'<option value="'+escaped(x.id)+'">'+escaped(x.requested_name||('Venue claim '+x.id.slice(0,8)))+' · '+escaped(statusNames[x.status]||x.status)+'</option>').join('')
- for(const id of ['asset-claim','interest-claim']){$(id).innerHTML=claimOpts||'<option value="">Claim a venue first</option>';$(id).disabled=!state.claims.length}
+ for(const id of ['asset-claim','interest-claim','draft-claim']){$(id).innerHTML=claimOpts||'<option value="">Claim a venue first</option>';$(id).disabled=!state.claims.length}
+ selectDraft(state.claims.find(x=>x.id===$('draft-claim').value))
  $('claim-list').innerHTML=state.claims.length?'<h3 class="list-heading">YOUR VENUE CLAIMS</h3>'+state.claims.map(x=>record(x.requested_name||'Existing Atlanta venue',statusNames[x.status]||x.status,new Date(x.submitted_at).toLocaleDateString(),x.review_reason)).join(''):''
  $('media-list').innerHTML=state.media.length?state.media.map(x=>record(x.asset_type.toUpperCase()+' · '+x.file_name,x.review_status,new Date(x.created_at).toLocaleDateString(),x.reviewer_note)).join(''):'<p class="empty-note">Your submitted media will appear here.</p>'
  const combined=[...state.claims.map(x=>({time:x.submitted_at,title:'Venue claim: '+(x.requested_name||'Atlanta venue'),status:statusNames[x.status]||x.status,details:x.review_reason})),...state.interests.map(x=>({time:x.submitted_at,title:marketing.find(y=>y[0]===x.category)?.[1]||x.category,status:x.status,details:x.objective}))]
@@ -197,6 +198,32 @@ async function submitInterest(e){
 function renderMarketing(){
  $('growth-cards').innerHTML=marketing.map(([key,title,desc],i)=>'<article class="growth-card"><span class="service-num">'+String(i+1).padStart(2,'0')+' / OPPORTUNITY</span><h3>'+escaped(title)+'</h3><p>'+escaped(desc)+'</p><button type="button" data-service="'+escaped(key)+'">Request details ↗</button></article>').join('')
 }
+
+function selectDraft(claim){
+ const data=claim?.profile_draft||{}
+ $('draft-website').value=clean(data.website)
+ $('draft-instagram').value=clean(data.instagram_handle)
+ $('draft-hours').value=clean(data.hours_notes)
+ $('draft-booking').value=clean(data.booking_link)
+ $('draft-description').value=clean(data.description)
+}
+async function saveProfileDraft(e){
+ e.preventDefault()
+ const claim=state.claims.find(x=>x.id===$('draft-claim').value)
+ if(!claim){toast('Claim a venue first.',true);view('claim');return}
+ if(!['pending_review','more_info'].includes(claim.status)){toast('This claim is under official review. Contact partner support for a published listing change.',true);return}
+ const website=$('draft-website').value.trim()
+ const booking=$('draft-booking').value.trim()
+ for(const value of [website,booking]){if(value && !/^https:\/\/[^ ]+\.[^ ]+/.test(value)){toast('Links must start with https://',true);return}}
+ const patch={...claim.profile_draft,website,instagram_handle:$('draft-instagram').value.trim(),hours_notes:$('draft-hours').value.trim(),booking_link:booking,description:$('draft-description').value.trim()}
+ try{
+ setBusy('save-profile',true)
+ await req('/rest/v1/gt_portal_claims?id=eq.'+encodeURIComponent(claim.id),{method:'PATCH',body:{profile_draft:patch,updated_at:new Date().toISOString()},headers:{'Content-Type':'application/json',Prefer:'return=minimal'}})
+ toast('Draft saved. These changes have not been published to GOOD TIMES.')
+ await loadPartnerData()
+ }catch(err){toast('Draft could not be saved: '+err.message,true)}finally{setBusy('save-profile',false)}
+}
+
 function bind(){
  document.addEventListener('click',e=>{
   const btn=e.target.closest('[data-view]');if(btn){e.preventDefault();view(btn.dataset.view)}
@@ -208,6 +235,8 @@ function bind(){
  $('email-link').addEventListener('click',sendEmail)
  $('verify-code').addEventListener('click',verifyCode)
  $('claim-form').addEventListener('submit',submitClaim)
+ $('draft-claim').addEventListener('change',()=>selectDraft(state.claims.find(x=>x.id===$('draft-claim').value)))
+ $('profile-draft-form').addEventListener('submit',saveProfileDraft)
  $('upload-asset').addEventListener('click',uploadAsset)
  $('interest-form').addEventListener('submit',submitInterest)
  $('signout').addEventListener('click',()=>{saveSession(null);initSession();toast('Signed out of the partner workspace.')})
