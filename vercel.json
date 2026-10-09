@@ -21,6 +21,14 @@
       "destination": "/api/data-live"
     },
     {
+      "source": "/partners",
+      "destination": "/partners/index.html"
+    },
+    {
+      "source": "/partners/",
+      "destination": "/partners/index.html"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
