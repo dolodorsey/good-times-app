@@ -22,7 +22,7 @@ const marketing=[
 ]
 const getSession=()=>{try{return JSON.parse(sessionStorage.getItem(SESSION_KEY)||'null')}catch{return null}}
 const saveSession=s=>{state.session=s; s?sessionStorage.setItem(SESSION_KEY,JSON.stringify(s)):sessionStorage.removeItem(SESSION_KEY)}
-const apiHeaders=(jwt,extra={})=>({apikey:KEY,Authorization:'Bearer '+(jwt||KEY),Accept:'application/json',...extra})
+const apiHeaders=(jwt,extra={})=>({apikey:KEY,...(jwt?{Authorization:'Bearer '+jwt}:{}),Accept:'application/json',...extra})
 const toast=(msg,error=false)=>{const el=$('toast');el.textContent=msg;el.classList.toggle('error',error);el.hidden=false;setTimeout(()=>{el.hidden=true},6500)}
 async function req(path,{method='GET',body,auth=true,headers={},raw=false}={}){
  const response=await fetch(BASE+path,{method,headers:apiHeaders(auth?state.session?.access_token:null,headers),body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'})
