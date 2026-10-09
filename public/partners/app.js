@@ -56,7 +56,7 @@ async function sendEmail(){
  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){toast('Enter a valid business email.',true);return}
  try{
   setBusy('email-link',true)
-  const redirect=location.origin+'/partners/'
+  const redirect=location.origin+(location.pathname.startsWith('/partners')?'/partners/':'/')
   await req('/auth/v1/otp',{method:'POST',auth:false,body:{email,create_user:true},headers:{'Content-Type':'application/json','x-supabase-auth-redirect-to':redirect}})
   sessionStorage.setItem('gt_partner_email',email)
   toast('Sign-in email requested. Check your inbox, and return to this page after verifying.')
