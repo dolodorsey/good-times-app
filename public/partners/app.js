@@ -122,7 +122,7 @@ function renderSearch(items=[]){
 }
 async function searchVenues(){
  const q=$('venue-search').value.trim()
- state.selectedVenue=null;$('selected-venue').hidden=true
+ state.selectedVenue=null;$('selected-venue').hidden=true;$('published-venue-preview').hidden=true
  if(q.length<2){$('venue-results').innerHTML='<p class="form-hint">Enter at least two letters to find an eligible venue.</p>';return}
  const seq=++state.searchSeq
  const p=new URLSearchParams({select:'id,name,address,neighborhood,category_key,city_key',city_key:'eq.atlanta',status:'eq.active',is_verified:'eq.true',name:'ilike.*'+q.replace(/[*%,().]/g,'')+'*',order:'name.asc',limit:'12'})
@@ -132,12 +132,37 @@ async function searchVenues(){
   state.venues=rows||[];renderSearch(state.venues)
  }catch(e){$('venue-results').textContent='Directory is temporarily unavailable. Please retry.'}
 }
+
+async function showPublishedPreview(venueId){
+ const box=$('published-venue-preview'),target=$('venue-preview-details')
+ box.hidden=false;target.textContent='Loading current published details…'
+ try{
+  const qp=new URLSearchParams({select:'id,name,address,neighborhood,hero_image,short_desc,website,instagram_handle,booking_link',id:'eq.'+venueId,city_key:'eq.atlanta',status:'eq.active',is_verified:'eq.true',limit:'1'})
+  const list=await req('/rest/v1/gt_venues?'+qp.toString(),{auth:false})
+  if(state.selectedVenue?.id!==venueId)return
+  const venue=list?.[0]
+  if(!venue){target.textContent='Published details are not currently available.';return}
+  target.replaceChildren()
+  const wrap=document.createElement('div');wrap.style.display='flex';wrap.style.gap='15px';wrap.style.flexWrap='wrap';wrap.style.alignItems='flex-start'
+  if(venue.hero_image&&/^https:\/\//i.test(venue.hero_image)){
+   const img=document.createElement('img');img.src=venue.hero_image;img.alt='Existing verified venue image';img.loading='lazy';img.style.width='150px';img.style.height='113px';img.style.borderRadius='9px';img.style.objectFit='cover';img.style.border='1px solid #454545';wrap.appendChild(img)
+  }
+  const content=document.createElement('div');content.style.flex='1';content.style.minWidth='180px'
+  for(const [value,size,color] of [[venue.name,'17px','#f7f1e8'],[venue.address,'12px','#b6b3ad'],[venue.short_desc,'12px','#b6b3ad']]){
+   if(value){const p=document.createElement('p');p.textContent=value;p.style.fontSize=size;p.style.color=color;p.style.margin='3px 0 10px';p.style.lineHeight='1.45';content.appendChild(p)}
+  }
+  if(venue.website&&/^https:\/\//i.test(venue.website)){const a=document.createElement('a');a.href=venue.website;a.textContent='Current official website ↗';a.target='_blank';a.rel='noopener noreferrer';a.style.fontSize='12px';a.style.color='#deb960';content.appendChild(a)}
+  wrap.appendChild(content);target.appendChild(wrap)
+ }catch(err){target.textContent='Current public venue details could not be loaded.'}
+}
+
 function selectVenue(id){
  const v=state.venues.find(x=>x.id===id);if(!v)return
  state.selectedVenue=v;$('selected-venue').hidden=false
  $('selected-venue').innerHTML='<strong>✓ '+escaped(v.name)+'</strong><br/><small>'+escaped(v.address||'Atlanta venue')+'</small>'
  $('venue-search').value=v.name;$('venue-results').innerHTML=''
  $('unlisted').checked=false;$('manual-venue-wrap').hidden=true
+ showPublishedPreview(id)
 }
 function view(name){
  for(const el of document.querySelectorAll('.panel-view'))el.classList.toggle('active',el.id==='view-'+name)
@@ -232,7 +257,7 @@ function bind(){
   const serv=e.target.closest('[data-service]');if(serv){$('interest-category').value=serv.dataset.service;$('interest-form').scrollIntoView({behavior:'smooth',block:'start'})}
  })
  let searchTimer;$('venue-search').addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(searchVenues,350)})
- $('unlisted').addEventListener('change',e=>{const checked=e.target.checked;$('manual-venue-wrap').hidden=!checked;if(checked){state.selectedVenue=null;$('selected-venue').hidden=true;$('venue-results').innerHTML=''}})
+ $('unlisted').addEventListener('change',e=>{const checked=e.target.checked;$('manual-venue-wrap').hidden=!checked;if(checked){state.selectedVenue=null;$('selected-venue').hidden=true;$('published-venue-preview').hidden=true;$('venue-results').innerHTML=''}})
  $('email-link').addEventListener('click',sendEmail)
  $('verify-code').addEventListener('click',verifyCode)
  $('claim-form').addEventListener('submit',submitClaim)
