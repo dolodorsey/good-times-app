@@ -4,6 +4,7 @@ import {publicApiHeaders} from '../src/lib/public-api-headers.js'
  */
 import {KHG_SUPABASE_URL,KHG_SUPABASE_ANON_KEY} from '../src/lib/supabase.js'
 import {inferCustomerTaxonomy} from './data.js'
+import {reviewedTitleMatches} from '../src/features/experience/complete/reviewed-event-facts.js'
 import {correctDisplayEvents} from '../src/features/experience/complete/taxonomy.js'
 import {eventTimeFields} from './event-time-display.js'
 import {eventFacts,SHOW_PUBLIC_FIELDS} from './event-facts.js'
@@ -37,7 +38,7 @@ export function showQuery(scope,cursor,now=Date.now()) {
  const clauses=[`show_date.gte.${scope.from}`,`show_date.lte.${scope.to}`]
  if(scope.id){const id=scope.id.replace(/^show:/,'');if(!/^[a-f0-9-]{36}$/i.test(id))throw new Error('Invalid event identity.');params.set('id','eq.'+id)}
  if(scope.venueId){if(!/^[a-f0-9-]{36}$/i.test(scope.venueId))throw new Error('Invalid venue identity.');params.set('venue_id','eq.'+scope.venueId)}
- if(scope.query)clauses.push('or('+['event_name','venue_name','genre','description'].map(f=>`${f}.ilike.${quote(textPattern(scope.query))}`).join(',')+')')
+ if(scope.query)clauses.push('or('+[...['event_name','venue_name','genre','description'].map(f=>`${f}.ilike.${quote(textPattern(scope.query))}`),...reviewedTitleMatches(scope.query).map(id=>`id.eq.${id}`)].join(',')+')')
  // Filter category/subcategory after taxonomy correction, not against stale source labels.
  // Public eligibility, dates and the bounded scan still apply to every raw page.
  if(cursor)clauses.push(`or(show_date.gt.${cursor.date},and(show_date.eq.${cursor.date},id.gt.${quote(cursor.id)}))`)

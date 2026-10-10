@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import {mapShow,browse} from '../api/browse.js'
+import {mapShow,browse,showQuery,browseScope} from '../api/browse.js'
 import {normalizePlanInput,composePlan,venueFits,editStops} from '../src/features/experience/complete/planner.js'
 import {parsePlanIntent} from '../src/features/experience/complete/plan-intent.js'
 import {discoveryWindow,filterDiscoveryEvents} from '../src/features/experience/complete/discovery-time.js'
@@ -84,3 +84,5 @@ test('organizer-cancelled occurrence cannot enter discovery or a new itinerary',
 })
 
 test('organizer-postponed Drake occurrence is not an available plan candidate',()=>{assert.equal(mapShow(show(93,{id:'381bff7b-c1d3-46bd-b1f9-f373eaa34709',event_name:"We Should Link ATL: Bracket Party - DRAKE EDITION",show_date:'2026-10-10',ticket_url:'https://www.eventbrite.com/e/we-should-link-atl-bracket-party-drake-edition-tickets-1997844875804'}),now),null)})
+
+test('reviewed title remains searchable before upstream publication',()=>{const q=showQuery(browseScope('/api/browse?query=Reggae%20vs%20Soca',now),null,now).get('and');assert.match(q,/id.eq.7e09a6d0-df5f-44ea-9352-e240215e78e6/);assert.doesNotMatch(showQuery(browseScope('/api/browse?query=unrelated',now),null,now).get('and'),/id.eq.7e09/)})
