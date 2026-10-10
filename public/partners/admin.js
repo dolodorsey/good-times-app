@@ -113,7 +113,7 @@ async function submitAction(action){
  try{
   let result;
   if(state.tab==='media')result=await rpc('gt_portal_staff_media_decision',{p_media_id:current.id,p_decision:action,p_note:note});
-  else if(action==='publish')result=await rpc('gt_portal_staff_publish',{p_claim_id:current.id,p_fields:[...document.querySelectorAll('[name="publish-field"]:checked')].map(x=>x.value),p_evidence_ref:evidence});
+  else if(action==='publish')result=await rpc('gt_portal_staff_publish_checked',{p_claim_id:current.id,p_fields:[...document.querySelectorAll('[name="publish-field"]:checked')].map(x=>x.value),p_evidence_ref:evidence,p_expected_draft:current.profile_draft||{}});
   else result=await rpc('gt_portal_staff_claim_decision',{p_claim_id:current.id,p_decision:action,p_authority_method:method||null,p_evidence_ref:evidence||null,p_note:note});
   notice((result?.status||action)+' saved with audit evidence.');await refreshAll();
  }catch(err){notice('Action blocked: '+err.message,true)}finally{buttons.forEach(b=>b.disabled=false)}
