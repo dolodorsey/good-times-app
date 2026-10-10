@@ -90,3 +90,8 @@ c59ba076f90ce4fe915c21a7ebc2b0495ce2f84f:api/place-photo.js:generic-api-key:2
 80f4fa0f73fd9cb61c9cee8f83ac4a14c7c7d872:docs/all-pages/20_Event_Detail.md:generic-api-key:18
 # Same reviewed prose copied into its validator; exact source digest checked.
 733de0880c41b125acc772b2875c2ea579971d91:scripts/validate-secret-exceptions.py:generic-api-key:18
+
+# Public publishable keys in partner history; validated by the existing public_line rule.
+27d51a5271c15654cbed333de5e5c2aa39da89b0:public/partners/admin.js:generic-api-key:3
+4f36a9439551bfc3de2f4cf0b9a78d9cba3fe249:public/partners/app.js:generic-api-key:4
+515b9a1248530f2977bc52e7606ca213a32671ff:public/partners/outreach.js:generic-api-key:3
