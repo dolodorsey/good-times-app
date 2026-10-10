@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="robots" content="noindex,nofollow"/><meta name="theme-color" content="#08090b"/>
+<title>GOOD TIMES | Partner Verification Desk</title>
+<link rel="stylesheet" href="./partners.css"/>
+<style>
+.staff-grid{display:grid;grid-template-columns:minmax(280px,1fr) minmax(350px,1.12fr);gap:15px;align-items:start}
+.review-list{display:flex;flex-direction:column;gap:10px;max-height:660px;overflow:auto}
+.review-item{display:block;width:100%;text-align:left;background:#16181a;color:#eee;border:1px solid #35383c;border-radius:9px;padding:17px;line-height:1.55}
+.review-item:hover,.review-item[aria-selected="true"]{border-color:#deb960;background:#28241d}
+.review-item strong,.review-item small{display:block}.review-item small{color:#9d9d9b;font-size:11px;margin-top:6px}
+.staff-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}
+.staff-tabs button{color:#c9c7be;background:#15171b;border:1px solid #3f4144;padding:11px 14px;border-radius:9px;font-size:12px;font-weight:800;min-height:44px}
+.staff-tabs button.active{color:#111;background:#deb960;border-color:#deb960}
+.review-detail{white-space:pre-wrap;font-size:12px;color:#e2ded6;line-height:1.7;background:#0c0e10;padding:15px;border:1px solid #383838;border-radius:9px;max-height:240px;overflow:auto;overflow-wrap:anywhere}
+.admin-stat{padding:14px 20px;border:1px solid #514228;border-radius:9px;background:#201b13;color:#efdbb2;margin-bottom:16px;font-size:12px}
+.admin-verified{color:#82d7a6}
+.selected-staff-meta{font-size:11px;color:#b5b6b1;overflow-wrap:anywhere}
+.staff-buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:17px}.staff-buttons .button{flex:1;justify-content:center}
+.admin-hint{font-size:11px;color:#adadaa;line-height:1.65}
+.staff-two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.staff-actions{padding-top:14px}
+.admin-image{max-height:270px;max-width:100%;object-fit:contain;display:block;margin:12px auto;background:#090a0d}
+@media(max-width:950px){.staff-grid{grid-template-columns:1fr}.staff-two{grid-template-columns:1fr}}
+</style>
+</head><body>
+<div class="portal-shell">
+<header class="global-header"><a href="./" class="logo"><span class="logo-mark">GT<span class="logo-dot">.</span></span><span class="logo-text"><strong>GOOD TIMES</strong><small>PARTNER VERIFICATION DESK</small></span></a>
+<div class="header-end"><span class="pilot-flag">RESTRICTED STAFF ACCESS</span><a class="button outline" href="./outreach.html">Venue Outreach Prep ↗</a> <a class="button outline" href="./">Partner portal ↗</a></div></header>
+<main class="main" style="max-width:1380px;margin:auto">
+<div class="section-header"><div><span class="section-index">GOOD TIMES / ATLANTA / OFFICIAL OPERATIONS</span><h2>Partner Verification Desk</h2><p>Verify authority. Review assets. Publish only approved venue facts.</p></div></div>
+<div id="auth" class="admin-stat">Checking your verified GOOD TIMES staff access…</div>
+<section id="staff-app" hidden>
+<div class="metrics-grid">
+<article class="metric-card"><small>CLAIM REVIEWS</small><strong id="claims-count">—</strong><span>Ownership must be evidenced.</span></article>
+<article class="metric-card"><small>MEDIA QUEUE</small><strong id="media-count">—</strong><span>Assets must be licensed and reviewed.</span></article>
+<article class="metric-card"><small>MARKETING INQUIRIES</small><strong id="interest-count">—</strong><span>Not paid orders or sent proposals.</span></article></div>
+<div class="staff-tabs" role="tablist">
+<button type="button" data-staff-tab="claims" class="active">Venue Claims</button>
+<button type="button" data-staff-tab="media">Media Review</button>
+<button type="button" data-staff-tab="interests">Growth Inquiries</button>
+<button type="button" data-staff-tab="publications">Published Changes</button>
+<button type="button" id="staff-refresh">↻ Refresh</button></div>
+<div class="staff-grid">
+<div><div class="section-index">REVIEW QUEUE</div><div class="review-list" id="review-list" style="margin-top:15px"></div></div>
+<div class="form-panel">
+<div class="step-heading"><span class="step-num">✓</span><div><h3 id="detail-title">Choose a record</h3><p id="detail-status">Select a request to inspect its verified state.</p></div></div>
+<div id="selected-summary" class="selected-staff-meta"></div>
+<pre id="selected-detail" class="review-detail">Only real applicant records will appear here.</pre>
+<div id="media-preview"></div>
+<form id="staff-action" hidden>
+<div id="authority-wrap">
+<label for="authority-method">BUSINESS AUTHORITY EVIDENCE METHOD</label>
+<select id="authority-method">
+<option value="">Choose a verified method…</option>
+<option value="official_business_domain">Confirmed business-domain contact</option>
+<option value="confirmed_business_channel">Verified official business channel</option>
+<option value="signed_authorization">Signed authorization</option>
+<option value="verified_existing_owner">Confirmed existing operator</option>
+<option value="documentary_staff_review">Reviewed documentary proof</option>
+</select></div>
+<label for="staff-evidence">EVIDENCE REFERENCE / SOURCE</label>
+<textarea id="staff-evidence" rows="2" placeholder="Describe and reference verified evidence, not a guess." maxlength="1500"></textarea>
+<label for="staff-note">REVIEW NOTES</label>
+<textarea id="staff-note" rows="3" placeholder="Document what was independently verified or why review is held." maxlength="1800"></textarea>
+<div id="publish-controls" hidden><label>SELECT ONLY VERIFIED FIELDS TO PUBLISH</label>
+<label class="checkline"><input type="checkbox" name="publish-field" value="website"/> Official website</label>
+<label class="checkline"><input type="checkbox" name="publish-field" value="instagram_handle"/> Instagram handle</label>
+<label class="checkline"><input type="checkbox" name="publish-field" value="booking_link"/> Booking URL</label>
+<label class="checkline"><input type="checkbox" name="publish-field" value="short_desc"/> Brief venue description</label>
+<p class="admin-hint">No address, hours, quality score, category or event status can be changed here.</p></div>
+<div class="staff-buttons" id="staff-buttons"></div>
+</form>
+<p class="admin-hint" style="margin-top:20px">Approvals must be based on independently verified business authority and are recorded with staff identity and evidence. A successful claim does not automatically publish its details or reserve advertising.</p>
+</div></div></section>
+<div class="toast" id="admin-toast" hidden role="status"></div>
+<footer class="content-footer">GOOD TIMES VERIFIED PARTNER OPERATIONS <span>ACCESS CONTROLLED · ALL ACTIONS AUDITED</span></footer>
+</main></div><script type="module" src="./admin.js"></script></body></html>

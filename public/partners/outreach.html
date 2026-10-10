@@ -1,0 +1,51 @@
+<!doctype html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="robots" content="noindex,nofollow"/><meta name="theme-color" content="#08090b"/><title>GOOD TIMES | Venue Outreach Prep</title><link rel="stylesheet" href="./partners.css"/><style>
+.staff-status{margin:20px 0;background:#242018;border:1px solid #645130;color:#f2dfb0;border-radius:10px;padding:16px;font-size:12px}
+.outreach-frame{display:grid;grid-template-columns:minmax(280px,0.9fr) minmax(350px,1.1fr);gap:16px;align-items:start}
+.stagebar{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+.stagebar button{min-height:44px;background:#18191b;border:1px solid #424242;border-radius:9px;color:#eee;padding:11px 12px;font-size:11px;font-weight:700}
+.stagebar button.active{background:#443823;border-color:var(--gold);color:var(--gold-strong)}
+.outreach-item{width:100%;text-align:left;padding:16px 17px;background:#161719;color:#eee;border-radius:9px;border:1px solid #3b3c3c;display:block;margin-bottom:9px}
+.outreach-item.active{border-color:var(--gold);background:#27251f}
+.outreach-item strong{display:block;font-size:13px;margin-bottom:7px}
+.outreach-item small{color:#afb0ab;font-size:11px;line-height:1.5}
+.outreach-list{min-height:240px}
+.pagination{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:13px 0}
+.pagination button{background:#292a2d;color:#eee;border:1px solid #5a5446;padding:10px 13px;min-height:44px;border-radius:7px}
+.small-note{font-size:11px;line-height:1.65;color:#b8b6af}
+.reference{font-family:monospace;font-size:11px;word-break:break-all;color:#a5b7b0}
+.form-panel a{color:var(--gold)}
+.panel-state{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.stage-count{color:#b3b3ae;font-size:11px}
+@media(max-width:900px){.outreach-frame{grid-template-columns:1fr}}
+</style></head>
+<body><header class="global-header"><a class="logo" href="./"><span class="logo-mark">GT<span class="logo-dot">.</span></span><span class="logo-text"><strong>GOOD TIMES</strong><small>VENUE OUTREACH PREPARATION</small></span></a><div class="header-end"><span class="pilot-flag">INTERNAL / NO SEND ACCESS</span><a class="minimal" href="./admin.html">Verification desk ↗</a></div></header>
+<main class="main" style="max-width:1360px;margin:auto">
+<div class="section-header"><div><span class="section-index">ATLANTA / VENUE PARTNERS / MUSE HANDOFF</span><h2>Make the introduction count.</h2><p>Research decision-makers. Verify the destination. Prepare a venue-specific email. Muse handles authorized external sends.</p></div></div>
+<div class="staff-status" id="status">Checking staff authorization…</div>
+<section id="workspace" hidden>
+<div class="stagebar" id="stagebar"><button data-stage="research" class="active">Needs contact research <b id="cnt-research"></b></button><button data-stage="contact_qualified">Recipient verified <b id="cnt-contact_qualified"></b></button><button data-stage="copy_approved">Email prepared <b id="cnt-copy_approved"></b></button><button data-stage="send_ready">Ready after full QA <b id="cnt-send_ready"></b></button><button data-stage="sent_receipted">Sent with receipt <b id="cnt-sent_receipted"></b></button></div>
+<div class="outreach-frame">
+<div><div class="section-index">01 / CANONICAL VENUE SHORTLIST</div><div id="list" class="outreach-list" style="margin-top:14px"></div><div class="pagination"><button id="prev" type="button">← Previous</button><span id="page-note" class="stage-count"></span><button id="next" type="button">Next →</button></div></div>
+<div class="form-panel">
+<div class="step-heading"><span class="step-num">02</span><div><h3 id="venue-name">Select a venue</h3><p id="venue-status">Venue records are not yet permission to send.</p></div></div>
+<div id="venue-identity" class="small-note"></div>
+<form id="recipient-form">
+<label for="contact-name">VERIFIED BUSINESS CONTACT NAME</label><input id="contact-name" required maxlength="160"/>
+<label for="contact-title">ROLE / TITLE</label><input id="contact-title" required maxlength="160" placeholder="General Manager / Ownership / Marketing"/>
+<label for="contact-email">OFFICIAL RECIPIENT EMAIL</label><input id="contact-email" type="email" required autocomplete="off" maxlength="254"/>
+<label for="contact-proof">SOURCE URL VERIFYING THIS EMAIL</label><input id="contact-proof" type="url" required maxlength="1500" placeholder="https://officialvenuewebsite.com/contact"/>
+<label for="contact-note">RESEARCHER'S VERIFICATION NOTE</label><textarea id="contact-note" required minlength="20" rows="3" placeholder="Explain how this published email connects to the venue and recipient."></textarea>
+<button class="button primary" id="save-contact" type="submit">Save verified research ↗</button>
+</form>
+<div style="border-top:1px solid #45423b;margin:26px 0"></div>
+<form id="email-form">
+<div class="step-heading"><span class="step-num">03</span><div><h3>Personalized invitation</h3><p>Saved to the review queue only. This does not send an email.</p></div></div>
+<label for="subject">EMAIL SUBJECT</label><input id="subject" readonly/>
+<label for="email-copy">PERSONALIZED EMAIL BODY</label><textarea id="email-copy" rows="12" maxlength="4000" required></textarea>
+<label for="copy-note">REVIEW NOTES</label><textarea id="copy-note" rows="2" required placeholder="What venue-specific facts did you verify?"></textarea>
+<button class="button outline" id="save-copy" type="submit">Approve prepared draft (no send) ↗</button>
+</form>
+<div class="growth-notice" style="margin-top:22px"><strong>NO SEND PERMISSION</strong><span>Public portal link is currently gated and OTP completion is not yet end-to-end verified. No records may be marked ready or emailed until tests, DNC, consent/legal checks, suppression and Muse approvals are complete.</span></div>
+</div></div></section>
+<div id="toast" class="toast" hidden role="status"></div>
+<footer class="content-footer">GOOD TIMES · VENUE GROWTH <span>PREPARATION IS NOT EXECUTION</span></footer></main><script type="module" src="./outreach.js"></script></body></html>
