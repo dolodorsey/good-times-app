@@ -75,3 +75,12 @@ test('reviewed event correction matches exact source, record and occurrence with
  const fixed=mapShow(raw,now);assert.match(fixed.title,/^REGGAE VS SOCA/);assert.equal(fixed.age_requirement,'21+');assert.equal(fixed.is_verified,false);assert.equal(fixed.source_fact_corrections[0].original_title,raw.event_name);assert.equal(fixed.id,raw.id)
  for(const patch of [{id:uuid(91)},{show_date:'2026-10-11'},{ticket_url:'https://example.test/event'}])assert.equal(mapShow({...raw,...patch},now).title,raw.event_name)
 })
+
+
+test('organizer-cancelled occurrence cannot enter discovery or a new itinerary',()=>{
+ const raw=show(92,{id:'89d0604e-fa2e-48f6-87f8-d62cf28054bd',event_name:'PRVCY Saturdays @ Embr Lounge',show_date:'2026-10-10',show_time:'22:00',venue_name:'Embr Lounge',ticket_url:'https://www.eventbrite.com/e/prvcy-saturdays-embr-lounge-tickets-1979600848427'})
+ assert.equal(mapShow(raw,now),null)
+ assert.ok(mapShow({...raw,show_date:'2026-10-17'},now))
+})
+
+test('organizer-postponed Drake occurrence is not an available plan candidate',()=>{assert.equal(mapShow(show(93,{id:'381bff7b-c1d3-46bd-b1f9-f373eaa34709',event_name:"We Should Link ATL: Bracket Party - DRAKE EDITION",show_date:'2026-10-10',ticket_url:'https://www.eventbrite.com/e/we-should-link-atl-bracket-party-drake-edition-tickets-1997844875804'}),now),null)})
