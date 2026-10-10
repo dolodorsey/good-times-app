@@ -82,7 +82,9 @@ function showAuth(){
  if(!signed)$('staff-console-link').hidden=true
 }
 async function initSession(){
- if(!await authenticated() && state.session?.refresh_token){await refreshSession();if(!await authenticated())saveSession(null)}
+ let valid=await authenticated()
+ if(!valid && state.session?.refresh_token){if(await refreshSession())valid=await authenticated()}
+ if(!valid)saveSession(null)
  showAuth()
  if(state.session?.user?.id){await loadPartnerData();try{const staff=await req('/rest/v1/rpc/gt_portal_staff_profile',{method:'POST',body:{},headers:{'Content-Type':'application/json'}});$('staff-console-link').hidden=!staff?.authorized}catch{$('staff-console-link').hidden=true}}else{state.claims=[];state.media=[];state.interests=[];renderAll()}
 }
