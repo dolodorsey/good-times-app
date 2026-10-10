@@ -45,7 +45,7 @@ try{
     await page.waitForSelector('.gtc-home',{state:'visible',timeout:20000})
     await capture(page,target,'01-home')
 
-    await openTab(page,'Discover','.gtc-places')
+    await openTab(page,'Places','.gtc-places')
     await capture(page,target,'02-discover')
 
     await openTab(page,'Plan','[data-page="23"]')

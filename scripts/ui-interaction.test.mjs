@@ -66,7 +66,7 @@ for(const vp of [{name:'desktop',width:1440,height:900,mobile:false},{name:'mobi
     try{
       const nav=page.locator('.gt5-nav button')
       assert.equal(await nav.count(),5,'V4 navigation must contain five protected destinations');assert.equal(await nav.filter({hasText:'Saved'}).count(),0,'Saved must not return as a permanent destination')
-      assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Discover','Entertainment','Plan','Profile'])
+      assert.deepEqual((await nav.allTextContents()).map(x=>x.replace(/^[^A-Za-z]+/,'').trim()),['Home','Places','Plan','Entertainment','Profile'])
       for(let round=0;round<3;round++)for(let i=0;i<5;i++){await nav.nth(i).click();await page.waitForTimeout(100);await assertOnscreen(page,'.gt5-nav')}
 
       await nav.filter({hasText:'Home'}).click()

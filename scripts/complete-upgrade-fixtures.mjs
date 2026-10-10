@@ -39,6 +39,7 @@ export async function install(context,state){
  await context.route('**/*',async route=>{const req=route.request(),u=new URL(req.url()),p=u.searchParams,table=u.pathname.split('/').at(-1)
   if(u.pathname==='/api/health')return route.fulfill(json({ok:true,service:'good-times',customer_ready:true,content_ready:true}))
   if(u.pathname.startsWith('/api/data'))return route.fulfill(json({ok:true,connected:true,city:'atlanta',events:correctDisplayEvents(events),venues:[...venues,food],counts:{events:events.length,venues:7}}))
+  if(u.pathname==='/api/sports-live')return route.fulfill(json({ok:true,items:[],asOf:new Date(NOW).toISOString(),partial:false,failedLeagues:[]}))
   if(u.pathname==='/api/browse'){if(state.failBrowse)return route.fulfill({status:503,contentType:'application/json',body:'{"ok":false,"error":"Fixture refresh failure"}'});try{return route.fulfill(json(await browse(req.url(),{fetcher:publicFetch,now:NOW})))}catch(e){return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({ok:false,error:e.message})})}}
   if(u.pathname==='/api/saved-content')return route.fulfill(json(await savedContent(req.url(),{fetcher:publicFetch,now:NOW})))
   if(u.pathname==='/api/plan'){state.apiWrites++;try{return route.fulfill(json(await generatePlan(JSON.parse(req.postData()),{fetcher:publicFetch,now:NOW,token:'test-token'})))}catch(e){return route.fulfill({status:400,contentType:'application/json',body:JSON.stringify({ok:false,error:e.message})})}}

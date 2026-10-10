@@ -73,7 +73,8 @@ export async function shareContent({ title='GOOD TIMES', text='', url='https://t
       }
     }
     try {
-      await navigator.clipboard?.writeText([text, url].filter(Boolean).join('\n'));
+      if (!navigator.clipboard?.writeText) return false;
+      await navigator.clipboard.writeText([text, url].filter(Boolean).join('\n'));
       return true;
     } catch (error) {
       return false;

@@ -36,6 +36,7 @@
     "@capacitor/ios": "^8.5.2",
     "@electric-sql/pglite": "0.5.8",
     "@vitejs/plugin-react": "^6.0.5",
+    "axe-core": "^4.14.0",
     "playwright-core": "^1.62.1",
     "vite": "^8.2.0"
   },

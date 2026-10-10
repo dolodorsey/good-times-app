@@ -4,6 +4,7 @@ export function discoveryWindow(mode,now=Date.now()) {
  const c=selectedCityClock('atlanta',now),day=new Date(c.date+'T12:00:00Z').getUTCDay()
  if(mode==='tonight')return {from:c.serviceDate,to:shiftDate(c.serviceDate,1)}
  if(mode==='weekend'){const friday=shiftDate(c.date,day===0?-2:day===6?-1:(5-day+7)%7);return {from:friday,to:shiftDate(friday,3)}}
+ if(mode==='month'){const d=new Date(c.date+'T12:00:00Z');d.setUTCMonth(d.getUTCMonth()+1,0);return {from:c.date,to:d.toISOString().slice(0,10)}}
  const n=mode==='week'?6:mode==='next-week'?13:mode==='month'?30:180
  return {from:mode==='next-week'?shiftDate(c.date,7):c.date,to:shiftDate(c.date,n)}
 }

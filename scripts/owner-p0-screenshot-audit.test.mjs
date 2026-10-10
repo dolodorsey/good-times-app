@@ -70,7 +70,7 @@ for(const vp of viewports)test(`owner screenshot acceptance ${vp.label}`,{skip:!
     assert.equal(overlap(dateBox,sortBox),false,'Date and Sort controls must never overlap')
     await shot(page,`owner-${vp.label}-upcoming-controls.png`)
 
-    await navTo(page,'Discover')
+    await navTo(page,'Places')
     const placesSearch=page.getByRole('textbox',{name:'Search Atlanta places'})
     assert.equal(await placesSearch.getAttribute('placeholder'),'Place, activity or neighborhood…')
     await shot(page,`owner-${vp.label}-places.png`)
@@ -80,7 +80,7 @@ for(const vp of viewports)test(`owner screenshot acceptance ${vp.label}`,{skip:!
     assert.equal(await entertainmentSearch.getAttribute('placeholder'),'Clubs, concerts, sports, activities…')
     await shot(page,`owner-${vp.label}-entertainment.png`)
 
-    await navTo(page,'Discover')
+    await navTo(page,'Places')
     await page.getByRole('navigation',{name:'Place shortcuts'}).getByRole('button',{name:'Nightlife',exact:true}).click()
     await page.locator('[data-gt-subcategories="nightlife"]').waitFor()
     await shot(page,`owner-${vp.label}-bars-lounges.png`)

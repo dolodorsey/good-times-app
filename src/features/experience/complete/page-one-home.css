@@ -22,6 +22,7 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen="home"] {
  & .gtc-section header button{font-size:11px;}
  & .gt01-rail{display:flex;gap:9px;overflow-x:auto;align-items:stretch;scroll-snap-type:x proximity;scrollbar-width:thin;padding-bottom:4px;}
  & .gt01-rail-item{flex:0 0 142px;min-width:0;display:flex;flex-direction:column;scroll-snap-align:start;}
+ & .gt01-rail-item:only-child{flex:1;}
  & .gt01-rail-item .gtc-card{flex:1;border-radius:10px!important;background:linear-gradient(#101619,#080b0c)!important;}
  & .gt01-rail .gtc-picture{height:93px;}
  & .gt01-rail .gtc-card-copy{padding:8px;gap:4px;}

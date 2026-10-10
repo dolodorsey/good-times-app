@@ -128,6 +128,12 @@ jobs:
           GT_UI_SESSION: /tmp/gt-qa-session.json
           GT_UI_ARTIFACTS: ui-artifacts
         run: timeout 480s node --test --test-concurrency=1 scripts/ui-interaction.test.mjs
+      - name: Verify V5 guest accessibility and reflow
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: timeout 120s node --test --test-concurrency=1 scripts/v5-a11y.test.mjs scripts/v5-extra-journeys.test.mjs
       - name: Upload rendered screenshots
         if: always()
         uses: actions/upload-artifact@v7

@@ -134,11 +134,12 @@ function PremiumRoot({children,launch=false,installPrompt=false}){
 }
 
 function SignedOutMemberGate(){
+  const [guest,setGuest]=useState(false)
   const complete=(nextSession,prefs)=>{
     if(prefs){try{localStorage.setItem('gt_personalization',JSON.stringify({...prefs,updated_at:new Date().toISOString()}))}catch{}}
     if(nextSession)window.location.reload()
   }
-  return <LazyOnboarding onComplete={complete}/>
+  return guest?<LazyCommandApp onAuth={()=>setGuest(false)}/>:<LazyOnboarding onComplete={complete} onGuest={()=>setGuest(true)}/>
 }
 
 async function bootstrap(){

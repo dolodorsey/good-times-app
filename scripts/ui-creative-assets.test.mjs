@@ -70,7 +70,7 @@ async function prove(width,height,name){
   try{
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
     await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
-    await page.locator('.gt5-nav button').filter({hasText:'Discover'}).click()
+    await page.locator('.gt5-nav button').filter({hasText:'Places'}).click()
     await page.waitForSelector('.gtc-places',{state:'visible',timeout:10000})
     await page.waitForSelector('.gt-compact-category-grid>button',{timeout:15000})
     const lanes=await page.evaluate(()=>[...document.querySelectorAll('.gt-compact-category-grid>button')].map(card=>({label:String(card.querySelector('strong')?.textContent||'').trim(),background:getComputedStyle(card).backgroundImage})))

@@ -43,7 +43,22 @@ export function homeCollections(events,venues,now=Date.now(),preferences=[]) {
  return {tonight,picks,next}
 }
 export function validStopStatus(stop) {const value=String(stop?.status||'SUGGESTED').toUpperCase();if(['CONFIRMED','TICKETED','HELD','REQUESTED','WAITLIST'].includes(value))return 'ACTION REQUIRED';return ['SUGGESTED','SELECTED','ACTION REQUIRED','CANCELLED','COMPLETED'].includes(value)?value:'SUGGESTED'}
-export function itineraryWarnings(plan) {const warnings=[];let previous=null;for(const stop of list(plan?.stops)){const minutes=timeMinutes(stop.time);const day=dateNumber(stop.date||plan.itinerary_date);const n=minutes===null||day===null?null:day*1440+minutes;if(n!==null&&previous!==null&&n<previous)warnings.push('The stop order conflicts with the selected times. Adjust the time or order before going.');if(n!==null)previous=n;if(stop.hours_verified!==true&&stop.type!=='event')warnings.push('Venue hours and availability still need confirmation.');if(stop.travel_verified!==true)warnings.push('Travel times are not confirmed. Leave a travel buffer between stops.')}return [...new Set(warnings)]}
+export function itineraryWarnings(plan) {
+ const warnings=[];let previous=null,previousEnd=null
+ const base=dateNumber(plan.itinerary_date),start=timeMinutes(plan.vibe_profile?.start),end=timeMinutes(plan.vibe_profile?.end)
+ const lower=base!==null&&start!==null?base*1440+start:null,upper=lower!==null&&end!==null?base*1440+end+(end<=start?1440:0):null
+ for(const stop of list(plan?.stops)){
+  const minutes=timeMinutes(stop.time),day=dateNumber(stop.date||plan.itinerary_date),n=minutes===null||day===null?null:day*1440+minutes
+  if(n!==null&&previous!==null&&n<previous)warnings.push('The stop order conflicts with the selected times. Adjust the time or order before going.')
+  if(n!==null&&previousEnd!==null&&n<previousEnd+30)warnings.push('Stops overlap or lack the 30-minute planning buffer. Adjust their times; travel is not verified.')
+  const finish=n!==null&&Number.isFinite(stop.duration_minutes)?n+stop.duration_minutes:n
+  if(n!==null&&((lower!==null&&n<lower)||(upper!==null&&finish>upper)))warnings.push('A stop falls outside your requested time window. Adjust it before going.')
+  if(n!==null)previous=n;previousEnd=finish
+  if(stop.hours_verified!==true)warnings.push(stop.type==='event'?'Event facts still need provider confirmation.':'Venue hours and availability still need confirmation.')
+  if(stop.travel_verified!==true)warnings.push('Travel times are not confirmed. Leave a travel buffer between stops.')
+ }
+ return [...new Set(warnings)]
+}
 export function planText(plan) {return [plan.name||'My GOOD TIMES plan',`${displayDate(plan.itinerary_date)} · Atlanta`,...list(plan.stops).map((s,i)=>`${i+1}. ${displayTime(s.time)} — ${s.name} · ${validStopStatus(s)}`),'Recommendations only. Check hours and book separately.'].join('\n')}
 const escapeICS=s=>String(s||'').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;')
 export function calendarText(plan) {const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');const blocks=list(plan.stops).filter(s=>dateNumber(s.date||plan.itinerary_date)!==null&&timeMinutes(s.time)!==null).map((s,i)=>['BEGIN:VEVENT',`UID:${escapeICS(plan.id||'draft')}-${i}@thegoodtimesworldwide.com`,`DTSTAMP:${stamp}`,`DTSTART;TZID=America/New_York:${(s.date||plan.itinerary_date).replaceAll('-','')}T${s.time.slice(0,5).replace(':','')}00`,`SUMMARY:${escapeICS(s.name)}`,`LOCATION:${escapeICS(s.address||s.venue||'Atlanta')}`,`DESCRIPTION:${escapeICS('GOOD TIMES suggestion — not a reservation. '+(safeLink(s.ticket_url||s.booking_link||s.website)||''))}`,'END:VEVENT'].join('\r\n'));return ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//GOOD TIMES//Experience Plan//EN','CALSCALE:GREGORIAN',...blocks,'END:VCALENDAR',''].join('\r\n')}
