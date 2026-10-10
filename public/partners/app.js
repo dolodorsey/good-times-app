@@ -57,7 +57,7 @@ async function sendEmail(){
  try{
   setBusy('email-link',true)
   const redirect=location.origin+(location.pathname.startsWith('/partners')?'/partners/':'/')
-  await req('/auth/v1/otp',{method:'POST',auth:false,body:{email,create_user:true},headers:{'Content-Type':'application/json','x-supabase-auth-redirect-to':redirect}})
+  await req('/auth/v1/otp?redirect_to='+encodeURIComponent(redirect),{method:'POST',auth:false,body:{email,create_user:true},headers:{'Content-Type':'application/json'}})
   sessionStorage.setItem('gt_partner_email',email)
   toast('Sign-in email requested. Check your inbox, and return to this page after verifying.')
  }catch(err){toast('Unable to send sign-in request: '+err.message,true)}finally{setBusy('email-link',false)}
