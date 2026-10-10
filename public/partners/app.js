@@ -41,7 +41,7 @@ async function refreshSession(){
  const r=await req('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:{refresh_token:state.session.refresh_token},auth:false,headers:{'Content-Type':'application/json'}})
  if(!r.access_token)throw Error('Missing session')
  saveSession({...r,user:state.session.user});return true
- }catch{saveSession(null);return false}
+ }catch{return false}
 }
 function readHashAuth(){
  const p=new URLSearchParams(location.hash.slice(1))
@@ -79,11 +79,12 @@ function showAuth(){
  $('signed-out-auth').hidden=signed;$('signed-in-auth').hidden=!signed;$('signout').hidden=!signed
  $('account-pill').textContent=signed?safeName(state.session.user.email):'Official venue access'
  $('verified-email').textContent=signed?safeName(state.session.user.email):''
+ if(!signed)$('staff-console-link').hidden=true
 }
 async function initSession(){
- if(!await authenticated() && state.session?.refresh_token){await refreshSession();await authenticated()}
+ if(!await authenticated() && state.session?.refresh_token){await refreshSession();if(!await authenticated())saveSession(null)}
  showAuth()
- if(state.session?.user?.id){await loadPartnerData()}else{state.claims=[];state.media=[];state.interests=[];renderAll()}
+ if(state.session?.user?.id){await loadPartnerData();try{const staff=await req('/rest/v1/rpc/gt_portal_staff_profile',{method:'POST',body:{},headers:{'Content-Type':'application/json'}});$('staff-console-link').hidden=!staff?.authorized}catch{$('staff-console-link').hidden=true}}else{state.claims=[];state.media=[];state.interests=[];renderAll()}
 }
 async function loadPartnerData(){
  try{
