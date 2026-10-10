@@ -68,3 +68,10 @@ test('sports watch parties retain their own type without capturing TV titles',as
  for(const title of ['Game of Thrones Watch Party','Dream Watch Party']){const tv=mapShow(show(79,{event_name:title,event_type:'party',category_key_v2:'nightlife',subcategory_key_v2:'late_night'}),now);assert.equal(tv.category_key,'nightlife')}
  const described=mapShow(show(80,{event_name:'Alumni Watch Party',event_type:'party',description:'Join the chapter for college football.'}),now);assert.equal(described.category_key,'sports_watch');assert.equal(described.subcategory_key,'watch_parties')
 })
+
+
+test('reviewed event correction matches exact source, record and occurrence without declaring all facts verified',()=>{
+ const raw=show(90,{id:'7e09a6d0-df5f-44ea-9352-e240215e78e6',event_name:'AFRO BEATS VS REGGAE | REGGAE ON THE ROOFTOP | FREE ENTRY TIL 11PM',show_date:'2026-10-10',show_time:'22:00',venue_name:'Cafe Circa',event_type:'party',category_key_v2:'nightlife',ticket_url:'https://www.eventbrite.com/e/reggae-vs-soca-reggae-on-the-rooftop-free-entry-til-11pm-tickets-2001072123589',age_requirement:'18+'})
+ const fixed=mapShow(raw,now);assert.match(fixed.title,/^REGGAE VS SOCA/);assert.equal(fixed.age_requirement,'21+');assert.equal(fixed.is_verified,false);assert.equal(fixed.source_fact_corrections[0].original_title,raw.event_name);assert.equal(fixed.id,raw.id)
+ for(const patch of [{id:uuid(91)},{show_date:'2026-10-11'},{ticket_url:'https://example.test/event'}])assert.equal(mapShow({...raw,...patch},now).title,raw.event_name)
+})

@@ -46,10 +46,22 @@ export function EventCollection({mode='upcoming',category=null,subcategory=null,
 }
 const TEAMS=[['NFL','Falcons','https://www.atlantafalcons.com/schedule/'],['NBA','Hawks','https://www.nba.com/hawks/schedule'],['MLB','Braves','https://www.mlb.com/braves/schedule'],['WNBA','Dream','https://dream.wnba.com/schedule'],['MLS','Atlanta United','https://www.atlutd.com/schedule/']]
 export function Sports({embedded=false,now,savedKeys,onEvent,onSave,onBack,onPlaces}){
- const [league,setLeague]=useState('All'),data=useBrowse({kind:'sports'}),games=data.items.filter(x=>league==='All'||x.league===league)
+ const [league,setLeague]=useState('All'),[date,setDate]=useState(()=>selectedCityClock('atlanta',now).date),data=useBrowse({date,league},true,'/api/sports-live'),games=data.items.filter(x=>league==='All'||x.league===league)
  return <section className="gtc-sports">{!embedded&&<header className="gtc-page-heading"><button onClick={onBack} aria-label="Back to Discover">←</button><div><h1>Sports & Watch</h1><small>Atlanta teams. Real game-day options.</small></div></header>}<div className="gtc-chips">{['All',...TEAMS.map(t=>t[0])].map(l=><button className={league===l?'active':''} aria-pressed={league===l} onClick={()=>setLeague(l)} key={l}>{l}</button>)}</div>
  <Section title="Atlanta teams"><div className="gtc-team-grid">{TEAMS.filter(([l])=>league==='All'||l===league).map(([l,n,url])=><ActionLink href={url} key={l}><small>{l}</small><strong>{n}</strong><span>Official schedule</span></ActionLink>)}</div></Section>
- <Section title="Provider schedules" subtext="Only recently updated games are shown. No unverified live scores.">{data.status==='loading'?<Skeleton/>:data.status==='error'?<State error title="Schedules could not refresh" action={<button onClick={data.reload}>Retry</button>}/>:!games.length?<State title="No fresh games in this feed" body="Use the official team schedules above. Ticketed local sports remain below."/>:<div className="gtc-grid">{games.map(g=><article className="gtc-matchup" key={g.id}><small>{g.league} · {g.is_home_game?'Home':'Away'}</small><h3>{g.home_team}<span>vs</span>{g.away_team}</h3><p>{displayDate(g.game_date)} · {displayTime(g.game_time)}</p><p>{g.venue}</p><small>Schedule checked {displayDate(g.updated_at?.slice(0,10))}</small></article>)}</div>}</Section>
+ <div className="gtc-controls"><label>Game date<input type="date" value={date} onChange={e=>{if(e.target.value)setDate(e.target.value)}}/></label><button onClick={data.reload} disabled={data.status==='loading'}>Refresh games</button></div>
+ <Section title="Provider schedules" subtext="Atlanta teams, home and away. Game times are shown in Atlanta time.">
+ {data.status==='loading'?<Skeleton/>:data.status==='error'?<State error title="Schedules could not refresh" body={data.error} action={<button onClick={data.reload}>Retry</button>}/>:<>
+ {data.partial&&<p role="status" className="gtc-note">{data.notice}</p>}
+ {!games.length?<State title={data.partial?'Some schedules are unavailable':'No games on this date'} body="Choose another date or check the official team schedules. Watch parties remain below."/>:<div className="gtc-grid">{games.map(g=><article className="gtc-matchup" key={g.id}>
+ <small>{g.league} · {g.is_home_game?'Home':'Away'} · {g.status}</small><h3>{g.home_team}<span>vs</span>{g.away_team}</h3>
+ {g.score_is_provider_reported&&g.home_score!==null&&g.away_score!==null&&<p aria-label="Provider-reported score">{g.home_abbr||g.home_team} {g.home_score} – {g.away_abbr||g.away_team} {g.away_score}</p>}
+ <p>{displayDate(g.game_date)} · {displayTime(g.game_time)}</p>{g.venue&&<p>{g.venue}</p>}{g.status_detail&&<p>{g.status_detail}</p>}
+ {g.source_url&&<ActionLink href={g.source_url}>View provider game ↗</ActionLink>}
+ </article>)}</div>}
+ {data.asOf&&<p className="gtc-note">ESPN · Retrieved {displayTime(new Intl.DateTimeFormat('en-GB',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(data.asOf)))} Atlanta time. Scores are provider-reported; refresh for updates.</p>}
+ </>}
+ </Section>
  <EventCollection category="sports_watch" {...{now,savedKeys,onEvent,onSave}} inline/><Section title="Places to watch" subtext="Screenings vary. Confirm the specific game with the venue."><button className="gtc-load-more" onClick={onPlaces}>Browse sports bars & watch experiences ↗</button></Section>
  </section>
 }
