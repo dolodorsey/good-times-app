@@ -90,7 +90,7 @@ function select(id){
  if(state.tab==='claims'){
   if(record.status==='pending_review'||record.status==='more_info'||record.status==='disputed'){
    for(const [label,act,kind] of [['Approve verified claim','approve','primary'],['Request more information','more_info','outline'],['Reject claim','reject','outline'],['Mark disputed','dispute','outline']])actions.appendChild(actionButton(label,act,kind));
-  }else if(record.status==='verified'){actions.appendChild(actionButton('Publish selected verified fields','publish','primary'))}
+  }else if(record.status==='verified'){actions.appendChild(actionButton('Publish selected verified fields','publish','primary'));actions.appendChild(actionButton('Revoke venue access','revoke','outline'))}
   else $('staff-action').hidden=true;
  }else if(state.tab==='media'){
   if(record.review_status==='pending'){actions.appendChild(actionButton('Approve media','approved','primary'));actions.appendChild(actionButton('Reject media','rejected','outline'))}
@@ -101,7 +101,7 @@ function select(id){
    $('authority-wrap').hidden=true;
    if(['new','qualified','proposal'].includes(record.status)){
      if(record.status==='new')actions.appendChild(actionButton('Mark qualified','qualified','primary'));
-     if(record.status!=='proposal')actions.appendChild(actionButton('Proposal prepared (not sent)','proposal','outline'));
+     if(record.status!=='proposal')actions.appendChild(actionButton('Mark proposal requested (not sent)','proposal','outline'));
      actions.appendChild(actionButton('Decline inquiry','declined','outline'));
    }else $('staff-action').hidden=true;
  }else $('media-preview').replaceChildren();
@@ -113,7 +113,8 @@ async function submitAction(action){
  const current=state.selected;if(!current)return;
  const note=$('staff-note').value.trim(),evidence=$('staff-evidence').value.trim(),method=$('authority-method').value;
  if(note.length<15){notice('Enter a review note of at least 15 characters.',true);return}
- if((action==='approve'||action==='publish')&&evidence.length<18){notice('Document the verified evidence source before approval.',true);return}
+ if((action==='approve'||action==='publish'||action==='revoke')&&evidence.length<18){notice('Document the verified evidence source before approval.',true);return}
+ if(action==='revoke'&&note.length<20){notice('Record at least 20 characters explaining access revocation.',true);return}
  if(action==='approve'&&!method){notice('Choose an independently verified authority method.',true);return}
  if(action==='publish'&&!document.querySelectorAll('[name="publish-field"]:checked').length){notice('Choose specific approved fields to publish.',true);return}
  if(!confirm('Apply '+action+' to this record? This change is audited.'))return;
@@ -122,6 +123,7 @@ async function submitAction(action){
   let result;
   if(state.tab==='media')result=await rpc('gt_portal_staff_media_decision',{p_media_id:current.id,p_decision:action,p_note:note});
   else if(state.tab==='interests')result=await rpc('gt_portal_staff_interest_decision',{p_interest_id:current.id,p_decision:action,p_note:note});
+  else if(action==='revoke')result=await rpc('gt_portal_staff_revoke_claim',{p_claim_id:current.id,p_evidence_ref:evidence,p_note:note});
   else if(action==='publish')result=await rpc('gt_portal_staff_publish_checked',{p_claim_id:current.id,p_fields:[...document.querySelectorAll('[name="publish-field"]:checked')].map(x=>x.value),p_evidence_ref:evidence,p_expected_draft:current.profile_draft||{}});
   else result=await rpc('gt_portal_staff_claim_decision',{p_claim_id:current.id,p_decision:action,p_authority_method:method||null,p_evidence_ref:evidence||null,p_note:note});
   notice((result?.status||action)+' saved with audit evidence.');await refreshAll();
