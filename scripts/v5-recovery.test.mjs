@@ -60,3 +60,11 @@ test('corrected events remain reachable through their category and subcategory f
  assert.equal(result.items.length,1);assert.equal(result.items[0].subcategory_key,'tours_sightseeing')
  const wrong=await browse('/api/browse?category=concerts_live_music',{now,fetcher:async()=>json([raw])});assert.equal(wrong.items.length,0)
 })
+
+test('sports watch parties retain their own type without capturing TV titles',async()=>{
+ const row=show(78,{event_name:'Red River Rivalry Watch Party',event_type:'party',category_key_v2:'nightlife',subcategory_key_v2:'late_night',venue_name:'Botica',description:'Red River Rivalry at Botica. The one game we all circle in Sharpie.'})
+ const mapped=mapShow(row,now);assert.equal(mapped.category_key,'sports_watch');assert.equal(mapped.subcategory_key,'watch_parties')
+ const result=await browse('/api/browse?category=sports_watch&subcategory=watch_parties',{now,fetcher:async()=>json([row])});assert.equal(result.items.length,1)
+ for(const title of ['Game of Thrones Watch Party','Dream Watch Party']){const tv=mapShow(show(79,{event_name:title,event_type:'party',category_key_v2:'nightlife',subcategory_key_v2:'late_night'}),now);assert.equal(tv.category_key,'nightlife')}
+ const described=mapShow(show(80,{event_name:'Alumni Watch Party',event_type:'party',description:'Join the chapter for college football.'}),now);assert.equal(described.category_key,'sports_watch');assert.equal(described.subcategory_key,'watch_parties')
+})

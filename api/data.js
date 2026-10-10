@@ -144,7 +144,12 @@ export function inferCustomerTaxonomy(item) {
     return { category:'festivals_major_activations', subcategory }
   }
   if (/watch party/.test(text)) {
-    return hasSportsSignal(text)
+    // Generic words such as "game" or "dream" also occur in film/TV titles.
+    // Watch parties need a sport, team or named sporting-event identity.
+    // Red River evidence: Eventbrite organizer listing 1999498085599 (Botica).
+    const watchContext = normalizeText(`${text} ${item?.description || ''}`)
+    const sportsWatch = /\b(sports?|football|basketball|baseball|soccer|hockey|wnba|nba|nfl|mlb|mls|ufc|mma|boxing|formula 1|f1|falcons|hawks|braves|atlanta united|atlanta dream|red river rivalry|super bowl|world cup)\b/.test(watchContext)
+    return sportsWatch
       ? { category:'sports_watch', subcategory:'watch_parties' }
       : { category:'nightlife', subcategory:'late_night' }
   }
