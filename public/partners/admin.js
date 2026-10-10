@@ -81,7 +81,7 @@ function select(id){
  $('detail-status').textContent=names[record.status||record.review_status]||record.status||record.review_status||'Published';
  $('selected-summary').textContent=state.tab==='claims'?'Applicant: '+(record.contact_name||'')+' · '+(record.contact_email||'')+' · '+(record.relationship||''):state.tab==='media'?'Claim '+record.claim_id+' · '+record.asset_type:'';
  $('selected-detail').textContent=JSON.stringify(record,null,2);
- $('staff-action').hidden=state.tab==='interests'||state.tab==='publications';
+ $('staff-action').hidden=state.tab==='publications';
  $('authority-wrap').hidden=state.tab!=='claims';
  $('publish-controls').hidden=!(state.tab==='claims'&&record.status==='verified');
  $('staff-note').value='';$('staff-evidence').value='';$('authority-method').value='';
@@ -96,6 +96,14 @@ function select(id){
   if(record.review_status==='pending'){actions.appendChild(actionButton('Approve media','approved','primary'));actions.appendChild(actionButton('Reject media','rejected','outline'))}
   else $('staff-action').hidden=true;
   previewAsset(record);
+ }else if(state.tab==='interests'){
+   $('media-preview').replaceChildren();
+   $('authority-wrap').hidden=true;
+   if(['new','qualified','proposal'].includes(record.status)){
+     if(record.status==='new')actions.appendChild(actionButton('Mark qualified','qualified','primary'));
+     if(record.status!=='proposal')actions.appendChild(actionButton('Proposal prepared (not sent)','proposal','outline'));
+     actions.appendChild(actionButton('Decline inquiry','declined','outline'));
+   }else $('staff-action').hidden=true;
  }else $('media-preview').replaceChildren();
 }
 function actionButton(label,act,variant){
@@ -113,6 +121,7 @@ async function submitAction(action){
  try{
   let result;
   if(state.tab==='media')result=await rpc('gt_portal_staff_media_decision',{p_media_id:current.id,p_decision:action,p_note:note});
+  else if(state.tab==='interests')result=await rpc('gt_portal_staff_interest_decision',{p_interest_id:current.id,p_decision:action,p_note:note});
   else if(action==='publish')result=await rpc('gt_portal_staff_publish_checked',{p_claim_id:current.id,p_fields:[...document.querySelectorAll('[name="publish-field"]:checked')].map(x=>x.value),p_evidence_ref:evidence,p_expected_draft:current.profile_draft||{}});
   else result=await rpc('gt_portal_staff_claim_decision',{p_claim_id:current.id,p_decision:action,p_authority_method:method||null,p_evidence_ref:evidence||null,p_note:note});
   notice((result?.status||action)+' saved with audit evidence.');await refreshAll();
