@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
       - name: Validate and resubmit the explicitly selected GOOD TIMES build
         env:
@@ -130,7 +130,7 @@ jobs:
           PY
       - name: Preserve resubmission evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GOOD-TIMES-review-resubmission-${{ github.run_number }}
           path: ${{ runner.temp }}/good-times-resubmission.json
