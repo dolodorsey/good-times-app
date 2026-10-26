@@ -96,3 +96,8 @@ c59ba076f90ce4fe915c21a7ebc2b0495ce2f84f:api/place-photo.js:generic-api-key:2
 4f36a9439551bfc3de2f4cf0b9a78d9cba3fe249:public/partners/app.js:generic-api-key:4
 # 2026-10-26: Product requirements prose (Tickets/RSVP/Guest List/Free/Sold Out/Resale); exact line validated.
 80f4fa0f73fd9cb61c9cee8f83ac4a14c7c7d872:docs/all-pages/20_Event_Detail.md:generic-api-key:18
+
+# Historical validator source versions contained quoted requirements prose; exact immutable false positives.
+d3235593e8112273955159560509b13bfcf6fddb:scripts/validate-secret-exceptions.py:generic-api-key:13
+d3235593e8112273955159560509b13bfcf6fddb:scripts/validate-secret-exceptions.py:generic-api-key:14
+041eba7a78365e329aea3936925c8bf51500a393:scripts/validate-secret-exceptions.py:generic-api-key:13
