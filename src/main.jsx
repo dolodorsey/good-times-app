@@ -130,15 +130,21 @@ function PremiumRoot({children,launch=false,installPrompt=false}){
   const[showLaunch,setShowLaunch]=useState(()=>launch&&sessionStorage.getItem('gt_premium_launch')!=='1')
   useEffect(()=>{if(!showLaunch)return undefined;sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1');const timer=setTimeout(()=>setShowLaunch(false),2000);return()=>clearTimeout(timer)},[showLaunch])
   if(showLaunch)return <div className="gt-launch" role="status" aria-label="Opening GOOD TIMES"><video className="gt-current-launch-video" autoPlay muted loop playsInline preload="metadata" poster={GT_CURRENT_HOME} src={GT_CURRENT_ANIMATION}/><div className="gt-launch__scene"/><div className="gt-launch__content"><img className="gt-launch__logo" src={GT_CURRENT_LOGO} alt="GOOD TIMES"/><div className="gt-launch__eyebrow">Worldwide experience concierge</div><div className="gt-launch__title">Your next move starts here.</div><div className="gt-launch__line"/></div></div>
-  return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}{installPrompt?<GoodTimesInstallPrompt persistent={!readSession()}/>:null}</div>
+  return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}{installPrompt?<GoodTimesInstallPrompt persistent={false}/>:null}</div>
 }
 
-function SignedOutMemberGate(){
+function SignedOutGuestExperience(){
+  const[authRequested,setAuthRequested]=React.useState(false)
+  if(!authRequested)return <LazyCommandApp onAuth={()=>setAuthRequested(true)}/>
+  return <SignedOutMemberGate onBack={()=>setAuthRequested(false)}/>
+}
+
+function SignedOutMemberGate({onBack=null}){
   const complete=(nextSession,prefs)=>{
     if(prefs){try{localStorage.setItem('gt_personalization',JSON.stringify({...prefs,updated_at:new Date().toISOString()}))}catch{}}
     if(nextSession)window.location.reload()
   }
-  return <LazyOnboarding onComplete={complete}/>
+  return <><button type="button" onClick={onBack||(()=>window.location.reload())} style={{position:'fixed',top:16,left:16,zIndex:10001,padding:'10px 14px',borderRadius:12,background:'#16161e',color:'#fff',border:'1px solid #777'}}>← Browse as guest</button><LazyOnboarding onComplete={complete}/></>
 }
 
 async function bootstrap(){
@@ -174,7 +180,7 @@ async function bootstrap(){
   let loadingLabel='Opening GOOD TIMES'
   if(recoverySession){route=<LazyPasswordRecovery recoverySession={recoverySession}/>;loadingLabel='Securing your account'}
   else if(requestType){route=<LazyDirectRequest requestType={requestType}/>;loadingLabel='Opening your concierge request'}
-  else if(!hasSession){route=<SignedOutMemberGate/>;loadingLabel='Opening GOOD TIMES sign in'}
+  else if(!hasSession){route=<SignedOutGuestExperience/>;loadingLabel='Opening GOOD TIMES discovery'}
   else if(legacyRoute){route=<LazyLegacyApp/>;loadingLabel='Opening legacy GOOD TIMES'}
   else {route=<LazyCommandApp/>;loadingLabel=commandRoute?'Opening command interface':'Opening GOOD TIMES'}
 
