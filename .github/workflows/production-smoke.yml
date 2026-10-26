@@ -68,11 +68,15 @@ jobs:
           print("GOOD TIMES production smoke OK:", counts, coverage.get("event_latest_update"))
           '
 
-      - name: Verify auth contract remains mandatory
+      - name: Verify signed-out guest discovery and account-only authentication
         shell: bash
         run: |
           set -euo pipefail
-          grep -q 'SignedOutMemberGate' src/main.jsx
-          grep -q 'consumeOAuthRedirect' src/main.jsx
-          grep -q 'Continue with Google' src/features/onboarding/GoodTimesOnboarding.jsx
-          ! grep -q 'Continue as guest' src/main.jsx
+          grep -Fq 'else if(!hasSession){route=<SignedOutGuestExperience/>' src/main.jsx
+          grep -Fq 'if(!authRequested)return <LazyCommandApp onAuth=' src/main.jsx
+          grep -Fq 'Browse as guest' src/main.jsx
+          grep -Fq 'consumeOAuthRedirect' src/main.jsx
+          grep -Fq 'Continue with Google' src/features/onboarding/GoodTimesOnboarding.jsx
+          grep -Fq "Sign in to save and personalize." src/features/experience/GoodTimesCommandAppV4.jsx
+          grep -Fq "Sign in to follow and get Radar alerts." src/features/experience/GoodTimesCommandAppV4.jsx
+          ! grep -Fq 'else if(!hasSession){route=<SignedOutMemberGate/>' src/main.jsx
