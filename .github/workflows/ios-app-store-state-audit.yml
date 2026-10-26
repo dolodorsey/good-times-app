@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
       - name: Read GOOD TIMES App Store state
         env:
@@ -52,7 +52,7 @@ jobs:
           print(json.dumps(evidence,indent=2))
           PY
       - name: Preserve state evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GOOD-TIMES-app-store-state-${{ github.run_number }}
           path: ${{ runner.temp }}/good-times-app-store-state.json

@@ -69,7 +69,7 @@ jobs:
           output.write_text(json.dumps(evidence, indent=2))
           print(json.dumps(evidence, indent=2))
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: GOOD-TIMES-build-selection-${{ github.run_number }}
           path: ${{ runner.temp }}/app-store-build-selection.json
