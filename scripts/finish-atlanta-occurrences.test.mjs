@@ -58,11 +58,16 @@ test('the real live handler preserves occurrences and cannot serve a differently
     assert.equal(full.headers['X-Good-Times-Live-Gateway'],'v9')
     const small=await call(1);assert.equal(JSON.parse(small.body).events.length,1)
     globalThis.fetch=async()=>{throw new Error('simulated source outage')}
-    const unseen=await call(2);assert.equal(unseen.statusCode,200,'Use the verified embedded Atlanta snapshot instead of a differently sized in-memory payload');assert.equal(JSON.parse(unseen.body).events.length,2);assert.equal(unseen.headers['X-Good-Times-Cache'],'EMBEDDED');assert.equal(JSON.parse(unseen.body).degraded,true)
-    const recovered=await call(3);assert.equal(recovered.statusCode,200)
+    // The embedded snapshot is stale (October 7). Reject an outage rather than
+    // returning old listings or improperly reusing a differently sized cache.
+    const unseen=await call(2)
+    assert.equal(unseen.statusCode,503,'Stale emergency snapshot must not be served as fresh inventory')
+    assert.equal(JSON.parse(unseen.body).ok,false)
+    // An exactly keyed, previously verified response can remain cached briefly.
+    const recovered=await call(3)
+    assert.equal(recovered.statusCode,200)
     assert.equal(JSON.parse(recovered.body).events.length,3)
-    assert.equal(JSON.parse(recovered.body).degraded,true)
-    assert.equal(recovered.headers['Cache-Control'],'no-store','Do not compound staleness at the CDN')
-    const recoveredSmall=await call(1);assert.equal(JSON.parse(recoveredSmall.body).events.length,1)
+    const recoveredSmall=await call(1)
+    assert.equal(JSON.parse(recoveredSmall.body).events.length,1)
   }finally{globalThis.fetch=original;globalThis.__GT_DATA_LIVE_CACHE_V8__?.clear()}
 })
