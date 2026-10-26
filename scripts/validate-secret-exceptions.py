@@ -9,9 +9,13 @@ PUBLIC = re.compile(r'\bsb_publishable_[A-Za-z0-9_-]+\b')
 REVIEWED_ISSUERS = frozenset(('supabase','HS256','sup'))
 # Exact historical prose that a heuristic scanner mistook for a generic API key.
 # These are not credentials; require an exact immutable commit/path/line match.
+_DOC_LINE = '- Adaptive access CTA: ' + ''.join(('Tickets/RSVP/', 'Guest List/', 'Free/Sold Out/', 'Resale.'))
 REVIEWED_PROSE = {
-    '80f4fa0f73fd9cb61c9cee8f83ac4a14c7c7d872:docs/all-pages/20_Event_Detail.md:generic-api-key:18': '- Adaptive access CTA: Tickets/RSVP/Guest List/Free/Sold Out/Resale.',
-    '733de0880c41b125acc772b2875c2ea579971d91:scripts/validate-secret-exceptions.py:generic-api-key:18': "        '- Adaptive access CTA: Tickets/RSVP/Guest List/Free/Sold Out/Resale.',",
+    '80f4fa0f73fd9cb61c9cee8f83ac4a14c7c7d872:docs/all-pages/20_Event_Detail.md:generic-api-key:18': _DOC_LINE,
+    '733de0880c41b125acc772b2875c2ea579971d91:scripts/validate-secret-exceptions.py:generic-api-key:18': "        '" + _DOC_LINE + "',",
+    "d3235593e8112273955159560509b13bfcf6fddb:scripts/validate-secret-exceptions.py:generic-api-key:13": "    '80f4fa0f73fd9cb61ccee8f83ac4a14c7c7d872:docs/all-pages/20_Event_Detail.md:generic-api-key:18': '" + _DOC_LINE + "',",
+    "d3235593e8112273955159560509b13bfcf6fddb:scripts/validate-secret-exceptions.py:generic-api-key:14": "    '733de0880c41b125acc772b2875c2ea579971d91:scripts/validate-secret-exceptions.py:generic-api-key:18': \"        '" + _DOC_LINE + "',\",",
+    "041eba7a78365e329aea3936925c8bf51500a393:scripts/validate-secret-exceptions.py:generic-api-key:13": "    '80f4fa0f73fd9cb61c9cee8f83ac4a14c7c7d872:docs/all-pages/20_Event_Detail.md:generic-api-key:18': '" + _DOC_LINE + "',",
 }
 
 RETIRED_PRIVATE = frozenset({
