@@ -26,7 +26,7 @@ test('GOOD TIMES supports Google OAuth and restores the returned session', () =>
 })
 
 test('install prompt reaches signed-out web visitors but never native, recovery or direct-request routes', () => {
-  assert.match(main, /\{installPrompt\?<GoodTimesInstallPrompt persistent=\{!readSession\(\)\}\/>:null\}/)
+  assert.ok(main.includes('{installPrompt?<GoodTimesInstallPrompt persistent={false}/>:null}'))
   assert.match(main, /const showInstallPrompt=!isNative&&!requestType&&!recoverySession/)
   assert.doesNotMatch(main, /readSession\(\)\?<GoodTimesInstallPrompt/)
 })
