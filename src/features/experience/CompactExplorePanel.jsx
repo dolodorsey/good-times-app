@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { loadExploreCounts, loadExplorePage, loadExploreTaxonomy } from '../intelligence/client.js'
+import { loadExploreCounts, loadExplorePage, loadExploreTaxonomy, loadSubcategoryArt } from '../intelligence/client.js'
 import { exploreSignature, knownPlaceCount, uniqueScopedPlaces, validCoordinate } from '../intelligence/explore-page.js'
 import GoodTimesIcon from './GoodTimesIcon.jsx'
 
 const categoryGlyph = key => ({ nightlife: '◇', concerts_live_music: '♫', sports_watch: '◉', dining_culinary: '🍴', family_kids: '◎', seasonal_holiday: '✦', wellness_fitness: '♡', arts_museums_culture: '▱' })[key] || '✦'
 const normalize = category => ({ ...category, subcategoryRows: category.subcategoryRows || (category.subcategories || []).map((s, index) => ({ subcategory_key: s.subcategory_key || s.id, subcategory_name: s.subcategory_name || s.name, sort_order: s.sort_order ?? index })) })
-function countText(value) { return value == null ? 'Browse places' : `${value} ${value === 1 ? 'place' : 'places'}` }
+function countText(value) { return value == null ? 'Browse places' : value === 0 ? 'Coming soon' : `${value} ${value === 1 ? 'place' : 'places'}` }
 function jumpToResults() { requestAnimationFrame(() => document.querySelector('.gtc-event-results-start,.gt-compact-result-header')?.scrollIntoView({ block: 'start' })) }
 
 export default function CompactExplorePanel({ taxonomy = [], cityName, query = '', onQuery, selectedCategory, selectedSubcategory, onCategory, onSubcategory, directoryOpen, onDirectoryOpen, mapMode, onMapMode, renderVenue, renderEvents = null, eventsFirst = false }) {
@@ -17,7 +17,10 @@ export default function CompactExplorePanel({ taxonomy = [], cityName, query = '
   const selectedLabel = subcategoryRows.find(s => s.subcategory_key === selectedSubcategory)?.subcategory_name
   const [sort, setSort] = useState('quality'), [settledQuery, setSettledQuery] = useState(query)
   const [pageState, setPageState] = useState({ items: [], nextCursor: null, status: 'idle', error: '', signature: '', asOf: null })
-  const [retry, setRetry] = useState(0), [mapId, setMapId] = useState(null)
+  const [retry, setRetry] = useState(0), [mapId, setMapId] = useState(null), [subArt, setSubArt] = useState({})
+  useEffect(() => { let live = true; setSubArt({}); if (selectedCategory) loadSubcategoryArt(cityName, selectedCategory).then(art => { if (live) setSubArt(art || {}) }).catch(() => {}); return () => { live = false } }, [cityName, selectedCategory])
+  const countsLoaded = counts.length > 0 && !countError
+  const placeCount = (category, sub = null) => { const known = knownPlaceCount(counts, category, sub); return known ?? (countsLoaded ? 0 : null) }
   const sequence = useRef(0), requestController = useRef(null), pendingPage = useRef(false)
   useEffect(() => { const timer = setTimeout(() => setSettledQuery(query), 240); return () => clearTimeout(timer) }, [query])
   useEffect(() => { let live = true; setCountError(false); loadExploreCounts(cityName).then(rows => { if (live) setCounts(rows || []) }).catch(() => { if (live) { setCounts([]); setCountError(true) } }); return () => { live = false } }, [cityName, retry])
@@ -50,7 +53,7 @@ export default function CompactExplorePanel({ taxonomy = [], cityName, query = '
     } catch (error) { if (current === sequence.current && !controller.signal.aborted) setPageState(previous => ({ ...previous, status: 'more-error', error: error.message })) }
     finally { if (current === sequence.current) pendingPage.current = false }
   }
-  const chooseCategory = id => { onCategory(id); onSubcategory(null); onDirectoryOpen(false); onMapMode(false); onQuery(''); setMapId(null) }
+  const chooseCategory = id => { onCategory(id); onSubcategory(null); onDirectoryOpen(Boolean(id)); onMapMode(false); onQuery(''); setMapId(null) }
   const chooseSubcategory = id => { onSubcategory(id); onDirectoryOpen(true); onMapMode(false); setMapId(null); jumpToResults() }
   const items = pageState.signature === signature && !changingQuery ? pageState.items : []
   const mapped = items.filter(validCoordinate), mappedItem = mapped.find(v => v.id === mapId) || mapped[0]
@@ -65,16 +68,16 @@ export default function CompactExplorePanel({ taxonomy = [], cityName, query = '
       <div className="gt-compact-section-heading"><h2>Find your kind of good time</h2><span>Atlanta</span></div>
       {!categoryRows.length && <div className="gt-compact-state" role="status"><h2>Categories unavailable</h2><p>{catalogError || 'The catalog has not loaded yet.'}</p><button onClick={refreshCatalog} disabled={catalogBusy}>{catalogBusy ? 'Loading…' : 'Retry categories'}</button></div>}
       <div className="gt2-category-grid gt-compact-category-grid">
-        {categoryRows.map(category => <button key={category.id} type="button" data-gt-category={category.id} onClick={() => chooseCategory(category.id)}><span className="gt-compact-category-icon"><GoodTimesIcon glyph={categoryGlyph(category.id)} /></span><strong>{category.name}</strong><small>{category.subcategoryRows.length} subcategories</small><span aria-hidden="true" className="gt-compact-arrow">›</span></button>)}
+        {categoryRows.map(category => <button key={category.id} type="button" data-gt-category={category.id} onClick={() => chooseCategory(category.id)}><span className="gt-compact-category-icon"><GoodTimesIcon glyph={categoryGlyph(category.id)} /></span><strong>{category.name}</strong><small>{category.subcategoryRows.length} subcategories{placeCount(category.id) ? ` · ${countText(placeCount(category.id))}` : ''}</small><span aria-hidden="true" className="gt-compact-arrow">›</span></button>)}
       </div>
     </>}
     {activeCategory && <>
       <div className="gt2-explore-actions gt-compact-breadcrumb"><button type="button" onClick={() => chooseCategory(null)}>‹ All categories</button><span>{activeCategory.name}</span></div>
-      <details className="gt-compact-subcategories" open={!directoryOpen} key={activeCategory.id}>
-        <summary>{directoryOpen ? `${selectedLabel || `All ${activeCategory.name}`} · Change` : `Explore ${activeCategory.name}`}<span aria-hidden="true">⌄</span></summary>
+      <details className="gt-compact-subcategories" open={!directoryOpen || !selectedSubcategory} key={`${activeCategory.id}:${selectedSubcategory || 'all'}`}>
+        <summary>{directoryOpen && selectedSubcategory ? `${selectedLabel} · Change` : `Explore ${activeCategory.name}`}<span aria-hidden="true">⌄</span></summary>
         <div className="gt2-subcategory-grid" data-gt-subcategories={activeCategory.id} data-gt-explore-stage={directoryOpen ? 'directory' : 'subcategories'}>
-          <button className={directoryOpen && !selectedSubcategory ? 'active' : ''} onClick={() => chooseSubcategory(null)}><strong>All {activeCategory.name}</strong><small>{countText(knownPlaceCount(counts, activeCategory.id))}</small></button>
-          {subcategoryRows.map(sub => <button key={sub.subcategory_key} data-gt-subcategory={sub.subcategory_key} className={selectedSubcategory === sub.subcategory_key ? 'active' : ''} onClick={() => chooseSubcategory(sub.subcategory_key)}><strong>{sub.subcategory_name}</strong><small>{countText(knownPlaceCount(counts, activeCategory.id, sub.subcategory_key))}</small></button>)}
+          <button className={directoryOpen && !selectedSubcategory ? 'active' : ''} onClick={() => chooseSubcategory(null)}><strong>All {activeCategory.name}</strong><small>{countText(placeCount(activeCategory.id))}</small></button>
+          {subcategoryRows.map(sub => { const n = placeCount(activeCategory.id, sub.subcategory_key), art = n ? subArt[sub.subcategory_key] : null; return <button key={sub.subcategory_key} data-gt-subcategory={sub.subcategory_key} data-empty={n === 0 ? 'true' : undefined} style={art ? { '--gt-sub-image': `url("${art}")` } : undefined} className={[selectedSubcategory === sub.subcategory_key ? 'active' : '', art ? 'has-image' : '', n === 0 ? 'is-empty' : ''].filter(Boolean).join(' ')} onClick={() => chooseSubcategory(sub.subcategory_key)}><strong>{sub.subcategory_name}</strong><small>{countText(n)}</small></button> })}
         </div>
       </details>
     </>}

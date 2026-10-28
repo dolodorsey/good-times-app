@@ -124,6 +124,44 @@ export async function loadExploreCounts(city = 'atlanta') {
   )
 }
 
+/** One representative, real venue photo per Places lane (highest quality first). Never stock/generic art. */
+export async function loadPlaceLaneArt(city = 'atlanta', categoryKeys = []) {
+  const keys = (categoryKeys || []).filter(key => /^[a-z0-9_]{1,60}$/.test(key))
+  if (!keys.length) return {}
+  const rows = await fetchJson(
+    `${KHG_SUPABASE_URL}/rest/v1/v_gt_venue_taxonomy_directory?select=id,category_key,hero_image,quality_score&city_key=eq.${encodeURIComponent(normalizeCity(city))}&category_key=in.(${keys.join(',')})&hero_image=not.is.null&order=quality_score.desc.nullslast&limit=400`,
+    { headers: gatewayHeaders },
+  )
+  const out = {}, used = new Set(), list = Array.isArray(rows) ? rows : []
+  // Lane covers must read as photography: first pass skips PNG/logo/thumbnail artwork, second pass allows it.
+  for (const photographic of [true, false]) for (const row of list) {
+    const image = String(row?.hero_image || '')
+    if (!/^https:\/\//.test(image) || /images\.unsplash\.com|good-times-backgrounds\/(?:gt-cat-|event-)|maps\.googleapis/i.test(image)) continue
+    if (photographic && /\.png(?:[?~%]|$)|logo|icon|thumbnail|favicon/i.test(image)) continue
+    if (out[row.category_key] || used.has(image) || used.has(row.id)) continue
+    out[row.category_key] = image; used.add(image); used.add(row.id)
+  }
+  return out
+}
+
+/** One real venue photo per subcategory inside a category (distinct venues where possible). */
+export async function loadSubcategoryArt(city = 'atlanta', category = null) {
+  if (!category || !/^[a-z0-9_]{1,60}$/.test(category)) return {}
+  const rows = await fetchJson(
+    `${KHG_SUPABASE_URL}/rest/v1/v_gt_venue_taxonomy_directory?select=id,subcategory_key,hero_image,quality_score&city_key=eq.${encodeURIComponent(normalizeCity(city))}&category_key=eq.${category}&hero_image=not.is.null&order=quality_score.desc.nullslast&limit=500`,
+    { headers: gatewayHeaders },
+  )
+  const out = {}, used = new Set()
+  const usable = row => { const image = String(row?.hero_image || ''); return /^https:\/\//.test(image) && !/images\.unsplash\.com|good-times-backgrounds\/(?:gt-cat-|event-)|maps\.googleapis/i.test(image) ? image : null }
+  const list = Array.isArray(rows) ? rows : []
+  for (const pass of [true, false]) for (const row of list) {
+    const image = usable(row); if (!image || !row.subcategory_key || out[row.subcategory_key]) continue
+    if (pass && used.has(row.id)) continue
+    out[row.subcategory_key] = image; used.add(row.id)
+  }
+  return out
+}
+
 export async function loadExploreDirectory(city = 'atlanta', { limit = 2500, category = null, subcategory = null } = {}) {
   const normalizedCity = normalizeCity(city)
   const categoryFilter = category ? `&category_key=eq.${encodeURIComponent(category)}` : ''

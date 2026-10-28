@@ -1,9 +1,9 @@
 import React,{useEffect,useState} from 'react'
 import GoodTimesIcon from '../GoodTimesIcon.jsx'
-import {safeImage,safeLink,displayDate,displayTime,cleanTitle,labelFor,list} from './model.js'
+import {safeImage,safeLink,displayDate,displayTime,cleanTitle,labelFor,humanize,list} from './model.js'
 export function Picture({src,alt='',kind='Experience',poster=false,illustration=false}) {const [failed,setFailed]=useState(false);useEffect(()=>setFailed(false),[src]);const image=!failed&&(illustration?(String(src||'').startsWith('/')&&!String(src).startsWith('//')?src:safeLink(src)):safeImage(src));return <div className={`gtc-picture ${poster?'gtc-poster':''}`}>{image?<img src={image} alt={alt} loading="lazy" decoding="async" onError={()=>setFailed(true)}/>:<div className="gtc-no-picture"><GoodTimesIcon name="sparkle" size={26}/><span>{kind}</span><small>{illustration?'Choose your vibe':'Photo unavailable'}</small></div>}</div>}
 export function ExperienceCard({item,kind='event',saved=false,onOpen,onSave,busy=false}) {
- const [saving,setSaving]=useState(false);const event=kind==='event',title=cleanTitle(item.title||item.name),category=event?labelFor(item.category_key):(item.venue_subcategory||item.subcategory||labelFor(item.venue_category_key||item.category_key));
+ const [saving,setSaving]=useState(false);const event=kind==='event',title=cleanTitle(item.title||item.name),category=event?labelFor(item.category_key):(humanize(item.cuisine_label||item.venue_subcategory||item.subcategory)||labelFor(item.venue_category_key||item.category_key));
  const place=event?item.venue_name:(item.neighborhood||'Atlanta');
  const image=event?item.image_url:item.hero_image;
  const price=event?(item.is_free===true?'Free':item.ticket_price_min!=null&&item.currency?`${item.currency} ${item.ticket_price_min}+`:null):item.price_range;

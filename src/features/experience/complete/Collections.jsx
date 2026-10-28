@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react'
 import {ExperienceCard,Section,State,Skeleton,ActionLink} from './Cards.jsx'
 import {useBrowse} from './useBrowse.js'
+import {loadExplorePage} from '../../intelligence/client.js'
 import {selectedCityClock} from '../good-times-event-clock.js'
 import {homeCollections,homeDashboard,labelFor,displayDate,displayTime,shiftDate,unique,occurrenceUsable,eveningUsable,list} from './model.js'
 const keyFor=i=>`${i.event_key?'event':'venue'}:${i.event_key||i.id}`
@@ -24,7 +25,15 @@ export function Home({events,venues,profile,savedKeys,onEvent,onVenue,onSave,onE
  </>}
  </section>
 }
-export function EventCollection({mode='upcoming',category=null,subcategory=null,query='',venueId=null,now=Date.now(),initialEvents=[],savedKeys,onEvent,onSave,inline=false,onClose=null}){
+/** When a dated lane is empty, show the category's verified places instead of a dead end. */
+export function CategoryPlacesFallback({category,savedKeys,onVenue,onSave}){
+ const [state,setState]=useState({status:'loading',items:[]})
+ useEffect(()=>{if(!category||!onVenue){setState({status:'idle',items:[]});return}const c=new AbortController();setState({status:'loading',items:[]});loadExplorePage('atlanta',{category,limit:12},{signal:c.signal}).then(r=>setState({status:'success',items:list(r?.items)})).catch(()=>{if(!c.signal.aborted)setState({status:'error',items:[]})});return()=>c.abort()},[category,!onVenue])
+ if(state.status==='loading')return <Skeleton count={2}/>
+ if(!state.items.length)return null
+ return <Section className="gtc-category-places" title={`${labelFor(category)} places`} subtext="No dated events are confirmed for this window yet — these verified places are open for planning."><CollectionGrid items={state.items} savedKeys={savedKeys} onVenue={onVenue} onSave={onSave}/></Section>
+}
+export function EventCollection({mode='upcoming',category=null,subcategory=null,query='',venueId=null,now=Date.now(),initialEvents=[],savedKeys,onEvent,onVenue=null,onSave,inline=false,onClose=null}){
  const c=selectedCityClock('atlanta',now),[date,setDate]=useState(mode==='tonight'?c.serviceDate:''),[sort,setSort]=useState('date'),[debounced,setDebounced]=useState(query)
  useEffect(()=>{const t=setTimeout(()=>setDebounced(query),240);return()=>clearTimeout(t)},[query])
  const windowDate=date||c.serviceDate,request={kind:'events',category,subcategory,query:debounced,from:windowDate,to:date?shiftDate(date,mode==='tonight'?1:0):shiftDate(c.date,180),venue_id:venueId,limit:24}
@@ -39,7 +48,8 @@ export function EventCollection({mode='upcoming',category=null,subcategory=null,
  {mode==='tonight'&&c.minute<240&&date===c.serviceDate&&<p className="gtc-note">Showing the evening of {displayDate(c.serviceDate)}. <button onClick={()=>setDate(c.date)}>See tonight instead</button></p>}
  {result.status==='loading'&&<Skeleton count={inline?2:4}/>}
  {result.status==='error'&&<State error title="Couldn’t refresh events" body={fallback.length?'Showing already loaded items; current status may have changed.':result.error} action={<button onClick={result.reload}>Retry events</button>}/>}
- {hasData&&!rows.length&&<State title={result.nextCursor?'No eligible events on this page':'No events match this selection'} body={result.nextCursor?'More events are available. Tap Show more events.':'Try another date or explore places.'} action={result.nextCursor?<button onClick={result.more}>Check more events</button>:!inline?<button onClick={()=>setDate(mode==='tonight'?shiftDate(c.date,1):'')}>{mode==='tonight'?'Try tomorrow':'Clear date'}</button>:null}/>}
+ {hasData&&!rows.length&&<State title={result.nextCursor?'No eligible events on this page':'No events match this selection'} body={result.nextCursor?'More events are available. Tap Show more events.':category&&!inline?'Nothing dated is confirmed for this window yet. Verified places for this lane are below.':'Try another date or explore places.'} action={result.nextCursor?<button onClick={result.more}>Check more events</button>:!inline?<button onClick={()=>setDate(mode==='tonight'?shiftDate(c.date,1):'')}>{mode==='tonight'?'Try tomorrow':'Clear date'}</button>:null}/>}
+ {hasData&&!rows.length&&!result.nextCursor&&!inline&&category&&!venueId&&<CategoryPlacesFallback category={category} savedKeys={savedKeys} onVenue={onVenue} onSave={onSave}/>}
  {groupRows.filter(([,items])=>items.length).map(([day,items])=><div key={day||'all'} className="gtc-date-group">{day&&<h2>{displayDate(day)}</h2>}<CollectionGrid items={items} {...{savedKeys,onEvent,onSave}}/></div>)}
  {result.status==='more-error'&&<p role="alert">{result.error}</p>}{result.nextCursor&&rows.length>0&&<button className="gtc-load-more" onClick={result.more} disabled={result.status==='loading-more'}>{result.status==='loading-more'?'Loading…':'Show more events'}</button>}
  </section>
