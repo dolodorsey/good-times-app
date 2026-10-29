@@ -1,6 +1,15 @@
 import {dateNumber, selectedCityClock, timeMinutes, eventIsDiscoverable, eventIsTonight, eventIsThisWeekend} from '../good-times-event-clock.js'
-export const LABELS = Object.freeze({nightlife:'Nightlife',concerts_live_music:'Concerts & Live Music',sports_watch:'Sports & Watch',festivals_major_activations:'Festivals & Major Activations',dining_culinary:'Food & Drink',entertainment:'Entertainment',comedy_performing_arts:'Comedy & Performing Arts',family_kids:'Family & Kids',arts_museums_culture:'Arts, Museums & Culture',wellness_fitness:'Wellness & Fitness',day_parties_brunch:'Day Parties & Brunch',seasonal_holiday:'Seasonal & Holiday'})
-export const labelFor = key => LABELS[key] || String(key || 'Experience').replaceAll('_',' ').replace(/\b\w/g,c=>c.toUpperCase())
+export const LABELS = Object.freeze({nightlife:'Nightlife',concerts_live_music:'Concerts & Live Music',sports_watch:'Sports & Watch',festivals_major_activations:'Festivals & Major Activations',dining_culinary:'Food & Drink',entertainment:'Entertainment',comedy_performing_arts:'Comedy & Performing Arts',family_kids:'Family & Kids',arts_museums_culture:'Arts, Museums & Culture',wellness_fitness:'Wellness & Fitness',day_parties_brunch:'Day Parties & Brunch',seasonal_holiday:'Seasonal & Holiday',attractions_experiences:'Attractions & Experiences',travel_staycations:'Hotels & Staycations',fashion_beauty_shopping:'Fashion, Beauty & Shopping',games_interactive:'Games & Interactive',black_culture_diaspora:'Black Culture & Diaspora',business_professional:'Business & Professional',classes_workshops:'Classes & Workshops',college_alumni:'College & Alumni',community_civic:'Community & Civic',creative_creator:'Creative & Creator',dating_social:'Date Night & Social',faith_inspirational:'Faith & Inspirational',free_things_to_do:'Free Things To Do',vip_exclusive:'VIP & Exclusive'})
+const WORDS = Object.freeze({bbq:'BBQ',vr:'VR',atl:'ATL',hbcu:'HBCU',r:'R',b:'B',and:'&',lgbtq:'LGBTQ',diy:'DIY',tv:'TV',ufc:'UFC',nfl:'NFL',nba:'NBA'})
+/** Human label for any stored key or free-text source label ("afro_caribbean" → "Afro-Caribbean"). */
+export function humanize(value) {
+ const raw=String(value||'').trim();if(!raw)return ''
+ if(LABELS[raw])return LABELS[raw]
+ if(!/[_]/.test(raw)&&/[A-Z]/.test(raw))return raw
+ const text=raw.replace(/[_]+/g,' ').replace(/\s+/g,' ').trim().toLowerCase().replace(/\bafro caribbean\b/g,'afro-caribbean')
+ return text.split(' ').map(w=>WORDS[w]||w.split('-').map(p=>p.charAt(0).toUpperCase()+p.slice(1)).join('-')).join(' ')
+}
+export const labelFor = key => LABELS[key] || humanize(key) || 'Experience'
 export const list = value => Array.isArray(value) ? value : []
 export const identity = item => String(item?.event_key || item?.id || '')
 export const isEvent = item => Boolean(item?.event_key || item?.event_date)
