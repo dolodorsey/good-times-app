@@ -29,12 +29,14 @@ test('Places surfaces depth instead of dead ends', () => {
   assert.match(panel, /Coming soon/, 'empty subcategories stay visible but read as coming soon')
   assert.match(panel, /loadSubcategoryArt/, 'subcategory tiles use real venue photography')
   const v4 = fs.readFileSync('src/features/experience/GoodTimesCommandAppV4.jsx', 'utf8')
+  const placesScreen = fs.readFileSync('src/features/experience/complete/PlacesScreen.jsx', 'utf8')
   assert.match(v4, /loadPlaceLaneArt/, 'Places lanes use distinct real venue photography')
-  assert.match(v4, /gtc-lane-count/, 'Places lanes show verified place counts')
+  assert.match(placesScreen, /gtc-lane-count/, 'Places lanes show verified place counts')
   const collections = fs.readFileSync('src/features/experience/complete/Collections.jsx', 'utf8')
   assert.match(collections, /CategoryPlacesFallback/, 'empty dated lanes fall back to verified places')
   const explorer = fs.readFileSync('src/features/experience/complete/RestaurantExplorer.jsx', 'utf8')
-  assert.match(explorer, /Browse by cuisine/)
+  assert.match(explorer, /title="Popular" accent="Cuisines"/, 'Restaurants open with real cuisine subcategories')
+  assert.match(explorer, /PhotoTile/, 'cuisine subcategories are photographic')
 })
 
 test('re-verification never upgrades unverified inventory', () => {
@@ -43,4 +45,15 @@ test('re-verification never upgrades unverified inventory', () => {
   assert.match(sql, /v\.verified_at is not null/)
   assert.match(sql, /p_closed_signal is null/)
   assert.match(sql, /previous_freshness_expires_at/, 'every renewal is reversible')
+})
+
+test('cinematic standard: every primary screen opens with a themed hero and real actions only', () => {
+  const read = f => fs.readFileSync(f, 'utf8')
+  for (const f of ['HomeScreen.jsx','PlacesScreen.jsx','EntertainmentHub.jsx','RestaurantExplorer.jsx']) assert.match(read('src/features/experience/complete/' + f), /<ScreenHero/, f + ' must open with a cinematic hero')
+  const posters = read('src/features/experience/complete/posters.jsx')
+  assert.match(posters, /safeLink\(v\?\.booking_link\)/, 'Reserve only appears with a real booking link')
+  assert.match(posters, /safeLink\(event\.ticket_url\)/, 'Get Tickets only appears with a real ticket link')
+  assert.doesNotMatch(posters, /Math\.random|open now/i, 'no invented ratings, distances or open-now claims')
+  const kit = read('src/features/experience/complete/Kit.jsx')
+  assert.match(kit, /Verified photo coming soon/, 'named places without verified media use the premium no-photo treatment')
 })
