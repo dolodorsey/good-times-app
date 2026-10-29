@@ -2,6 +2,8 @@ import React,{useEffect,useMemo,useState} from 'react'
 import {eventIsThisWeekend,eventIsTonight,eventDaysAway} from '../good-times-event-clock.js'
 import {CollectionGrid,Sports} from './Collections.jsx'
 import {Section,State} from './Cards.jsx'
+import {Themed,ScreenHero,SearchBar,IconRail,Rail,PhotoTile,BuildTrio,AddSpace,Empty,Icon,SCENES} from './Kit.jsx'
+import {EventPoster,VenuePoster} from './posters.jsx'
 import {gtAssetUrl} from '../good-times-assets.js'
 
 const LANES=[
@@ -33,10 +35,16 @@ export function InteractiveCollection({venues=[],events=[],savedKeys,onEvent,onV
   </section>
 }
 
+const ENT_RAIL=[
+ {id:'concerts_live_music',label:'Concerts',icon:'music'},{id:'nightlife',label:'Parties',icon:'cocktail'},{id:'sports',label:'Sports',icon:'ball'},
+ {id:'comedy_performing_arts',label:'Comedy',icon:'masks'},{id:'festivals_major_activations',label:'Festivals',icon:'tent'},{id:'arts_museums_culture',label:'Culture',icon:'landmark'},
+ {id:'interactive',label:'Interactive',icon:'game'},{id:'family_kids',label:'Family',icon:'family'},{id:'venues',label:'Lounges',icon:'moon'},
+]
+const VIBES=[['nightlife-events','High Energy',SCENES.nightlife],['nightlife-venues','Chill',SCENES.lounge],['date-night','Date Night',SCENES.date],['interactive','Group Fun',SCENES.interactive],['culture','Cultural',SCENES.culture],['concerts','Live Music',SCENES.concert]]
 export default function EntertainmentHub({
-  events=[],now=Date.now(),savedKeys,onEvent,onSave,onSearch,onOpenCategory,onOpenVenues,onOpenSports,onOpenInteractive,onPlan,initialMode='tonight'
+  events=[],now=Date.now(),savedKeys,onEvent,onSave,onSearch,onOpenCategory,onOpenVenues,onOpenSports,onOpenInteractive,onPlan,onNavigate,initialMode='tonight'
 }){
-  const [mode,setMode]=useState(initialMode)
+  const [mode,setMode]=useState(initialMode),[q,setQ]=useState('')
   useEffect(()=>{if(['tonight','weekend','upcoming'].includes(initialMode))setMode(initialMode)},[initialMode])
   const scoped=useMemo(()=>{
     const rows=events.filter(event=>{
@@ -44,45 +52,34 @@ export default function EntertainmentHub({
       if(mode==='weekend')return eventIsThisWeekend(event,'atlanta',now)
       return eventDaysAway(event.event_date,'atlanta',now)>=0
     }).sort((a,b)=>String(a.event_date||'9999').localeCompare(String(b.event_date||'9999'))||String(a.event_time||'99:99').localeCompare(String(b.event_time||'99:99')))
-    return rows.slice(0,8)
+    return rows.slice(0,12)
   },[events,mode,now])
-
-  return <section className="gtc-entertainment">
-    <header className="gtc-page-heading">
-      <div>
-        <h1>Entertainment</h1>
-        <small>What’s happening, what’s live, and what’s worth doing in Atlanta.</small>
-      </div>
-    </header>
-
-    <div className="gtc-search"><input aria-label="Search Entertainment" placeholder="Clubs, concerts, sports, activities…" onKeyDown={e=>{if(e.key==='Enter'&&e.currentTarget.value.trim())onSearch?.(e.currentTarget.value)}}/><button aria-label="Search Entertainment globally" onClick={e=>{const input=e.currentTarget.previousElementSibling;if(input?.value.trim())onSearch?.(input.value)}}>⌕</button></div>
-    <nav className="gtc-tabs gtc-entertainment-time" aria-label="Entertainment timing">
+  const open=id=>id==='sports'?onOpenSports():id==='interactive'?onOpenInteractive?.():id==='venues'?onOpenVenues('nightlife'):onOpenCategory(id)
+  const title=mode==='tonight'?['Featured','Tonight']:mode==='weekend'?['This','Weekend']:['Coming','Up']
+  return <Themed theme="violet" className="gtc-entertainment gtk-entertainment">
+    <ScreenHero size="md" eyebrow="LIVE MORE · FEEL MORE" title="Entertainment" tagline="Events that make life extraordinary." image={SCENES.concert}>
+      <SearchBar inputLabel="Search Entertainment" placeholder="Clubs, concerts, sports, activities…" value={q} onChange={setQ} onSubmit={v=>v.trim()&&onSearch?.(v)} onFilters={()=>q.trim()&&onSearch?.(q)}/>
+    </ScreenHero>
+    <IconRail variant="circle" label="Entertainment categories" items={ENT_RAIL} onSelect={open}/>
+    <nav className="gtc-tabs gtc-entertainment-time gtk-time-tabs" aria-label="Entertainment timing">
       {[['tonight','Tonight'],['weekend','This Weekend'],['upcoming','Upcoming']].map(([id,label])=>
         <button key={id} className={mode===id?'active':''} aria-pressed={mode===id} onClick={()=>setMode(id)}>{label}</button>
       )}
     </nav>
-
-    <div className="gtc-entertainment-lanes">
-      {LANES.map(([key,label,desc,kind,art])=>
-        <button key={label} className="gtc-entertainment-lane" style={{backgroundImage:`linear-gradient(90deg,rgba(5,6,7,.92),rgba(5,6,7,.48)),url("${gtAssetUrl(art,'good-times-backgrounds')}")`}} onClick={()=>kind==='sports'?onOpenSports():kind==='venues'?onOpenVenues(key):kind==='interactive'?onOpenInteractive?.():onOpenCategory(key)}>
-          <span><strong>{label}</strong><small>{desc}</small></span><b aria-hidden="true">↗</b>
-        </button>
-      )}
-    </div>
-
-    <Section
-      title={mode==='tonight'?'Tonight in Atlanta':mode==='weekend'?'This Weekend':'Upcoming'}
-      subtext={mode==='tonight'?'Current entertainment options using Atlanta local time.':mode==='weekend'?'Friday through Sunday, ranked for useful browsing.':'The next things worth planning around.'}
-      action={<button onClick={()=>onOpenCategory(null)}>See all ↗</button>}
-    >
-      {scoped.length
-        ? <CollectionGrid items={scoped} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>
-        : <State title="Nothing confirmed in this exact window yet" body="Try Upcoming or open a category. GOOD TIMES will not fill this space with unrelated listings."/>
-      }
-    </Section>
-
-    <button className="gtc-plan-band" onClick={onPlan}>
-      <span><strong>Build around what’s happening.</strong><small>Combine a place, event and next move into one plan.</small></span><span aria-hidden="true">＋</span>
-    </button>
-  </section>
+    <section className="gtk-section gtk-ent-results"><header className="gtk-section-head"><div><h2>{title[0]} <em>{title[1]}</em></h2><p>{mode==='tonight'?'Handpicked. Atlanta local time.':mode==='weekend'?'Friday through Sunday.':'The next things worth planning around.'}</p></div><button type="button" className="gtk-see-all" onClick={()=>onOpenCategory(null)}>See All<Icon name="arrow" size={16}/></button></header>
+      {scoped.length?<div className="gtk-scroller">{scoped.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}</div>:<Empty title="Nothing confirmed in this exact window yet" body="Try Upcoming or open a category. GOOD TIMES will not fill this space with unrelated listings." action={<button onClick={()=>setMode('upcoming')}>See Upcoming</button>}/>}
+    </section>
+    <section className="gtk-section"><header className="gtk-section-head"><div><h2>Explore <em>Entertainment</em></h2><p>Every lane, one tap away</p></div></header>
+      <div className="gtc-entertainment-lanes gtk-lanes">
+        {LANES.map(([key,label,desc,kind,art])=>
+          <button key={label} className="gtc-entertainment-lane" style={{backgroundImage:`linear-gradient(180deg,rgba(5,6,7,.05),rgba(5,6,7,.9)),url("${gtAssetUrl(art,'good-times-backgrounds')}")`}} onClick={()=>kind==='sports'?onOpenSports():kind==='venues'?onOpenVenues(key):kind==='interactive'?onOpenInteractive?.():onOpenCategory(key)}>
+            <span><strong>{label}</strong><small>{desc}</small></span><b aria-hidden="true">↗</b>
+          </button>
+        )}
+      </div>
+    </section>
+    <Rail title="Browse by" accent="Vibe" subtitle="Find your kind of good time">{VIBES.map(([id,label,img])=><PhotoTile key={id} image={img} label={label} onClick={()=>onNavigate?.(id)}/>)}</Rail>
+    <BuildTrio title="Build Around Tonight" kicker="MAKE IT A FULL NIGHT" onBuild={()=>onPlan?.('guided')} onShake={()=>onPlan?.('shake')} onAsk={()=>onPlan?.('ask')}/>
+    <AddSpace label="Add Space" sub="List your event, show or venue on GOOD TIMES"/>
+  </Themed>
 }

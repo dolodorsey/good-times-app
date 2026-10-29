@@ -1,8 +1,9 @@
 import React,{useEffect,useMemo,useState} from 'react'
 import {KHG_SUPABASE_URL,KHG_SUPABASE_ANON_KEY} from '../../../lib/supabase.js'
 import {publicApiHeaders} from '../../../lib/public-api-headers.js'
-import {CollectionGrid} from './Collections.jsx'
 import {State,Skeleton} from './Cards.jsx'
+import {Themed,ScreenHero,SearchBar,PhotoTile,Rail,BrandBand,SCENES} from './Kit.jsx'
+import {VenuePoster} from './posters.jsx'
 import {safeImage} from './model.js'
 import {restaurantCuisines,CUISINE_LABELS} from './restaurant-cuisine.js'
 
@@ -63,8 +64,8 @@ async function loadRestaurants(signal){
  throw last
 }
 
-export default function RestaurantExplorer({savedKeys,onVenue,onSave,onBack,initialQuery=''}) {
- const [query,setQuery]=useState(initialQuery),[filter,setFilter]=useState(null),[all,setAll]=useState([]),[status,setStatus]=useState('loading'),[error,setError]=useState(''),[advanced,setAdvanced]=useState(false),[retry,setRetry]=useState(0)
+export default function RestaurantExplorer({savedKeys,onVenue,onSave,onBack,onPlan,initialQuery='',initialFilter=null}) {
+ const [query,setQuery]=useState(initialQuery),[filter,setFilter]=useState(initialFilter),[all,setAll]=useState([]),[status,setStatus]=useState('loading'),[error,setError]=useState(''),[advanced,setAdvanced]=useState(false),[retry,setRetry]=useState(0)
  useEffect(()=>{const c=new AbortController();setStatus('loading');setError('');loadRestaurants(c.signal).then(rows=>{setAll(rows);setStatus('success')}).catch(e=>{if(!c.signal.aborted){setStatus('error');setError(e.message)}});return()=>c.abort()},[retry])
  const searched=useMemo(()=>{const n=fold(query).trim();if(!n)return all;return all.filter(r=>fold([r.name,r.neighborhood,r.short_desc,...r.cuisines.map(c=>CUISINE_LABELS[c]),r.source_subcategory].join(' ')).includes(n))},[all,query])
  const rows=useMemo(()=>searched.filter(r=>restaurantMatches(r,filter)),[searched,filter])
@@ -72,19 +73,19 @@ export default function RestaurantExplorer({savedKeys,onVenue,onSave,onBack,init
  const countFor=(field,value)=>searched.filter(r=>restaurantMatches(r,{field,value})).length
  const toggle=(field,value,label)=>{setFilter(filter?.value===value&&filter?.field===field?null:{field,value,label});requestAnimationFrame(()=>document.querySelector('.gtc-restaurant-tools')?.scrollIntoView?.({block:'start',behavior:'smooth'}))}
  const saved=new Set([...savedKeys].filter(k=>k.startsWith('venue:')))
- return <section className="gtc-restaurants">
-  <header className="gtc-page-heading"><button onClick={onBack} aria-label="Back to Places">←</button><div><h1>Restaurants</h1><small>Everyday to fine dining—browse by cuisine, occasion and vibe.</small></div></header>
-  <div className="gtc-search"><input aria-label="Search restaurants" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Cuisine, restaurant, neighborhood…"/>{query&&<button aria-label="Clear restaurant search" onClick={()=>setQuery('')}>×</button>}</div>
-  <div className="gtc-restaurant-quick" aria-label="Restaurant interests">{QUICK.map(([value,label,field])=>{const n=status==='success'?countFor(field,value):null;return <button key={value} aria-pressed={filter?.value===value} className={`${filter?.value===value?'active':''} ${n===0?'is-empty':''}`.trim()} onClick={()=>toggle(field,value,label)}>{label}{n?<em>{n}</em>:null}</button>})}</div>
-  {status==='success'&&!filter&&cuisines.length>0&&<section className="gtc-cuisine-browse" aria-label="Browse restaurants by cuisine">
-   <header><h2>Browse by cuisine</h2><small>{cuisines.length} cuisines · {searched.length} restaurants</small></header>
-   <div className="gtc-cuisine-grid" data-gt-subcategories="restaurant_cuisines">{cuisines.map(c=><button key={c.value} data-gt-subcategory={c.value} onClick={()=>toggle('cuisines',c.value,c.label)} style={c.image?{'--gtc-cuisine-image':`url("${c.image}")`}:undefined} className={c.image?'has-image':''}><strong>{c.label}</strong><small>{c.count} {c.count===1?'place':'places'}</small></button>)}</div>
-  </section>}
+ const featured=rows.find(r=>safeImage(r.hero_image))
+ return <Themed theme="emerald" className="gtc-restaurants">
+  <ScreenHero size="md" eyebrow="ATLANTA" title="Dining" tagline="Extraordinary food. Unforgettable nights." image={SCENES.dining} onBack={onBack} backLabel="Back to Places" script={'Good\nPeople\nBetter\nNights.'}>
+   <SearchBar inputLabel="Search restaurants" placeholder="Search restaurants, cuisine, or neighborhood…" value={query} onChange={setQuery} onFilters={()=>setAdvanced(x=>!x)}/>
+  </ScreenHero>
+  <div className="gtc-restaurant-quick gtk-pills is-scroll" aria-label="Restaurant interests" role="group">{QUICK.map(([value,label,field])=>{const n=status==='success'?countFor(field,value):null;return <button key={value} aria-pressed={filter?.value===value} className={`${filter?.value===value?'active':''} ${n===0?'is-empty':''}`.trim()} onClick={()=>toggle(field,value,label)}>{label}{n?<em>{n}</em>:null}</button>})}</div>
+  {status==='success'&&!filter&&cuisines.length>0&&<Rail className="gtc-cuisine-browse" title="Popular" accent="Cuisines" kicker={`${cuisines.length} CUISINES · ${searched.length} RESTAURANTS`}><div className="gtk-scroller-inner" data-gt-subcategories="restaurant_cuisines" style={{display:'contents'}}>{cuisines.map(c=><PhotoTile key={c.value} image={c.image} label={c.label} sub={`${c.count} ${c.count===1?'place':'places'}`} onClick={()=>toggle('cuisines',c.value,c.label)}/>)}</div></Rail>}
   <div className="gtc-restaurant-tools"><span>{status==='success'?<><strong>{rows.length}</strong> {rows.length===1?'restaurant':'restaurants'}{filter?<> · {filter.label} <button className="gtc-clear-filter" onClick={()=>setFilter(null)} aria-label={`Clear ${filter.label} filter`}>×</button></>:null}</>:'Finding the right places…'}</span><button onClick={()=>setAdvanced(x=>!x)} aria-expanded={advanced}>Filters {advanced?'−':'＋'}</button></div>
   {advanced&&<div className="gtc-restaurant-filter-groups">{[['Cuisine','cuisines',cuisines.map(c=>[c.value,c.label])],...GROUPS].map(([label,field,items])=>{const shown=items.map(([value,name])=>[value,name,countFor(field,value)]).filter(([,,n])=>n>0);return shown.length?<section key={label}><strong>{label}</strong><div>{shown.map(([value,name,n])=><button key={value} className={filter?.value===value?'active':''} aria-pressed={filter?.value===value} onClick={()=>toggle(field,value,name)}>{name}<em>{n}</em></button>)}</div></section>:null})}</div>}
   {status==='loading'&&<Skeleton count={4}/>}
   {status==='error'&&<State error title="Restaurants could not refresh" body={error} action={<button onClick={()=>setRetry(x=>x+1)}>Retry</button>}/>}
   {status==='success'&&!rows.length&&<State title="Nothing verified for that exact interest yet" body="Clear the filter or search another cuisine, neighborhood or occasion. GOOD TIMES will not fill this with unrelated restaurants." action={<button onClick={()=>{setFilter(null);setQuery('')}}>Clear filters</button>}/>}
-  {rows.length>0&&<CollectionGrid items={rows} savedKeys={saved} onVenue={onVenue} onSave={onSave}/>}
- </section>
+  {rows.length>0&&<section className="gtk-section"><header className="gtk-section-head"><div><h2>{filter?filter.label:'Top Restaurants'} <em>in Atlanta</em></h2></div></header><div className="gtk-grid">{rows.map(r=><VenuePoster key={r.id} venue={r} savedKeys={saved} onVenue={onVenue} onSave={onSave} onPlan={onPlan}/>)}</div></section>}
+  {status==='success'&&<BrandBand kicker="DISCOVER. DINE. DRINK. REPEAT." image={featured?.hero_image||SCENES.diningWarm}/>}
+ </Themed>
 }
