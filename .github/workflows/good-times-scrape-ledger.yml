@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Verify canonical scrape-run states
         run: |
           initial='supabase/migrations/20260803010000_normalize_good_times_scrape_run_status.sql'
