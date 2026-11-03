@@ -10,6 +10,7 @@ import { eventTimeFields, validClock } from './event-time-display.js'
 import { eventFacts } from './event-facts.js'
 import { dedupeEventOccurrences, inventoryCacheKey } from './event-occurrences.js'
 import ATLANTA_FALLBACK_SNAPSHOT from './atlanta-fallback-snapshot.js'
+import { HOUSE_VENUE_TBA, houseVenueTba, withHouseVenue, limitKeepingHouse } from './house-programming.js'
 
 const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
@@ -174,23 +175,25 @@ function isStaleServiceDayEvent(item,clock){
   if(start<0)return false
   return start<clock.serviceMinute-(6*60)
 }
-function customerReadyEvent(item,clock){
+export function customerReadyEvent(item,clock){
   const taxonomy=inferCustomerTaxonomy(item)
   const title=String(item.event_name||'').trim()
-  const venue=String(item.venue_name||'').trim()
+  // Kollective house listings may be venue-TBA (never invented); every other event needs a real venue.
+  const venueTba=houseVenueTba(item)
+  const venue=venueTba?HOUSE_VENUE_TBA:String(item.venue_name||'').trim()
   if(!title||!venue||!taxonomy.category||!safeImage(item.image_url)||!item.ticket_url||isStaleServiceDayEvent(item,clock))return false
-  if(/^(atlanta|houston|miami|dallas|charlotte|phoenix|scottsdale|las vegas|los angeles|new york|washington dc|tba|tbd|online|virtual|warehouse)$/i.test(venue))return false
+  if(!venueTba&&/^(atlanta|houston|miami|dallas|charlotte|phoenix|scottsdale|las vegas|los angeles|new york|washington dc|tba|tbd|online|virtual|warehouse)$/i.test(venue))return false
   if(/\b(online reserved|zoom id|virtual event|sold out|mon-fri 2026|make money fast|timeshare|webinar)\b/i.test(`${title} ${venue}`))return false
   return true
 }
-function mapEvents(rows){return rows.map((item,index)=>{const taxonomy=inferCustomerTaxonomy(item);return{
+function mapEvents(rows){return rows.map(withHouseVenue).map((item,index)=>{const taxonomy=inferCustomerTaxonomy(item);return{
   ...eventFacts(item),
   event_key:`show:${item.id}`,source_table:'gt_shows',source_id:item.id,city_key:item.city_key,
   title:decode(item.event_name),event_date:item.show_date,...eventTimeFields(item),venue_name:decode(item.venue_name),
   raw_type:item.event_type,raw_category:item.genre,description:decode(item.description),ticket_url:item.ticket_url,image_url:safeImage(item.image_url),organizer:decode(item.organizer),
   source_name:item.source,source_url:item.source_url,is_verified:item.status==='confirmed',quality_score:item.quality_score,freshness_tier:item.freshness_tier,updated_at:item.updated_at,
   display_priority:item.display_priority,good_times_score:item.good_times_score,category_key:taxonomy.category,subcategory_key:taxonomy.subcategory,
-  is_featured:item.is_featured,is_curated:item.is_curated,rank_order:index+1,
+  is_featured:item.is_featured,is_curated:item.is_curated,venue_tba:Boolean(item.venue_tba),rank_order:index+1,
 }})}
 function mapVenues(rows){
   const normalized=rows.map(row=>({
@@ -250,7 +253,7 @@ export default async function handler(request,response){
   const freshness=getEventFreshness(rawEvents,new Date())
   const readyEvents=freshness.live?rawEvents.filter(item=>customerReadyEvent(item,clock)):[]
   const ranked=rankEvents(dedupeEventOccurrences(readyEvents),clock)
-  const events=mapEvents(ranked).slice(0,eventLimit)
+  const events=limitKeepingHouse(mapEvents(ranked),eventLimit)
   const venues=mapVenues(rawVenues).slice(0,venueLimit)
   const degraded=embeddedFallbackUsed||freshness.status==='stale'
   const payload={

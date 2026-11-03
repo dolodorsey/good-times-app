@@ -1,5 +1,6 @@
 import { eventFacts, SHOW_PUBLIC_FIELDS } from './event-facts.js'
 import { eventTimeFields } from './event-time-display.js'
+import { HOUSE_VENUE_TBA, houseVenueTba, withHouseVenue, limitKeepingHouse } from './house-programming.js'
 
 const CONTENT_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
@@ -166,10 +167,12 @@ export function inferCustomerTaxonomy(item) {
 export function inferCustomerCategory(item) { return inferCustomerTaxonomy(item).category }
 function customerReadyEvent(item, verifiedVenueNames, city) {
   const title = String(item.event_name || '').trim()
-  const venue = String(item.venue_name || '').trim()
+  // Kollective house listings may be venue-TBA (never invented); every other event needs a real venue.
+  const venueTba = houseVenueTba(item)
+  const venue = venueTba ? HOUSE_VENUE_TBA : String(item.venue_name || '').trim()
   const taxonomy = inferCustomerTaxonomy(item)
   if (!title || !taxonomy.category || !safePublicImage(item.image_url) || !item.ticket_url) return false
-  if (!venue || /^(atlanta|houston|miami|dallas|charlotte|phoenix|scottsdale|las vegas|los angeles|new york|washington dc|tba|online|virtual|warehouse)$/i.test(venue)) return false
+  if (!venueTba && (!venue || /^(atlanta|houston|miami|dallas|charlotte|phoenix|scottsdale|las vegas|los angeles|new york|washington dc|tba|online|virtual|warehouse)$/i.test(venue))) return false
   if (/\b(sold out|mon-fri 2026|make money fast|timeshare|webinar)\b/i.test(title)) return false
   if (city !== 'atlanta') {
     const venueMatched = verifiedVenueNames.has(normalizeVenueName(venue))
@@ -259,7 +262,7 @@ async function fetchRows(path, label) {
   throw lastError || new Error(`${label} failed`)
 }
 function mapShows(rows) {
-  return rows.map((item, index) => {
+  return rows.map(withHouseVenue).map((item, index) => {
     const taxonomy = inferCustomerTaxonomy(item)
     return {
       ...eventFacts(item),
@@ -269,7 +272,7 @@ function mapShows(rows) {
       description:decodeHtmlEntities(item.description),source_name:item.source,source_url:item.source_url,updated_at:item.updated_at,
       organizer:decodeHtmlEntities(item.organizer), display_priority:item.display_priority, good_times_score:item.good_times_score,
       category_key:taxonomy.category, subcategory_key:taxonomy.subcategory,
-      is_featured:item.is_featured, is_curated:item.is_curated, rank_order:index + 1,
+      is_featured:item.is_featured, is_curated:item.is_curated, venue_tba:Boolean(item.venue_tba), rank_order:index + 1,
     }
   })
 }
@@ -314,7 +317,7 @@ export default async function handler(request, response) {
   const venues = dedupeCustomerVenues(rawVenues).map(item => ({...item,hero_image:safePublicImage(item.hero_image)})).slice(0,venueLimit)
   const verifiedVenueNames = new Set(venues.map(item => normalizeVenueName(item.name)).filter(Boolean))
   const filteredEvents = eventFreshness.live ? rawEvents.filter(item => customerReadyEvent(item,verifiedVenueNames,city)) : []
-  const events = mapShows(dedupeCustomerEvents(filteredEvents)).slice(0,eventLimit)
+  const events = limitKeepingHouse(mapShows(dedupeCustomerEvents(filteredEvents)),eventLimit)
   const degraded = eventResult.status === 'rejected' || venueResult.status === 'rejected' || eventFreshness.status === 'stale'
   const coverage = {
     events_live:eventFreshness.live,

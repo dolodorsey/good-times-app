@@ -7,6 +7,7 @@ import {inferCustomerTaxonomy} from './data.js'
 import {correctDisplayEvents} from '../src/features/experience/complete/taxonomy.js'
 import {eventTimeFields} from './event-time-display.js'
 import {eventFacts,SHOW_PUBLIC_FIELDS} from './event-facts.js'
+import {houseVenueTba,withHouseVenue} from './house-programming.js'
 import {selectedCityClock,dateNumber,eventIsDiscoverable} from '../src/features/experience/good-times-event-clock.js'
 import {safeLink,safeImage,occurrenceUsable,shiftDate} from '../src/features/experience/complete/model.js'
 import {RESTAURANT_PROFILE_FIELDS,normalizeRestaurantProfile} from '../src/features/experience/complete/restaurant-facts.js'
@@ -42,14 +43,16 @@ export function showQuery(scope,cursor,now=Date.now()) {
  if(cursor)clauses.push(`or(show_date.gt.${cursor.date},and(show_date.eq.${cursor.date},id.gt.${quote(cursor.id)}))`)
  params.set('and','('+clauses.join(',')+')');return params
 }
-export function mapShow(row,now=Date.now()) {
+export function mapShow(source,now=Date.now()) {
+ // Kollective house listings may be venue-TBA (never invented); every other event needs a real venue.
+ const venueTba=houseVenueTba(source),row=withHouseVenue(source)
  const taxonomy=inferCustomerTaxonomy(row),category=row.category_key_v2&&row.category_key_v2!=='needs_review'?row.category_key_v2:taxonomy.category
  if(row.category_key_v2==='needs_review'||row.city_key!=='atlanta'||!row.event_name||!row.venue_name||row.is_sold_out||!['confirmed','tentative'].includes(row.status))return null
  if(!Number.isFinite(Date.parse(row.updated_at))||Date.parse(row.updated_at)<now-72*3600000)return null
  if(!safeLink(row.ticket_url||row.source_url))return null
  // Strong source taxonomy rules remain authoritative; do not inherit arena=concert.
  const strongest=['sports_watch','comedy_performing_arts','wellness_fitness'].includes(taxonomy.category)?taxonomy.category:category
- const event={...eventFacts(row),event_key:'show:'+row.id,id:row.id,city_key:'atlanta',source_table:'gt_shows',source_id:row.id,title:row.event_name,event_date:row.show_date,...eventTimeFields(row),category_key:strongest,subcategory_key:row.subcategory_key_v2||taxonomy.subcategory,venue_name:row.venue_name,image_url:safeImage(row.image_url),ticket_url:safeLink(row.ticket_url),source_url:safeLink(row.source_url),source_name:row.source,description:row.description,organizer:row.organizer,is_featured:row.is_featured,is_curated:row.is_curated,display_priority:row.display_priority,quality_score:row.quality_score,good_times_score:row.good_times_score,freshness_tier:row.freshness_tier,updated_at:row.updated_at,is_verified:row.status==='confirmed'}
+ const event={...eventFacts(row),event_key:'show:'+row.id,id:row.id,city_key:'atlanta',source_table:'gt_shows',source_id:row.id,title:row.event_name,event_date:row.show_date,...eventTimeFields(row),category_key:strongest,subcategory_key:row.subcategory_key_v2||taxonomy.subcategory,venue_name:row.venue_name,venue_tba:venueTba,image_url:safeImage(row.image_url),ticket_url:safeLink(row.ticket_url),source_url:safeLink(row.source_url),source_name:row.source,description:row.description,organizer:row.organizer,is_featured:row.is_featured,is_curated:row.is_curated,display_priority:row.display_priority,quality_score:row.quality_score,good_times_score:row.good_times_score,freshness_tier:row.freshness_tier,updated_at:row.updated_at,is_verified:row.status==='confirmed'}
  const fixed=correctDisplayEvents([event])[0];return fixed.category_key&&eventIsDiscoverable(fixed,'atlanta',now)?fixed:null
 }
 async function rows(table,params,fetcher,timeoutMs=6500) {
