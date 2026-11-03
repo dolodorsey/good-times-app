@@ -1,20 +1,25 @@
-import React,{useMemo,useState} from 'react'
+import React,{useEffect,useMemo,useState} from 'react'
 import {Themed,ScreenHero,SearchBar,IconRail,Rail,BuildTrio,ConciergeBand,PhotoTile,Skeletons,Empty,SCENES} from './Kit.jsx'
 import {EventPoster,VenuePoster} from './posters.jsx'
 import {EventCollection} from './Collections.jsx'
 import {State} from './Cards.jsx'
 import {selectedCityClock,eventIsThisWeekend} from '../good-times-event-clock.js'
-import {occurrenceUsable,eveningUsable,unique,list,labelFor,safeImage} from './model.js'
+import {occurrenceUsable,eveningUsable,unique,list,labelFor,safeImage,safeLink,displayDate,displayTime} from './model.js'
 import {PosterCard} from './Kit.jsx'
-import {houseEvents,KOLLECTIVE_PROGRAMS} from './kollective-programming.js'
+import {houseEvents,otherCityHouseEvents,ACCESS_LABELS,ACCESS_CTA,KOLLECTIVE_PROGRAMS} from './kollective-programming.js'
 import {openLink} from '../../../native.js'
 
-// Kollective events are live gt_shows inventory (same feed, detail sheet and Plan as any event);
-// programs are ongoing brands without a dated listing, so they link out.
+// Atlanta Kollective events are live gt_shows inventory from the feed (same detail sheet and Plan as any event).
+// Kollective events in other cities (DC) come from /api/house and show with their city; they never enter
+// Atlanta's discovery lanes. Programs are ongoing brands without a dated listing, so they link out.
 function KollectiveRail({events,now,savedKeys,onEvent,onSave}){
  const items=useMemo(()=>houseEvents(events),[events])
- return <Rail title="From The" accent="Kollective" kicker="OUR EVENTS · ATLANTA" className="gtk-kollective">
+ const [away,setAway]=useState([])
+ useEffect(()=>{const c=new AbortController();fetch('/api/house',{signal:c.signal}).then(r=>r.ok?r.json():null).then(b=>{if(b?.ok)setAway(otherCityHouseEvents(b.events))}).catch(()=>{});return()=>c.abort()},[])
+ return <Rail title="From The" accent="Kollective" kicker={away.length?'OUR EVENTS · ATLANTA & DC':'OUR EVENTS · ATLANTA'} className="gtk-kollective">
   {items.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}
+  {away.map(e=>{const link=safeLink(e.ticket_url),go=link?()=>openLink(link):undefined,end=e.end_time?` – ${displayTime(e.end_time)}`:''
+   return <PosterCard key={e.event_key} cardClass="gtk-house-card" id={`kollective:${e.event_key}`} image={e.image_url} badge={ACCESS_LABELS[e.access]} kicker={e.city_label?.toUpperCase()} title={e.title} lines={[`${displayDate(e.event_date)} · ${displayTime(e.event_time)}${end}`,[e.venue_name,e.city_label].filter(Boolean).join(' · ')]} onOpen={go} action={link&&ACCESS_CTA[e.access]?{label:ACCESS_CTA[e.access],icon:'ticket',onClick:go}:undefined}/>})}
   {KOLLECTIVE_PROGRAMS.map(p=>{const go=()=>openLink(p.url);return <PosterCard key={p.key} cardClass="gtk-house-card" id={`kollective:${p.key}`} image={p.image} kicker={p.kicker} title={p.title} lines={[p.line]} onOpen={go} action={{label:p.cta,icon:'arrow',onClick:go}}/>})}
  </Rail>
 }

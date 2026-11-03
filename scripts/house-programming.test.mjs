@@ -52,3 +52,29 @@ test('rail shows the next occurrence per house series only',()=>{
   const out=houseEvents([ev('KINGS OF THE COURT','2026-12-18'),ev('KINGS OF THE COURT','2026-11-20'),ev('BLACK BALL','2026-11-21','21:00'),ev('Other party','2026-11-01','20:00','Eventbrite ATL')])
   assert.deepEqual(out.map(e=>e.title+' '+e.event_date),['KINGS OF THE COURT 2026-11-20','BLACK BALL 2026-11-21'])
 })
+
+import {mapHouseEvent,houseAccess} from '../api/house.js'
+import {otherCityHouseEvents} from '../src/features/experience/complete/kollective-programming.js'
+
+const houseRow=(patch={})=>({id:uuid(9),city_key:'washington_dc',series_key:'crystal-ball',event_name:'CRYSTAL BALL — Charity Experience',event_type:'nightlife',show_date:'2026-12-10',show_time:'21:00',end_time:'01:00',venue_name:null,image_url:'https://img.evbuc.com/x.jpg',ticket_url:null,is_free:false,admission_type:null,status:'tentative',source:HOUSE_SOURCE,...patch})
+
+test('/api/house: invite-only never exposes a ticket link, even if one exists',()=>{
+  const e=mapHouseEvent(houseRow({series_key:'diamond-ball',admission_type:'invite_only',ticket_url:'https://www.eventbrite.com/e/x-tickets-1'}))
+  assert.equal(e.access,'invite_only'); assert.equal(e.ticket_url,null)
+})
+
+test('/api/house: unpublished listing shows details with no link; published free RSVP links out',()=>{
+  const pending=mapHouseEvent(houseRow())
+  assert.equal(pending.access,'tickets_pending'); assert.equal(pending.ticket_url,null)
+  assert.equal(pending.venue_name,HOUSE_VENUE_TBA); assert.equal(pending.city_label,'Washington, DC')
+  const rsvp=mapHouseEvent(houseRow({is_free:true,ticket_url:'https://www.eventbrite.com/e/give-a-gobble-tickets-2004110707074',status:'confirmed'}))
+  assert.equal(rsvp.access,'free_rsvp'); assert.match(rsvp.ticket_url,/eventbrite\.com/)
+  assert.equal(houseAccess({ticket_url:'https://x.test/t',is_free:false}),'tickets')
+})
+
+test('/api/house: unknown city is dropped (no wrong-city leakage)',()=>assert.equal(mapHouseEvent(houseRow({city_key:'miami'})),null))
+
+test('rail: only non-Atlanta house events come from /api/house (Atlanta stays on the feed)',()=>{
+  const out=otherCityHouseEvents([mapHouseEvent(houseRow()),mapHouseEvent(houseRow({city_key:'atlanta',event_name:'BLACK BALL'}))])
+  assert.deepEqual(out.map(e=>e.city_key),['washington_dc'])
+})
