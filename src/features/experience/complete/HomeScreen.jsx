@@ -5,6 +5,19 @@ import {EventCollection} from './Collections.jsx'
 import {State} from './Cards.jsx'
 import {selectedCityClock,eventIsThisWeekend} from '../good-times-event-clock.js'
 import {occurrenceUsable,eveningUsable,unique,list,labelFor,safeImage} from './model.js'
+import {PosterCard} from './Kit.jsx'
+import {houseEvents,KOLLECTIVE_PROGRAMS} from './kollective-programming.js'
+import {openLink} from '../../../native.js'
+
+// Kollective events are live gt_shows inventory (same feed, detail sheet and Plan as any event);
+// programs are ongoing brands without a dated listing, so they link out.
+function KollectiveRail({events,now,savedKeys,onEvent,onSave}){
+ const items=useMemo(()=>houseEvents(events),[events])
+ return <Rail title="From The" accent="Kollective" kicker="OUR EVENTS · ATLANTA" className="gtk-kollective">
+  {items.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}
+  {KOLLECTIVE_PROGRAMS.map(p=>{const go=()=>openLink(p.url);return <PosterCard key={p.key} cardClass="gtk-house-card" id={`kollective:${p.key}`} image={p.image} kicker={p.kicker} title={p.title} lines={[p.line]} onOpen={go} action={{label:p.cta,icon:'arrow',onClick:go}}/>})}
+ </Rail>
+}
 
 const MOODS=[
  {id:'restaurants',label:'Food',sub:'Dining',icon:'food',tone:'food'},
@@ -48,6 +61,7 @@ export default function HomeScreen({events=[],venues=[],profile,savedKeys,onEven
   <div className="gtk-time-tabs"><nav className="gtc-tabs gt5-home-modes gtk-time-nav" aria-label="GOOD TIMES Home views">{[['for-you','For You'],['upcoming','Upcoming'],['tonight','Tonight']].map(([id,label])=><button key={id} className={id===mode?'active':''} aria-pressed={id===mode} onClick={()=>onMode(id)}>{label}</button>)}</nav><button type="button" onClick={()=>nav('weekend')}>This Weekend</button></div>
   {mode!=='for-you'?<EventCollection key={mode} mode={mode} now={now} initialEvents={events} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>:<>
    <section className="gtk-section gtk-moods"><header className="gtk-section-head"><div><h2>What kind of <em>time?</em></h2></div><button type="button" className="gtk-see-all" onClick={()=>nav('places')}>See All</button></header><IconRail variant="mood" label="What kind of time" items={MOODS} onSelect={nav}/></section>
+   <KollectiveRail events={live} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>
    {error&&<State error title="Couldn’t refresh all recommendations" body={error} action={<button onClick={onRetry}>Retry</button>}/>}
    {loading&&!events.length&&!venues.length?<Skeletons/>:<>
     {tonight.length>0&&<Rail title={c.minute<240?'Still going':'Tonight'} accent="in Atlanta" kicker="LIVE & UPCOMING" onSeeAll={()=>onMode('tonight')}>{tonight.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}</Rail>}

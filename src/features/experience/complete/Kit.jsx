@@ -71,9 +71,9 @@ export function Rail({title,accent,kicker,subtitle,onSeeAll,seeAllLabel='See All
 }
 function PosterImage({src,alt='',icon='sparkle'}) {const [failed,setFailed]=useState(false);useEffect(()=>setFailed(false),[src]);const image=!failed&&safeImage(src);return image?<img src={image} alt={alt} loading="lazy" decoding="async" onError={()=>setFailed(true)}/>:<div className="gtk-no-photo" aria-hidden="true"><Icon name={icon} size={34} stroke={1.3}/><span>GOOD TIMES</span><small>Verified photo coming soon</small></div>}
 /** Image-first card: title over photo, meta lines, one real action. */
-export function PosterCard({id,image,badge,kicker,title,lines=[],tags=[],action,onOpen,saved=false,onSave,size='md',live=false,icon='sparkle'}) {
+export function PosterCard({id,image,badge,kicker,title,lines=[],tags=[],action,onOpen,saved=false,onSave,size='md',live=false,icon='sparkle',cardClass='gtc-card'}) {
   const [busy,setBusy]=useState(false)
-  return <article className={`gtk-poster gtk-poster-${size} gtc-card`} data-item-id={id||undefined}>
+  return <article className={`gtk-poster gtk-poster-${size} ${cardClass}`} data-item-id={id||undefined}>
     <button type="button" className="gtk-poster-open gtc-card-open" onClick={onOpen} aria-label={`View ${title}`}>
       <div className="gtk-poster-media"><PosterImage src={image} icon={icon}/><div className="gtk-poster-shade"/>{badge&&<span className={`gtk-badge ${live?'is-live':''}`}>{live&&<i/>}{badge}</span>}</div>
       <div className="gtk-poster-copy">{kicker&&<small className="gtk-poster-kicker">{kicker}</small>}<h3>{title}</h3>{lines.filter(Boolean).map((l,i)=><p key={i} className={i===0?'is-primary':''}>{l}</p>)}{tags.length>0&&<div className="gtk-tags">{tags.filter(Boolean).slice(0,3).map(t=><span key={t}>{t}</span>)}</div>}</div>
