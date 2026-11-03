@@ -15,7 +15,8 @@ function KollectiveRail({today}){
  return <Rail title="From The" accent="Kollective" kicker="OUR EVENTS · ATLANTA" className="gtk-kollective">{items.map(item=>{
   const go=()=>openLink(item.url)
   const when=item.kind==='brand'?null:`${displayDate(item.date)} · ${displayTime(item.time)}`
-  return <PosterCard key={item.key} id={`kollective:${item.key}`} image={item.image} badge={item.free?'FREE':null} kicker={item.kicker} title={item.title} lines={[when,item.line].filter(Boolean)} onOpen={go} action={{label:item.cta||'Get Tickets',icon:item.kind==='brand'?'arrow':'ticket',onClick:go}}/>
+  // Link-out cards: kept out of the .gtc-card discovery contract (which opens the in-app detail sheet).
+  return <PosterCard key={item.key} cardClass="gtk-house-card" id={`kollective:${item.key}`} image={item.image} badge={item.free?'FREE':null} kicker={item.kicker} title={item.title} lines={[when,item.line].filter(Boolean)} onOpen={go} action={{label:item.cta||'Get Tickets',icon:item.kind==='brand'?'arrow':'ticket',onClick:go}}/>
  })}</Rail>
 }
 
