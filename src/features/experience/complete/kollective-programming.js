@@ -13,7 +13,16 @@ export const KOLLECTIVE_PROGRAMS = [
   {key:'sole-exchange',title:'Sole Exchange',kicker:'SHOE DRIVE',line:'Ongoing community shoe drive',cta:'Learn More',url:'https://soleexchangeworldwide.com',image:'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/websites/graphics/SOLE_EXCHANGE_WEBSITE/ChatGPT_Image_Jul_30_2026_02_35_07_AM_1_.png'},
 ]
 
-const seriesKey = event => String(event?.title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+// Kollective events outside Atlanta (Dr. Dorsey's DC slate) come from /api/house, not the Atlanta
+// feed, so they never mix into Atlanta's Tonight/Weekend lanes. The rail shows them with their city.
+export const ACCESS_LABELS = {invite_only:'INVITE ONLY',tickets_pending:'TICKETS SOON',free_rsvp:'FREE',tickets:null}
+export const ACCESS_CTA = {free_rsvp:'Free RSVP',tickets:'Get Tickets'}
+
+export function otherCityHouseEvents(events = []) {
+  return houseEvents((Array.isArray(events) ? events : []).filter(e => e?.city_key && e.city_key !== 'atlanta').map(e => ({...e, source_name: HOUSE_SOURCE})))
+}
+
+const seriesKey = event => String(event?.city_key || '') + ':' + String(event?.title || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 
 /** House events from the live feed: next upcoming occurrence per series, in date/time order. */
 export function houseEvents(events = []) {
