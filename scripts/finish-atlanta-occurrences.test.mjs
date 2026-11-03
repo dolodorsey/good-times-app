@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import {dedupeEventOccurrences,occurrenceKey,inventoryCacheKey} from '../api/event-occurrences.js'
 import {validClock,eventTimeFields} from '../api/event-time-display.js'
 import handler from '../api/data-live.js'
+import ATLANTA_FALLBACK_SNAPSHOT from '../api/atlanta-fallback-snapshot.js'
 
 const event=(patch={})=>({id:'one',city_key:'atlanta',event_name:'A Named Headliner',venue_name:'Fox Theatre',show_date:'2026-10-02',show_time:'20:00',ticket_url:'https://example.com/season',good_times_score:65,...patch})
 
@@ -58,11 +59,16 @@ test('the real live handler preserves occurrences and cannot serve a differently
     assert.equal(full.headers['X-Good-Times-Live-Gateway'],'v9')
     const small=await call(1);assert.equal(JSON.parse(small.body).events.length,1)
     globalThis.fetch=async()=>{throw new Error('simulated source outage')}
-    // The embedded snapshot is stale (October 7). Reject an outage rather than
-    // returning old listings or improperly reusing a differently sized cache.
+    // The refresh workflow rebuilds this embedded snapshot before its build
+    // guard. A current, schema-valid snapshot is a legitimate fallback; an
+    // expired snapshot must fail closed. Keep this test correct in both states.
+    const snapshotAge=Date.now()-Date.parse(ATLANTA_FALLBACK_SNAPSHOT?.refreshed_at||'')
+    const snapshotUsable=Number.isFinite(snapshotAge)&&snapshotAge>=0&&snapshotAge<=36*60*60*1000&&
+      Array.isArray(ATLANTA_FALLBACK_SNAPSHOT?.events)&&ATLANTA_FALLBACK_SNAPSHOT.events.length>0&&
+      Array.isArray(ATLANTA_FALLBACK_SNAPSHOT?.venues)&&ATLANTA_FALLBACK_SNAPSHOT.venues.length>0
     const unseen=await call(2)
-    assert.equal(unseen.statusCode,503,'Stale emergency snapshot must not be served as fresh inventory')
-    assert.equal(JSON.parse(unseen.body).ok,false)
+    assert.equal(unseen.statusCode,snapshotUsable?200:503,'Fallback must serve only a current, schema-valid embedded snapshot')
+    assert.equal(JSON.parse(unseen.body).ok,snapshotUsable)
     // An exactly keyed, previously verified response can remain cached briefly.
     const recovered=await call(3)
     assert.equal(recovered.statusCode,200)

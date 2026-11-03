@@ -1,6 +1,7 @@
 name: Refresh Atlanta fallback snapshot
 
 # Keeps the verified Atlanta emergency snapshot fresh.
+# Snapshot-refresh close-out: run on workflow-file changes after the freshness-aware build guard is updated.
 #
 # GitHub Actions is responsible only for:
 # 1) refreshing and validating the embedded Atlanta snapshot,
