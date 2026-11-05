@@ -64,8 +64,8 @@ function installDataRequestGuard(){
         if(url.pathname==='/api/data'){
           const eventLimit=Number.parseInt(url.searchParams.get('event_limit')||'0',10)
           const venueLimit=Number.parseInt(url.searchParams.get('venue_limit')||'0',10)
-          if(!Number.isFinite(eventLimit)||eventLimit<=0||eventLimit>120){url.searchParams.set('event_limit','120');changed=true}
-          if(!Number.isFinite(venueLimit)||venueLimit<=0||venueLimit>180){url.searchParams.set('venue_limit','180');changed=true}
+          if(!Number.isFinite(eventLimit)||eventLimit<=0||eventLimit>240){url.searchParams.set('event_limit','240');changed=true}
+          if(!Number.isFinite(venueLimit)||venueLimit<=0||venueLimit>300){url.searchParams.set('venue_limit','300');changed=true}
           if(!url.searchParams.has('vibes')){
             try{
               const personalization=JSON.parse(localStorage.getItem('gt_personalization')||'{}')

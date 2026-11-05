@@ -55,13 +55,13 @@ function validLivePayload(payload) {
 
 async function requestLivePayload(normalizedCity) {
   try {
-    const fast = await fetchJson(`/api/data-fast?city=${encodeURIComponent(normalizedCity)}&event_limit=80&venue_limit=120`)
+    const fast = await fetchJson(`/api/data-fast?city=${encodeURIComponent(normalizedCity)}&event_limit=240&venue_limit=300`)
     if (validLivePayload(fast)) return fast
   } catch (error) {
     console.warn('[GOOD TIMES live data] Personalized gateway unavailable; falling back to canonical gateway.', error)
   }
 
-  const canonical = await fetchJson(`/api/data?city=${encodeURIComponent(normalizedCity)}&event_limit=80&venue_limit=120`)
+  const canonical = await fetchJson(`/api/data?city=${encodeURIComponent(normalizedCity)}&event_limit=240&venue_limit=300`)
   if (!validLivePayload(canonical)) throw new Error('GOOD TIMES data gateway returned an invalid response.')
   return canonical
 }

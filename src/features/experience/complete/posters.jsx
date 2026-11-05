@@ -1,6 +1,6 @@
 import React from 'react'
 import {PosterCard} from './Kit.jsx'
-import {humanize,labelFor,displayDate,displayTime,safeLink,cleanTitle,unique} from './model.js'
+import {humanize,labelFor,displayDate,displayTime,safeLink,cleanTitle,unique,runLine,matchupTeams} from './model.js'
 import {selectedCityClock} from '../good-times-event-clock.js'
 import {restaurantCuisines,CUISINE_LABELS} from './restaurant-cuisine.js'
 
@@ -19,10 +19,16 @@ export function VenuePoster({venue,savedKeys,onVenue,onSave,onPlan,size='md',sho
   lines={[[venue.neighborhood,venue.price_range].filter(Boolean).join(' · ')||'Atlanta',rating(venue)]} saved={savedKeys?.has?.(key(venue))}
   onOpen={()=>onVenue(venue)} onSave={onSave?()=>onSave('venue',venue.id):null} action={showAction?venueAction(venue,onPlan):null}/>
 }
+const TEAM_COLORS=Object.freeze({hawks:['#E03A3E','#26282A'],falcons:['#A71930','#101820'],'georgia tech':['#B3A369','#003057'],wizards:['#002B5C','#E31837'],nets:['#2a2a2a','#000000'],lakers:['#552583','#FDB927'],hornets:['#1D1160','#00788C'],pistons:['#C8102E','#1D42BA'],pacers:['#002D62','#FDBB30'],magic:['#0077C0','#111111'],thunder:['#007AC1','#EF3B24'],chiefs:['#E31837','#FFB81C'],lions:['#0076B6','#B0B7BC'],saints:['#9F8958','#101820'],louisville:['#C9001F','#111111']})
+const teamColor=(name,fallback)=>TEAM_COLORS[String(name).toLowerCase()]?.[0]||fallback
+/** Real UI text over team colors, like the flyers. Never a fake photo of a game. */
+function MatchupArt({teams}){
+ return <div className="gtk-matchup-art" aria-hidden="true" style={{'--gtk-team-a':teamColor(teams[0],'#3a2a12'),'--gtk-team-b':teamColor(teams[1],'#14171c')}}><span>{teams[0]}</span><i>vs</i><span>{teams[1]}</span></div>
+}
 export function EventPoster({event,savedKeys,onEvent,onSave,now,size='md',showAction=true}){
- const when=eventWhen(event,now),ticket=safeLink(event.ticket_url)
- return <PosterCard icon={eventIcon(event)} id={event.event_key} size={size} image={event.image_url} badge={when} live={Boolean(when&&when.startsWith('TONIGHT'))} kicker={labelFor(event.category_key)} title={cleanTitle(event.title)}
-  lines={[event.venue_name||'Location to confirm',eventPrice(event)]} saved={savedKeys?.has?.(key(event))}
+ const when=eventWhen(event,now),ticket=safeLink(event.ticket_url),teams=matchupTeams(event)
+ return <PosterCard art={teams?<MatchupArt teams={teams}/>:null} icon={eventIcon(event)} id={event.event_key} size={size} image={event.image_url} badge={when} live={Boolean(when&&when.startsWith('TONIGHT'))} kicker={labelFor(event.category_key)} title={cleanTitle(event.title)}
+  lines={[event.venue_name||'Location to confirm',runLine(event),eventPrice(event)]} saved={savedKeys?.has?.(key(event))}
   onOpen={()=>onEvent(event)} onSave={onSave?()=>onSave('event',event.event_key):null} action={showAction&&ticket?{label:'Get Tickets',icon:'ticket',href:ticket}:null}/>
 }
 export function Poster({item,...props}){return item.event_key?<EventPoster event={item} {...props}/>:<VenuePoster venue={item} {...props}/>}

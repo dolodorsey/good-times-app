@@ -4,18 +4,18 @@ import {CollectionGrid,Sports} from './Collections.jsx'
 import {Section,State} from './Cards.jsx'
 import {Themed,ScreenHero,SearchBar,IconRail,Rail,PhotoTile,BuildTrio,AddSpace,Empty,Icon,SCENES} from './Kit.jsx'
 import {EventPoster,VenuePoster} from './posters.jsx'
-import {gtAssetUrl} from '../good-times-assets.js'
+import {rankMarquee} from './model.js'
 
 const LANES=[
- ['nightlife','Nightlife','Parties, club nights, rooftops, after-hours','events','gt-cat-nightlife.webp'],
- ['nightlife','Bars & Lounges','Bars, lounges, hookah and social nightlife venues','venues','gt-cat-nightlife.webp'],
- ['concerts_live_music','Concerts','Artists, tours, live music','events','gt-cat-music.webp'],
- ['festivals_major_activations','Festivals + Events','Festivals, activations, major city moments','events','gt-cat-culture.webp'],
- ['sports_watch','Sports','Games, scores, watch parties','sports','gt-cat-sports.webp'],
- ['comedy_performing_arts','Comedy + Live','Comedy, theater, performing arts','events','gt-cat-culture.webp'],
- ['games_interactive','Interactive','Puttshack, darts, VR, racing, game shows, creative play','interactive','gt-cat-adventure.webp'],
- ['family_kids','Family','Kids, family events, discovery','events','gt-cat-adventure.webp'],
- ['attractions_experiences','Attractions','Museums, exhibits, attractions','events','gt-cat-adventure.webp'],
+ ['nightlife','Nightlife','Parties, club nights, rooftops, after-hours','events',SCENES.nightlife],
+ ['nightlife','Bars & Lounges','Bars, lounges, hookah and social nightlife venues','venues',SCENES.drinks],
+ ['concerts_live_music','Concerts','Artists, tours, live music','events',SCENES.stage],
+ ['festivals_major_activations','Festivals + Events','Festivals, activations, major city moments','events',SCENES.festival],
+ ['sports_watch','Sports','Games, scores, watch parties','sports',SCENES.sports],
+ ['comedy_performing_arts','Comedy + Live','Comedy, theater, performing arts','events',SCENES.comedy],
+ ['games_interactive','Interactive','Puttshack, darts, VR, racing, game shows, creative play','interactive',SCENES.interactive],
+ ['family_kids','Family','Kids, family events, discovery','events',SCENES.family],
+ ['attractions_experiences','Attractions','Museums, exhibits, attractions','events',SCENES.gallery],
 ]
 
 const INTERACTIVE_MATCH=/puttshack|flight club|cosm|f1 arcade|andretti|topgolf|top golf|sandbox vr|great big game show|spin art|game show|mini golf|darts|vr|immersive|sim[_ -]?racing|karting|arcade|bowling|escape|splatter|rage room/i
@@ -40,7 +40,7 @@ const ENT_RAIL=[
  {id:'comedy_performing_arts',label:'Comedy',icon:'masks'},{id:'festivals_major_activations',label:'Festivals',icon:'tent'},{id:'arts_museums_culture',label:'Culture',icon:'landmark'},
  {id:'interactive',label:'Interactive',icon:'game'},{id:'family_kids',label:'Family',icon:'family'},{id:'venues',label:'Lounges',icon:'moon'},
 ]
-const VIBES=[['nightlife-events','High Energy',SCENES.nightlife],['nightlife-venues','Chill',SCENES.lounge],['date-night','Date Night',SCENES.date],['interactive','Group Fun',SCENES.interactive],['culture','Cultural',SCENES.culture],['concerts','Live Music',SCENES.concert]]
+const VIBES=[['nightlife-events','High Energy',SCENES.nightlife],['nightlife-venues','Chill',SCENES.lounge],['date-night','Date Night',SCENES.date],['interactive','Group Fun',SCENES.interactive],['culture','Cultural',SCENES.culture],['concerts','Live Music',SCENES.stage]]
 export default function EntertainmentHub({
   events=[],now=Date.now(),savedKeys,onEvent,onSave,onSearch,onOpenCategory,onOpenVenues,onOpenSports,onOpenInteractive,onPlan,onNavigate,initialMode='tonight'
 }){
@@ -52,7 +52,8 @@ export default function EntertainmentHub({
       if(mode==='weekend')return eventIsThisWeekend(event,'atlanta',now)
       return eventDaysAway(event.event_date,'atlanta',now)>=0
     }).sort((a,b)=>String(a.event_date||'9999').localeCompare(String(b.event_date||'9999'))||String(a.event_time||'99:99').localeCompare(String(b.event_time||'99:99')))
-    return rows.slice(0,12)
+    // Lead with the top of the city, like the flyers. Upcoming keeps the nearest marquee dates first.
+    return mode==='upcoming'?rankMarquee(rows.slice(0,48)).slice(0,18):rankMarquee(rows).slice(0,18)
   },[events,mode,now])
   const open=id=>id==='sports'?onOpenSports():id==='interactive'?onOpenInteractive?.():id==='venues'?onOpenVenues('nightlife'):onOpenCategory(id)
   const title=mode==='tonight'?['Featured','Tonight']:mode==='weekend'?['This','Weekend']:['Coming','Up']
@@ -72,13 +73,13 @@ export default function EntertainmentHub({
     <section className="gtk-section"><header className="gtk-section-head"><div><h2>Explore <em>Entertainment</em></h2><p>Every lane, one tap away</p></div></header>
       <div className="gtc-entertainment-lanes gtk-lanes">
         {LANES.map(([key,label,desc,kind,art])=>
-          <button key={label} className="gtc-entertainment-lane" style={{backgroundImage:`linear-gradient(180deg,rgba(5,6,7,.05),rgba(5,6,7,.9)),url("${gtAssetUrl(art,'good-times-backgrounds')}")`}} onClick={()=>kind==='sports'?onOpenSports():kind==='venues'?onOpenVenues(key):kind==='interactive'?onOpenInteractive?.():onOpenCategory(key)}>
+          <button key={label} className="gtc-entertainment-lane" style={{backgroundImage:`linear-gradient(180deg,rgba(5,6,7,.05),rgba(5,6,7,.9)),url("${art}")`}} onClick={()=>kind==='sports'?onOpenSports():kind==='venues'?onOpenVenues(key):kind==='interactive'?onOpenInteractive?.():onOpenCategory(key)}>
             <span><strong>{label}</strong><small>{desc}</small></span><b aria-hidden="true">↗</b>
           </button>
         )}
       </div>
     </section>
-    <Rail title="Browse by" accent="Vibe" subtitle="Find your kind of good time">{VIBES.map(([id,label,img])=><PhotoTile key={id} image={img} label={label} onClick={()=>onNavigate?.(id)}/>)}</Rail>
+    <Rail className="gtk-vibes" title="Browse by" accent="Vibe" subtitle="Find your kind of good time">{VIBES.map(([id,label,img])=><PhotoTile key={id} image={img} label={label} onClick={()=>onNavigate?.(id)}/>)}</Rail>
     <BuildTrio title="Build Around Tonight" kicker="MAKE IT A FULL NIGHT" onBuild={()=>onPlan?.('guided')} onShake={()=>onPlan?.('shake')} onAsk={()=>onPlan?.('ask')}/>
     <AddSpace label="Add Space" sub="List your event, show or venue on GOOD TIMES"/>
   </Themed>

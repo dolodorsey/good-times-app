@@ -19,7 +19,48 @@ export function safeImage(value) {if(typeof value!=='string')return null;if(/^\/
 export function displayDate(date,options={month:'short',day:'numeric',weekday:'short'}) {return dateNumber(date)===null?'Date to confirm':new Intl.DateTimeFormat('en-US',{...options,timeZone:'UTC'}).format(new Date(date+'T12:00:00Z'))}
 export function displayTime(time) {const n=timeMinutes(time);if(n===null)return 'Time to confirm';return `${Math.floor(n/60)%12||12}:${String(n%60).padStart(2,'0')} ${n>=720?'PM':'AM'}`}
 export function shiftDate(date,n) {if(dateNumber(date)===null)return null;const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
-export function cleanTitle(value) {return String(value||'Experience').replace(/&amp;/g,'&').replace(/&#0?39;|&apos;/g,"'").replace(/&quot;/g,'"').replace(/\s+/g,' ').trim()}
+/** Readable card title. Strips the SEO sentences club calendars use as event names ("Franky Rizardo headlines at District Atlanta on Friday, November 6…"). */
+export function cleanTitle(value) {
+ const decoded=String(value||'Experience').replace(/&amp;/g,'&').replace(/&#0?39;|&apos;/g,"'").replace(/&quot;/g,'"').replace(/\s+/g,' ').trim()
+ const sentence=decoded.match(/^(.{2,}?)\s+(?:headlines at|is dropping the heat on|dropping the heat on|at)\s+(?:District\s+)?Atlanta\b.*$/i)||decoded.match(/^(.{2,}?)\s+at\s+District\s+Atlanta\b.*$/i)
+ if(sentence)return sentence[1].trim()
+ const piped=decoded.match(/^([^|]{2,}?)\s*\|\s*[^|]*\d{4}\s*\|.*$/)
+ return piped?piped[1].trim():decoded
+}
+const VENUE_TIERS=[[/mercedes-benz stadium/i,40],[/state farm arena/i,34],[/truist park/i,30],[/fox theatre/i,28],[/bobby dodd/i,26],[/high museum|botanical garden|fernbank/i,24],[/cobb energy|gas south|ameris|lakewood|chastain/i,22],[/tabernacle|coca-cola roxy|the eastern|symphony hall|stone mountain/i,18],[/buckhead theatre|district atlanta|believe music/i,12],[/city winery|punchline|masquerade|terminal west|variety playhouse/i,9]]
+const CATEGORY_LIFT=Object.freeze({festivals_major_activations:9,seasonal_holiday:8,sports_watch:7,arts_museums_culture:7,nightlife:6,concerts_live_music:5,comedy_performing_arts:5})
+/** How "top of the flyer" an event is. Only reorders verified inventory; it never admits anything or claims popularity. */
+export function marqueeScore(event) {
+ const title=`${event?.title||''}`,venue=`${event?.venue_name||''}`
+ let score=event?.is_featured?30:0
+ score+=(VENUE_TIERS.find(([pattern])=>pattern.test(venue))||[null,0])[1]
+ score+=CATEGORY_LIFT[event?.category_key]||0
+ score+=Math.min(10,Number(event?.good_times_score||0)/10)
+ if(/pick-?up party|vinofile|member(s)? only|overture concert|workshop|class\b/i.test(title))score-=25
+ return score
+}
+const productionKey=event=>`${cleanTitle(event?.title).toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()}|${String(event?.venue_name||'').toLowerCase().trim()}`
+/** One card per production: a five-night run is one marquee, not five identical posters in a rail. */
+export function collapseRuns(rows) {
+ const runs=new Map()
+ for(const row of list(rows)){const key=productionKey(row);if(!runs.has(key))runs.set(key,{...row,run_dates:[]});const first=runs.get(key);if(row.event_date&&!first.run_dates.includes(row.event_date))first.run_dates.push(row.event_date)}
+ return [...runs.values()]
+}
+/** Later dates of a run, for the card: "Also Nov 6, 8, 10". */
+export function runLine(event) {
+ const later=list(event?.run_dates).filter(date=>date!==event?.event_date)
+ if(!later.length)return null
+ let month=''
+ const shown=later.slice(0,4).map(date=>{const [m,d]=displayDate(date,{month:'short',day:'numeric'}).split(' '),part=m===month?d:`${m} ${d}`;month=m;return part}).join(', ')
+ return `Also ${shown}${later.length>4?` +${later.length-4}`:''}`
+}
+export function rankMarquee(rows) {return collapseRuns(rows).sort((a,b)=>marqueeScore(b)-marqueeScore(a)||String(a.event_date).localeCompare(String(b.event_date)))}
+/** "Hawks vs Lakers" → ['Hawks','Lakers'], for designed matchup art instead of generic arena graphics. */
+export function matchupTeams(event) {
+ if(event?.category_key!=='sports_watch')return null
+ const found=String(event?.title||'').match(/^(.{2,28}?)\s+vs\.?\s+(.{2,28})$/i)
+ return found?[found[1].trim(),found[2].trim()]:null
+}
 export function occurrenceUsable(event,now=Date.now()) {if(!eventIsDiscoverable(event,'atlanta',now))return false;const c=selectedCityClock('atlanta',now),m=timeMinutes(event.event_time);return event.event_date!==c.date||m===null||m>=c.minute||Boolean(event.event_end_time||event.end_time)}
 export function eveningUsable(event,now=Date.now()) {return occurrenceUsable(event,now)&&eventIsTonight(event,'atlanta',now)}
 export function homeDashboard(events,now=Date.now()) {

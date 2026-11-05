@@ -220,11 +220,11 @@ export default async function handler(request,response){
   const requestedCity=normalizeCity(url.searchParams.get('city'))
   const city='atlanta'
   if(requestedCity!=='atlanta')response.setHeader('X-Good-Times-Launch-Scope','atlanta-only')
-  const eventLimit=clampLimit(url.searchParams.get('event_limit'),120,180)
-  const venueLimit=clampLimit(url.searchParams.get('venue_limit'),120,180)
+  const eventLimit=clampLimit(url.searchParams.get('event_limit'),120,240)
+  const venueLimit=clampLimit(url.searchParams.get('venue_limit'),120,300)
   const clock=cityClock(city)
-  const eventFetchLimit=Math.min(Math.max(eventLimit*2,120),240)
-  const venueFetchLimit=Math.min(Math.max(venueLimit*2,120),240)
+  const eventFetchLimit=Math.min(Math.max(eventLimit*2,120),480)
+  const venueFetchLimit=Math.min(Math.max(venueLimit*2,120),540)
   const cacheKey=inventoryCacheKey(city,clock.serviceDate,eventLimit,venueLimit)
   let inventory
   let embeddedFallbackUsed=false
