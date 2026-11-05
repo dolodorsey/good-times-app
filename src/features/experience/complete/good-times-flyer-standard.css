@@ -161,3 +161,4 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-poster h3{font:600 c
   .gtk-board{margin-left:-4px;margin-right:-4px;padding:18px 12px 12px}
   .gtk-board-copy{max-width:74%}
 }
+@media(max-width:899px){html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-no-photo small{display:none}}
