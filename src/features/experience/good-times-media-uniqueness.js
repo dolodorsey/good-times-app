@@ -33,16 +33,20 @@ function uniqueRows(rows,keyFn){
   })
 }
 
+// The same show on another night is the same production, so it keeps its art. A different event reusing that image does not.
+function productionKey(row){return identityText(`${row?.title||row?.name||''}|${row?.venue_name||''}`)}
+
 function stripRepeatedMedia(rows,field,seenMedia){
   return (rows||[]).map(row=>{
     const value=row?.[field]
     if(!value)return row
     const fp=mediaFingerprint(value)
     if(!fp)return row
-    if(GENERIC_MEDIA.test(unwrapMediaUrl(value))||seenMedia.has(fp)){
+    const owner=seenMedia.get(fp),production=productionKey(row)
+    if(GENERIC_MEDIA.test(unwrapMediaUrl(value))||(owner!==undefined&&owner!==production)){
       return {...row,[field]:null,image_uniqueness:'fallback_required'}
     }
-    seenMedia.add(fp)
+    seenMedia.set(fp,production)
     return row
   })
 }
@@ -50,7 +54,7 @@ function stripRepeatedMedia(rows,field,seenMedia){
 export function hardenDisplayInventory(events=[],venues=[]){
   const uniqueEvents=uniqueRows(events,row=>row?.event_key||identityText(`${row?.title}|${row?.event_date}|${row?.venue_name}|${row?.event_time}`))
   const uniqueVenues=uniqueRows(venues,row=>identityText(`${row?.city_key}|${row?.name}`)||row?.id)
-  const seenMedia=new Set()
+  const seenMedia=new Map()
   const hardenedEvents=stripRepeatedMedia(uniqueEvents,'image_url',seenMedia)
   const hardenedVenues=stripRepeatedMedia(uniqueVenues,'hero_image',seenMedia)
   return{events:hardenedEvents,venues:hardenedVenues}

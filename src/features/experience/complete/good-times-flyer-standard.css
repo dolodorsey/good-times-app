@@ -1,0 +1,164 @@
+/* GOOD TIMES flyer standard — owner directive 2026-11-05: "our flyers are better than our app UI".
+   Same screens, same layout, same navigation. This sheet brings the flyers' language to them:
+   gold foil on italic display serif, heavy condensed event titles, gold date chips, hairline gold frames with glow,
+   and a warm, lit canvas instead of flat black. Loaded last so it can sit on top of the cinematic kit. */
+:root{
+  --gtf-foil:linear-gradient(176deg,#fff3c4 0%,#ffdf86 22%,#f6c344 48%,#c98e1e 72%,#ffe08a 100%);
+  --gtf-foil-flat:linear-gradient(180deg,#ffe9a6 0%,#f5c542 55%,#d39b24 100%);
+  --gtf-line:rgba(244,200,92,.5);
+  --gtf-line-soft:rgba(244,200,92,.24);
+  --gtf-glow:0 0 0 1px rgba(244,200,92,.16),0 12px 34px rgba(0,0,0,.55),0 0 26px rgba(244,190,70,.09);
+  --gtf-title:'Oswald','Arial Narrow','DM Sans',system-ui,sans-serif;
+}
+
+/* Canvas: lit from above like the flyers' skyline, never flat black. */
+.gt5-complete .gt5-main{
+  background:
+    radial-gradient(1100px 420px at 78% -60px,rgba(244,190,70,.13),transparent 68%),
+    radial-gradient(900px 480px at 8% 12%,rgba(150,70,190,.07),transparent 70%),
+    radial-gradient(900px 620px at 92% 62%,rgba(244,190,70,.05),transparent 70%),
+    #050506;
+}
+
+/* Heroes: more image, foil on the headline. */
+.gtk-hero-art{filter:saturate(1.2) contrast(1.06) brightness(1.08)}
+.gtk-hero-shade{background:linear-gradient(90deg,rgba(5,6,7,.88) 0%,rgba(5,6,7,.52) 44%,rgba(5,6,7,.04) 100%),linear-gradient(0deg,#050506 0%,rgba(5,6,7,.28) 30%,rgba(5,6,7,0) 62%)}
+.gtk-hero{border:0;box-shadow:inset 0 -1px 0 var(--gtf-line-soft)}
+.gtk-hero h1{font-weight:800;font-style:italic;letter-spacing:-.018em;text-shadow:0 3px 26px rgba(0,0,0,.72)}
+.gtk-hero h1 em{font-style:italic;background:var(--gtf-foil);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 14px rgba(244,190,70,.32))}
+.gtk-eyebrow{color:#ffdf86}
+.gtk-script{color:#ffe7a8;text-shadow:0 2px 16px rgba(0,0,0,.8)}
+
+/* Section headlines: white italic with one foil phrase. */
+.gtk-section-head h2{font-style:italic;font-weight:800;letter-spacing:-.012em}
+.gtk-section-head h2 em{font-style:italic;background:var(--gtf-foil);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.gtk-kicker{font-style:normal;color:#d9c68f}
+.gtk-see-all{color:#ffdf86}
+
+/* Cards: hairline gold frame, heavy condensed title, solid gold date chip. */
+.gtk-poster{border:1px solid var(--gtf-line);background:linear-gradient(180deg,#121110 0%,#09090a 100%);box-shadow:var(--gtf-glow);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.gtk-poster:hover{transform:translateY(-3px);border-color:#ffdf86;box-shadow:0 0 0 1px rgba(255,223,134,.5),0 18px 40px rgba(0,0,0,.6),0 0 34px rgba(244,190,70,.22)}
+.gtk-poster-media{aspect-ratio:4/3.5}
+.gtk-poster-media img{object-position:center 22%;filter:saturate(1.1) contrast(1.04)}
+.gtk-poster-shade{background:linear-gradient(180deg,rgba(0,0,0,0) 46%,rgba(8,8,9,.72) 78%,#0b0b0c 100%)}
+.gtk-poster h3{font:600 clamp(19px,1.5vw,23px)/1.1 var(--gtf-title);letter-spacing:.006em;text-transform:uppercase;color:#fff;text-shadow:0 2px 10px rgba(0,0,0,.9)}
+.gtk-poster-kicker{color:#f6cf6a;font-size:9.5px;letter-spacing:.2em}
+.gtk-poster-copy p{color:#e6dfd0;font-weight:500}
+.gtk-poster-copy p.is-primary{color:#f4e3b4}
+.gtk-badge{background:var(--gtf-foil-flat);border:0;color:#120d02;font:800 11px/1 var(--gtf-title);letter-spacing:.06em;padding:6px 10px;border-radius:7px;box-shadow:0 3px 12px rgba(0,0,0,.5)}
+.gtk-badge.is-live i{background:#0b5d2a;box-shadow:0 0 0 2px rgba(11,93,42,.25)}
+.gtk-poster-action{border:1px solid var(--gtf-line);color:#fff4d2;background:rgba(244,200,92,.06);font-family:var(--gtf-title);font-weight:600;letter-spacing:.05em;text-transform:uppercase;font-size:13px}
+.gtk-poster-action:hover{background:var(--gtf-foil-flat);color:#120d02;border-color:transparent}
+.gtk-save{backdrop-filter:blur(6px)}
+
+/* No photo: the name is the art. Replaces the wall of identical placeholders. */
+.gtk-no-photo{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:6px;padding:14px 14px 46px;text-align:left;background:
+  radial-gradient(130% 90% at 88% 6%,rgba(244,190,70,.26),transparent 62%),
+  radial-gradient(90% 70% at 4% 96%,rgba(150,70,190,.16),transparent 70%),
+  repeating-linear-gradient(135deg,rgba(255,255,255,.018) 0 1px,transparent 1px 9px),
+  #101012}
+.gtk-no-photo .gtk-icon{color:#f6cf6a;opacity:.72;position:absolute;right:50px;top:14px}
+.gtk-no-photo span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font:italic 800 clamp(22px,2.1vw,30px)/1.03 var(--gtk-serif);letter-spacing:-.01em;opacity:1;background:var(--gtf-foil);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.gtk-no-photo small{position:absolute;left:14px;top:14px;font:600 8px/1 var(--gtk-sans);letter-spacing:.14em;text-transform:uppercase;color:rgba(246,241,231,.45)}
+.gtk-poster:has(.gtk-no-photo) .gtk-poster-shade{display:none}
+.gtk-poster:has(.gtk-no-photo) .gtk-poster-copy{margin-top:0;padding-top:10px}
+.gtk-poster:has(.gtk-no-photo) .gtk-poster-copy h3{display:none}
+
+/* Matchups: team colors and real type, like the flyers' game-night cards. */
+.gtk-matchup-art{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;padding:34px 14px 40px;gap:0;background:linear-gradient(112deg,var(--gtk-team-a) 0%,var(--gtk-team-a) 47%,#0a0a0b 50%,var(--gtk-team-b) 53%,var(--gtk-team-b) 100%)}
+.gtk-matchup-art:after{content:"";position:absolute;inset:0;background:radial-gradient(70% 90% at 50% 40%,rgba(255,255,255,.14),transparent 62%),linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.42))}
+.gtk-matchup-art span,.gtk-matchup-art i{position:relative;z-index:1}
+.gtk-matchup-art span{font:700 clamp(25px,2.3vw,33px)/1 var(--gtf-title);letter-spacing:.004em;text-transform:uppercase;color:#fff;text-shadow:0 3px 14px rgba(0,0,0,.65);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gtk-matchup-art i{font:italic 800 16px/1.15 var(--gtk-serif);background:var(--gtf-foil);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.gtk-poster:has(.gtk-matchup-art) .gtk-poster-shade{background:linear-gradient(180deg,transparent 62%,#0b0b0c 100%)}
+
+/* The board: the flyer, live. Day rows, biggest move first. */
+.gtk-board{position:relative;padding:20px 16px 14px;border-radius:18px;border:1px solid var(--gtf-line);background:
+  radial-gradient(120% 90% at 86% -10%,rgba(244,190,70,.2),transparent 60%),
+  linear-gradient(180deg,rgba(5,5,6,.55),rgba(5,5,6,.92)),
+  url("https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds/gt-bg-panoramic-skyline.webp") top center/cover no-repeat,#070708;box-shadow:var(--gtf-glow)}
+.gtk-board-head{text-align:center;margin:0 0 14px}
+.gtk-board-head small{display:block;font:700 10px/1.2 var(--gtk-sans);letter-spacing:.26em;color:#f6dfa0}
+.gtk-board-head h2{margin:8px 0 0;font:italic 800 clamp(30px,5vw,54px)/1 var(--gtk-serif);letter-spacing:-.016em;color:#fff;text-shadow:0 3px 22px rgba(0,0,0,.75)}
+.gtk-board-head h2 em{font-style:italic;background:var(--gtf-foil);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 2px 12px rgba(244,190,70,.3))}
+.gtk-board-days{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.gtk-board-days button{position:relative;width:100%;min-height:92px;display:grid;grid-template-columns:62px minmax(0,1fr);align-items:center;gap:12px;padding:10px 14px 10px 10px;text-align:left;color:inherit;overflow:hidden;border-radius:12px;border:1px solid var(--gtf-line);background:#0a0a0b;box-shadow:0 0 16px rgba(244,190,70,.06);transition:border-color .16s ease,box-shadow .16s ease}
+.gtk-board-days button:hover{border-color:#ffdf86;box-shadow:0 0 22px rgba(244,190,70,.2)}
+.gtk-board-art{position:absolute;top:0;right:0;bottom:0;width:62%;background:center 24%/cover no-repeat;-webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 46%);mask-image:linear-gradient(90deg,transparent 0%,#000 46%);opacity:.92}
+.gtk-board-date,.gtk-board-copy{position:relative;z-index:1}
+.gtk-board-date{display:flex;flex-direction:column;align-items:center;padding-right:10px;border-right:1px solid var(--gtf-line)}
+.gtk-board-date small{font:600 12px/1 var(--gtf-title);letter-spacing:.1em;text-transform:uppercase;color:#f6dfa0}
+.gtk-board-date strong{font:700 34px/1.04 var(--gtf-title);background:var(--gtf-foil);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.gtk-board-copy{display:flex;flex-direction:column;gap:3px;min-width:0;max-width:68%;text-shadow:0 2px 10px rgba(0,0,0,.9)}
+.gtk-board-copy strong{font:700 clamp(19px,2.1vw,27px)/1.06 var(--gtf-title);text-transform:uppercase;color:#fff;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gtk-board-copy small{font:600 11px/1.2 var(--gtf-title);letter-spacing:.09em;text-transform:uppercase;color:#f6cf6a}
+.gtk-board-copy em{font:500 11.5px/1.25 var(--gtk-sans);font-style:normal;color:#d9d3c6;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gtk-board-foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 16px;margin-top:12px}
+.gtk-board-foot button{min-height:44px;display:inline-flex;align-items:center;gap:8px;padding:0 4px;font:600 12px/1 var(--gtf-title);letter-spacing:.14em;text-transform:uppercase;color:#ffdf86}
+.gtk-board-foot button:first-child{color:#fff}
+
+/* One Nightlife: the switch that replaces two disconnected pages. */
+.gtk-nightlife-switch{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:0 0 16px;padding:5px;border-radius:14px;border:1px solid var(--gtf-line);background:#0a0a0b}
+.gtk-nightlife-switch button{min-height:46px;border-radius:10px;font:600 14px/1 var(--gtf-title);letter-spacing:.08em;text-transform:uppercase;color:#e9e2d2}
+.gtk-nightlife-switch button.active{background:var(--gtf-foil-flat);color:#120d02}
+
+/* Lanes and tiles: gold frames, each with its own art. */
+.gtc-entertainment-lane,.gtc-place-lanes>button{border:1px solid var(--gtf-line-soft)!important;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.gtc-entertainment-lane strong{font:600 clamp(18px,1.6vw,22px)/1.1 var(--gtf-title);text-transform:uppercase;letter-spacing:.02em}
+.gtc-place-lanes>button strong{font-family:var(--gtf-title);font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+.gtk-photo-tile{border:1px solid var(--gtf-line-soft)}
+.gtk-photo-tile strong{font:600 15px/1.12 var(--gtf-title);text-transform:uppercase;letter-spacing:.02em}
+.gtk-photo-tile:hover{border-color:#ffdf86}
+
+/* Calendar lists: no more one card and a blank screen. Days flow into columns on wide screens. */
+.gtc-date-group>h2{font:700 13px/1 var(--gtf-title);letter-spacing:.12em;text-transform:uppercase;color:#ffdf86}
+@media(min-width:900px){
+  .gtc-events{column-gap:16px}
+  .gtc-events>.gtc-date-group{display:inline-block;width:100%;break-inside:avoid;vertical-align:top}
+  .gtc-events:has(>.gtc-date-group){column-width:300px}
+  .gtc-events:has(>.gtc-date-group)>.gtc-page-heading,.gtc-events:has(>.gtc-date-group)>.gtc-controls,.gtc-events:has(>.gtc-date-group)>.gtc-note,.gtc-events:has(>.gtc-date-group)>.gtc-load-more{column-span:all}
+  .gtc-events>.gtc-date-group .gtk-grid{grid-template-columns:1fr}
+  .gtc-controls{max-width:620px}
+  .gtk-lanes:has(.gtc-entertainment-lane){grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .gtk-section .gtk-scroller:has(>.gtk-photo-tile){justify-content:flex-start}
+  .gtk-rail-circle{justify-content:space-between}
+  .gtk-board-days{grid-template-columns:repeat(auto-fit,minmax(400px,1fr))}
+}
+@media(prefers-reduced-motion:reduce){.gtk-poster,.gtk-poster:hover{transition:none;transform:none}}
+
+/* Earlier sheets force the sans on every heading with !important. Flyer headlines need the display serif. */
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-hero h1,
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-section-head h2,
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-board-head h2,
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-concierge h2{font-family:'Playfair Display',Georgia,serif!important;font-style:italic!important;font-weight:800!important;letter-spacing:-.015em!important}
+.gtk-poster h3{-webkit-line-clamp:3}
+.gtk-board-art.is-matchup{background:radial-gradient(90% 120% at 100% 50%,rgba(224,58,62,.62),transparent 70%),linear-gradient(112deg,transparent 30%,rgba(244,190,70,.14) 48%,transparent 62%);opacity:1}
+@media(min-width:900px){
+  html body.gt-complete-mode #root .gt5-app.gt5-complete .gtc-events>.gtc-date-group .gtk-grid{grid-template-columns:minmax(0,1fr)!important}
+  html body.gt-complete-mode #root .gt5-app.gt5-complete .gtc-events>.gtc-date-group .gtk-poster{width:100%!important;max-width:none!important}
+  .gtk-vibes .gtk-scroller{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));overflow:visible;margin:0;padding:2px 0 8px}
+  .gtk-vibes .gtk-photo-tile{width:auto;min-width:0}
+}
+
+/* The older no-photo rules are !important; the name-as-art treatment has to win. */
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-no-photo{display:flex!important;flex-direction:column;align-items:flex-start!important;justify-content:flex-end!important;text-align:left}
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-no-photo span{font:italic 800 clamp(23px,2.1vw,31px)/1.04 'Playfair Display',Georgia,serif!important;letter-spacing:-.012em!important;opacity:1!important;color:transparent!important;background:var(--gtf-foil);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;text-transform:none!important}
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-no-photo small{font:600 7.5px/1 var(--gtk-sans)!important;letter-spacing:.14em!important}
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-no-photo svg{position:absolute;left:14px;top:30px;right:auto;opacity:.75}
+
+/* Keep faces in frame: tour and event art is usually taller than the crop. */
+.gtc-picture img,.gtk-detail-cover img{object-position:center 12%}
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtc-page-heading h1,
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtc-planner h1,
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtc-planner h2{font-family:'Playfair Display',Georgia,serif!important;font-style:italic!important;font-weight:800!important}
+
+/* Phone cards: the date chip must never hide under the save button, and titles stay condensed. */
+html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-poster h3{font:600 clamp(19px,1.5vw,23px)/1.1 var(--gtf-title)!important;letter-spacing:.006em!important;text-transform:uppercase}
+@media(max-width:899px){
+  .gtk-badge{left:8px;top:8px;max-width:calc(100% - 56px);padding:5px 7px;font-size:10px;letter-spacing:.02em;white-space:normal;line-height:1.1}
+  html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-save{width:36px!important;height:36px!important;min-width:36px!important;min-height:36px!important;top:6px!important;right:6px!important}
+  html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-save:before{content:"";position:absolute;inset:-4px}
+  .gtk-board{margin-left:-4px;margin-right:-4px;padding:18px 12px 12px}
+  .gtk-board-copy{max-width:74%}
+}
+@media(max-width:899px){html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-no-photo small{display:none}}

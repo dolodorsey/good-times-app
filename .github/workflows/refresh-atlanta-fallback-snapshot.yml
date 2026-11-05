@@ -26,6 +26,7 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 concurrency:
   group: atlanta-fallback-snapshot-refresh
@@ -92,6 +93,18 @@ jobs:
           git commit -m "GOOD TIMES: refresh verified Atlanta fallback snapshot (data-only)"
           git push -f origin "$BRANCH"
           echo "Snapshot branch staged. Supabase protected-PR reconciler will create/merge the user-authored PR."
+
+      # Pushes made with the workflow token do not trigger workflows, so verify and geometry never attached to this
+      # branch and the refresh PR sat blocked until the fallback expired (2026-11-05 outage). Dispatch them explicitly.
+      - name: Attach required checks to the refresh branch
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          gh workflow run ui-regression.yml --ref "$BRANCH"
+          gh workflow run premium-quality-gate.yml --ref "$BRANCH"
 
       - name: Report staging failure
         if: failure()

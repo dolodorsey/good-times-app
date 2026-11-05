@@ -72,9 +72,28 @@
     }
   }
 
+  // Shared-database contention can fail the health probe while the CDN still holds verified inventory.
+  // Discovery is read-only, so open the app when that inventory is reachable instead of locking customers out.
+  async function cachedInventoryReady(){
+    if (nativePlatform) return false
+    var controller = new AbortController()
+    var timer = setTimeout(function(){ controller.abort() }, 3500)
+    try {
+      var response = await fetch('/api/data-fast?city=atlanta&event_limit=240&venue_limit=300', { headers:{ Accept:'application/json' }, signal:controller.signal })
+      if (!response.ok) return false
+      var payload = await response.json().catch(function(){ return null })
+      return Boolean(payload && payload.ok === true && Array.isArray(payload.events) && payload.events.length > 0)
+    } catch (error) {
+      return false
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+
   async function checkHealth(isRetry){
     if (!isRetry) renderShell('checking')
     var state = await fetchHealth()
+    if (!state.ready && await cachedInventoryReady()) state = { ready:true, detail:'degraded-cached-inventory' }
     window.__GOOD_TIMES_SERVICE_STATE__ = state
     if (state.ready) {
       if (isRetry) {

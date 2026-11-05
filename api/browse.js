@@ -12,6 +12,10 @@ import {selectedCityClock,dateNumber,eventIsDiscoverable} from '../src/features/
 import {safeLink,safeImage,occurrenceUsable,shiftDate} from '../src/features/experience/complete/model.js'
 import {RESTAURANT_PROFILE_FIELDS,normalizeRestaurantProfile} from '../src/features/experience/complete/restaurant-facts.js'
 const KEY=/^[A-Za-z0-9_-]{1,100}$/
+// Matches gt_public_live_inventory: calendars only bump updated_at when a row changes.
+const BROWSE_FRESHNESS_MS=45*24*3600000
+// Listings that are not somewhere to go: concert shuttles, professional trainings, promo noise.
+const LANE_NOISE=/\b(shuttle|transportation|botox|dermal filler|filler training|webinar|timeshare|make money|season tickets?|parking pass|zoom)\b/i
 const SHOW_FIELDS=SHOW_PUBLIC_FIELDS
 const VENUE_FIELDS='id,city_key,name,neighborhood,category_key,subcategory,address,latitude,longitude,phone,website,short_desc,long_desc,hero_image,photos,booking_link,hours,hours_summary,dress_code,price_range,age_range,status,is_verified,verification_status,verified_at,freshness_expires_at,is_stock_photo,photo_credit,vibe_tags,amenity_tags,dietary_tags,is_black_owned'
 const quote=s=>'"'+String(s).replace(/\\/g,'\\\\').replace(/"/g,'\\"')+'"'
@@ -33,7 +37,7 @@ function signature(s){return JSON.stringify(s)}
 export function cursorRead(value,scope) {if(!value)return null;if(value.length>3000)throw new Error('Invalid cursor.');let c;try{c=JSON.parse(Buffer.from(value,'base64url').toString('utf8'))}catch{throw new Error('Invalid cursor.')}if(c.scope!==signature(scope)||!c.id||typeof c.id!=='string'||c.id.length>128||dateNumber(c.date)===null)throw new Error('Refresh this collection to continue.');return c}
 const cursorWrite=(row,scope)=>Buffer.from(JSON.stringify({scope:signature(scope),id:String(row.id),date:row.show_date||row.game_date})).toString('base64url')
 export function showQuery(scope,cursor,now=Date.now()) {
- const params=new URLSearchParams({select:SHOW_FIELDS,city_key:'eq.atlanta',status:'in.(confirmed,tentative)',updated_at:`gte.${new Date(now-72*3600000).toISOString()}`,order:'show_date.asc,id.asc',limit:String(scope.limit+1)})
+ const params=new URLSearchParams({select:SHOW_FIELDS,city_key:'eq.atlanta',status:'in.(confirmed,tentative)',updated_at:`gte.${new Date(now-BROWSE_FRESHNESS_MS).toISOString()}`,order:'show_date.asc,id.asc',limit:String(scope.limit+1)})
  const clauses=[`show_date.gte.${scope.from}`,`show_date.lte.${scope.to}`]
  if(scope.id){const id=scope.id.replace(/^show:/,'');if(!/^[a-f0-9-]{36}$/i.test(id))throw new Error('Invalid event identity.');params.set('id','eq.'+id)}
  if(scope.venueId){if(!/^[a-f0-9-]{36}$/i.test(scope.venueId))throw new Error('Invalid venue identity.');params.set('venue_id','eq.'+scope.venueId)}
@@ -48,8 +52,9 @@ export function mapShow(source,now=Date.now()) {
  const venueTba=houseVenueTba(source),row=withHouseVenue(source)
  const taxonomy=inferCustomerTaxonomy(row),category=row.category_key_v2&&row.category_key_v2!=='needs_review'?row.category_key_v2:taxonomy.category
  if(row.category_key_v2==='needs_review'||row.city_key!=='atlanta'||!row.event_name||!row.venue_name||row.is_sold_out||!['confirmed','tentative'].includes(row.status))return null
- if(!Number.isFinite(Date.parse(row.updated_at))||Date.parse(row.updated_at)<now-72*3600000)return null
+ if(!Number.isFinite(Date.parse(row.updated_at))||Date.parse(row.updated_at)<now-BROWSE_FRESHNESS_MS)return null
  if(!safeLink(row.ticket_url||row.source_url))return null
+ if(LANE_NOISE.test(row.event_name))return null
  // Strong source taxonomy rules remain authoritative; do not inherit arena=concert.
  const strongest=['sports_watch','comedy_performing_arts','wellness_fitness'].includes(taxonomy.category)?taxonomy.category:category
  const event={...eventFacts(row),event_key:'show:'+row.id,id:row.id,city_key:'atlanta',source_table:'gt_shows',source_id:row.id,title:row.event_name,event_date:row.show_date,...eventTimeFields(row),category_key:strongest,subcategory_key:row.subcategory_key_v2||taxonomy.subcategory,venue_name:row.venue_name,venue_tba:venueTba,image_url:safeImage(row.image_url),ticket_url:safeLink(row.ticket_url),source_url:safeLink(row.source_url),source_name:row.source,description:row.description,organizer:row.organizer,is_featured:row.is_featured,is_curated:row.is_curated,display_priority:row.display_priority,quality_score:row.quality_score,good_times_score:row.good_times_score,freshness_tier:row.freshness_tier,updated_at:row.updated_at,is_verified:row.status==='confirmed'}

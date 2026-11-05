@@ -1,6 +1,7 @@
 import React,{useEffect,useState} from 'react'
 import {safeImage} from './model.js'
 import './good-times-cinematic.css'
+import './good-times-flyer-standard.css'
 
 /** GOOD TIMES cinematic kit (2026-10-29 owner standard).
  * Editorial art is decoration only; named places/events always use their own verified media or the no-photo treatment.
@@ -8,11 +9,11 @@ import './good-times-cinematic.css'
 const MEDIA='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/good-times-backgrounds'
 export const SCENES=Object.freeze({
   home:`${MEDIA}/gt-homescreen-atlanta.webp`, skyline:`${MEDIA}/gt-bg-panoramic-skyline.webp`, places:`${MEDIA}/gt-bg-courtyard-evening.webp`,
-  dining:`${MEDIA}/gt-cat-dining.webp`, diningWarm:`${MEDIA}/gt-cat-adventure.webp`, nightlife:`${MEDIA}/explore-cat-nightlife.jpg`, district:`${MEDIA}/gt-bg-nightlife-district.webp`,
-  interactive:`${MEDIA}/gt-bg-neon-skyline.webp`, future:`${MEDIA}/gt-bg-future-city.webp`, sports:`${MEDIA}/explore-cat-sports.jpg`, stadium:`${MEDIA}/gt-cat-sports.webp`,
-  music:`${MEDIA}/gt-cat-music.webp`, concert:`${MEDIA}/explore-cat-music.jpg`, entertainment:`${MEDIA}/gt-bg-social-scene.webp`, hotels:`${MEDIA}/gt-bg-waterfront-venue.webp`,
+  dining:`${MEDIA}/explore-cat-dining.jpg`, diningWarm:`${MEDIA}/gt-cat-adventure.webp`, nightlife:`${MEDIA}/explore-cat-nightlife.jpg`, district:`${MEDIA}/gt-bg-nightlife-district.webp`,
+  interactive:`${MEDIA}/gt-bg-neon-skyline.webp`, future:`${MEDIA}/gt-bg-future-city.webp`, sports:`${MEDIA}/explore-cat-sports.jpg`, stadium:`${MEDIA}/explore-cat-sports.jpg`,
+  music:`${MEDIA}/gt-cat-sports.webp`, concert:`${MEDIA}/event-night-party.jpg`, stage:`${MEDIA}/gt-cat-sports.webp`, comedy:`${MEDIA}/pin-sports2.jpg`, festival:`${MEDIA}/pin-sports3.jpg`, entertainment:`${MEDIA}/gt-bg-social-scene.webp`, hotels:`${MEDIA}/gt-bg-penthouse-view.webp`,
   penthouse:`${MEDIA}/gt-bg-penthouse-view.webp`, rooftop:`${MEDIA}/gt-bg-rooftop-lounge.webp`, lounge:`${MEDIA}/gt-bg-cocktail-lounge.webp`, drinks:`${MEDIA}/explore-cat-drinks.jpg`,
-  culture:`${MEDIA}/gt-cat-culture.webp`, wellness:`${MEDIA}/gt-cat-wellness.webp`, shopping:`${MEDIA}/gt-cat-shopping.webp`, family:`${MEDIA}/gt-cat-family.webp`,
+  culture:`${MEDIA}/event-art-festival.jpg`, gallery:`${MEDIA}/explore-cat-culture.jpg`, wellness:`${MEDIA}/explore-cat-wellness.jpg`, shopping:`${MEDIA}/explore-cat-shopping.jpg`, family:`${MEDIA}/explore-cat-family.jpg`,
   date:`${MEDIA}/gt-cat-mood-date.webp`, chill:`${MEDIA}/gt-cat-mood-chill.webp`, bougie:`${MEDIA}/gt-cat-mood-bougie.webp`, turnt:`${MEDIA}/gt-cat-mood-turnt.webp`,
   hookah:`${MEDIA}/gt-cat-hookah.webp`, exclusive:`${MEDIA}/gt-cat-exclusive.webp`, vip:`${MEDIA}/gt-bg-vip-arrival.webp`, terrace:`${MEDIA}/gt-bg-skyline-terrace.webp`,
 })
@@ -69,13 +70,13 @@ export function PillRow({items=[],active=null,onSelect,label='Filters',scroll=tr
 export function Rail({title,accent,kicker,subtitle,onSeeAll,seeAllLabel='See All',children,className='',grid=false}) {
   return <section className={`gtk-section ${className}`}><header className="gtk-section-head"><div><h2>{title}{accent&&<> <em>{accent}</em></>}{kicker&&<span className="gtk-kicker">{kicker}</span>}</h2>{subtitle&&<p>{subtitle}</p>}</div>{onSeeAll&&<button type="button" className="gtk-see-all" onClick={onSeeAll}>{seeAllLabel}<Icon name="arrow" size={16}/></button>}</header><div className={grid?'gtk-grid':'gtk-scroller'}>{children}</div></section>
 }
-function PosterImage({src,alt='',icon='sparkle'}) {const [failed,setFailed]=useState(false);useEffect(()=>setFailed(false),[src]);const image=!failed&&safeImage(src);return image?<img src={image} alt={alt} loading="lazy" decoding="async" onError={()=>setFailed(true)}/>:<div className="gtk-no-photo" aria-hidden="true"><Icon name={icon} size={34} stroke={1.3}/><span>GOOD TIMES</span><small>Verified photo coming soon</small></div>}
+function PosterImage({src,alt='',icon='sparkle',title=''}) {const [failed,setFailed]=useState(false);useEffect(()=>setFailed(false),[src]);const image=!failed&&safeImage(src);return image?<img src={image} alt={alt} loading="lazy" decoding="async" onError={()=>setFailed(true)}/>:<div className="gtk-no-photo" aria-hidden="true"><Icon name={icon} size={22} stroke={1.3}/><span>{title||'GOOD TIMES'}</span><small>Verified photo coming soon</small></div>}
 /** Image-first card: title over photo, meta lines, one real action. */
-export function PosterCard({id,image,badge,kicker,title,lines=[],tags=[],action,onOpen,saved=false,onSave,size='md',live=false,icon='sparkle',cardClass='gtc-card'}) {
+export function PosterCard({id,image,art=null,badge,kicker,title,lines=[],tags=[],action,onOpen,saved=false,onSave,size='md',live=false,icon='sparkle',cardClass='gtc-card'}) {
   const [busy,setBusy]=useState(false)
   return <article className={`gtk-poster gtk-poster-${size} ${cardClass}`} data-item-id={id||undefined}>
     <button type="button" className="gtk-poster-open gtc-card-open" onClick={onOpen} aria-label={`View ${title}`}>
-      <div className="gtk-poster-media"><PosterImage src={image} icon={icon}/><div className="gtk-poster-shade"/>{badge&&<span className={`gtk-badge ${live?'is-live':''}`}>{live&&<i/>}{badge}</span>}</div>
+      <div className="gtk-poster-media">{art||<PosterImage src={image} icon={icon} title={title}/>}<div className="gtk-poster-shade"/>{badge&&<span className={`gtk-badge ${live?'is-live':''}`}>{live&&<i/>}{badge}</span>}</div>
       <div className="gtk-poster-copy">{kicker&&<small className="gtk-poster-kicker">{kicker}</small>}<h3>{title}</h3>{lines.filter(Boolean).map((l,i)=><p key={i} className={i===0?'is-primary':''}>{l}</p>)}{tags.length>0&&<div className="gtk-tags">{tags.filter(Boolean).slice(0,3).map(t=><span key={t}>{t}</span>)}</div>}</div>
     </button>
     {action&&(action.href?<a className="gtk-poster-action" href={action.href} target="_blank" rel="noopener noreferrer"><Icon name={action.icon||'arrow'} size={16}/>{action.label}</a>:<button type="button" className="gtk-poster-action" onClick={action.onClick}><Icon name={action.icon||'arrow'} size={16}/>{action.label}</button>)}
@@ -101,14 +102,14 @@ export function Empty({title,body,action}) {return <div className="gtk-empty" ro
 export function Skeletons({count=3}) {return <div className="gtk-scroller" aria-busy="true" aria-label="Loading">{Array.from({length:count},(_,i)=><div className="gtk-poster gtk-poster-md gtk-skeleton" key={i}/>)}</div>}
 
 export const LANE_HEROES=Object.freeze({
- concerts_live_music:{theme:'gold',eyebrow:'LIVE MUSIC',title:'Music',accent:'Lives Here.',tagline:'Concerts · Artists · Culture',image:SCENES.concert,script:'Good\nPeople\nBetter\nMusic.'},
+ concerts_live_music:{theme:'gold',eyebrow:'LIVE MUSIC',title:'Music',accent:'Lives Here.',tagline:'Concerts · Artists · Culture',image:SCENES.stage,script:'Good\nPeople\nBetter\nMusic.'},
  nightlife:{theme:'magenta',eyebrow:'NIGHTLIFE',title:'Good People',accent:'Better Nights.',tagline:'Parties · Music · Culture · All night long',image:SCENES.nightlife},
  day_parties_brunch:{theme:'ember',eyebrow:'DAY PARTIES',title:'Brunch',accent:'& Beats.',tagline:'Day parties · Brunch · Pool parties',image:SCENES.terrace},
- comedy_performing_arts:{theme:'violet',eyebrow:'COMEDY & LIVE',title:'Laugh',accent:'Louder.',tagline:'Stand-up · Theater · Performing arts',image:SCENES.culture},
- festivals_major_activations:{theme:'ember',eyebrow:'FESTIVALS',title:'Big City',accent:'Moments.',tagline:'Festivals · Activations · Major weekends',image:SCENES.district},
+ comedy_performing_arts:{theme:'violet',eyebrow:'COMEDY & LIVE',title:'Laugh',accent:'Louder.',tagline:'Stand-up · Theater · Performing arts',image:SCENES.comedy},
+ festivals_major_activations:{theme:'ember',eyebrow:'FESTIVALS',title:'Big City',accent:'Moments.',tagline:'Festivals · Activations · Major weekends',image:SCENES.festival},
  arts_museums_culture:{theme:'rose',eyebrow:'CULTURE',title:'Arts',accent:'& Culture.',tagline:'Museums · Galleries · Film · Talks',image:SCENES.culture},
  family_kids:{theme:'gold',eyebrow:'FAMILY',title:'Family',accent:'Time.',tagline:'Kids · Family events · Discovery',image:SCENES.family},
- attractions_experiences:{theme:'cyan',eyebrow:'ATTRACTIONS',title:'Only in',accent:'Atlanta.',tagline:'Museums · Exhibits · Attractions',image:SCENES.terrace},
+ attractions_experiences:{theme:'cyan',eyebrow:'ATTRACTIONS',title:'Only in',accent:'Atlanta.',tagline:'Museums · Exhibits · Attractions',image:SCENES.gallery},
  games_interactive:{theme:'cyan',eyebrow:'ATLANTA',title:'Interactive',accent:'Experiences.',tagline:'Play. Compete. Connect.',image:SCENES.interactive,script:'Play\nPeople\nBelong\nHere'},
  sports_watch:{theme:'ember',eyebrow:'ATLANTA',title:'Game',accent:'Time.',tagline:'Atlanta teams. Epic games.',image:SCENES.sports,script:'More\nThan\nA Game.'},
  venues:{theme:'magenta',eyebrow:'ATLANTA',title:'Nightlife',accent:'',tagline:'Clubs. Lounges. Rooftops. Unforgettable nights.',image:SCENES.district},
