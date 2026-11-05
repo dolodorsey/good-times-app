@@ -39,3 +39,7 @@ update public.gt_venues v set metadata=coalesce(v.metadata,'{}'::jsonb)||jsonb_b
 where v.city_key='atlanta' and v.id::text like 'abe5dcfa%';
 
 select public.gt_refresh_atlanta_live_inventory_cache_v1();
+
+-- Chastain Park Fall Arts Festival had no image, so the public policy hid it. Art is from the festival's official site.
+update public.gt_shows set image_url='https://chastainparkartsfestival.com/wp-content/uploads/2022/10/Lucy-Murcia-.png',updated_at=now()
+where provider_occurrence_id='chastain:fall-arts:2026-11-07' and image_url is null;
