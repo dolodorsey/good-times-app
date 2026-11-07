@@ -124,6 +124,16 @@ export function customerVenueMedia(item){
     intelligence_components:{...(enriched?.intelligence_components||{}),visual_quality:0},
   }
 }
+// Intent eligibility is a filter, not simply an affinity boost.
+// We only match documented taxonomy categories; copy in event titles cannot
+// turn business/professional listings into nightlife recommendations.
+export function matchesEventIntent(item,vibes){
+  if(!vibes.length)return true
+  return vibes.some(vibe=>EVENT_CATEGORIES[vibe]?.has(item?.category_key))
+}
+export function filterEventsForIntent(events,vibes){
+  return (events||[]).filter(item=>matchesEventIntent(item,vibes))
+}
 function venueScore(item,index,vibes) {
   const intelligence=scoreGoodTimesVenue(item)
   let score = intelligence.total * 10 - index / 1000
@@ -165,7 +175,7 @@ function personalizeBody(body,vibes,city) {
     payload.venues=payload.venues.map(customerVenueMedia)
     const serviceDate=payload?.local_clock?.service_date||cityClock(city).serviceDate
     if(vibes.length){
-      payload.events=[...payload.events]
+      payload.events=filterEventsForIntent(payload.events,vibes)
         .map((item,index)=>({item,index,score:eventScore(item,index,vibes)}))
         .sort((a,b)=>{
           const date=String(a.item?.event_date||'').localeCompare(String(b.item?.event_date||''))
@@ -181,7 +191,7 @@ function personalizeBody(body,vibes,city) {
         .map(({item})=>item)
       payload.venues=[...payload.venues].map((item,index)=>({item,index,score:venueScore(item,index,vibes)})).sort((a,b)=>b.score-a.score).map(({item})=>item)
       payload.personalized=true
-      payload.personalization={vibes,service_date:serviceDate,ordering:'quality-first-then-intent'}
+      payload.personalization={vibes,service_date:serviceDate,ordering:'intent-filter-before-quality-ranking',filter_applied:true}
     }else{
       payload.venues=[...payload.venues].sort((a,b)=>Number(b?.intelligence_score||0)-Number(a?.intelligence_score||0))
     }
@@ -194,7 +204,7 @@ function personalizeBody(body,vibes,city) {
       seo_weight:0,
       proximity_max_weight:5,
       visual_selection:'independent-candidate-scoring',
-      ordering:vibes.length?'quality-first-then-intent':'quality-first',
+      ordering:vibes.length?'intent-filter-before-quality-ranking':'quality-first',
     }
     return JSON.stringify(payload)
   } catch { return body }
