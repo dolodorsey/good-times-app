@@ -3,8 +3,9 @@
 -- start with our non profit stuff: Sole Exchange, Give a Gobble, Santa in Atlanta."
 -- Every placement carries an honest disclosure label (Community for nonprofit/house, Sponsored for paid).
 -- Only status='active' rows inside their window are public; the queue is managed from the admin console.
+-- Named gt_ad_queue: public.gt_ad_placements in this project already holds the ad rate card (left untouched).
 
-create table if not exists public.gt_ad_placements (
+create table if not exists public.gt_ad_queue (
   id uuid primary key default gen_random_uuid(),
   city_key text not null default 'atlanta',
   advertiser text not null,
@@ -28,50 +29,50 @@ create table if not exists public.gt_ad_placements (
   constraint gt_ad_window check (ends_at is null or starts_at is null or ends_at > starts_at),
   constraint gt_ad_disclosure check (kind not in ('partner','sponsor') or disclosure_label in ('Sponsored','Partner'))
 );
-create index if not exists gt_ad_placements_live_idx on public.gt_ad_placements(city_key, status, priority);
-alter table public.gt_ad_placements enable row level security;
-drop policy if exists gt_ad_placements_public_read on public.gt_ad_placements;
-create policy gt_ad_placements_public_read on public.gt_ad_placements for select to anon, authenticated
+create index if not exists gt_ad_queue_live_idx on public.gt_ad_queue(city_key, status, priority);
+alter table public.gt_ad_queue enable row level security;
+drop policy if exists gt_ad_queue_public_read on public.gt_ad_queue;
+create policy gt_ad_queue_public_read on public.gt_ad_queue for select to anon, authenticated
   using (status='active' and (starts_at is null or starts_at <= now()) and (ends_at is null or ends_at > now()));
-grant select on public.gt_ad_placements to anon, authenticated;
+grant select on public.gt_ad_queue to anon, authenticated;
 
-create table if not exists public.gt_ad_events (
+create table if not exists public.gt_ad_queue_events (
   id bigint generated always as identity primary key,
-  ad_id uuid references public.gt_ad_placements(id) on delete set null,
+  ad_id uuid references public.gt_ad_queue(id) on delete set null,
   placement text,
   event_type text not null check (event_type in ('impression','click')),
   anon_id text,
   utm_source text,
   created_at timestamptz not null default now()
 );
-alter table public.gt_ad_events enable row level security;
-revoke all on public.gt_ad_events from anon, authenticated;
+alter table public.gt_ad_queue_events enable row level security;
+revoke all on public.gt_ad_queue_events from anon, authenticated;
 
 create or replace function public.gt_track_ad_event(p jsonb)
 returns void language plpgsql security definer set search_path to 'public','pg_temp' as $fn$
 begin
   if coalesce(p->>'event_type','') not in ('impression','click') then return; end if;
-  insert into public.gt_ad_events(ad_id, placement, event_type, anon_id, utm_source)
-  values (case when (p->>'ad_id') ~ '^[0-9a-f-]{36}$' and exists(select 1 from public.gt_ad_placements a where a.id=(p->>'ad_id')::uuid) then (p->>'ad_id')::uuid end,
+  insert into public.gt_ad_queue_events(ad_id, placement, event_type, anon_id, utm_source)
+  values (case when (p->>'ad_id') ~ '^[0-9a-f-]{36}$' and exists(select 1 from public.gt_ad_queue a where a.id=(p->>'ad_id')::uuid) then (p->>'ad_id')::uuid end,
           left(p->>'placement',40), p->>'event_type', left(p->>'anon_id',64), left(p->>'utm_source',80));
 end $fn$;
 revoke all on function public.gt_track_ad_event(jsonb) from public;
 grant execute on function public.gt_track_ad_event(jsonb) to anon, authenticated;
 
-create or replace view public.v_gt_ad_metrics with (security_invoker = true) as
+create or replace view public.v_gt_ad_queue_metrics with (security_invoker = true) as
   select a.id, a.advertiser, a.title, a.status, a.priority,
     count(e.*) filter (where e.event_type='impression') impressions,
     count(e.*) filter (where e.event_type='click') clicks
-  from public.gt_ad_placements a left join public.gt_ad_events e on e.ad_id=a.id group by a.id;
-revoke all on public.v_gt_ad_metrics from anon, authenticated;
+  from public.gt_ad_queue a left join public.gt_ad_queue_events e on e.ad_id=a.id group by a.id;
+revoke all on public.v_gt_ad_queue_metrics from anon, authenticated;
 
-create or replace function public.gt_ads_touch() returns trigger language plpgsql set search_path to 'public','pg_temp' as $fn$
+create or replace function public.gt_ad_queue_touch() returns trigger language plpgsql set search_path to 'public','pg_temp' as $fn$
 begin new.updated_at := now(); return new; end $fn$;
-drop trigger if exists gt_ads_touch_trg on public.gt_ad_placements;
-create trigger gt_ads_touch_trg before update on public.gt_ad_placements for each row execute function public.gt_ads_touch();
+drop trigger if exists gt_ad_queue_touch_trg on public.gt_ad_queue;
+create trigger gt_ad_queue_touch_trg before update on public.gt_ad_queue for each row execute function public.gt_ad_queue_touch();
 
 -- First queue (owner, 2026-11-10): Kollective nonprofit work. Facts from the official Eventbrite listings / site.
-insert into public.gt_ad_placements(city_key, advertiser, kind, disclosure_label, kicker, title, subtitle, image_url, cta_label, cta_url, priority, starts_at, ends_at, status, approved_by, notes)
+insert into public.gt_ad_queue(city_key, advertiser, kind, disclosure_label, kicker, title, subtitle, image_url, cta_label, cta_url, priority, starts_at, ends_at, status, approved_by, notes)
 select * from (values
  ('atlanta','The Kollective Hospitality Group','nonprofit','Community','COMMUNITY · SAT, NOV 21 · 11 AM','Give a Gobble',
   'Free community turkey giveaway in Atlanta — helping families gather around the table this Thanksgiving.',
@@ -86,4 +87,4 @@ select * from (values
   'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/websites/graphics/SOLE_EXCHANGE_WEBSITE/ChatGPT_Image_Jul_30_2026_02_35_07_AM_1_.png',
   'Learn More','https://soleexchangeworldwide.com', 30, null, null, 'active','owner 2026-11-10',null)
 ) v(city_key, advertiser, kind, disclosure_label, kicker, title, subtitle, image_url, cta_label, cta_url, priority, starts_at, ends_at, status, approved_by, notes)
-where not exists (select 1 from public.gt_ad_placements a where a.title=v.title and a.city_key=v.city_key);
+where not exists (select 1 from public.gt_ad_queue a where a.title=v.title and a.city_key=v.city_key);

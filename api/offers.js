@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       const city = CITIES.has(url.searchParams.get('city')) ? url.searchParams.get('city') : 'atlanta'
       if (url.searchParams.get('kind') === 'ads') {
         const sel = 'id,advertiser,kind,disclosure_label,kicker,title,subtitle,image_url,cta_label,cta_url,placements,priority,ends_at'
-        const r = await fetch(`${CONTENT_URL}/rest/v1/gt_ad_placements?select=${sel}&city_key=eq.${city}&order=priority.asc&limit=50`, { headers })
+        const r = await fetch(`${CONTENT_URL}/rest/v1/gt_ad_queue?select=${sel}&city_key=eq.${city}&order=priority.asc&limit=50`, { headers })
         if (!r.ok) throw new Error(`ads read failed (${r.status})`)
         const ads = await r.json()
         return send(res, 200, { ok: true, city, ads: Array.isArray(ads) ? ads : [] }, 'public, s-maxage=120, stale-while-revalidate=600')

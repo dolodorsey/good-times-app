@@ -52,7 +52,7 @@ test('ad spaces are disclosed and appear on every main screen', () => {
   assert.match(ad, /disclosure_label/)
   assert.match(ad, /rel="noopener noreferrer sponsored"/)
   for (const f of ['HomeScreen.jsx','PlacesScreen.jsx','EntertainmentHub.jsx','FreeInTheA.jsx','ProfileHub.jsx','Planner.jsx']) assert.match(fs.readFileSync('src/features/experience/complete/' + f, 'utf8'), /<AdSlot placement=/, f)
-  const sql = fs.readFileSync('supabase/migrations/20261110070000_gt_ad_placements_v1.sql', 'utf8')
+  const sql = fs.readFileSync('supabase/migrations/20261110070000_gt_ad_queue_v1.sql', 'utf8')
   for (const t of ['Give a Gobble','Santa in Atlanta','Sole Exchange']) assert.match(sql, new RegExp(t))
   assert.match(sql, /gt_ad_disclosure/)
 })

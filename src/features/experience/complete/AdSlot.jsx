@@ -2,7 +2,7 @@ import React,{useEffect,useRef,useState} from 'react'
 import {Icon} from './Kit.jsx'
 import {safeImage,safeLink} from './model.js'
 
-// GOOD TIMES ad spaces. Content comes from public.gt_ad_placements (status active, inside its window), managed in
+// GOOD TIMES ad spaces. Content comes from public.gt_ad_queue (status active, inside its window), managed in
 // the admin console queue. Every unit shows its disclosure label (Community / Sponsored). If the live queue can't
 // be reached, the owner's current house queue (Kollective nonprofit work) is shown, still respecting end dates.
 const HOUSE_QUEUE=[
