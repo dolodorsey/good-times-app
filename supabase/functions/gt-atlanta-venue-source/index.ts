@@ -165,7 +165,9 @@ const imageOk = async (u: string) => {
       try { await r.body?.cancel(); } catch { /* */ }
       if (r.status >= 200 && r.status < 300) {
         const typed = /^image\/(?!svg|gif)/i.test(ct) || (!ct && /\.(jpe?g|png|webp|avif)(\?|$)/i.test(safe));
-        if (typed && (!total || total > 15_000)) return { ok: true, url: r.url || safe, why: "ok" };
+        // PNG share images are usually logos/wordmarks; only accept large PNGs (photographic) or JPEG/WebP/AVIF photos.
+        const png = /png/i.test(ct) || (!ct && /\.png(\?|$)/i.test(safe));
+        if (typed && (png ? total > 300_000 : (!total || total > 15_000))) return { ok: true, url: r.url || safe, why: "ok" };
         return { ok: false, why: `type:${ct}|size:${total}` };
       }
       if (method === "GET") return { ok: false, why: `http_${r.status}` };
@@ -185,7 +187,7 @@ const officialImage = async (html: string, base: string, debug: string[] = []) =
     const u = absolutize(raw.trim(), base);
     if (!u) { debug.push(`bad:${raw.slice(0, 60)}`); continue; }
     const https = u.replace(/^http:\/\//i, "https://");
-    if (/favicon|placeholder|spacer|blank\.|\/logo[^/]*\.(png|jpe?g|webp)|\.svg(\?|$)|\.gif(\?|$)/i.test(https)) { debug.push(`skip:${https.slice(0, 80)}`); continue; }
+    if (/favicon|placeholder|spacer|blank\.|logo|wordmark|brandmark|badge|merch|icon|\.svg(\?|$)|\.gif(\?|$)/i.test(https)) { debug.push(`skip:${https.slice(0, 80)}`); continue; }
     const r = await imageOk(https);
     debug.push(`${r.ok ? "ok" : "no"}:${r.why}:${https.slice(0, 80)}`);
     if (r.ok && r.url) return r.url;

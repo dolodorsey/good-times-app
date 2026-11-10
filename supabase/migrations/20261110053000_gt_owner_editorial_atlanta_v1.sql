@@ -28,6 +28,59 @@ drop trigger if exists gt_venue_hero_guard_trg on public.gt_venues;
 create trigger gt_venue_hero_guard_trg before insert or update of status, hero_image on public.gt_venues
   for each row execute function public.gt_venue_hero_guard();
 
+-- 1b. is_stock_photo is a generated column — the og:image write must not set it (fix for v1 signals apply).
+create or replace function public.gt_apply_venue_site_signals_v1(
+  p_venue_id uuid, p_source_url text, p_pages text[], p_signals text[], p_booking_link text, p_evidence jsonb)
+returns jsonb language plpgsql security definer set search_path to 'public','pg_temp' as $fn$
+declare
+  v public.gt_venues%rowtype;
+  s text[] := coalesce(p_signals,'{}');
+  meal text[]; feat text[]; occ text[];
+  v_platform text;
+  v_img text := nullif(btrim(coalesce(p_evidence->>'official_image','')),'');
+begin
+  select * into v from public.gt_venues where id=p_venue_id for update;
+  if not found then return jsonb_build_object('ok',false,'reason','venue_not_found'); end if;
+  insert into public.gt_venue_site_signals(venue_id, checked_at, source_url, pages, signals, booking_link, evidence)
+  values (v.id, now(), p_source_url, coalesce(p_pages,'{}'), s, p_booking_link, coalesce(p_evidence,'{}'::jsonb))
+  on conflict (venue_id) do update set checked_at=now(), source_url=excluded.source_url, pages=excluded.pages,
+    signals=excluded.signals, booking_link=excluded.booking_link, evidence=excluded.evidence;
+
+  if p_booking_link is not null and nullif(btrim(coalesce(v.booking_link,'')),'') is null and p_booking_link ~* '^https://' then
+    v_platform := case when p_booking_link ~* 'resy\.com' then 'resy' when p_booking_link ~* 'opentable\.' then 'opentable'
+      when p_booking_link ~* 'sevenrooms\.com' then 'sevenrooms' when p_booking_link ~* 'exploretock\.com' then 'tock'
+      when p_booking_link ~* 'tablelist\.com' then 'tablelist' when p_booking_link ~* 'yelp\.com/reservations' then 'yelp' else 'official' end;
+    update public.gt_venues set booking_link=p_booking_link, booking_platform=coalesce(booking_platform,v_platform), updated_at=now() where id=v.id;
+  end if;
+
+  -- The venue's own published share image (og:image) on its official site is a verified photo of that place.
+  if v_img is not null and v_img ~* '^https://' and nullif(btrim(coalesce(v.hero_image,'')),'') is null then
+    update public.gt_venues set hero_image=v_img, photo_source='official_website',
+      photo_credit=left(regexp_replace(coalesce(p_source_url,''),'^https?://(www\.)?([^/]+).*$','\2'),120),
+      photo_status='official_site_og', updated_at=now() where id=v.id;
+  end if;
+
+  meal := array(select x from unnest(array['brunch','breakfast','lunch','dinner','late_night','dessert']) x where x = any(s));
+  feat := array(select x from unnest(array['hookah','rooftop','patio','live_music','dj','happy_hour','private_events','bottle_service']) x where x = any(s));
+  occ  := array(select x from unnest(array['date_night','group_dining','birthday']) x where x = any(s));
+
+  update public.gt_restaurant_profiles p set
+    meal_tags = array(select distinct unnest(coalesce(p.meal_tags,'{}') || meal)),
+    feature_tags = array(select distinct unnest(coalesce(p.feature_tags,'{}') || feat)),
+    occasion_tags = array(select distinct unnest(coalesce(p.occasion_tags,'{}') || occ)),
+    evidence = coalesce(p.evidence,'{}'::jsonb) || jsonb_build_object('site_signals', jsonb_build_object('source_url',p_source_url,'signals',s,'checked_at',now())),
+    updated_at = now()
+  where p.entity_id = v.id and (cardinality(meal)+cardinality(feat)+cardinality(occ)) > 0;
+
+  if cardinality(s) > 0 then
+    update public.gt_venues set
+      search_tags = array(select distinct unnest(coalesce(search_tags,'{}') || s)),
+      updated_at = now()
+    where id = v.id;
+  end if;
+  return jsonb_build_object('ok',true,'signals',s);
+end $fn$;
+
 -- 2. Nightlife taxonomy gets a Strip Clubs lane (owner: "Magic City is a Strip Club").
 insert into public.gt_taxonomy_subcategories(subcategory_key, category_key, subcategory_name, description, sort_order, minimum_upcoming_inventory, is_active)
 values ('strip_clubs','nightlife','Strip Clubs','Atlanta gentlemen''s clubs and strip clubs (21+).', 75, 1, true)
