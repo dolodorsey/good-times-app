@@ -8,7 +8,7 @@ import { askLocal } from '../src/features/experience/complete/planner-ask.js'
 
 test('owner Top Places lead, in owner order, without adding venues', () => {
   const feed = [{ name: 'Zed Cafe' }, { name: 'Magic City' }, { name: 'Revel Atlanta' }, { name: 'Opium' }]
-  assert.deepEqual(topPlaces(feed).map(v => v.name), ['Opium', 'Revel Atlanta', 'Magic City', 'Zed Cafe'])
+  assert.deepEqual(topPlaces(feed).map(v => v.name), ['Opium', 'Magic City', 'Revel Atlanta', 'Zed Cafe'])
   assert.deepEqual(topPlaces([{ name: 'B', editorial_rank: 2 }, { name: 'A', editorial_rank: 1 }]).map(v => v.name), ['A', 'B'])
   assert.equal(topPlaces([]).length, 0)
 })
@@ -45,4 +45,14 @@ test('Ask GOOD TIMES answers instantly from the verified feed only', () => {
   const r = askLocal('date night sushi', venues, [])
   assert.deepEqual(r.venues.map(v => v.name), ['Sozou'])
   assert.equal(askLocal('', venues, []).venues.length, 0)
+})
+
+test('ad spaces are disclosed and appear on every main screen', () => {
+  const ad = fs.readFileSync('src/features/experience/complete/AdSlot.jsx', 'utf8')
+  assert.match(ad, /disclosure_label/)
+  assert.match(ad, /rel="noopener noreferrer sponsored"/)
+  for (const f of ['HomeScreen.jsx','PlacesScreen.jsx','EntertainmentHub.jsx','FreeInTheA.jsx','ProfileHub.jsx','Planner.jsx']) assert.match(fs.readFileSync('src/features/experience/complete/' + f, 'utf8'), /<AdSlot placement=/, f)
+  const sql = fs.readFileSync('supabase/migrations/20261110070000_gt_ad_placements_v1.sql', 'utf8')
+  for (const t of ['Give a Gobble','Santa in Atlanta','Sole Exchange']) assert.match(sql, new RegExp(t))
+  assert.match(sql, /gt_ad_disclosure/)
 })

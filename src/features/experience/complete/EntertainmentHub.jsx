@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react'
+import AdSlot from './AdSlot.jsx'
 import {eventIsThisWeekend,eventIsTonight,eventDaysAway} from '../good-times-event-clock.js'
 import {CollectionGrid,Sports} from './Collections.jsx'
 import {Section,State} from './Cards.jsx'
@@ -80,6 +81,7 @@ export default function EntertainmentHub({
       {scoped.length?<div className="gtk-scroller">{scoped.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}</div>:<Empty title="Nothing confirmed in this exact window yet" body="Try Upcoming or open a category. GOOD TIMES will not fill this space with unrelated listings." action={<button onClick={()=>setMode('upcoming')}>See Upcoming</button>}/>}
     </section>
     {afterDarkRows.length>0&&<Rail title="Clubs, Lounges" accent="& After Dark" kicker="WHERE ATLANTA GOES OUT" onSeeAll={()=>onOpenVenues('nightlife')} className="gtk-after-dark">{afterDarkRows.map(v=><VenuePoster key={v.id} venue={v} savedKeys={savedKeys} onVenue={onVenue} onSave={onSave}/>)}</Rail>}
+    <AdSlot placement="entertainment" slot={0}/>
     <section className="gtk-section"><header className="gtk-section-head"><div><h2>Explore <em>Entertainment</em></h2><p>Every lane, one tap away</p></div></header>
       <div className="gtc-entertainment-lanes gtk-lanes">
         {LANES.map(([key,label,desc,kind,art])=>
@@ -90,6 +92,7 @@ export default function EntertainmentHub({
       </div>
     </section>
     <Rail title="Browse by" accent="Vibe" subtitle="Find your kind of good time">{VIBES.map(([id,label,img])=><PhotoTile key={id} image={img} label={label} onClick={()=>onNavigate?.(id)}/>)}</Rail>
+    <AdSlot placement="entertainment" slot={1}/>
     <BuildTrio title="Plan Your Night" kicker="BUILD IT · SHAKE IT · ASK IT" onBuild={()=>onPlan?.('guided')} onShake={()=>onPlan?.('shake')} onAsk={()=>onPlan?.('ask')}/>
     <AddSpace label="Add Space" sub="List your event, show or venue on GOOD TIMES"/>
   </Themed>

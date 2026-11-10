@@ -10,7 +10,6 @@ export const HOUSE_SOURCE = 'Kollective Hospitality · Official Eventbrite'
 
 export const KOLLECTIVE_PROGRAMS = [
   {key:'american-track-field',title:'American Track & Field',kicker:'NOW LAUNCHED',line:'Opening day May 8, 2027',cta:'Explore ATF',url:'https://americantnf.com',image:'https://americantnf.com/atf/atf-02.webp'},
-  {key:'sole-exchange',title:'Sole Exchange',kicker:'SHOE DRIVE',line:'Ongoing community shoe drive',cta:'Learn More',url:'https://soleexchangeworldwide.com',image:'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/websites/graphics/SOLE_EXCHANGE_WEBSITE/ChatGPT_Image_Jul_30_2026_02_35_07_AM_1_.png'},
 ]
 
 // Kollective events outside Atlanta (Dr. Dorsey's DC slate) come from /api/house, not the Atlanta

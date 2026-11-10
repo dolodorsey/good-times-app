@@ -3,21 +3,23 @@
 // The name list is only a fallback order for venues already in the verified feed — it never adds a venue
 // and never invents facts; a venue must pass the normal verified gate to appear at all.
 export const OWNER_TOP_PLACES = [
-  { match: /^opium\b/i, type: 'Nightclub' },
-  { match: /^revel\b/i, type: 'Nightclub' },
   { match: /^tulum\b/i, type: null },
   { match: /^sea salt\b/i, type: null },
   { match: /^hungry af\b/i, type: null },
-  { match: /^goodfellas\b/i, type: null },
-  { match: /^(club )?33\b/i, type: null },
-  { match: /^happy hour\b/i, type: 'Lounge' },
-  { match: /^(the )?locker room\b/i, type: null },
-  { match: /^utopia\b/i, type: 'Lounge' },
+  { match: /^opium\b/i, type: 'Nightclub' },
   { match: /^magic city\b/i, type: 'Strip Club' },
+  { match: /^revel\b/i, type: 'Nightclub' },
+  { match: /^goodfellas\b/i, type: null },
+  { match: /^(thirty three|33)\b/i, type: null },
+  { match: /^happy hour\b/i, type: 'Lounge' },
+  { match: /^(the )?locker room\b/i, type: 'Sports Bar' },
+  { match: /^utopia\b/i, type: 'Lounge' },
   { match: /^onyx\b/i, type: 'Strip Club' },
   { match: /^pasha\b/i, type: null },
   { match: /^blue flame\b/i, type: 'Strip Club' },
   { match: /^cosm\b/i, type: 'Immersive Venue' },
+  { match: /^blue (restaurant|lounge|hookah)\b/i, type: 'Hookah Lounge' },
+  { match: /^flo\b/i, type: 'Lounge' },
 ]
 
 const ownerIndex = venue => OWNER_TOP_PLACES.findIndex(p => p.match.test(String(venue?.name || '').trim()))

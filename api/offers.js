@@ -30,6 +30,13 @@ export default async function handler(req, res) {
     if (method === 'GET') {
       const url = new URL(req.url, 'http://localhost')
       const city = CITIES.has(url.searchParams.get('city')) ? url.searchParams.get('city') : 'atlanta'
+      if (url.searchParams.get('kind') === 'ads') {
+        const sel = 'id,advertiser,kind,disclosure_label,kicker,title,subtitle,image_url,cta_label,cta_url,placements,priority,ends_at'
+        const r = await fetch(`${CONTENT_URL}/rest/v1/gt_ad_placements?select=${sel}&city_key=eq.${city}&order=priority.asc&limit=50`, { headers })
+        if (!r.ok) throw new Error(`ads read failed (${r.status})`)
+        const ads = await r.json()
+        return send(res, 200, { ok: true, city, ads: Array.isArray(ads) ? ads : [] }, 'public, s-maxage=120, stale-while-revalidate=600')
+      }
       const select = 'id,city_key,title,description,category,offer_type,merchant_name,venue_id,show_id,image_url,location,participating_locations,actual_value,requirements,claim_method,claim_url,redemption_instructions,source_url,source_type,starts_at,expires_at,verified_at,featured,featured_on'
       const r = await fetch(`${CONTENT_URL}/rest/v1/v_gt_offers_public?select=${select}&city_key=eq.${city}&order=featured.desc,expires_at.asc.nullslast&limit=200`, { headers })
       if (!r.ok) throw new Error(`offers read failed (${r.status})`)
@@ -45,6 +52,11 @@ export default async function handler(req, res) {
         category: text(body.category, 40), anon_id: text(body.anon_id, 64), utm_source: text(body.utm_source, 80), utm_medium: text(body.utm_medium, 80),
         utm_campaign: text(body.utm_campaign, 120), utm_content: text(body.utm_content, 120), referrer: text(body.referrer, 300),
       } })
+      return send(res, 202, { ok: true })
+    }
+    if (body.action === 'ad_track') {
+      if (!['impression', 'click'].includes(body.event_type)) return send(res, 400, { ok: false, error: 'Unsupported event' })
+      await rpc('gt_track_ad_event', { p: { ad_id: text(body.ad_id, 40), placement: text(body.placement, 40), event_type: body.event_type, anon_id: text(body.anon_id, 64), utm_source: text(body.utm_source, 80) } })
       return send(res, 202, { ok: true })
     }
     if (body.action === 'submit') {

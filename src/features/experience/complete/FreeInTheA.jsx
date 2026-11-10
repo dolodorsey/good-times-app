@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react'
+import AdSlot from './AdSlot.jsx'
 import {Icon,SCENES,Rail} from './Kit.jsx'
 import {safeImage,cleanTitle} from './model.js'
 import {FREE_CATEGORIES,freeEvents,badgeFor,sourceLabel,expiresLabel,offerActions,inCategory,endingSoon,featuredOfTheDay,isThisWeekend,
@@ -107,6 +108,7 @@ export default function FreeInTheA({city='atlanta',events=[],now=Date.now(),init
       {weekend.length>0&&<Rail title="Free This" accent="Weekend" kicker="FRI – SUN" className="gtf-rail">{weekend.map(o=>card(o))}</Rail>}
       {FREE_CATEGORIES.filter(c=>!['today','weekend'].includes(c.id)).map(c=>{const rows=inCategory(all,c.id,now);return rows.length?<Rail key={c.id} title={c.label} kicker={c.blurb.toUpperCase()} className="gtf-rail" onSeeAll={()=>pick(c.id)}>{rows.slice(0,10).map(o=>card(o))}</Rail>:null})}
       {!all.length&&<Empty/>}
+      <AdSlot placement="free" slot={0}/>
       <AlertsOptIn/>
       <SubmitInvite/>
     </>:<section className="gtf-grid-wrap"><header><h2>{catMeta?.label}</h2><p>{catMeta?.blurb}</p></header>{list.length?<div className="gtf-grid">{list.map(o=>card(o))}</div>:<Empty category={catMeta}/>}<AlertsOptIn/></section>}

@@ -138,9 +138,26 @@ values
  ('atlanta','Hungry AF','hungry-af','restaurant','american','2740 Greenbriar Pkwy SW B14, Atlanta, GA 30331','Greenbriar','https://thehungryaf.com/',
   'needs_reverification','needs_reverification','owner_editorial_2026_11_09',
   jsonb_build_object('owner_editorial','2026-11-09 owner top places + November magazine','listing_source','https://www.theinfatuation.com/atlanta/reviews/hungry-af')),
- ('atlanta','Goodfellas Pizza & Wings','goodfellas-pizza-wings-west-end','restaurant','pizza_wings','898 Oak St SW, Atlanta, GA','West End','https://www.goodfellaspizzaandwings.com/',
-  'needs_reverification','needs_reverification','owner_editorial_2026_11_09',
-  jsonb_build_object('owner_editorial','2026-11-09 owner top places + November magazine','listing_source','https://www.atly.com/location/GOODFELLAS-PIZZA-WINGS-WESTEND'))
+ ('atlanta','Goodfellas Pizza & Wings','goodfellas-pizza-wings-14th-street','restaurant','pizza_wings','365 14th St NW, Atlanta, GA 30318','Home Park','https://tharealgoodfellas.com/',
+  'needs_reverification','needs_reverification','owner_editorial_2026_11_10',
+  jsonb_build_object('owner_editorial','2026-11-10 owner: 14th Street location only','listing_source','https://www.atly.com/location/Goodfellas-Pizza-Wings')),
+ ('atlanta','Thirty Three Restaurant Experience','thirty-three-atl','restaurant','american_hookah','33 Hurt Plaza SE, Atlanta, GA 30303','Downtown','https://www.thirtythreeatl.com/',
+  'needs_reverification','needs_reverification','owner_editorial_2026_11_10',
+  jsonb_build_object('owner_editorial','2026-11-10 owner top places: "33"','booking_source','https://tables.toasttab.com/restaurants/2f121560-0a73-450b-bb43-f66ee8bb5df7/reserve')),
+ ('atlanta','Blue Restaurant & Hookah Lounge','blue-buckhead','lounge','restaurant_hookah_lounge','262 Pharr Rd NE, Atlanta, GA 30305','Buckhead Village','https://www.bluebuckhead.com/',
+  'needs_reverification','needs_reverification','owner_editorial_2026_11_10',
+  jsonb_build_object('owner_editorial','2026-11-10 owner top places: "BLUE" off Pharr Rd'))
+on conflict (city_key, slug) do nothing;
+
+insert into public.gt_venues(city_key, name, slug, category_key, subcategory, address, neighborhood, website, instagram_handle, status, verification_status,
+  is_verified, verified_at, freshness_expires_at, verification_method, evidence_url_1, evidence_type_1, verification_evidence_count, data_source, metadata)
+values
+ ('atlanta','The Locker Room Sports Bar','the-locker-room-sports-bar','sports_bar','sports_bar','199 Mitchell St SW, Atlanta, GA 30303','Downtown',null,null,'active','verified_current',
+  true, now(), now()+interval '30 days','owner_editorial_plus_independent_listing_v1','https://toast.app/r/the-locker-room-sports-bar-199-mitchell-street-southwest/order','independent_listing',2,
+  'owner_editorial_2026_11_10', jsonb_build_object('owner_editorial','2026-11-10 owner confirmed 199 Mitchell St SW')),
+ ('atlanta','FLO','flo-atl','lounge','cocktail_lounge','2196 Cheshire Bridge Rd NE, Atlanta, GA','Cheshire Bridge','https://www.instagram.com/flo_atl','flo_atl','active','verified_current',
+  true, now(), now()+interval '30 days','owner_editorial_plus_independent_listing_v1','https://www.atly.com/location/Flo','independent_listing',2,
+  'owner_editorial_2026_11_10', jsonb_build_object('owner_editorial','2026-11-10 owner top places'))
 on conflict (city_key, slug) do nothing;
 
 -- 5. Curated nightlife memberships (owner-stated types). Shown only while each venue passes the verified gate.
@@ -158,16 +175,23 @@ from (values
 join public.gt_venues v on v.id=m.id
 where not exists (select 1 from public.gt_curated_venue_memberships c where c.venue_id=v.id and c.subcategory_key=m.sub and c.is_active);
 
+insert into public.gt_curated_venue_memberships(venue_id, city_key, category_key, subcategory_key, rank_score, reason, source_url_1, expires_at)
+select g.id, 'atlanta', 'nightlife', 'lounges', 95, 'owner_editorial_2026_11_10', coalesce(g.evidence_url_1, g.website), now()+interval '120 days'
+from public.gt_venues g where g.city_key='atlanta' and g.slug in ('flo-atl','blue-buckhead')
+  and not exists (select 1 from public.gt_curated_venue_memberships c where c.venue_id=g.id and c.subcategory_key='lounges' and c.is_active);
+
 -- 6. Owner Top Places order (then the magazine's picks).
 insert into public.gt_editorial_top_places(venue_id, rank, owner_type_label)
 select v.id, r.rank, r.label
 from (values
-  (1,'^opium$',null::text,'Nightclub'),(2,'^revel atlanta$',null,'Nightclub'),(3,'^tulum atl$',null,null),(4,'^sea salt$',null,null),
-  (5,'^hungry af$',null,null),(6,'^goodfellas pizza',null,null),(7,'^happy hour atl$',null,'Lounge'),(8,'^utopia restaurant underground$',null,'Lounge'),
-  (9,'^magic city$',null,'Strip Club'),(10,'^onyx atlanta$',null,'Strip Club'),(11,'^pasha restaurant',null,null),(12,'^blue flame lounge$',null,'Strip Club'),
-  (13,'^cosm atlanta$',null,null),(14,'^heritage supper club$',null,null),(15,'^sargent$',null,null),(16,'^sozou$',null,null),(17,'^pataaka$',null,null),
-  (18,'^mr\. everything',null,null),(19,'^le petit marche$',null,null),(20,'^puttshack atlanta$',null,null),(21,'^flight club atlanta$',null,null),
-  (22,'^f1 arcade atlanta$',null,null),(23,'^topgolf atlanta$',null,null),(24,'^high museum of art$',null,null),(25,'^fernbank museum',null,null)
+  (1,'^tulum atl$',null::text,null::text),(2,'^sea salt$',null,null),(3,'^hungry af$',null,null),(4,'^opium$',null,'Nightclub'),
+  (5,'^magic city$',null,'Strip Club'),(6,'^revel atlanta$',null,'Nightclub'),(7,'^goodfellas pizza',null,null),(8,'^thirty three',null,null),
+  (9,'^happy hour atl$',null,'Lounge'),(10,'^the locker room sports bar$',null,'Sports Bar'),(11,'^utopia restaurant underground$',null,'Lounge'),
+  (12,'^onyx atlanta$',null,'Strip Club'),(13,'^pasha restaurant',null,null),(14,'^blue flame lounge$',null,'Strip Club'),(15,'^cosm atlanta$',null,null),
+  (16,'^blue restaurant',null,'Hookah Lounge'),(17,'^flo$',null,'Lounge'),
+  (18,'^heritage supper club$',null,null),(19,'^sargent$',null,null),(20,'^sozou$',null,null),(21,'^pataaka$',null,null),
+  (22,'^mr\. everything',null,null),(23,'^le petit marche$',null,null),(24,'^puttshack atlanta$',null,null),(25,'^flight club atlanta$',null,null),
+  (26,'^f1 arcade atlanta$',null,null),(27,'^topgolf atlanta$',null,null),(28,'^high museum of art$',null,null),(29,'^fernbank museum',null,null)
 ) r(rank, pattern, _unused, label)
 join lateral (select g.id from public.gt_venues g where g.city_key='atlanta' and lower(g.name) ~ r.pattern
               order by (g.status='active') desc, (g.verification_status='verified_current') desc, g.updated_at desc limit 1) v on true
@@ -181,8 +205,8 @@ update public.gt_restaurant_profiles p set
 where p.entity_id in ('5de14bcd-991d-4063-87d7-2b79ca93e33a','4d7ac719-3aa7-4d5a-baef-2c4aa39f5024','c53d8e6e-9b47-4dab-b398-aacbbd3b4753','0d933960-487b-4677-87d6-845c65382445');
 
 -- 8. Feed carries editorial_rank and leads with owner picks.
-insert into gt_private.gt_function_snapshots(id, fn, reason, definition)
-select coalesce((select max(id) from gt_private.gt_function_snapshots),0)+1, 'public.gt_public_live_inventory(text,date,integer,integer)'::regprocedure,
+insert into gt_private.gt_function_snapshots(fn, reason, definition)
+select 'public.gt_public_live_inventory(text,date,integer,integer)'::regprocedure,
   'before owner editorial top places 2026-11-10', pg_get_functiondef('public.gt_public_live_inventory(text,date,integer,integer)'::regprocedure);
 
 create or replace function public.gt_public_live_inventory(p_city text, p_service_date date, p_event_limit integer default 480, p_venue_limit integer default 360)

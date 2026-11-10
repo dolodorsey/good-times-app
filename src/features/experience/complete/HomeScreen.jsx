@@ -1,4 +1,5 @@
 import React,{useMemo,useState} from 'react'
+import AdSlot from './AdSlot.jsx'
 import {Themed,ScreenHero,SearchBar,CategoryCards,Rail,BuildTrio,ConciergeBand,PhotoTile,Skeletons,Empty,SCENES} from './Kit.jsx'
 import {EventPoster,VenuePoster} from './posters.jsx'
 import {EventCollection} from './Collections.jsx'
@@ -75,6 +76,7 @@ export default function HomeScreen({events=[],venues=[],profile,savedKeys,onEven
   {mode!=='for-you'?<EventCollection key={mode} mode={mode} now={now} initialEvents={events} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>:<>
    <section className="gtk-section gtk-moods"><header className="gtk-section-head"><div><h2>What kind of <em>time?</em></h2></div><button type="button" className="gtk-see-all" onClick={()=>nav('places')}>See All</button></header><CategoryCards label="What kind of time" items={MOODS} onSelect={nav}/></section>
    <BuildTrio onBuild={()=>onPlan?.('guided')} onShake={()=>onPlan?.('shake')} onAsk={()=>onPlan?.('ask')}/>
+   <AdSlot placement="home" slot={0}/>
    <BestRail events={live} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave} onSeeAll={()=>onMode('upcoming')}/>
    {error&&<State error title="Couldn’t refresh all recommendations" body={error} action={<button onClick={onRetry}>Retry</button>}/>}
    {loading&&!events.length&&!venues.length?<Skeletons/>:<>
@@ -85,6 +87,7 @@ export default function HomeScreen({events=[],venues=[],profile,savedKeys,onEven
     {comingUp.length>0&&<Rail title="Coming" accent="Up" kicker="PLAN AHEAD" onSeeAll={()=>onMode('upcoming')}>{comingUp.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}</Rail>}
     {different.length>0&&<Rail title="Something" accent="Different" kicker="PLAY · COMPETE · CONNECT" onSeeAll={()=>nav('interactive')}>{different.map(v=><VenuePoster key={v.id} venue={v} size="sm" showAction={false} savedKeys={savedKeys} onVenue={onVenue} onSave={onSave}/>)}</Rail>}
     {!night.rows.length&&!weekend.length&&!comingUp.length&&!places.length&&<Empty title="Find your next good time" body="Browse the full Atlanta collection, or refresh current recommendations." action={<button onClick={onRetry}>Refresh</button>}/>}
+    <AdSlot placement="home" slot={1}/>
     <ConciergeBand onClick={()=>onPlan?.('ask')}/>
     {sponsored}
    </>}

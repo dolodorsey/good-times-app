@@ -479,3 +479,19 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-plan>.gtk-plan-modes
 .gtf-hero{padding-top:62px}
 html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-plan>.gtk-plan-modes>.gtk-plan-mode.active,
 html body.gt-complete-mode #root .gt5-app.gt5-complete .gtk-plan>.gtk-plan-modes>.gtk-plan-mode[aria-pressed="true"]{background:#0b0c0e var(--gtk-mode-image) center/cover no-repeat!important;color:#fff!important}
+
+/* ── GOOD TIMES ad spaces (disclosed: Community / Sponsored) ── */
+.gtad{margin:14px 0}
+.gtad>a{position:relative;isolation:isolate;display:grid;grid-template-columns:42% 1fr;min-height:150px;border-radius:18px;overflow:hidden;border:1px solid rgba(243,200,81,.35);background:#0d0b06;color:#fff;text-decoration:none;box-shadow:0 10px 26px rgba(0,0,0,.45)}
+.gtad.is-nonprofit>a{border-color:rgba(255,140,90,.45);background:#120806}
+.gtad-media{background:#151208 center/cover no-repeat;min-height:150px}
+.gtad-copy{display:flex;flex-direction:column;justify-content:center;gap:4px;padding:12px 14px}
+.gtad-label{align-self:flex-start;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.22);font:800 9px/1 var(--gtk-sans);letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.85)}
+.gtad-copy small{font:800 9.5px/1.25 var(--gtk-sans);letter-spacing:.14em;color:#f3c851}
+.gtad.is-nonprofit .gtad-copy small{color:#ffab7a}
+.gtad-copy strong{font:700 21px/1.05 var(--gtk-serif);color:#fff}
+.gtad-copy em{font:500 12px/1.3 var(--gtk-sans);font-style:normal;color:rgba(255,255,255,.78);display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.gtad-cta{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:8px 13px;border-radius:999px;background:#f3c851;color:#141005;font:800 12px/1 var(--gtk-sans)}
+.gtad.is-nonprofit .gtad-cta{background:#ff8a5c;color:#1a0702}
+@media(max-width:360px){.gtad>a{grid-template-columns:1fr}.gtad-media{min-height:120px}}
+@media(min-width:760px){.gtad>a{grid-template-columns:320px 1fr;min-height:170px}.gtad-copy strong{font-size:26px}}
