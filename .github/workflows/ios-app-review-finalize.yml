@@ -21,7 +21,7 @@ jobs:
       GT_UI_ARTIFACTS: 'ui-artifacts'
       VALIDATED_UI_ARTIFACT_ID: '9345864431'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validate finalizer
         run: python3 -m py_compile scripts/app-store-review-finalize.py
       - name: Load validated screenshot artifact
@@ -50,7 +50,7 @@ jobs:
         run: python3 scripts/app-store-review-finalize.py
       - name: Preserve finalization evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: GOOD-TIMES-app-review-finalize-${{ github.run_number }}
           path: ${{ runner.temp }}/good-times-app-store-finalize.json
