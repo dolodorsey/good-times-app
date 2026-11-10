@@ -180,13 +180,32 @@ begin
   get diagnostics n = row_count; return n;
 end $fn$;
 revoke all on function public.gt_expire_offers_v1() from public, anon, authenticated;
-do $do$ begin
-  if exists (select 1 from pg_extension where extname='pg_cron') and not exists (select 1 from cron.job where jobname='gt-expire-offers-v1') then
-    perform cron.schedule('gt-expire-offers-v1','17 * * * *','select public.gt_expire_offers_v1()');
-  end if;
-end $do$;
+-- Expired offers are already hidden at read time (RLS + view). A scheduled sweep (gt_expire_offers_v1) is
+-- optional housekeeping and is scheduled separately with owner approval.
 
 -- Admin key for the FREE IN THE A admin API (gt-offers-admin). Value lives only in public.credentials (service role).
 insert into public.credentials(credential_type, credential_key, credential_value, is_active)
 select 'api_key', 'gt_free_in_the_a_admin', jsonb_build_object('api_key', replace(gen_random_uuid()::text,'-','')||replace(gen_random_uuid()::text,'-',''), 'purpose','FREE IN THE A admin console'), true
 where not exists (select 1 from public.credentials where credential_key='gt_free_in_the_a_admin');
+
+-- Advisor fix (2026-11-10): trigger function from the editorial migration is not an API endpoint.
+revoke all on function public.gt_venue_hero_guard() from public, anon, authenticated;
+
+-- Photo guard v2 (2026-11-10): an og:image that was reviewed and rejected as a logo/graphic is never re-applied
+-- by a later site-signals scan.
+create or replace function public.gt_venue_hero_guard()
+returns trigger language plpgsql security definer set search_path to 'public','pg_temp' as $fn$
+begin
+  if tg_op='UPDATE' and coalesce(trim(new.hero_image),'') <> ''
+     and regexp_replace(lower(trim(new.hero_image)),'\?.*$','') = regexp_replace(lower(trim(coalesce(old.metadata->>'rejected_og_image',''))),'\?.*$','') then
+    new.hero_image := null;
+    new.photo_status := 'official_site_logo_rejected';
+    return new;
+  end if;
+  if new.status='active' and coalesce(trim(new.hero_image),'') <> '' and public.gt_hero_image_in_use(new.hero_image, new.id) then
+    new.metadata := coalesce(new.metadata,'{}'::jsonb) || jsonb_build_object('duplicate_hero_image_dropped', new.hero_image, 'duplicate_hero_dropped_at', now());
+    new.hero_image := null;
+  end if;
+  return new;
+end $fn$;
+revoke all on function public.gt_venue_hero_guard() from public, anon, authenticated;
