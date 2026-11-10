@@ -74,15 +74,15 @@ create trigger gt_ad_queue_touch_trg before update on public.gt_ad_queue for eac
 -- First queue (owner, 2026-11-10): Kollective nonprofit work. Facts from the official Eventbrite listings / site.
 insert into public.gt_ad_queue(city_key, advertiser, kind, disclosure_label, kicker, title, subtitle, image_url, cta_label, cta_url, priority, starts_at, ends_at, status, approved_by, notes)
 select * from (values
- ('atlanta','The Kollective Hospitality Group','nonprofit','Community','COMMUNITY · SAT, NOV 21 · 11 AM','Give a Gobble',
+ ('atlanta','The Kollective Hospitality Group','nonprofit','Community','SAT, NOV 21 · 11 AM','Give a Gobble',
   'Free community turkey giveaway in Atlanta — helping families gather around the table this Thanksgiving.',
   'https://img.evbuc.com/https%3A%2F%2Fcdn.evbuc.com%2Fimages%2F1196914878%2F2574990468831%2F1%2Foriginal.20261030-085051?auto=format%2Ccompress&q=75&sharp=10&s=934d9ffb280c780ea34bc07e275c3355',
   'Free RSVP','https://www.eventbrite.com/e/give-a-gobble-turkey-drive-giveaway-tickets-2004110761236', 10, null::timestamptz, '2026-11-22 04:59:00+00'::timestamptz, 'active','owner 2026-11-10','Atlanta date (DC date is Nov 17)'),
- ('atlanta','The Kollective Hospitality Group','nonprofit','Community','COMMUNITY · TUE, DEC 22 · DOORS 8 PM','Santa in Atlanta',
+ ('atlanta','The Kollective Hospitality Group','nonprofit','Community','TUE, DEC 22 · DOORS 8 PM','Santa in Atlanta',
   'Christmas concert + toy drive. Free with RSVP — bring a new, unwrapped toy for Atlanta kids.',
   'https://img.evbuc.com/https%3A%2F%2Fcdn.evbuc.com%2Fimages%2F1196914904%2F2574990468831%2F1%2Foriginal.20261030-085135?auto=format%2Ccompress&q=75&sharp=10&s=dc213d3caaf17eef600938afba923ce6',
   'Free RSVP','https://www.eventbrite.com/e/santa-in-atlanta-tickets-2004110817404', 20, null, '2026-12-23 04:59:00+00', 'active','owner 2026-11-10','Toys distributed Christmas Eve'),
- ('atlanta','Sole Exchange','nonprofit','Community','COMMUNITY · SHOE DRIVE','Sole Exchange',
+ ('atlanta','Sole Exchange','nonprofit','Community','SHOE DRIVE','Sole Exchange',
   'Ongoing community shoe drive from The Kollective.',
   'https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/websites/graphics/SOLE_EXCHANGE_WEBSITE/ChatGPT_Image_Jul_30_2026_02_35_07_AM_1_.png',
   'Learn More','https://soleexchangeworldwide.com', 30, null, null, 'active','owner 2026-11-10',null)

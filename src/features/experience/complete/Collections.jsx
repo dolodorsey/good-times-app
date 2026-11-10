@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react'
+import {collapseShows} from './dedupe.js'
 import {ExperienceCard,Section,State,Skeleton,ActionLink} from './Cards.jsx'
 import {useBrowse} from './useBrowse.js'
 import {loadExplorePage} from '../../intelligence/client.js'
@@ -41,10 +42,11 @@ export function EventCollection({mode='upcoming',category=null,subcategory=null,
  const result=useBrowse(request),hasData=result.status==='success'||result.status==='loading-more'||result.status==='more-error'
  const fallback=result.status==='error'?list(initialEvents).filter(e=>(!category||e.category_key===category)&&(!subcategory||e.subcategory_key===subcategory)&&(!debounced||[e.title,e.venue_name].join(' ').toLowerCase().includes(debounced.toLowerCase()))&&(!venueId||e.venue_id===venueId)):[]
  const rows=unique(hasData?result.items:fallback).filter(e=>{if(!occurrenceUsable(e,now))return false;if(mode==='tonight'){const anchor=date===c.serviceDate?now:new Date(date+'T22:00:00Z').getTime();return eveningUsable(e,anchor)}return !date||e.event_date===date}).sort((a,b)=>sort==='quality'?Number(b.good_times_score||b.quality_score||0)-Number(a.good_times_score||a.quality_score||0):String(a.event_date).localeCompare(String(b.event_date))||String(a.event_time||'99').localeCompare(String(b.event_time||'99'))||String(a.event_key).localeCompare(String(b.event_key)))
+ const shows=collapseShows(rows)
  const title=venueId?'Upcoming here':mode==='tonight'?(date===c.serviceDate&&c.minute<240?'Still going · last night':'Tonight in Atlanta'):category?labelFor(category):'Upcoming in Atlanta'
- const groupRows=inline?[[null,rows]]:[...rows.reduce((m,e)=>{const k=e.event_date;if(!m.has(k))m.set(k,[]);m.get(k).push(e);return m},new Map())]
+ const groupRows=inline?[[null,shows]]:[...shows.reduce((m,e)=>{const k=e.event_date;if(!m.has(k))m.set(k,[]);m.get(k).push(e);return m},new Map())]
  return <section className={`gtc-events ${inline?'gtc-inline-events':''}`} aria-label={title}>
- <header className="gtc-page-heading">{onClose&&<button onClick={onClose} aria-label="Back to Discover">←</button>}<div><h1>{title}</h1>{!inline&&<small>{rows.length} events shown</small>}</div></header>
+ <header className="gtc-page-heading">{onClose&&<button onClick={onClose} aria-label="Back to Discover">←</button>}<div><h1>{title}</h1>{!inline&&<small>{shows.length} events shown</small>}</div></header>
  {!inline&&<div className="gtc-controls"><label>Date<input type="date" min={c.serviceDate} value={date} onChange={e=>setDate(e.target.value)}/></label>{mode!=='tonight'&&date&&<button onClick={()=>setDate('')}>All upcoming</button>}<label>Sort<select value={sort} onChange={e=>setSort(e.target.value)}><option value="date">Date & time</option><option value="quality">Recommended</option></select></label></div>}
  {mode==='tonight'&&c.minute<240&&date===c.serviceDate&&<p className="gtc-note">Showing the evening of {displayDate(c.serviceDate)}. <button onClick={()=>setDate(c.date)}>See tonight instead</button></p>}
  {result.status==='loading'&&<Skeleton count={inline?2:4}/>}

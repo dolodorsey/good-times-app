@@ -10,10 +10,13 @@ import {PosterCard} from './Kit.jsx'
 import {tonightOrNext} from './tonight.js'
 import {houseEvents,KOLLECTIVE_PROGRAMS} from './kollective-programming.js'
 import {topPlaces} from './top-places.js'
+import {claim,collapseByTitle} from './dedupe.js'
 import {openLink} from '../../../native.js'
 
 // "The Best Happening" — owner-featured programming plus the biggest confirmed Atlanta events, in date order.
 // House events come from the live feed (same detail sheet and Plan as any event); no city or brand label.
+// Services sold on ticketing sites (party buses, concert shuttles, parking) are not events.
+const NOT_AN_EVENT=/\b(concert transportation|premium transportation|party bus|shuttle|parking pass|parking only)\b/i
 const MAJOR=/(state farm arena|mercedes-benz stadium|tabernacle|fox theatre|coca-cola roxy|truist park|lakewood|cellairis|ameris|gas south|buckhead theatre|masquerade|terminal west|eastern|city winery|district atlanta|believe music hall|opium|revel)/i
 function bestRows(events,now){
  const house=houseEvents(events)
@@ -22,8 +25,7 @@ function bestRows(events,now){
  const major=unique(events).filter(e=>occurrenceUsable(e,now)&&e.event_date<=last&&!house.includes(e)&&safeImage(e.image_url)&&score(e)>=40).sort((a,b)=>score(b)-score(a)).slice(0,10)
  return [...house,...major].sort((a,b)=>`${a.event_date}T${a.event_time||'99'}`.localeCompare(`${b.event_date}T${b.event_time||'99'}`)).slice(0,14)
 }
-function BestRail({events,now,savedKeys,onEvent,onSave,onSeeAll}){
- const items=useMemo(()=>bestRows(events,now),[events,now])
+function BestRail({items,now,savedKeys,onEvent,onSave,onSeeAll}){
  if(!items.length&&!KOLLECTIVE_PROGRAMS.length)return null
  return <Rail title="The Best" accent="Happening" kicker="HAND-PICKED · ATLANTA" className="gtk-best" onSeeAll={onSeeAll}>
   {items.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}
@@ -58,15 +60,21 @@ function greeting(minute){if(minute<240||minute>=1080)return 'Good Evening,';if(
 export default function HomeScreen({events=[],venues=[],profile,savedKeys,onEvent,onVenue,onSave,onSearch,onNavigate,onPlan,mode,onMode,now,loading,error,onRetry,sponsored=null}){
  const c=selectedCityClock('atlanta',now),[q,setQ]=useState('')
  const nav=target=>onNavigate?.(target)
- const live=useMemo(()=>unique(events).filter(e=>occurrenceUsable(e,now)).sort((a,b)=>String(a.event_date).localeCompare(String(b.event_date))||String(a.event_time||'99').localeCompare(String(b.event_time||'99'))),[events,now])
+ const live=useMemo(()=>unique(events).filter(e=>occurrenceUsable(e,now)&&!NOT_AN_EVENT.test(e.title||'')).sort((a,b)=>String(a.event_date).localeCompare(String(b.event_date))||String(a.event_time||'99').localeCompare(String(b.event_time||'99'))),[events,now])
  const night=useMemo(()=>tonightOrNext(events,now),[events,now])
- const tonight=useMemo(()=>night.next?[]:night.rows.slice(0,10),[night])
- const weekend=useMemo(()=>live.filter(e=>eventIsThisWeekend(e,'atlanta',now)&&!tonight.includes(e)).slice(0,10),[live,now,tonight])
- const week=useMemo(()=>{const end=new Date(`${c.date}T12:00:00Z`);end.setUTCDate(end.getUTCDate()+7);const last=end.toISOString().slice(0,10);return live.filter(e=>e.event_date<=last)},[live,c.date])
- const comingUp=useMemo(()=>live.filter(e=>!tonight.includes(e)&&!weekend.includes(e)).slice(0,10),[live,tonight,weekend])
- const places=useMemo(()=>topPlaces(unique(venues).filter(v=>!INTERACTIVE.test(`${v.name} ${v.venue_subcategory||''}`)||/^cosm\b/i.test(v.name)),14),[venues])
- const different=useMemo(()=>unique(venues).filter(v=>INTERACTIVE.test([v.name,v.category_key,v.venue_subcategory,v.subcategory].filter(Boolean).join(' '))).slice(0,10),[venues])
- const weekTiles=useMemo(()=>{const restaurants=venues.filter(v=>/restaurant|dining|food|brunch|coffee|cafe|bakery/.test(`${v.category_key} ${v.venue_category_key||''}`));const rows=[{id:'restaurants',label:'Restaurants',sub:restaurants.length?`${restaurants.length}+ places`:'Explore',image:safeImage(restaurants.find(v=>safeImage(v.hero_image))?.hero_image)||SCENES.dining}];for(const [id,label,keys,art] of WEEK_GROUPS){const rowsFor=week.filter(e=>keys.includes(e.category_key));if(!rowsFor.length)continue;rows.push({id,label,sub:`${rowsFor.length} this week`,image:safeImage(rowsFor.find(e=>safeImage(e.image_url))?.image_url)||art})}return rows},[venues,week])
+ // Every event / venue appears once on Home, in rail order; multi-date shows collapse to their next date.
+ const rails=useMemo(()=>{
+  const used=new Set()
+  const best=claim(bestRows(live,now),used,14)
+  const nightRows=claim(collapseByTitle(night.rows),used,10)
+  const tonight=night.next?[]:nightRows
+  const places=claim(topPlaces(unique(venues).filter(v=>!INTERACTIVE.test(`${v.name} ${v.venue_subcategory||''}`)||/^cosm\b/i.test(v.name)),40),used,14)
+  const weekend=claim(collapseByTitle(live.filter(e=>eventIsThisWeekend(e,'atlanta',now))),used,10)
+  const comingUp=claim(collapseByTitle(live.filter(e=>String(e.event_date)>c.date)),used,10)
+  const different=claim(unique(venues).filter(v=>INTERACTIVE.test([v.name,v.category_key,v.venue_subcategory,v.subcategory].filter(Boolean).join(' '))),used,10)
+  return {best,nightRows,tonight,places,weekend,comingUp,different}
+ },[live,night,venues,now,c.date])
+ const {tonight,places,weekend,comingUp,different}=rails
  const firstName=String(profile?.full_name||'').trim().split(/\s+/)[0]
  return <Themed theme="gold" className="gtc-home gtk-home">
   <ScreenHero size="lg" eyebrow={firstName?`${greeting(c.minute).replace(',','')}, ${firstName}`.toUpperCase():greeting(c.minute).replace(',','').toUpperCase()} title="Atlanta." tagline="Great people. Better nights." image={SCENES.home} script={'Explore\nPlan\nExperience\nMore'}>
@@ -77,16 +85,15 @@ export default function HomeScreen({events=[],venues=[],profile,savedKeys,onEven
    <section className="gtk-section gtk-moods"><header className="gtk-section-head"><div><h2>What kind of <em>time?</em></h2></div><button type="button" className="gtk-see-all" onClick={()=>nav('places')}>See All</button></header><CategoryCards label="What kind of time" items={MOODS} onSelect={nav}/></section>
    <BuildTrio onBuild={()=>onPlan?.('guided')} onShake={()=>onPlan?.('shake')} onAsk={()=>onPlan?.('ask')}/>
    <AdSlot placement="home" slot={0}/>
-   <BestRail events={live} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave} onSeeAll={()=>onMode('upcoming')}/>
+   <BestRail items={rails.best} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave} onSeeAll={()=>onMode('upcoming')}/>
    {error&&<State error title="Couldn’t refresh all recommendations" body={error} action={<button onClick={onRetry}>Retry</button>}/>}
    {loading&&!events.length&&!venues.length?<Skeletons/>:<>
-    {night.rows.length>0&&<Rail title={night.title} accent="in Atlanta" kicker={night.kicker} onSeeAll={()=>onMode(night.next?'upcoming':'tonight')}>{night.rows.slice(0,10).map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}</Rail>}
+    {rails.nightRows.length>0&&<Rail title={night.title} accent="in Atlanta" kicker={night.kicker} onSeeAll={()=>onMode(night.next?'upcoming':'tonight')}>{rails.nightRows.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}</Rail>}
     <Rail title="Top Places" accent="in Atlanta" kicker="VERIFIED PICKS" onSeeAll={()=>nav('places')}>{places.length?places.map(v=><VenuePoster key={v.id} venue={v} savedKeys={savedKeys} onVenue={onVenue} onSave={onSave}/>):<Empty title="Places are loading" body="Verified Atlanta places will appear here."/>}</Rail>
     {weekend.length>0&&<Rail title="This" accent="Weekend" kicker="FRI – SUN" onSeeAll={()=>nav('weekend')}>{weekend.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}</Rail>}
-    {weekTiles.length>1&&<Rail title="This Week" accent="in ATL" onSeeAll={()=>nav('events')}>{weekTiles.map(t=><PhotoTile key={t.id} image={t.image} label={t.label} sub={t.sub} onClick={()=>nav(t.id)}/>)}</Rail>}
     {comingUp.length>0&&<Rail title="Coming" accent="Up" kicker="PLAN AHEAD" onSeeAll={()=>onMode('upcoming')}>{comingUp.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}</Rail>}
     {different.length>0&&<Rail title="Something" accent="Different" kicker="PLAY · COMPETE · CONNECT" onSeeAll={()=>nav('interactive')}>{different.map(v=><VenuePoster key={v.id} venue={v} size="sm" showAction={false} savedKeys={savedKeys} onVenue={onVenue} onSave={onSave}/>)}</Rail>}
-    {!night.rows.length&&!weekend.length&&!comingUp.length&&!places.length&&<Empty title="Find your next good time" body="Browse the full Atlanta collection, or refresh current recommendations." action={<button onClick={onRetry}>Refresh</button>}/>}
+    {!rails.nightRows.length&&!weekend.length&&!comingUp.length&&!places.length&&<Empty title="Find your next good time" body="Browse the full Atlanta collection, or refresh current recommendations." action={<button onClick={onRetry}>Refresh</button>}/>}
     <AdSlot placement="home" slot={1}/>
     <ConciergeBand onClick={()=>onPlan?.('ask')}/>
     {sponsored}

@@ -15,7 +15,8 @@ import {useBrowse} from './useBrowse.js'
 import {loadExplorePage} from '../../intelligence/client.js'
 import {shareContent} from '../../../native.js'
 import {refreshStoredSession} from '../../../gt-auth-session.js'
-const MOOD_ART={nightlife:'/venues/opium.jpg',chill:'/reference-base/atlanta-rooftop.webp',date:'/good-times-backgrounds/gt-cat-mood-date.webp',music:'/good-times-backgrounds/gt-cat-music.webp',food:'/good-times-backgrounds/gt-cat-dining.webp',sports:'/good-times-backgrounds/gt-cat-sports.webp',culture:'/good-times-backgrounds/gt-cat-culture.webp',rooftop:'/reference-base/atlanta-rooftop.webp'}
+// Distinct art per mood (the old relative /good-times-backgrounds paths 404'd, and Chill + Rooftop shared one image).
+const MOOD_ART={nightlife:'/venues/opium.jpg',chill:SCENES.chill,date:SCENES.date,music:SCENES.music,food:SCENES.dining,sports:SCENES.stadium,culture:SCENES.culture,rooftop:SCENES.rooftop}
 const RECENT_PLAN_KEY='gt_recent_plan_venue_ids'
 const recentPlanIds=()=>{try{const rows=JSON.parse(localStorage.getItem(RECENT_PLAN_KEY)||'[]');return Array.isArray(rows)?rows.filter(Boolean).slice(0,20):[]}catch{return[]}}
 const rememberPlanIds=plan=>{try{const next=[...(plan?.stops||[]).filter(s=>s?.type==='venue').map(s=>s.object_id||String(s.id||'').replace(/^venue:/,'')),...recentPlanIds()];localStorage.setItem(RECENT_PLAN_KEY,JSON.stringify([...new Set(next.filter(Boolean))].slice(0,20)))}catch{}}

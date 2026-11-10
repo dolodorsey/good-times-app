@@ -23,7 +23,7 @@ export function VenuePoster({venue,savedKeys,onVenue,onSave,onPlan,size='md',sho
 export function EventPoster({event,savedKeys,onEvent,onSave,now,size='md',showAction=true}){
  const when=eventWhen(event,now),ticket=safeLink(event.ticket_url)
  return <PosterCard icon={eventIcon(event)} id={event.event_key} size={size} image={event.image_url} badge={when} live={Boolean(when&&when.startsWith('TONIGHT'))} kicker={labelFor(event.category_key)} title={cleanTitle(event.title)}
-  lines={[event.venue_name||'Location to confirm',eventPrice(event)]} saved={savedKeys?.has?.(key(event))}
+  lines={[event.venue_name||'Location to confirm',event.more_dates?`+${event.more_dates} more date${event.more_dates>1?'s':''}`:eventPrice(event)]} saved={savedKeys?.has?.(key(event))}
   onOpen={()=>onEvent(event)} onSave={onSave?()=>onSave('event',event.event_key):null} action={showAction&&ticket?{label:'Get Tickets',icon:'ticket',href:ticket}:null}/>
 }
 export function Poster({item,...props}){return item.event_key?<EventPoster event={item} {...props}/>:<VenuePoster venue={item} {...props}/>}

@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react'
+import {collapseShows} from './dedupe.js'
 import AdSlot from './AdSlot.jsx'
 import {eventIsThisWeekend,eventIsTonight,eventDaysAway} from '../good-times-event-clock.js'
 import {CollectionGrid,Sports} from './Collections.jsx'
@@ -55,12 +56,12 @@ export default function EntertainmentHub({
   const night=useMemo(()=>tonightOrNext(events,now),[events,now])
   const freeCount=useMemo(()=>freeEvents(events,now).length,[events,now])
   const scoped=useMemo(()=>{
-    if(mode==='tonight')return night.rows.slice(0,12)
+    if(mode==='tonight')return collapseShows(night.rows).slice(0,12)
     const rows=events.filter(event=>{
       if(mode==='weekend')return eventIsThisWeekend(event,'atlanta',now)
       return eventDaysAway(event.event_date,'atlanta',now)>=0
     }).sort((a,b)=>String(a.event_date||'9999').localeCompare(String(b.event_date||'9999'))||String(a.event_time||'99:99').localeCompare(String(b.event_time||'99:99')))
-    return rows.slice(0,12)
+    return collapseShows(rows).slice(0,12)
   },[events,mode,now,night])
   const afterDark=useMemo(()=>{const groups=new Map();for(const v of topPlaces(unique(venues),400)){const kind=nightlifeKind(v);if(!kind||/wine bar|sports bar/i.test(kind))continue;if(!groups.has(kind))groups.set(kind,[]);groups.get(kind).push(v)}return groups},[venues])
   const afterDarkRows=useMemo(()=>{const order=['Nightclub','Lounge','Strip Club','Hookah Lounge','Rooftop Lounge','Speakeasy','Jazz Club'];return order.flatMap(k=>afterDark.get(k)||[]).slice(0,16)},[afterDark])
