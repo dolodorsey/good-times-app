@@ -1,6 +1,6 @@
 import { eventFacts, SHOW_PUBLIC_FIELDS } from './event-facts.js'
 import { eventTimeFields } from './event-time-display.js'
-import { HOUSE_VENUE_TBA, houseVenueTba, withHouseVenue, limitKeepingHouse } from './house-programming.js'
+import { HOUSE_VENUE_TBA, houseVenueTba, withHouseVenue, limitKeepingHouse, isHiddenListing } from './house-programming.js'
 
 const CONTENT_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
@@ -262,7 +262,7 @@ async function fetchRows(path, label) {
   throw lastError || new Error(`${label} failed`)
 }
 function mapShows(rows) {
-  return rows.map(withHouseVenue).map((item, index) => {
+  return rows.filter(row => !isHiddenListing(row)).map(withHouseVenue).map((item, index) => {
     const taxonomy = inferCustomerTaxonomy(item)
     return {
       ...eventFacts(item),

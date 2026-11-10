@@ -10,7 +10,7 @@ import { eventTimeFields, validClock } from './event-time-display.js'
 import { eventFacts } from './event-facts.js'
 import { dedupeEventOccurrences, inventoryCacheKey } from './event-occurrences.js'
 import ATLANTA_FALLBACK_SNAPSHOT from './atlanta-fallback-snapshot.js'
-import { HOUSE_VENUE_TBA, houseVenueTba, withHouseVenue, limitKeepingHouse } from './house-programming.js'
+import { HOUSE_VENUE_TBA, houseVenueTba, withHouseVenue, limitKeepingHouse, isHiddenListing } from './house-programming.js'
 
 const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
@@ -186,7 +186,7 @@ export function customerReadyEvent(item,clock){
   if(/\b(online reserved|zoom id|virtual event|sold out|mon-fri 2026|make money fast|timeshare|webinar)\b/i.test(`${title} ${venue}`))return false
   return true
 }
-function mapEvents(rows){return rows.map(withHouseVenue).map((item,index)=>{const taxonomy=inferCustomerTaxonomy(item);return{
+function mapEvents(rows){return rows.filter(row=>!isHiddenListing(row)).map(withHouseVenue).map((item,index)=>{const taxonomy=inferCustomerTaxonomy(item);return{
   ...eventFacts(item),
   event_key:`show:${item.id}`,source_table:'gt_shows',source_id:item.id,city_key:item.city_key,
   title:decode(item.event_name),event_date:item.show_date,...eventTimeFields(item),venue_name:decode(item.venue_name),
@@ -220,8 +220,8 @@ export default async function handler(request,response){
   const requestedCity=normalizeCity(url.searchParams.get('city'))
   const city='atlanta'
   if(requestedCity!=='atlanta')response.setHeader('X-Good-Times-Launch-Scope','atlanta-only')
-  const eventLimit=clampLimit(url.searchParams.get('event_limit'),120,180)
-  const venueLimit=clampLimit(url.searchParams.get('venue_limit'),120,180)
+  const eventLimit=clampLimit(url.searchParams.get('event_limit'),120,300)
+  const venueLimit=clampLimit(url.searchParams.get('venue_limit'),120,420)
   const clock=cityClock(city)
   const eventFetchLimit=Math.min(Math.max(eventLimit*2,120),240)
   const venueFetchLimit=Math.min(Math.max(venueLimit*2,120),240)

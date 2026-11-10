@@ -7,6 +7,14 @@
 export const HOUSE_SOURCE = 'Kollective Hospitality · Official Eventbrite'
 export const HOUSE_VENUE_TBA = 'Venue TBA'
 
+// Owner-hidden house listings (2026-11-09): programming the owner does not want surfaced in the app.
+export const HIDDEN_HOUSE_TITLES = /\btoy\s*distro\b/i
+
+/** True for a listing the owner removed from the app. Matches on title/event_name. */
+export function isHiddenListing(row) {
+  return HIDDEN_HOUSE_TITLES.test(String(row?.event_name || row?.title || ''))
+}
+
 export function isHouseRow(row) {
   return String(row?.source || '') === HOUSE_SOURCE
 }

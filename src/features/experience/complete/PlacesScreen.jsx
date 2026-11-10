@@ -1,4 +1,5 @@
 import React,{useMemo} from 'react'
+import AdSlot from './AdSlot.jsx'
 import {Themed,ScreenHero,SearchBar,PillRow,Rail,PhotoTile,PosterCard,BrandBand,Empty,Icon,SCENES} from './Kit.jsx'
 import {VenuePoster,venueKind,venueAction} from './posters.jsx'
 import {restaurantCuisines,CUISINE_LABELS} from './restaurant-cuisine.js'
@@ -43,6 +44,7 @@ export default function PlacesScreen({venues=[],laneArt={},laneCounts={},lanes=[
    <SearchBar inputLabel="Search Atlanta places" placeholder="Restaurants, hotels, attractions…" value={query} onChange={onQuery}/>
   </ScreenHero>
   <div className="gtc-place-lanes gtk-lanes gtk-lanes-top">{lanes.map(([key,label,desc])=>{const icon=(PLACE_CATEGORY_RAIL.find(c=>c.id===key)||{}).icon||'sparkle';return <button key={key} data-gt-lane={key} style={{backgroundImage:`linear-gradient(180deg,rgba(5,6,7,.12),rgba(5,6,7,.92)),url("${laneBackground(key)}")`}} onClick={()=>onCategory?.(key)}><i className="gtk-lane-icon"><Icon name={icon} size={20}/></i><span><strong>{label}</strong><small>{desc}</small>{laneCounts[key]>0&&<em className="gtc-lane-count">{laneCounts[key]} {laneCounts[key]===1?'place':'places'}</em>}</span><b aria-hidden="true">↗</b></button>})}</div>
+  <AdSlot placement="places" slot={0}/>
   <PillRow label="More ways to go out" items={[{id:'nightlife-venues',label:'Drinks & Lounges',icon:'cocktail'},{id:'interactive',label:'Interactive',icon:'game'},{id:'date-night',label:'Date Night',icon:'heart'}]} onSelect={id=>id&&onNavigate?.(id)}/>
 
   {cuisines.length>0&&<PillRow label="Cuisines" items={[{id:'all',label:'All Restaurants'},...cuisines.slice(0,10).map(c=>({id:c.id,label:c.label.replace(/ & .*/,''),count:c.count}))]} onSelect={id=>id&&id!=='all'?onCuisine?.(id,CUISINE_LABELS[id]):onCategory?.('dining_culinary')}/>}
@@ -52,6 +54,7 @@ export default function PlacesScreen({venues=[],laneArt={},laneCounts={},lanes=[
   {hoods.length>0&&<Rail title="Neighbor" accent="hoods" subtitle="Where Atlanta goes out">{hoods.map(h=><PhotoTile key={h.id} image={h.image} label={h.label} sub={`${h.count} places`} onClick={()=>onQuery?.(h.label)}/>)}</Rail>}
   {worth.length>0&&<Rail className="gtc-place-preview" title="Places" accent="Worth Knowing" subtitle="Attractions · stays · wellness · culture" grid>{worth.map(v=><VenuePoster key={v.id} venue={v} savedKeys={savedKeys} onVenue={onVenue} onSave={onSave} onPlan={onPlan}/>)}</Rail>}
   {!venues.length&&<Empty title="Places are loading" body="Verified Atlanta places will appear here."/>}
+  <AdSlot placement="places" slot={1}/>
   <BrandBand kicker="DISCOVER. DINE. DRINK. REPEAT." cta="Explore the City" onCta={()=>onCategory?.('attractions_experiences')}/>
  </Themed>
 }

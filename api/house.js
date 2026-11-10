@@ -1,7 +1,7 @@
 import {publicApiHeaders} from '../src/lib/public-api-headers.js'
 import {KHG_SUPABASE_URL,KHG_SUPABASE_ANON_KEY} from '../src/lib/supabase.js'
 import {safeLink,safeImage} from '../src/features/experience/complete/model.js'
-import {withHouseVenue} from './house-programming.js'
+import {withHouseVenue,isHiddenListing} from './house-programming.js'
 
 /** Read-only Kollective house programming (the founder's own events) for every city
  * where the Kollective runs them. Source: gt_house_listings → gt_shows, re-verified
@@ -19,6 +19,7 @@ export function houseAccess(row) {
 }
 
 export function mapHouseEvent(source) {
+  if (isHiddenListing(source)) return null
   const row = withHouseVenue(source)
   if (!row?.id || !row.event_name || !HOUSE_CITY_LABELS[row.city_key]) return null
   const access = houseAccess(row)

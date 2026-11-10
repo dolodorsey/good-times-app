@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react'
+import AdSlot from './AdSlot.jsx'
 import {KHG_SUPABASE_URL,KHG_SUPABASE_ANON_KEY} from '../../../lib/supabase.js'
 import {publicApiHeaders} from '../../../lib/public-api-headers.js'
 import {State,Skeleton} from './Cards.jsx'
@@ -86,6 +87,7 @@ export default function RestaurantExplorer({savedKeys,onVenue,onSave,onBack,onPl
   {status==='error'&&<State error title="Restaurants could not refresh" body={error} action={<button onClick={()=>setRetry(x=>x+1)}>Retry</button>}/>}
   {status==='success'&&!rows.length&&<State title="Nothing verified for that exact interest yet" body="Clear the filter or search another cuisine, neighborhood or occasion. GOOD TIMES will not fill this with unrelated restaurants." action={<button onClick={()=>{setFilter(null);setQuery('')}}>Clear filters</button>}/>}
   {rows.length>0&&<section className="gtk-section"><header className="gtk-section-head"><div><h2>{filter?filter.label:'Top Restaurants'} <em>in Atlanta</em></h2></div></header><div className="gtk-grid">{rows.map(r=><VenuePoster key={r.id} venue={r} savedKeys={saved} onVenue={onVenue} onSave={onSave} onPlan={onPlan}/>)}</div></section>}
+  <AdSlot placement="places" slot={2}/>
   {status==='success'&&<BrandBand kicker="DISCOVER. DINE. DRINK. REPEAT." image={featured?.hero_image||SCENES.diningWarm}/>}
  </Themed>
 }
