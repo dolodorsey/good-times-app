@@ -101,3 +101,4 @@ c59ba076f90ce4fe915c21a7ebc2b0495ce2f84f:api/place-photo.js:generic-api-key:2
 d3235593e8112273955159560509b13bfcf6fddb:scripts/validate-secret-exceptions.py:generic-api-key:13
 d3235593e8112273955159560509b13bfcf6fddb:scripts/validate-secret-exceptions.py:generic-api-key:14
 041eba7a78365e329aea3936925c8bf51500a393:scripts/validate-secret-exceptions.py:generic-api-key:13
+8f38fa6e4d597340630cc48c727a72c9b262b283:api/offers.js:generic-api-key:5
