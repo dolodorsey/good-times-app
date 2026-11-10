@@ -4,6 +4,11 @@ import {CollectionGrid,Sports} from './Collections.jsx'
 import {Section,State} from './Cards.jsx'
 import {Themed,ScreenHero,SearchBar,IconRail,Rail,PhotoTile,BuildTrio,AddSpace,Empty,Icon,SCENES} from './Kit.jsx'
 import {EventPoster,VenuePoster} from './posters.jsx'
+import {tonightOrNext} from './tonight.js'
+import {FreeInTheABanner} from './FreeInTheA.jsx'
+import {freeEvents} from './free-in-the-a.js'
+import {nightlifeKind,topPlaces} from './top-places.js'
+import {unique} from './model.js'
 import {gtAssetUrl} from '../good-times-assets.js'
 
 const LANES=[
@@ -42,33 +47,39 @@ const ENT_RAIL=[
 ]
 const VIBES=[['nightlife-events','High Energy',SCENES.nightlife],['nightlife-venues','Chill',SCENES.lounge],['date-night','Date Night',SCENES.date],['interactive','Group Fun',SCENES.interactive],['culture','Cultural',SCENES.culture],['concerts','Live Music',SCENES.concert]]
 export default function EntertainmentHub({
-  events=[],now=Date.now(),savedKeys,onEvent,onSave,onSearch,onOpenCategory,onOpenVenues,onOpenSports,onOpenInteractive,onPlan,onNavigate,initialMode='tonight'
+  events=[],venues=[],onVenue,onOpenFree,now=Date.now(),savedKeys,onEvent,onSave,onSearch,onOpenCategory,onOpenVenues,onOpenSports,onOpenInteractive,onPlan,onNavigate,initialMode='tonight'
 }){
   const [mode,setMode]=useState(initialMode),[q,setQ]=useState('')
   useEffect(()=>{if(['tonight','weekend','upcoming'].includes(initialMode))setMode(initialMode)},[initialMode])
+  const night=useMemo(()=>tonightOrNext(events,now),[events,now])
+  const freeCount=useMemo(()=>freeEvents(events,now).length,[events,now])
   const scoped=useMemo(()=>{
+    if(mode==='tonight')return night.rows.slice(0,12)
     const rows=events.filter(event=>{
-      if(mode==='tonight')return eventIsTonight(event,'atlanta',now)
       if(mode==='weekend')return eventIsThisWeekend(event,'atlanta',now)
       return eventDaysAway(event.event_date,'atlanta',now)>=0
     }).sort((a,b)=>String(a.event_date||'9999').localeCompare(String(b.event_date||'9999'))||String(a.event_time||'99:99').localeCompare(String(b.event_time||'99:99')))
     return rows.slice(0,12)
-  },[events,mode,now])
+  },[events,mode,now,night])
+  const afterDark=useMemo(()=>{const groups=new Map();for(const v of topPlaces(unique(venues),400)){const kind=nightlifeKind(v);if(!kind||/wine bar|sports bar/i.test(kind))continue;if(!groups.has(kind))groups.set(kind,[]);groups.get(kind).push(v)}return groups},[venues])
+  const afterDarkRows=useMemo(()=>{const order=['Nightclub','Lounge','Strip Club','Hookah Lounge','Rooftop Lounge','Speakeasy','Jazz Club'];return order.flatMap(k=>afterDark.get(k)||[]).slice(0,16)},[afterDark])
   const open=id=>id==='sports'?onOpenSports():id==='interactive'?onOpenInteractive?.():id==='venues'?onOpenVenues('nightlife'):onOpenCategory(id)
-  const title=mode==='tonight'?['Featured','Tonight']:mode==='weekend'?['This','Weekend']:['Coming','Up']
+  const title=mode==='tonight'?(night.next?['Up','Next']:['Featured','Tonight']):mode==='weekend'?['This','Weekend']:['Coming','Up']
   return <Themed theme="violet" className="gtc-entertainment gtk-entertainment">
     <ScreenHero size="md" eyebrow="LIVE MORE · FEEL MORE" title="Entertainment" tagline="Events that make life extraordinary." image={SCENES.concert}>
       <SearchBar inputLabel="Search Entertainment" placeholder="Clubs, concerts, sports, activities…" value={q} onChange={setQ} onSubmit={v=>v.trim()&&onSearch?.(v)} onFilters={()=>q.trim()&&onSearch?.(q)}/>
     </ScreenHero>
+    {onOpenFree&&<FreeInTheABanner count={freeCount} onOpen={onOpenFree}/>}
     <IconRail variant="circle" label="Entertainment categories" items={ENT_RAIL} onSelect={open}/>
     <nav className="gtc-tabs gtc-entertainment-time gtk-time-tabs" aria-label="Entertainment timing">
       {[['tonight','Tonight'],['weekend','This Weekend'],['upcoming','Upcoming']].map(([id,label])=>
         <button key={id} className={mode===id?'active':''} aria-pressed={mode===id} onClick={()=>setMode(id)}>{label}</button>
       )}
     </nav>
-    <section className="gtk-section gtk-ent-results"><header className="gtk-section-head"><div><h2>{title[0]} <em>{title[1]}</em></h2><p>{mode==='tonight'?'Handpicked. Atlanta local time.':mode==='weekend'?'Friday through Sunday.':'The next things worth planning around.'}</p></div><button type="button" className="gtk-see-all" onClick={()=>onOpenCategory(null)}>See All<Icon name="arrow" size={16}/></button></header>
+    <section className="gtk-section gtk-ent-results"><header className="gtk-section-head"><div><h2>{title[0]} <em>{title[1]}</em></h2><p>{mode==='tonight'?(night.next?`${night.title} · ${night.kicker.replace('UP NEXT · ','')}`:'Handpicked. Atlanta local time.'):mode==='weekend'?'Friday through Sunday.':'The next things worth planning around.'}</p></div><button type="button" className="gtk-see-all" onClick={()=>onOpenCategory(null)}>See All<Icon name="arrow" size={16}/></button></header>
       {scoped.length?<div className="gtk-scroller">{scoped.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}</div>:<Empty title="Nothing confirmed in this exact window yet" body="Try Upcoming or open a category. GOOD TIMES will not fill this space with unrelated listings." action={<button onClick={()=>setMode('upcoming')}>See Upcoming</button>}/>}
     </section>
+    {afterDarkRows.length>0&&<Rail title="Clubs, Lounges" accent="& After Dark" kicker="WHERE ATLANTA GOES OUT" onSeeAll={()=>onOpenVenues('nightlife')} className="gtk-after-dark">{afterDarkRows.map(v=><VenuePoster key={v.id} venue={v} savedKeys={savedKeys} onVenue={onVenue} onSave={onSave}/>)}</Rail>}
     <section className="gtk-section"><header className="gtk-section-head"><div><h2>Explore <em>Entertainment</em></h2><p>Every lane, one tap away</p></div></header>
       <div className="gtc-entertainment-lanes gtk-lanes">
         {LANES.map(([key,label,desc,kind,art])=>
@@ -79,7 +90,7 @@ export default function EntertainmentHub({
       </div>
     </section>
     <Rail title="Browse by" accent="Vibe" subtitle="Find your kind of good time">{VIBES.map(([id,label,img])=><PhotoTile key={id} image={img} label={label} onClick={()=>onNavigate?.(id)}/>)}</Rail>
-    <BuildTrio title="Build Around Tonight" kicker="MAKE IT A FULL NIGHT" onBuild={()=>onPlan?.('guided')} onShake={()=>onPlan?.('shake')} onAsk={()=>onPlan?.('ask')}/>
+    <BuildTrio title="Plan Your Night" kicker="BUILD IT · SHAKE IT · ASK IT" onBuild={()=>onPlan?.('guided')} onShake={()=>onPlan?.('shake')} onAsk={()=>onPlan?.('ask')}/>
     <AddSpace label="Add Space" sub="List your event, show or venue on GOOD TIMES"/>
   </Themed>
 }

@@ -22,7 +22,7 @@ export const PROVIDER_URL='https://forms.thekollectivehospitality.com/f/good-tim
 const P={
   search:'M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15m5.5-2 5 5', sliders:'M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M14 4v4M8 10v4M16 16v4',
   plus:'M12 5v14M5 12h14', arrow:'M5 12h14m-6-6 6 6-6 6', chevron:'m9 6 6 6-6 6', back:'M15 6l-6 6 6 6', heart:'M20.8 4.6a5.5 5.5 0 0 0-7.8 0l-1 1-1-1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z',
-  check:'m4 12 5 5L20 6', pin:'M12 22s8-8 8-14A8 8 0 0 0 4 8c0 6 8 14 8 14Zm0-11a3 3 0 1 0 0-6 3 3 0 0 0 0 6', clock:'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20m0-16v6l4 2',
+  check:'m4 12 5 5L20 6', pin:'M12 22s8-8 8-14A8 8 0 0 0 4 8c0 6 8 14 8 14Zm0-11a3 3 0 1 0 0-6 3 3 0 0 0 0 6', clock:'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20m0-16v6l4 2', gift:'M20 12v10H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 1 1 0-5C11 2 12 7 12 7Zm0 0h4.5a2.5 2.5 0 1 0 0-5C13 2 12 7 12 7Z', cake:'M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8M4 16s1.5-1 4-1 4 2 6 2 4-1 4-1M2 21h20M7 8v3M12 8v3M17 8v3M7 4h.01M12 4h.01M17 4h.01', tag:'M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8ZM7 7h.01',
   star:'m12 2 3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6Z', calendar:'M4 6h16v15H4zM4 10h16M8 3v4M16 3v4', ticket:'M3 8a2 2 0 0 0 0 4v0a2 2 0 0 1 0 4v2h18v-2a2 2 0 0 1 0-4 2 2 0 0 0 0-4V6H3v2Zm9-2v12',
   food:'M5 3v7a2 2 0 0 0 4 0V3M7 10v11M17 3c-2.5 2-3 5-3 8h3v10', cocktail:'M4 4h16l-8 9-8-9Zm8 9v8m-4 0h8M15 7l3-3', music:'M9 18V5l12-3v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0m12-3a3 3 0 1 1-6 0 3 3 0 0 1 6 0',
   game:'M6 9h4M8 7v4M15 9h.01M18 11h.01M7 5h10a4 4 0 0 1 4 4l1 7a3 3 0 0 1-5 2l-2-2H9l-2 2a3 3 0 0 1-5-2l1-7a4 4 0 0 1 4-4Z', ball:'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20M2 12h20M12 2c3 3 3 17 0 20M12 2c-3 3-3 17 0 20',
@@ -84,12 +84,22 @@ export function PosterCard({id,image,badge,kicker,title,lines=[],tags=[],action,
 }
 /** Small photo tile with a label — cuisines, neighborhoods, vibes, weekend categories. */
 export function PhotoTile({image,label,sub,onClick,icon}) {return <button type="button" className="gtk-photo-tile" onClick={onClick} style={image?{'--gtk-tile-image':`url("${image}")`}:undefined}><span className="gtk-photo-tile-art" aria-hidden="true"/>{icon&&<span className="gtk-photo-tile-icon"><Icon name={icon} size={22}/></span>}<strong>{label}</strong>{sub&&<small>{sub}</small>}</button>}
-export function BuildTrio({onBuild,onShake,onAsk,title='Build Your Night',kicker='DIFFERENT WAYS. SAME GOOD TIMES.'}) {
+export const PLAN_MODES=Object.freeze([
+  {id:'guided',label:'Build It',sub:'Pick the vibe. We build the night.',icon:'sparkle',tone:'build',image:SCENES.terrace},
+  {id:'shake',label:'Shake It',sub:'One tap. One great pick.',icon:'shuffle',tone:'shake',image:SCENES.turnt},
+  {id:'ask',label:'Ask GOOD TIMES',sub:'Say it how you want it.',icon:'chat',tone:'ask',image:SCENES.lounge},
+])
+/** Build / Shake / Ask — three big photo cards, every one opens its own planner mode. */
+export function BuildTrio({onBuild,onShake,onAsk,title='Plan Your Night',kicker='BUILD IT · SHAKE IT · ASK IT'}) {
+  const go={guided:onBuild,shake:onShake,ask:onAsk}
   return <section className="gtk-section gtk-build"><header className="gtk-section-head"><div><h2>{title.split(' ').slice(0,-1).join(' ')} <em>{title.split(' ').at(-1)}</em><span className="gtk-kicker">{kicker}</span></h2></div></header><div className="gtk-build-grid">
-    <button type="button" className="gtk-build-card is-build" onClick={onBuild}><Icon name="sparkle" size={26}/><span><strong>Build It</strong><small>Pick the places. Make it yours.</small></span><Icon name="chevron" size={18}/></button>
-    <button type="button" className="gtk-build-card is-shake" onClick={onShake}><Icon name="shuffle" size={26}/><span><strong>Shake It</strong><small>Surprise me with a vibe.</small></span><Icon name="chevron" size={18}/></button>
-    <button type="button" className="gtk-build-card is-ask" onClick={onAsk}><Icon name="chat" size={26}/><span><strong>Ask GOOD TIMES</strong><small>Tell us what you want.</small></span><Icon name="chevron" size={18}/></button>
+    {PLAN_MODES.map(m=><button type="button" key={m.id} className={`gtk-build-card is-${m.tone}`} style={{'--gtk-mode-image':`url("${m.image}")`}} onClick={()=>go[m.id]?.()}><span className="gtk-build-art" aria-hidden="true"/><span className="gtk-build-icon" aria-hidden="true"><Icon name={m.icon} size={24}/></span><span className="gtk-build-copy"><strong>{m.label}</strong><small>{m.sub}</small></span><span className="gtk-build-go" aria-hidden="true"><Icon name="chevron" size={18}/></span></button>)}
   </div></section>
+}
+/** Photographic category cards — the "What kind of time?" row. */
+export const CATEGORY_ART=Object.freeze({food:SCENES.dining,drinks:SCENES.drinks,nightlife:SCENES.turnt,events:SCENES.concert,interactive:SCENES.interactive,sports:SCENES.sports,date:SCENES.date,wellness:SCENES.wellness,hotels:SCENES.hotels,more:SCENES.district,brunch:SCENES.terrace,lounge:SCENES.lounge,rooftop:SCENES.rooftop,culture:SCENES.culture,family:SCENES.family,shopping:SCENES.shopping,hookah:SCENES.hookah,vip:SCENES.exclusive})
+export function CategoryCards({items=[],onSelect,label='Categories'}) {
+  return <nav className="gtk-cats" aria-label={label}>{items.map(it=><button type="button" key={it.id} data-gtk-tile={it.id} className={`gtk-cat gtk-tone-${it.tone||'more'}`} style={{'--gtk-cat-image':`url("${it.image||CATEGORY_ART[it.tone]||SCENES.district}")`}} onClick={()=>onSelect?.(it.id,it)}><span className="gtk-cat-art" aria-hidden="true"/><span className="gtk-cat-icon" aria-hidden="true"><Icon name={it.icon} size={20}/></span><span className="gtk-cat-copy"><strong>{it.label}</strong>{it.sub&&<small>{it.sub}</small>}</span></button>)}</nav>
 }
 export function ConciergeBand({onClick,title='Your Concierge Is Here.',kicker='GOOD PEOPLE. PERSONAL SUPPORT.',items=['Reservations','VIP Access','Custom Plans'],image=SCENES.lounge}) {
   return <aside className="gtk-concierge" style={{'--gtk-band-image':`url("${image}")`}}><div className="gtk-concierge-art" aria-hidden="true"/><div className="gtk-concierge-copy"><small>{kicker}</small><h2>{title}</h2><p>{items.join(' · ')}</p></div><button type="button" onClick={onClick}><Icon name="chat" size={18}/>Talk to Concierge<Icon name="chevron" size={16}/></button></aside>

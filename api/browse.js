@@ -7,7 +7,7 @@ import {inferCustomerTaxonomy} from './data.js'
 import {correctDisplayEvents} from '../src/features/experience/complete/taxonomy.js'
 import {eventTimeFields} from './event-time-display.js'
 import {eventFacts,SHOW_PUBLIC_FIELDS} from './event-facts.js'
-import {houseVenueTba,withHouseVenue} from './house-programming.js'
+import {houseVenueTba,withHouseVenue,isHiddenListing} from './house-programming.js'
 import {selectedCityClock,dateNumber,eventIsDiscoverable} from '../src/features/experience/good-times-event-clock.js'
 import {safeLink,safeImage,occurrenceUsable,shiftDate} from '../src/features/experience/complete/model.js'
 import {RESTAURANT_PROFILE_FIELDS,normalizeRestaurantProfile} from '../src/features/experience/complete/restaurant-facts.js'
@@ -45,6 +45,7 @@ export function showQuery(scope,cursor,now=Date.now()) {
 }
 export function mapShow(source,now=Date.now()) {
  // Kollective house listings may be venue-TBA (never invented); every other event needs a real venue.
+ if(isHiddenListing(source))return null
  const venueTba=houseVenueTba(source),row=withHouseVenue(source)
  const taxonomy=inferCustomerTaxonomy(row),category=row.category_key_v2&&row.category_key_v2!=='needs_review'?row.category_key_v2:taxonomy.category
  if(row.category_key_v2==='needs_review'||row.city_key!=='atlanta'||!row.event_name||!row.venue_name||row.is_sold_out||!['confirmed','tentative'].includes(row.status))return null
