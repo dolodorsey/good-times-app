@@ -13,4 +13,33 @@ export async function sportsLive(url,{fetcher=globalThis.fetch,now=Date.now(),us
  const scope=sportsScope(url,now),key=JSON.stringify(scope),existing=cache.get(key);if(useCache&&existing&&now-existing.at<30000)return existing.value;if(useCache&&inflight.has(key))return inflight.get(key)
  const request=(async()=>{const results=await Promise.all(scope.leagues.map(async league=>{const conf=FEEDS[league],u=new URL(`https://site.api.espn.com/apis/site/v2/sports/${conf.path}/scoreboard`);u.searchParams.set('dates',scope.date.replaceAll('-','')+'-'+scope.to.replaceAll('-',''));u.searchParams.set('limit','100');let httpStatus=null;try{const r=await fetcher(u.toString(),{headers:{Accept:'application/json'},signal:AbortSignal.timeout(5000)});httpStatus=r.status;if(!r.ok)return {league,items:[],ok:false,httpStatus,errorClass:'HTTP'};const body=await r.json();return {league,items:mapGames(body,league,scope,now),ok:true,httpStatus}}catch(e){return {league,items:[],ok:false,httpStatus,errorClass:e.message==='FORMAT'?'FORMAT':e.name==='TimeoutError'||e.name==='AbortError'?'TIMEOUT':e.name==='SyntaxError'?'JSON':'NETWORK_OR_MAPPING'}}}));const failed=results.filter(r=>!r.ok).map(r=>r.league);const value={ok:failed.length!==scope.leagues.length,items:results.flatMap(r=>r.items).sort((a,b)=>a.game_date.localeCompare(b.game_date)||a.game_time.localeCompare(b.game_time)),nextCursor:null,countType:'returned',asOf:new Date(now).toISOString(),scope,source:'ESPN',failedLeagues:failed,diagnostics:results.map(({league,ok,httpStatus,errorClass})=>({league,ok,httpStatus,errorClass})),partial:failed.length>0,notice:failed.length?`${failed.join(', ')} could not refresh. Other available leagues remain visible.`:'Provider-reported scores; refreshed on opening or manual refresh.'};if(value.ok&&useCache){if(cache.size>40)cache.clear();cache.set(key,{at:now,value})}return value})();if(useCache)inflight.set(key,request);try{return await request}finally{inflight.delete(key)}
 }
-export default async function handler(req,res){res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');if(req.method!=='GET'){res.statusCode=405;res.setHeader('Allow','GET');return res.end(JSON.stringify({ok:false,error:'Read-only sports endpoint.'}))}try{const data=await sportsLive(req.url);res.statusCode=data.ok?200:503;res.end(JSON.stringify(data.ok?data:{...data,error:'Sports provider unavailable. Use official schedules or retry.'}))}catch(e){res.statusCode=400;res.end(JSON.stringify({ok:false,error:e.message}))}}
+// ── Atlanta team board: each team's live game (with score) or next scheduled game, straight from the provider's team feed.
+export const ATL_TEAMS=Object.freeze([
+ {key:'falcons',name:'Atlanta Falcons',short:'Falcons',league:'NFL',path:'football/nfl/teams/atl'},
+ {key:'hawks',name:'Atlanta Hawks',short:'Hawks',league:'NBA',path:'basketball/nba/teams/atl'},
+ {key:'united',name:'Atlanta United',short:'United',league:'MLS',path:'soccer/usa.1/teams/18418'},
+ {key:'braves',name:'Atlanta Braves',short:'Braves',league:'MLB',path:'baseball/mlb/teams/atl'},
+ {key:'dream',name:'Atlanta Dream',short:'Dream',league:'WNBA',path:'basketball/wnba/teams/atl'},
+ {key:'gt',name:'Georgia Tech Football',short:'Georgia Tech',league:'NCAAF',path:'football/college-football/teams/59'},
+ {key:'uga',name:'Georgia Football',short:'Georgia',league:'NCAAF',path:'football/college-football/teams/61'},
+])
+const scoreOf=c=>{const v=c?.score;const n=typeof v==='object'&&v?v.displayValue??v.value:v;return n===undefined||n===null||n===''?null:String(n)}
+export function mapTeam(conf,payload){
+ const team=payload?.team;if(!team)throw new Error('FORMAT')
+ const e=(team.nextEvent||[])[0],c=e?.competitions?.[0],sides=c?.competitors||[],home=sides.find(x=>x.homeAway==='home'),away=sides.find(x=>x.homeAway==='away')
+ const base={key:conf.key,name:conf.name,short:conf.short,league:conf.league,record:team.recordSummary||team.record?.items?.[0]?.summary||null,standing:team.standingSummary||null,game:null}
+ if(!e||!home?.team||!away?.team)return base
+ const mine=String(home.team.id)===String(team.id)?home:away,them=mine===home?away:home,type=c.status?.type||{},when=localParts(c.date||e.date)
+ const state=type.state==='in'?'live':type.state==='post'?'final':'scheduled'
+ return {...base,game:{id:String(e.id),state,detail:type.shortDetail||type.detail||null,date:when?.date||null,time:c.timeValid===false?null:when?.time||null,is_home:mine===home,opponent:them.team.displayName||them.team.name,opponent_abbr:them.team.abbreviation||null,team_abbr:mine.team.abbreviation||null,team_score:state==='scheduled'?null:scoreOf(mine),opponent_score:state==='scheduled'?null:scoreOf(them),venue:c.venue?.fullName||null,broadcast:(c.broadcasts||[]).map(b=>b.media?.shortName).filter(Boolean).slice(0,2).join(', ')||null,url:safeLink((e.links||[])[0]?.href)||null}}
+}
+let boardCache=null
+export async function teamsBoard({fetcher=globalThis.fetch,now=Date.now(),useCache=true}={}) {
+ if(useCache&&boardCache&&now-boardCache.at<45000)return boardCache.value
+ const rows=await Promise.all(ATL_TEAMS.map(async conf=>{try{const r=await fetcher(`https://site.api.espn.com/apis/site/v2/sports/${conf.path}`,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(5000)});if(!r.ok)return null;return mapTeam(conf,await r.json())}catch{return null}}))
+ const teams=rows.filter(Boolean),rank={live:0,scheduled:1,final:2}
+ teams.sort((a,b)=>(a.game?rank[a.game.state]:9)-(b.game?rank[b.game.state]:9)||String(a.game?.date||'9').localeCompare(String(b.game?.date||'9'))||String(a.game?.time||'').localeCompare(String(b.game?.time||'')))
+ const value={ok:teams.length>0,teams,asOf:new Date(now).toISOString(),source:'ESPN',notice:'Provider-reported schedules and scores. Confirm tickets and times with the team.'}
+ if(value.ok)boardCache={at:now,value};return value
+}
+export default async function handler(req,res){res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');if(req.method!=='GET'){res.statusCode=405;res.setHeader('Allow','GET');return res.end(JSON.stringify({ok:false,error:'Read-only sports endpoint.'}))}try{if(new URL(req.url,'https://thegoodtimesworldwide.com').searchParams.get('view')==='teams'){const board=await teamsBoard();res.statusCode=board.ok?200:503;res.setHeader('Cache-Control','public, s-maxage=45, stale-while-revalidate=60');return res.end(JSON.stringify(board.ok?board:{...board,error:'Sports provider unavailable.'}))}const data=await sportsLive(req.url);res.statusCode=data.ok?200:503;res.end(JSON.stringify(data.ok?data:{...data,error:'Sports provider unavailable. Use official schedules or retry.'}))}catch(e){res.statusCode=400;res.end(JSON.stringify({ok:false,error:e.message}))}}

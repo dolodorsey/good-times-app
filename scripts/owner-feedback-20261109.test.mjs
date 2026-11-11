@@ -56,3 +56,16 @@ test('ad spaces are disclosed and appear on every main screen', () => {
   for (const t of ['Give a Gobble','Santa in Atlanta','Sole Exchange']) assert.match(sql, new RegExp(t))
   assert.match(sql, /gt_ad_disclosure/)
 })
+
+test('Ask honors every part of the request instead of any part (owner 2026-11-11)', async () => {
+  const { askLocal } = await import('../src/features/experience/complete/planner-ask.js')
+  const venues = [
+    { id: 'club', name: 'Opium', venue_category_key: 'nightclub', price_range: '$$$', editorial_rank: 1, hero_image: 'https://x/y.jpg' },
+    { id: 'roof', name: 'Sky Roof', venue_category_key: 'rooftop', venue_subcategory: 'rooftop_cocktail_lounge', vibe_tags: ['date night'] },
+    { id: 'steak', name: 'Prime', venue_category_key: 'restaurant', venue_subcategory: 'steakhouse' },
+  ]
+  const r = askLocal('Date night tonight on rooftop at 9pm', venues, [])
+  assert.deepEqual(r.venues.map(v => v.id), ['roof'])
+  assert.deepEqual(r.understood, ['Date night', 'Rooftop', 'Tonight', '9 PM'])
+  assert.equal(r.exact, true)
+})

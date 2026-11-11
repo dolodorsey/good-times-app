@@ -48,7 +48,7 @@ for(const vp of[{width:320,height:740},{width:390,height:844},{width:430,height:
    await page.getByRole('button',{name:/Restaurants/}).click();await page.locator('.gtc-restaurants').waitFor();assert.ok(await page.locator('.gtc-restaurant-quick button').count()>=9);await page.locator('.gtc-restaurants .gtc-card').first().waitFor({timeout:10000});assert.ok(await page.locator('.gtc-restaurants .gtc-card').count()>=1)
    await page.screenshot({path:path.join(OUT,`composition-${vp.width}-places.png`)})
 
-   await nav.filter({hasText:/^Entertainment$/}).click();await page.locator('.gtc-entertainment').waitFor();assert.equal(await page.locator('.gtc-entertainment-lane').count(),9)
+   await nav.filter({hasText:/^Entertainment$/}).click();await page.locator('.gtc-entertainment').waitFor();assert.equal(await page.locator('.gtc-entertainment-lane').count(),10)
    const lanes=await page.locator('.gtc-entertainment-lane').evaluateAll(items=>items.slice(0,4).map(x=>({x:x.getBoundingClientRect().x,w:x.getBoundingClientRect().width,h:x.getBoundingClientRect().height})))
    if(vp.width>=360)assert.equal(new Set(lanes.slice(0,2).map(x=>Math.round(x.x))).size,2,'Entertainment lanes must be two-up on normal phones')
    assert.deepEqual(await page.locator('.gtc-entertainment-time button').allTextContents(),['Tonight','This Weekend','Upcoming'])
