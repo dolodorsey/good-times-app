@@ -620,3 +620,8 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen]{
 .gtk-partner-done svg{color:var(--gtk-gold)}.gtk-partner-done h3{margin:0;font:700 24px/1.1 var(--gtk-serif)}.gtk-partner-done p{margin:0;max-width:36ch;font:500 14px/1.45 var(--gtk-sans);color:var(--gtk-muted)}
 @media(max-width:380px){.gtk-partner-fields{grid-template-columns:1fr}.gtk-shake-lanes{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(min-width:900px){.gtk-shake-lanes{grid-template-columns:repeat(5,minmax(0,1fr))}.gtk-area-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.gtk-partner-types{grid-template-columns:repeat(3,1fr)}}
+/* Upcoming: Date + Sort on one compact row so the list shows on entry */
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-timeline-controls{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;margin:4px 0 6px!important}
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-timeline-controls label{display:flex!important;flex-direction:column;gap:3px;min-width:0;font:700 10px/1 var(--gtk-sans)!important;letter-spacing:.14em;text-transform:uppercase;color:var(--gtk-muted)}
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-timeline-controls input,html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-timeline-controls select{min-height:40px!important;height:40px!important;padding:0 10px!important;font-size:14px!important;border-radius:12px!important;width:100%;min-width:0;box-sizing:border-box}
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-timeline-controls>button{grid-column:1/-1;min-height:36px}

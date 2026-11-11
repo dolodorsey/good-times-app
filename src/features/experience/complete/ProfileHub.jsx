@@ -27,11 +27,11 @@ export default function ProfileHub({
    <div className="gtk-account-city"><Icon name="pin" size={20}/><span><strong>{cityLabel}</strong><small>Your preferred city</small></span><button type="button" onClick={()=>setView('preferences')}>Change City<Icon name="chevron" size={14}/></button></div>
    <div className="gtk-script" aria-hidden="true"><span>Elevated</span><span>Experiences</span><span>Everywhere</span><span>You Go.</span></div>
   </header>
+  <button type="button" className="gtk-partner-cta" onClick={()=>setView('partner')} style={{'--gtk-band-image':`url("${SCENES.district}")`}}><span className="gtk-partner-art" aria-hidden="true"/><Icon name="plus" size={22}/><span><small>VENUES · PROMOTERS · ADVERTISERS</small><strong>Partner with GOOD TIMES</strong><em>Get listed, post your nights, or book ad space</em></span><Icon name="chevron" size={18}/></button>
   <aside className="gtk-saved-banner"><Icon name="saved" size={30}/><div><h2>Saved <em>Now Lives Here</em></h2><p>All your saved places, events and plans are in your Profile.</p></div></aside>
   <div className="gtk-profile-tiles">
    {[['library','Saved Places',`${savedPlaces} ${savedPlaces===1?'Place':'Places'}`,SCENES.terrace,'heart'],['library','Saved Entertainment',`${savedEvents} ${savedEvents===1?'Event':'Events'}`,SCENES.concert,'music'],['library','Plans',`${list(plans).length} Itineraries`,SCENES.skyline,'calendar'],['following','Following',`${list(follows).length} Watching`,SCENES.dining,'bell']].map(([v,label,sub,img,icon])=><PhotoTile key={label} image={img} icon={icon} label={label} sub={sub} onClick={()=>setView(v)}/>)}
   </div>
-  <button type="button" className="gtk-partner-cta" onClick={()=>setView('partner')} style={{'--gtk-band-image':`url("${SCENES.district}")`}}><span className="gtk-partner-art" aria-hidden="true"/><Icon name="plus" size={22}/><span><small>VENUES · PROMOTERS · ADVERTISERS</small><strong>Partner with GOOD TIMES</strong><em>Get listed, post your nights, or book ad space</em></span><Icon name="chevron" size={18}/></button>
   <nav className="gtc-profile-tabs" aria-label="My GOOD TIMES sections">
    {[['library','Library'],['following','Following'],['preferences','Preferences'],['account','Account']].map(([id,label])=><button key={id} className={view===id?'active':''} aria-pressed={view===id} onClick={()=>setView(id)}>{label}</button>)}
   </nav>

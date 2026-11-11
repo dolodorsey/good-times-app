@@ -28,7 +28,7 @@ export function timelineRows(events=[],mode='upcoming',now=Date.now()){
 export default function HomeTimeline({mode='upcoming',events=[],venues=[],now=Date.now(),savedKeys,onEvent,onVenue,onSave}){
  const [lane,setLane]=useState('all'),[limit,setLimit]=useState(36),[date,setDate]=useState(''),[sort,setSort]=useState('date')
  const base=useMemo(()=>{const b=timelineRows(events,mode,now);if(mode==='tonight')return b;let rows=date?b.rows.filter(e=>e.event_date===date):b.rows;if(sort==='quality')rows=[...rows].sort((a,b2)=>Number(b2.good_times_score||b2.quality_score||0)-Number(a.good_times_score||a.quality_score||0));return {...b,rows}},[events,mode,now,date,sort])
- const counts=useMemo(()=>{const m={all:base.rows.length};for(const e of base.rows){const k=laneOf(e);m[k]=(m[k]||0)+1}return m},[base])
+ const counts=useMemo(()=>{const shows=collapseShows(base.rows),m={all:shows.length};for(const e of shows){const k=laneOf(e);m[k]=(m[k]||0)+1}return m},[base])
  const rows=useMemo(()=>collapseShows(base.rows.filter(e=>lane==='all'||laneOf(e)===lane)),[base,lane])
  const groups=useMemo(()=>[...rows.slice(0,limit).reduce((m,e)=>{const k=e.event_date;if(!m.has(k))m.set(k,[]);m.get(k).push(e);return m},new Map())],[rows,limit])
  const clubs=useMemo(()=>mode==='tonight'&&(lane==='all'||lane==='nightlife')?topPlaces(unique(venues).filter(v=>nightlifeKind(v)),40).slice(0,12):[],[mode,lane,venues])

@@ -26,7 +26,8 @@ test('cuisine lanes come only from reviewed tags or the venue sourced subcategor
 
 test('Places surfaces depth instead of dead ends', () => {
   const panel = fs.readFileSync('src/features/experience/CompactExplorePanel.jsx', 'utf8')
-  assert.match(panel, /Coming soon/, 'empty subcategories stay visible but read as coming soon')
+  // Owner 2026-11-10: event-only lanes (Fashion Shows, Beauty Expos…) read as dead ends — empty subcategories are hidden.
+  assert.match(panel, /if \(n === 0 && selectedSubcategory !== sub\.subcategory_key\) return null/, 'empty subcategories are hidden, not shown as coming soon')
   assert.match(panel, /loadSubcategoryArt/, 'subcategory tiles use real venue photography')
   const v4 = fs.readFileSync('src/features/experience/GoodTimesCommandAppV4.jsx', 'utf8')
   const placesScreen = fs.readFileSync('src/features/experience/complete/PlacesScreen.jsx', 'utf8')
