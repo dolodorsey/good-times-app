@@ -4,12 +4,12 @@ import AdSlot from './AdSlot.jsx'
 import {eventIsThisWeekend,eventIsTonight,eventDaysAway} from '../good-times-event-clock.js'
 import {CollectionGrid,Sports} from './Collections.jsx'
 import {Section,State} from './Cards.jsx'
-import {Themed,ScreenHero,SearchBar,IconRail,Rail,PhotoTile,BuildTrio,AddSpace,Empty,Icon,SCENES} from './Kit.jsx'
+import {Themed,ScreenHero,SearchBar,IconRail,Rail,PhotoTile,BuildTrio,Empty,Icon,SCENES} from './Kit.jsx'
 import {EventPoster,VenuePoster} from './posters.jsx'
 import {tonightOrNext} from './tonight.js'
 import {FreeInTheABanner} from './FreeInTheA.jsx'
 import {freeEvents} from './free-in-the-a.js'
-import {nightlifeKind,topPlaces} from './top-places.js'
+import {nightlifeKind,topPlaces,ownerTypeLabel} from './top-places.js'
 import {unique} from './model.js'
 import {gtAssetUrl} from '../good-times-assets.js'
 
@@ -64,7 +64,8 @@ export default function EntertainmentHub({
     return collapseShows(rows).slice(0,12)
   },[events,mode,now,night])
   const afterDark=useMemo(()=>{const groups=new Map();for(const v of topPlaces(unique(venues),400)){const kind=nightlifeKind(v);if(!kind||/wine bar|sports bar/i.test(kind))continue;if(!groups.has(kind))groups.set(kind,[]);groups.get(kind).push(v)}return groups},[venues])
-  const afterDarkRows=useMemo(()=>{const order=['Nightclub','Lounge','Strip Club','Hookah Lounge','Rooftop Lounge','Speakeasy','Jazz Club'];return order.flatMap(k=>afterDark.get(k)||[]).slice(0,16)},[afterDark])
+  // Owner 2026-11-10: owner-ranked nightlife (Opium, Magic City, Revel…) leads; the rest follow by kind.
+  const afterDarkRows=useMemo(()=>{const order=['Nightclub','Lounge','Strip Club','Hookah Lounge','Rooftop Lounge','Speakeasy','Jazz Club'];const all=order.flatMap(k=>afterDark.get(k)||[]);const ranked=all.filter(v=>Number(v.editorial_rank)>0||ownerTypeLabel(v)).sort((a,b)=>(Number(a.editorial_rank)||99)-(Number(b.editorial_rank)||99));return [...ranked,...all.filter(v=>!ranked.includes(v))].slice(0,16)},[afterDark])
   const open=id=>id==='sports'?onOpenSports():id==='interactive'?onOpenInteractive?.():id==='venues'?onOpenVenues('nightlife'):onOpenCategory(id)
   const title=mode==='tonight'?(night.next?['Up','Next']:['Featured','Tonight']):mode==='weekend'?['This','Weekend']:['Coming','Up']
   return <Themed theme="violet" className="gtc-entertainment gtk-entertainment">
@@ -95,6 +96,5 @@ export default function EntertainmentHub({
     <Rail title="Browse by" accent="Vibe" subtitle="Find your kind of good time">{VIBES.map(([id,label,img])=><PhotoTile key={id} image={img} label={label} onClick={()=>onNavigate?.(id)}/>)}</Rail>
     <AdSlot placement="entertainment" slot={1}/>
     <BuildTrio title="Plan Your Night" kicker="BUILD IT · SHAKE IT · ASK IT" onBuild={()=>onPlan?.('guided')} onShake={()=>onPlan?.('shake')} onAsk={()=>onPlan?.('ask')}/>
-    <AddSpace label="Add Space" sub="List your event, show or venue on GOOD TIMES"/>
   </Themed>
 }

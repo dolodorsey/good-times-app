@@ -32,8 +32,18 @@ export function browseScope(url,now=Date.now()) {
 function signature(s){return JSON.stringify(s)}
 export function cursorRead(value,scope) {if(!value)return null;if(value.length>3000)throw new Error('Invalid cursor.');let c;try{c=JSON.parse(Buffer.from(value,'base64url').toString('utf8'))}catch{throw new Error('Invalid cursor.')}if(c.scope!==signature(scope)||!c.id||typeof c.id!=='string'||c.id.length>128||dateNumber(c.date)===null)throw new Error('Refresh this collection to continue.');return c}
 const cursorWrite=(row,scope)=>Buffer.from(JSON.stringify({scope:signature(scope),id:String(row.id),date:row.show_date||row.game_date})).toString('base64url')
+// Mirrors public.gt_is_official_calendar_source: official venue/team calendars stay listed for 45 days between refreshes;
+// everything else must have been re-confirmed in the last 72 hours.
+export const OFFICIAL_SOURCE=/(official|calendar|schedule|comedy club|^foxtheatre$|^statefarmarena$)/i
+export const UNOFFICIAL_SOURCE=/(university|eventbrite|allevents|instagram|perplexity|scout)/i
+const FRESH_WINDOW_MS=72*3600000,OFFICIAL_WINDOW_MS=45*86400000
+// Same noise guard as public.gt_public_live_inventory — add-ons, rides and classes are not events.
+const LISTING_NOISE=/(season tickets|season pass|parking pass|parking only|premium season|fast lane|vip upgrade|open.?mic|comedy school|workshop|audition|webinar|timeshare|make money|zoom|karaoke|shuttle|virtual event|^copy of[ :]|test event|sample event)/i
+const TRANSPORT_NOISE=/\b(back-to-campus transportation|college shuttle|shuttle event|scheduled motorcoach transportation|concert transportation|party bus)\b/i
+export function showFresh(row,now=Date.now()){const t=Date.parse(row?.updated_at);if(!Number.isFinite(t))return false;if(t>=now-FRESH_WINDOW_MS)return true;const src=String(row?.source||'');return t>=now-OFFICIAL_WINDOW_MS&&OFFICIAL_SOURCE.test(src)&&!UNOFFICIAL_SOURCE.test(src)&&!['expired','unknown'].includes(String(row?.freshness_tier||'unknown'))}
 export function showQuery(scope,cursor,now=Date.now()) {
- const params=new URLSearchParams({select:SHOW_FIELDS,city_key:'eq.atlanta',status:'in.(confirmed,tentative)',updated_at:`gte.${new Date(now-72*3600000).toISOString()}`,order:'show_date.asc,id.asc',limit:String(scope.limit+1)})
+ // Fresh within 72h, or an official venue/team calendar row refreshed within 45 days (same rule as the live feed).
+ const params=new URLSearchParams({select:SHOW_FIELDS,city_key:'eq.atlanta',status:'in.(confirmed,tentative)',updated_at:`gte.${new Date(now-OFFICIAL_WINDOW_MS).toISOString()}`,or:`(updated_at.gte.${new Date(now-FRESH_WINDOW_MS).toISOString()},and(source.imatch.${quote(OFFICIAL_SOURCE.source)},source.not.imatch.${quote(UNOFFICIAL_SOURCE.source)}))`,order:'show_date.asc,id.asc',limit:String(scope.limit+1)})
  const clauses=[`show_date.gte.${scope.from}`,`show_date.lte.${scope.to}`]
  if(scope.id){const id=scope.id.replace(/^show:/,'');if(!/^[a-f0-9-]{36}$/i.test(id))throw new Error('Invalid event identity.');params.set('id','eq.'+id)}
  if(scope.venueId){if(!/^[a-f0-9-]{36}$/i.test(scope.venueId))throw new Error('Invalid venue identity.');params.set('venue_id','eq.'+scope.venueId)}
@@ -49,7 +59,8 @@ export function mapShow(source,now=Date.now()) {
  const venueTba=houseVenueTba(source),row=withHouseVenue(source)
  const taxonomy=inferCustomerTaxonomy(row),category=row.category_key_v2&&row.category_key_v2!=='needs_review'?row.category_key_v2:taxonomy.category
  if(row.category_key_v2==='needs_review'||row.city_key!=='atlanta'||!row.event_name||!row.venue_name||row.is_sold_out||!['confirmed','tentative'].includes(row.status))return null
- if(!Number.isFinite(Date.parse(row.updated_at))||Date.parse(row.updated_at)<now-72*3600000)return null
+ if(!showFresh(row,now))return null
+ if(LISTING_NOISE.test(`${row.event_name} ${row.venue_name}`)||TRANSPORT_NOISE.test(`${row.event_name} ${row.description||''}`))return null
  if(!safeLink(row.ticket_url||row.source_url))return null
  // Strong source taxonomy rules remain authoritative; do not inherit arena=concert.
  const strongest=['sports_watch','comedy_performing_arts','wellness_fitness'].includes(taxonomy.category)?taxonomy.category:category

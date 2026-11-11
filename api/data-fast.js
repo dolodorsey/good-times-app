@@ -6,8 +6,8 @@ import {
   scoreGoodTimesVenue,
 } from './good-times-intelligence.js'
 
-const MAX_EVENTS = 300
-const MAX_VENUES = 420
+const MAX_EVENTS = 480
+const MAX_VENUES = 540
 const STALE_TTL_MS = 10 * 60 * 1000
 const cache = globalThis.__GOOD_TIMES_FAST_DATA_CACHE__ || (globalThis.__GOOD_TIMES_FAST_DATA_CACHE__ = new Map())
 const ALLOWED_VIBES = new Set(['grown','turnt','date','live','food','culture','free','vip'])
