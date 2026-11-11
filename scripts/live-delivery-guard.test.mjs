@@ -21,6 +21,8 @@ test('customer bootstrap requests a bounded but useful Atlanta payload', () => {
   assert.ok(client.includes('event_limit=420&venue_limit=480'))
   assert.ok(app.includes('loadCanonicalEvents(nextCity,{limit:420})'))
   assert.ok(app.includes('loadCanonicalVenues(nextCity,{limit:480})'))
+  // The complete app kept only the first 80 events, so Upcoming showed ~73 of 370 live listings.
+  assert.ok(app.includes('loadCanonicalEvents(nextCity,{limit:420,throwOnError:true})'))
 })
 
 test('taxonomy cannot block first useful customer inventory render', () => {
