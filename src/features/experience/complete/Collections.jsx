@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react'
+import TeamBoard from './TeamBoard.jsx'
 import {collapseShows} from './dedupe.js'
 import {ExperienceCard,Section,State,Skeleton,ActionLink} from './Cards.jsx'
 import {useBrowse} from './useBrowse.js'
@@ -61,8 +62,9 @@ const TEAMS=[['NFL','Falcons','https://www.atlantafalcons.com/schedule/'],['NBA'
 export function Sports({now,savedKeys,onEvent,onSave,onBack,onPlaces}){
  const [league,setLeague]=useState('All'),data=useBrowse({kind:'sports'}),games=data.items.filter(x=>league==='All'||x.league===league)
  return <section className="gtc-sports"><header className="gtc-page-heading"><button onClick={onBack} aria-label="Back to Discover">←</button><div><h1>Sports & Watch</h1><small>Atlanta teams. Real game-day options.</small></div></header><div className="gtc-chips">{['All',...TEAMS.map(t=>t[0])].map(l=><button className={league===l?'active':''} aria-pressed={league===l} onClick={()=>setLeague(l)} key={l}>{l}</button>)}</div>
- <Section title="Atlanta teams"><div className="gtc-team-grid">{TEAMS.filter(([l])=>league==='All'||l===league).map(([l,n,url])=><ActionLink href={url} key={l}><small>{l}</small><strong>{n}</strong><span>Official schedule</span></ActionLink>)}</div></Section>
- <Section title="Provider schedules" subtext="Only recently updated games are shown. No unverified live scores.">{data.status==='loading'?<Skeleton/>:data.status==='error'?<State error title="Schedules could not refresh" action={<button onClick={data.reload}>Retry</button>}/>:!games.length?<State title="No fresh games in this feed" body="Use the official team schedules above. Ticketed local sports remain below."/>:<div className="gtc-grid">{games.map(g=><article className="gtc-matchup" key={g.id}><small>{g.league} · {g.is_home_game?'Home':'Away'}</small><h3>{g.home_team}<span>vs</span>{g.away_team}</h3><p>{displayDate(g.game_date)} · {displayTime(g.game_time)}</p><p>{g.venue}</p><small>Schedule checked {displayDate(g.updated_at?.slice(0,10))}</small></article>)}</div>}</Section>
+ <TeamBoard title="Atlanta" accent="Teams"/>
+ <Section title="Official schedules"><div className="gtc-team-grid">{TEAMS.filter(([l])=>league==='All'||l===league).map(([l,n,url])=><ActionLink href={url} key={l}><small>{l}</small><strong>{n}</strong><span>Official schedule</span></ActionLink>)}</div></Section>
+ {games.length>0&&<Section title="Provider schedules" subtext="Only recently updated games are shown. No unverified live scores.">{data.status==='loading'?<Skeleton/>:data.status==='error'?<State error title="Schedules could not refresh" action={<button onClick={data.reload}>Retry</button>}/>:!games.length?<State title="No fresh games in this feed" body="Use the official team schedules above. Ticketed local sports remain below."/>:<div className="gtc-grid">{games.map(g=><article className="gtc-matchup" key={g.id}><small>{g.league} · {g.is_home_game?'Home':'Away'}</small><h3>{g.home_team}<span>vs</span>{g.away_team}</h3><p>{displayDate(g.game_date)} · {displayTime(g.game_time)}</p><p>{g.venue}</p><small>Schedule checked {displayDate(g.updated_at?.slice(0,10))}</small></article>)}</div>}</Section>}
  <EventCollection category="sports_watch" {...{now,savedKeys,onEvent,onSave}} inline/><Section title="Places to watch" subtext="Screenings vary. Confirm the specific game with the venue."><button className="gtc-load-more" onClick={onPlaces}>Browse sports bars & watch experiences ↗</button></Section>
  </section>
 }

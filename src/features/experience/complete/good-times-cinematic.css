@@ -625,3 +625,77 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-timelin
 html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-timeline-controls label{display:flex!important;flex-direction:column;gap:3px;min-width:0;font:700 10px/1 var(--gtk-sans)!important;letter-spacing:.14em;text-transform:uppercase;color:var(--gtk-muted)}
 html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-timeline-controls input,html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-timeline-controls select{min-height:40px!important;height:40px!important;padding:0 10px!important;font-size:14px!important;border-radius:12px!important;width:100%;min-width:0;box-sizing:border-box}
 html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-timeline-controls>button{grid-column:1/-1;min-height:36px}
+
+/* ── Owner pass 2026-11-11 ─────────────────────────────────────────────
+   "Cards still too big. Can't see enough on one screen." Three across on phones,
+   shorter photos, slimmer actions. Plus Ask box, team board, restaurant subcategories. */
+.gtk-grid,html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt2-venue-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+.gtk-poster{width:min(30.5vw,150px);border-radius:12px;border-color:rgba(255,255,255,.09);box-shadow:0 6px 16px rgba(0,0,0,.4)}
+.gtk-poster-lg{width:min(58vw,250px)}.gtk-poster-sm{width:min(28vw,132px)}
+.gtk-grid .gtk-poster,.gt2-venue-grid .gtk-poster{width:auto}
+.gtk-poster-media{aspect-ratio:1/.92}
+.gtk-poster-lg .gtk-poster-media{aspect-ratio:16/9.5}
+.gtk-poster-copy{margin-top:-22px;padding:0 8px 7px;gap:1px}
+.gtk-poster h3,.gtk-grid .gtk-poster h3{font:650 13px/1.15 var(--gtk-sans);letter-spacing:-.005em}
+.gtk-poster-lg h3{font:600 17px/1.12 var(--gtk-serif)}
+.gtk-poster p{font-size:10.5px}
+.gtk-poster-kicker{font-size:8.5px;letter-spacing:.12em}
+.gtk-poster-action{min-height:28px;margin:0 7px 7px;border-radius:8px;font-size:11px;gap:5px;border-color:color-mix(in srgb,var(--gtk-accent) 55%,transparent)}
+.gtk-poster-action svg{width:13px;height:13px}
+.gtk-poster .gtk-badge{font-size:8.5px;padding:3px 6px;max-width:calc(100% - 40px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gtk-poster .gtk-save{width:32px;height:32px;top:6px;right:6px}.gtk-poster .gtk-save svg{width:15px;height:15px}
+.gtk-poster .gtk-no-photo small{font-size:7.5px;letter-spacing:.14em}
+.gtk-section{margin-bottom:14px}
+.gtk-section-head{margin-bottom:6px}
+.gtk-section-head h2{font-size:clamp(17px,4.7vw,21px)}
+.gtk-hero{min-height:128px}.gtk-hero-sm{min-height:108px}.gtk-hero-md{min-height:128px}.gtk-hero-lg{min-height:150px}
+.gtk-hero h1{font-size:clamp(26px,7.4vw,38px)}
+@media(min-width:700px){.gtk-grid,html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt2-venue-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(min-width:1100px){.gtk-grid,html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt2-venue-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}}
+
+/* Typing: keep the bottom bar from riding the keyboard over the field */
+body.gt-typing .gt5-nav{display:none!important}
+.gtk-ask-box{display:flex;flex-direction:column;gap:8px;margin:4px 0 10px}
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-ask-box .gtc-ask-label{margin:0!important}
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-ask-box textarea{min-height:64px!important;font-size:16px!important;border-radius:14px!important;border-color:rgba(63,182,255,.45)!important;margin-top:6px}
+.gtk-ask-box>button{align-self:stretch;min-height:46px}
+.gtk-ask-understood{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 10px}
+.gtk-ask-understood small{font:800 9px/1 var(--gtk-sans);letter-spacing:.2em;color:var(--gtk-muted)}
+.gtk-ask-understood span{padding:5px 9px;border-radius:999px;border:1px solid rgba(63,182,255,.45);background:rgba(63,182,255,.1);color:#bfe6ff;font:650 11.5px/1 var(--gtk-sans)}
+.gtk-ask-understood em{flex-basis:100%;font:500 11.5px/1.3 var(--gtk-sans);font-style:normal;color:var(--gtk-muted)}
+
+/* Atlanta team board */
+.gtk-team-row{gap:8px}
+.gtk-team-card{flex:0 0 auto;width:min(46vw,190px);display:flex;flex-direction:column;gap:3px;padding:10px 11px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:linear-gradient(160deg,#17181c,#0b0c0e);color:var(--gtk-ink);text-decoration:none}
+.gtk-team-top{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.gtk-team-top small{font:800 9px/1 var(--gtk-sans);letter-spacing:.18em;color:var(--gtk-muted)}
+.gtk-team-top b{display:inline-flex;align-items:center;gap:4px;padding:3px 6px;border-radius:6px;background:rgba(255,255,255,.07);font:800 8.5px/1 var(--gtk-sans);letter-spacing:.12em;color:var(--gtk-accent2,#e9d9a6)}
+.gtk-team-top b.is-live{background:rgba(255,59,48,.16);color:#ff6b61}
+.gtk-team-top b.is-live i{width:6px;height:6px;border-radius:50%;background:#ff3b30;animation:gtk-live 1.2s ease-in-out infinite}
+@keyframes gtk-live{50%{opacity:.25}}
+.gtk-team-card strong{font:700 16px/1.1 var(--gtk-serif);color:#fff}
+.gtk-team-card em{font:600 10.5px/1.2 var(--gtk-sans);font-style:normal;color:var(--gtk-muted)}
+.gtk-team-main{margin-top:4px;font:700 13px/1.2 var(--gtk-sans);color:var(--gtk-accent2,#e9d9a6)}
+.gtk-team-sub{font:500 11.5px/1.25 var(--gtk-sans);color:var(--gtk-ink)}
+.gtk-team-venue{display:flex;align-items:center;gap:4px;font:500 10.5px/1.25 var(--gtk-sans);color:var(--gtk-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Restaurant subcategories (same pattern as other Places categories) */
+.gtk-subgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.gtk-subtile{position:relative;isolation:isolate;overflow:hidden;min-height:68px;display:flex;flex-direction:column;justify-content:flex-end;gap:2px;padding:8px 9px;border-radius:12px;border:1px solid var(--gtk-line);background:#0d0e11;color:#fff;text-align:left}
+.gtk-subtile-art{position:absolute;inset:0;z-index:-1;background:linear-gradient(0deg,rgba(5,6,7,.94) 8%,rgba(5,6,7,.35)),var(--gtk-tile-image,none) center/cover no-repeat}
+.gtk-subtile strong{font:700 12.5px/1.12 var(--gtk-sans)}
+.gtk-subtile small{font:600 10px/1 var(--gtk-sans);color:var(--gtk-accent2,#e9d9a6)}
+.gtk-subtile.active{border-color:var(--gtk-accent);box-shadow:0 0 14px var(--gtk-glow)}
+.gtk-subtile.is-all{background:linear-gradient(180deg,color-mix(in srgb,var(--gtk-accent) 22%,#101114),#0b0c0e)}
+.gtk-subcats{margin:8px 0 12px}
+@media(min-width:700px){.gtk-subgrid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-grid.gtk-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+@media(min-width:700px){html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-grid.gtk-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(min-width:1100px){html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-grid.gtk-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}}
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-poster .gtk-poster-action{font-size:10.5px!important;white-space:nowrap!important;min-height:28px!important;padding:0 4px!important;line-height:1!important}
+.gtk-poster .gtk-no-photo span{font-size:9px!important;letter-spacing:.2em!important}
+.gtk-poster .gtk-no-photo small{font-size:6.5px!important;letter-spacing:.08em!important;text-align:center;padding:0 4px}
+.gtk-poster .gtk-no-photo svg{width:20px;height:20px}
+html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt2-venue-grid.gt-compact-results{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+@media(min-width:700px){html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt2-venue-grid.gt-compact-results{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(max-width:339px){html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-grid.gtk-grid,html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt2-venue-grid.gt-compact-results,.gtk-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}

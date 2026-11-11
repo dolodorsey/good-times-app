@@ -38,7 +38,7 @@ for(const viewport of[{width:390,height:844},{width:834,height:1194},{width:1440
    await capture('01-home')
    await page.locator('.gt5-home-modes').getByRole('button',{name:'Tonight',exact:true}).click();await page.locator('.gtc-events').waitFor();await capture('02-tonight')
    await tab('Places','.gtc-places');assert.equal(await page.locator('.gtc-place-lanes>button').count(),6);assert.ok((await page.locator('.gtc-place-lanes>button').first().evaluate(e=>getComputedStyle(e).backgroundImage))!=='none');await capture('03-places')
-   await tab('Entertainment','.gtc-entertainment');assert.equal(await page.locator('.gtc-entertainment-lane').count(),9);await capture('04-entertainment')
+   await tab('Entertainment','.gtc-entertainment');assert.equal(await page.locator('.gtc-entertainment-lane').count(),10);await capture('04-entertainment')
    await tab('Plan','.gtc-planner');assert.deepEqual(await page.locator('.gtc-planner>.gtc-tabs button').allTextContents(),['Build My Night','Shake','Ask']);await capture('05-plan')
    await tab('Profile','.gt5-profile');await page.locator('.gtc-my-good-times').waitFor();await capture('06-my-good-times')
    await page.locator('.gtc-plan-tile').first().waitFor({state:'visible',timeout:5000});await page.locator('.gtc-plan-tile').first().click();await page.locator('.gtc-itinerary').waitFor();assert.equal(await page.locator('.gtc-stop').count(),2);assert.equal(await page.locator('.gtc-itinerary').getByText(/CONFIRMED/).count(),0,'Suggestions must not acquire confirmation');await capture('07-itinerary','.gtc-overlay');await page.getByRole('button',{name:'Close itinerary'}).click()

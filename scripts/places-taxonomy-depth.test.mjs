@@ -36,8 +36,9 @@ test('Places surfaces depth instead of dead ends', () => {
   const collections = fs.readFileSync('src/features/experience/complete/Collections.jsx', 'utf8')
   assert.match(collections, /CategoryPlacesFallback/, 'empty dated lanes fall back to verified places')
   const explorer = fs.readFileSync('src/features/experience/complete/RestaurantExplorer.jsx', 'utf8')
-  assert.match(explorer, /title="Popular" accent="Cuisines"/, 'Restaurants open with real cuisine subcategories')
-  assert.match(explorer, /PhotoTile/, 'cuisine subcategories are photographic')
+  // Owner 2026-11-11: Restaurants open into a subcategory grid like every other Places category (not a side-scrolling rail).
+  assert.match(explorer, /data-gt-subcategories="restaurant_cuisines"/, 'Restaurants open with real cuisine subcategories')
+  assert.match(explorer, /gtk-subtile-art/, 'cuisine subcategories are photographic')
 })
 
 test('re-verification never upgrades unverified inventory', () => {

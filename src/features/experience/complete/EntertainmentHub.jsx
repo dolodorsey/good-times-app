@@ -1,4 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react'
+import TeamBoard from './TeamBoard.jsx'
 import {collapseShows} from './dedupe.js'
 import AdSlot from './AdSlot.jsx'
 import {eventIsThisWeekend,eventIsTonight,eventDaysAway} from '../good-times-event-clock.js'
@@ -18,7 +19,8 @@ const LANES=[
  ['nightlife','Bars & Lounges','Bars, lounges, hookah and social nightlife venues','venues','gt-cat-nightlife.webp'],
  ['concerts_live_music','Concerts','Artists, tours, live music','events','gt-cat-music.webp'],
  ['festivals_major_activations','Festivals + Events','Festivals, activations, major city moments','events','gt-cat-culture.webp'],
- ['sports_watch','Sports','Games, scores, watch parties','sports','gt-cat-sports.webp'],
+ ['sports_watch','Sports','Live scores, next games, watch parties','sports','gt-cat-sports.webp'],
+ ['seasonal_holiday','Holiday','Lights, markets, shows and seasonal events','events','gt-cat-culture.webp'],
  ['comedy_performing_arts','Comedy + Live','Comedy, theater, performing arts','events','gt-cat-culture.webp'],
  ['games_interactive','Interactive','Puttshack, darts, VR, racing, game shows, creative play','interactive','gt-cat-adventure.webp'],
  ['family_kids','Family','Kids, family events, discovery','events','gt-cat-adventure.webp'],
@@ -42,10 +44,11 @@ export function InteractiveCollection({venues=[],events=[],savedKeys,onEvent,onV
   </section>
 }
 
+export const HOLIDAY=/\b(christmas|xmas|holiday|thanksgiving|friendsgiving|santa|nutcracker|new year|nye|kwanzaa|hanukkah|garden lights|tree lighting|winter wonderland|grinch|elf)\b/i
 const ENT_RAIL=[
  {id:'concerts_live_music',label:'Concerts',icon:'music'},{id:'nightlife',label:'Parties',icon:'cocktail'},{id:'sports',label:'Sports',icon:'ball'},
  {id:'comedy_performing_arts',label:'Comedy',icon:'masks'},{id:'festivals_major_activations',label:'Festivals',icon:'tent'},{id:'arts_museums_culture',label:'Culture',icon:'landmark'},
- {id:'interactive',label:'Interactive',icon:'game'},{id:'family_kids',label:'Family',icon:'family'},{id:'venues',label:'Lounges',icon:'moon'},
+ {id:'seasonal_holiday',label:'Holiday',icon:'star'},{id:'interactive',label:'Interactive',icon:'game'},{id:'family_kids',label:'Family',icon:'family'},{id:'venues',label:'Lounges',icon:'moon'},
 ]
 const VIBES=[['nightlife-events','High Energy',SCENES.nightlife],['nightlife-venues','Chill',SCENES.lounge],['date-night','Date Night',SCENES.date],['interactive','Group Fun',SCENES.interactive],['culture','Cultural',SCENES.culture],['concerts','Live Music',SCENES.concert]]
 export default function EntertainmentHub({
@@ -66,6 +69,8 @@ export default function EntertainmentHub({
   const afterDark=useMemo(()=>{const groups=new Map();for(const v of topPlaces(unique(venues),400)){const kind=nightlifeKind(v);if(!kind||/wine bar|sports bar/i.test(kind))continue;if(!groups.has(kind))groups.set(kind,[]);groups.get(kind).push(v)}return groups},[venues])
   // Owner 2026-11-10: owner-ranked nightlife (Opium, Magic City, Revel…) leads; the rest follow by kind.
   const afterDarkRows=useMemo(()=>{const order=['Nightclub','Lounge','Strip Club','Hookah Lounge','Rooftop Lounge','Speakeasy','Jazz Club'];const all=order.flatMap(k=>afterDark.get(k)||[]);const ranked=all.filter(v=>Number(v.editorial_rank)>0||ownerTypeLabel(v)).sort((a,b)=>(Number(a.editorial_rank)||99)-(Number(b.editorial_rank)||99));return [...ranked,...all.filter(v=>!ranked.includes(v))].slice(0,16)},[afterDark])
+  // Owner 2026-11-11: holiday programming gets its own row — seasonal category plus clearly holiday-titled shows.
+  const holiday=useMemo(()=>collapseShows(events.filter(e=>eventDaysAway(e.event_date,'atlanta',now)>=0&&(e.category_key==='seasonal_holiday'||HOLIDAY.test(e.title||''))).sort((a,b)=>String(a.event_date).localeCompare(String(b.event_date)))).slice(0,16),[events,now])
   const open=id=>id==='sports'?onOpenSports():id==='interactive'?onOpenInteractive?.():id==='venues'?onOpenVenues('nightlife'):onOpenCategory(id)
   const title=mode==='tonight'?(night.next?['Up','Next']:['Featured','Tonight']):mode==='weekend'?['This','Weekend']:['Coming','Up']
   return <Themed theme="violet" className="gtc-entertainment gtk-entertainment">
@@ -82,6 +87,8 @@ export default function EntertainmentHub({
     <section className="gtk-section gtk-ent-results"><header className="gtk-section-head"><div><h2>{title[0]} <em>{title[1]}</em></h2><p>{mode==='tonight'?(night.next?`${night.title} · ${night.kicker.replace('UP NEXT · ','')}`:'Handpicked. Atlanta local time.'):mode==='weekend'?'Friday through Sunday.':'The next things worth planning around.'}</p></div><button type="button" className="gtk-see-all" onClick={()=>onOpenCategory(null)}>See All<Icon name="arrow" size={16}/></button></header>
       {scoped.length?<div className="gtk-scroller">{scoped.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}</div>:<Empty title="Nothing confirmed in this exact window yet" body="Try Upcoming or open a category. GOOD TIMES will not fill this space with unrelated listings." action={<button onClick={()=>setMode('upcoming')}>See Upcoming</button>}/>}
     </section>
+    <TeamBoard compact/>
+    {holiday.length>0&&<Rail title="Holiday" accent="in Atlanta" kicker="LIGHTS · SHOWS · SEASONAL" onSeeAll={()=>onOpenCategory('seasonal_holiday')} className="gtk-holiday">{holiday.map(e=><EventPoster key={e.event_key} event={e} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>)}</Rail>}
     {afterDarkRows.length>0&&<Rail title="Clubs, Lounges" accent="& After Dark" kicker="WHERE ATLANTA GOES OUT" onSeeAll={()=>onOpenVenues('nightlife')} className="gtk-after-dark">{afterDarkRows.map(v=><VenuePoster key={v.id} venue={v} savedKeys={savedKeys} onVenue={onVenue} onSave={onSave}/>)}</Rail>}
     <AdSlot placement="entertainment" slot={0}/>
     <section className="gtk-section"><header className="gtk-section-head"><div><h2>Explore <em>Entertainment</em></h2><p>Every lane, one tap away</p></div></header>

@@ -71,7 +71,7 @@ for(const viewport of[{width:390,height:844},{width:1440,height:1000}]){
     await page.getByRole('button',{name:'‹ All categories',exact:true}).click();await page.locator('.gtc-place-lanes').waitFor()
    }
    assert.equal(traversed.length,FAMILIES.length)
-   await page.locator('.gt5-nav').getByRole('button',{name:'Entertainment',exact:true}).click();await page.locator('.gtc-entertainment').waitFor();assert.equal(await page.locator('.gtc-entertainment-lane').count(),9);assert.ok((await page.locator('.gtc-entertainment-lane').first().evaluate(e=>getComputedStyle(e).backgroundImage))!=='none')
+   await page.locator('.gt5-nav').getByRole('button',{name:'Entertainment',exact:true}).click();await page.locator('.gtc-entertainment').waitFor();assert.equal(await page.locator('.gtc-entertainment-lane').count(),10);assert.ok((await page.locator('.gtc-entertainment-lane').first().evaluate(e=>getComputedStyle(e).backgroundImage))!=='none')
    assert.deepEqual(errors,[]);for(const name of['gt_taxonomy_categories','gt_taxonomy_subcategories','v_gt_venue_taxonomy_directory'])assert.ok(requests.some(r=>r.table===name),`Missing source request ${name}`)
    fs.writeFileSync(path.join(dir,'evidence.json'),JSON.stringify({scope:'isolated fixture; not production auth/catalog proof',viewport,place_families_checked:FAMILIES.length,journeys_checked:traversed.length,restaurant_facets_checked:true,entertainment_lanes_checked:9,map_checked:true,detail_return_checked:true,empty_subcategory_retained:true,errors,requests},null,2))
   }catch(e){await capture('failure').catch(()=>{});throw e}finally{await context.close();await browser.close()}
