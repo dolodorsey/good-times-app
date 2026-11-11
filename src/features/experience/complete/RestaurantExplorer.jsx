@@ -65,7 +65,7 @@ async function loadRestaurants(signal){
  throw last
 }
 
-export default function RestaurantExplorer({savedKeys,onVenue,onSave,onBack,onPlan,initialQuery='',initialFilter=null,houseIds=[]}) {
+export default function RestaurantExplorer({savedKeys,onVenue,onSave,onBack,onPlan,initialQuery='',initialFilter=null,houseVenues=[]}) {
  const [query,setQuery]=useState(initialQuery),[filter,setFilter]=useState(initialFilter),[all,setAll]=useState([]),[status,setStatus]=useState('loading'),[error,setError]=useState(''),[advanced,setAdvanced]=useState(false),[retry,setRetry]=useState(0),[showAllCuisines,setShowAllCuisines]=useState(false)
  useEffect(()=>{const c=new AbortController();setStatus('loading');setError('');loadRestaurants(c.signal).then(rows=>{setAll(rows);setStatus('success')}).catch(e=>{if(!c.signal.aborted){setStatus('error');setError(e.message)}});return()=>c.abort()},[retry])
  const searched=useMemo(()=>{const n=fold(query).trim();if(!n)return all;return all.filter(r=>fold([r.name,r.neighborhood,r.short_desc,...r.cuisines.map(c=>CUISINE_LABELS[c]),r.source_subcategory].join(' ')).includes(n))},[all,query])
@@ -74,10 +74,10 @@ export default function RestaurantExplorer({savedKeys,onVenue,onSave,onBack,onPl
  const countFor=(field,value)=>searched.filter(r=>restaurantMatches(r,{field,value})).length
  const toggle=(field,value,label)=>{setFilter(filter?.value===value&&filter?.field===field?null:{field,value,label});requestAnimationFrame(()=>document.querySelector('.gtc-restaurant-tools')?.scrollIntoView?.({block:'start',behavior:'smooth'}))}
  const saved=new Set([...savedKeys].filter(k=>k.startsWith('venue:')))
- // Kollective restaurants lead every list (owner 2026-11-11); everything else keeps its order.
- const isHouse=r=>r.is_khg===true||houseIds.includes(r.id)
- const house=useMemo(()=>all.filter(isHouse),[all,houseIds])
- const ordered=useMemo(()=>[...rows.filter(isHouse),...rows.filter(r=>!isHouse(r))],[rows,houseIds])
+ // Kollective restaurants lead (owner 2026-11-11): the group's own concepts from the verified feed, then everything else in its usual order.
+ const houseIds=useMemo(()=>new Set(houseVenues.map(v=>v.id)),[houseVenues])
+ const house=houseVenues
+ const ordered=useMemo(()=>[...rows.filter(r=>houseIds.has(r.id)),...rows.filter(r=>!houseIds.has(r.id))],[rows,houseIds])
  const featured=rows.find(r=>safeImage(r.hero_image))
  return <Themed theme="emerald" className="gtc-restaurants">
   <ScreenHero size="md" eyebrow="ATLANTA" title="Dining" tagline="Extraordinary food. Unforgettable nights." image={SCENES.dining} onBack={onBack} backLabel="Back to Places" script={'Good\nPeople\nBetter\nNights.'}>
