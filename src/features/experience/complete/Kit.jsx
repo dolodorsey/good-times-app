@@ -53,7 +53,7 @@ export function ScreenHero({eyebrow='ATLANTA',title,accent,tagline,image,script=
   </header>
 }
 
-export function SearchBar({placeholder='Search…',value,onChange,onSubmit,onFilters,label='Search',addSpace=true,inputLabel,autoFocus=false}) {
+export function SearchBar({placeholder='Search…',value,onChange,onSubmit,onFilters,label='Search',addSpace=false,inputLabel,autoFocus=false}) {
   return <div className="gtk-searchbar"><label className="gtk-search"><Icon name="search" size={19}/><span className="gtk-sr">{inputLabel||label}</span><input aria-label={inputLabel||label} autoFocus={autoFocus} value={value} placeholder={placeholder} onChange={e=>onChange?.(e.target.value)} onKeyDown={e=>{if(e.key==='Enter')onSubmit?.(e.currentTarget.value)}}/>{value&&<button type="button" className="gtk-clear" aria-label="Clear search" onClick={()=>onChange?.('')}>×</button>}</label>{onFilters&&<button type="button" className="gtk-icon-btn" aria-label="Filters" onClick={onFilters}><Icon name="sliders" size={19}/></button>}{addSpace&&<AddSpace compact/>}</div>
 }
 export function AddSpace({compact=false,label='Add Space',sub='List your event or venue'}) {return <a className={`gtk-add-space ${compact?'is-compact':''}`} href={PROVIDER_URL} target="_blank" rel="noopener noreferrer"><Icon name="plus" size={18}/><span><strong>{label}</strong>{!compact&&<small>{sub}</small>}</span>{!compact&&<Icon name="chevron" size={18}/>}</a>}

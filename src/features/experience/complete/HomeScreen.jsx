@@ -2,7 +2,7 @@ import React,{useMemo,useState} from 'react'
 import AdSlot from './AdSlot.jsx'
 import {Themed,ScreenHero,SearchBar,CategoryCards,Rail,BuildTrio,ConciergeBand,PhotoTile,Skeletons,Empty,SCENES} from './Kit.jsx'
 import {EventPoster,VenuePoster} from './posters.jsx'
-import {EventCollection} from './Collections.jsx'
+import HomeTimeline from './HomeTimeline.jsx'
 import {State} from './Cards.jsx'
 import {selectedCityClock,eventIsThisWeekend} from '../good-times-event-clock.js'
 import {occurrenceUsable,eveningUsable,unique,list,labelFor,safeImage,safeLink,displayDate,displayTime} from './model.js'
@@ -54,6 +54,8 @@ const WEEK_GROUPS=[
  ['culture','Culture',['arts_museums_culture','black_culture_diaspora','community_civic'],SCENES.culture],
  ['festivals','Festivals',['festivals_major_activations','seasonal_holiday'],SCENES.district],
 ]
+// Owner 2026-11-10: keep these off the Home screen (still findable in Places / search).
+export const HOME_EXCLUDE=/^(the )?(royal peacock|safari( lounge)?|x ?midtown)\b/i
 const INTERACTIVE=/puttshack|flight club|cosm|f1 arcade|andretti|topgolf|top golf|sandbox vr|great big game show|spin art|game show|mini golf|darts|vr\b|immersive|sim[_ -]?racing|karting|arcade|bowling|escape|splatter|rage room|axe/i
 function greeting(minute){if(minute<240||minute>=1080)return 'Good Evening,';if(minute<720)return 'Good Morning,';return 'Good Afternoon,'}
 
@@ -68,20 +70,21 @@ export default function HomeScreen({events=[],venues=[],profile,savedKeys,onEven
   const best=claim(bestRows(live,now),used,14)
   const nightRows=claim(collapseByTitle(night.rows),used,10)
   const tonight=night.next?[]:nightRows
-  const places=claim(topPlaces(unique(venues).filter(v=>!INTERACTIVE.test(`${v.name} ${v.venue_subcategory||''}`)||/^cosm\b/i.test(v.name)),40),used,14)
+  const homeVenues=unique(venues).filter(v=>!HOME_EXCLUDE.test(String(v.name||'').trim()))
+  const places=claim(topPlaces(homeVenues.filter(v=>!INTERACTIVE.test(`${v.name} ${v.venue_subcategory||''}`)||/^cosm\b/i.test(v.name)),40),used,14)
   const weekend=claim(collapseByTitle(live.filter(e=>eventIsThisWeekend(e,'atlanta',now))),used,10)
   const comingUp=claim(collapseByTitle(live.filter(e=>String(e.event_date)>c.date)),used,10)
-  const different=claim(unique(venues).filter(v=>INTERACTIVE.test([v.name,v.category_key,v.venue_subcategory,v.subcategory].filter(Boolean).join(' '))),used,10)
+  const different=claim(homeVenues.filter(v=>INTERACTIVE.test([v.name,v.category_key,v.venue_subcategory,v.subcategory].filter(Boolean).join(' '))),used,10)
   return {best,nightRows,tonight,places,weekend,comingUp,different}
  },[live,night,venues,now,c.date])
  const {tonight,places,weekend,comingUp,different}=rails
  const firstName=String(profile?.full_name||'').trim().split(/\s+/)[0]
  return <Themed theme="gold" className="gtc-home gtk-home">
-  <ScreenHero size="lg" eyebrow={firstName?`${greeting(c.minute).replace(',','')}, ${firstName}`.toUpperCase():greeting(c.minute).replace(',','').toUpperCase()} title="Atlanta." tagline="Great people. Better nights." image={SCENES.home} script={'Explore\nPlan\nExperience\nMore'}>
+  <ScreenHero size="md" eyebrow={firstName?`${greeting(c.minute).replace(',','')}, ${firstName}`.toUpperCase():greeting(c.minute).replace(',','').toUpperCase()} title="Atlanta." tagline="Great people. Better nights." image={SCENES.home} script={'Explore\nPlan\nExperience\nMore'}>
    <SearchBar inputLabel="Search Atlanta" placeholder="What are you trying to get into?" value={q} onChange={setQ} onSubmit={v=>v.trim()&&onSearch?.(v)} onFilters={()=>q.trim()?onSearch?.(q):nav('places')}/>
   </ScreenHero>
   <div className="gtk-time-tabs"><nav className="gtc-tabs gt5-home-modes gtk-time-nav" aria-label="GOOD TIMES Home views">{[['for-you','For You'],['upcoming','Upcoming'],['tonight','Tonight']].map(([id,label])=><button key={id} className={id===mode?'active':''} aria-pressed={id===mode} onClick={()=>onMode(id)}>{label}</button>)}</nav><button type="button" onClick={()=>nav('weekend')}>This Weekend</button></div>
-  {mode!=='for-you'?<EventCollection key={mode} mode={mode} now={now} initialEvents={events} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave}/>:<>
+  {mode!=='for-you'?<HomeTimeline key={mode} mode={mode} events={events} venues={venues.filter(v=>!HOME_EXCLUDE.test(String(v.name||'').trim()))} now={now} savedKeys={savedKeys} onEvent={onEvent} onVenue={onVenue} onSave={onSave}/>:<>
    <section className="gtk-section gtk-moods"><header className="gtk-section-head"><div><h2>What kind of <em>time?</em></h2></div><button type="button" className="gtk-see-all" onClick={()=>nav('places')}>See All</button></header><CategoryCards label="What kind of time" items={MOODS} onSelect={nav}/></section>
    <BuildTrio onBuild={()=>onPlan?.('guided')} onShake={()=>onPlan?.('shake')} onAsk={()=>onPlan?.('ask')}/>
    <AdSlot placement="home" slot={0}/>
