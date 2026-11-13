@@ -15,7 +15,10 @@ export const identity = item => String(item?.event_key || item?.id || '')
 export const isEvent = item => Boolean(item?.event_key || item?.event_date)
 export function unique(rows) {const seen=new Set();return list(rows).filter(r=>{const id=identity(r);if(!id||seen.has(id))return false;seen.add(id);return true})}
 export function safeLink(value) {if(typeof value!=='string'||!value.trim())return null;try{const u=new URL(value);return ['https:','http:'].includes(u.protocol)&&!u.username&&!u.password?u.href:null}catch{return null}}
-export function safeImage(value) {if(typeof value!=='string')return null;if(/^\/(?!\/)/.test(value))return value;const u=safeLink(value);return u&&!/images\.unsplash\.com|maps\.googleapis\.com|[?&]key=|good-times-backgrounds\/(?:gt-cat-|event-)/i.test(u)?u:null}
+// Eventbrite's resizer (img.evbuc.com/<encoded original>?…&s=<signature>) now rejects hotlinked requests, which left
+// 18 event cards without art (owner note 2026-11-12). The original it wraps on cdn.evbuc.com loads, so use that.
+function directImage(u) {const m=/^https:\/\/img\.evbuc\.com\/(https%3A%2F%2Fcdn\.evbuc\.com%2F[^?#]+)/i.exec(u);if(!m)return u;try{const inner=decodeURIComponent(m[1]);return /^https:\/\/cdn\.evbuc\.com\/images\//.test(inner)?inner:u}catch{return u}}
+export function safeImage(value) {if(typeof value!=='string')return null;if(/^\/(?!\/)/.test(value))return value;const u=safeLink(value);return u&&!/images\.unsplash\.com|maps\.googleapis\.com|[?&]key=|good-times-backgrounds\/(?:gt-cat-|event-)/i.test(u)?directImage(u):null}
 export function displayDate(date,options={month:'short',day:'numeric',weekday:'short'}) {return dateNumber(date)===null?'Date to confirm':new Intl.DateTimeFormat('en-US',{...options,timeZone:'UTC'}).format(new Date(date+'T12:00:00Z'))}
 export function displayTime(time) {const n=timeMinutes(time);if(n===null)return 'Time to confirm';return `${Math.floor(n/60)%12||12}:${String(n%60).padStart(2,'0')} ${n>=720?'PM':'AM'}`}
 export function shiftDate(date,n) {if(dateNumber(date)===null)return null;const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10)}
