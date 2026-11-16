@@ -43,7 +43,7 @@ jobs:
           done < evidence/frame-times.txt
       - name: Save brand-isolated verification evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: atlanta-social-media-qa
           path: evidence
