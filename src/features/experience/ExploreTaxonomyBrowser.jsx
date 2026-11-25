@@ -1,4 +1,5 @@
 import CompactExplorePanel from './CompactExplorePanel.jsx'
+import { topPlaces } from './complete/top-places.js'
 import React, { useEffect, useMemo, useState } from 'react'
 import { loadExploreCounts, loadExploreDirectory } from '../intelligence/client.js'
 import { loadGoodTimesAssetManifest, manifestAssetForCategory } from './good-times-assets.js'
@@ -137,7 +138,9 @@ function LegacyExploreTaxonomyBrowser({
         ...(row.search_tags || []),
       ].filter(Boolean).join(' ').toLowerCase().includes(needle)
     })
-    return uniqueVenues(rows)
+    // Owner-ranked places (Top Places order — e.g. Magic City in nightlife) lead; everything else keeps directory order.
+    const unique = uniqueVenues(rows)
+    return topPlaces(unique, unique.length)
   }, [activeDirectory, needle, selectedCategory, selectedSubcategory])
 
   const selectedSubcategoryLabel = subcategoryRows.find(row => row.subcategory_key === selectedSubcategory)?.subcategory_name
@@ -193,6 +196,8 @@ function LegacyExploreTaxonomyBrowser({
           const exact=exactCount(countRows,activeCategory.id,subcategory.subcategory_key)
           const fallback=new Set(activeDirectory.filter(row => row.category_key===activeCategory.id&&row.subcategory_key === subcategory.subcategory_key).map(row => row.id)).size
           const count=countWithFallback(exact,fallback)
+          // Empty subcategories (event-only lanes like Fashion Shows) are not places — don't show '0 verified places'.
+          if(!count&&countRows?.length&&selectedSubcategory!==subcategory.subcategory_key)return null
           return <button key={subcategory.subcategory_key} className={selectedSubcategory === subcategory.subcategory_key ? 'active' : ''} onClick={() => { onSubcategory?.(subcategory.subcategory_key);setDirectoryOpen(true) }}><span>Explore</span><strong>{subcategory.subcategory_name}</strong><small>{count} verified places</small><em>›</em></button>
         })}
       </div>

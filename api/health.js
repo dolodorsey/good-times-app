@@ -5,6 +5,7 @@ import {
   KHG_SUPABASE_ANON_KEY,
 } from '../src/lib/supabase.js'
 import ATLANTA_FALLBACK_SNAPSHOT from './atlanta-fallback-snapshot.js'
+import { selectedCityClock } from '../src/features/experience/good-times-event-clock.js'
 
 const GT_URL = GT_SUPABASE_URL
 const CONTENT_URL = KHG_SUPABASE_URL
@@ -42,12 +43,9 @@ async function probeAtlantaInventory(fetchImpl, now = new Date()) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS)
   try {
-    const serviceDate = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/New_York',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(now)
+    // The active night keeps the previous service date until 04:00 local.
+    // Calendar-day probes bypass a healthy inventory cache after midnight.
+    const serviceDate = selectedCityClock('atlanta', now).serviceDate
     const response = await fetchImpl(`${CONTENT_URL}/rest/v1/rpc/gt_public_live_inventory_cached`, {
       method: 'POST',
       headers: { ...headers(CONTENT_ANON_KEY), 'Content-Type': 'application/json' },

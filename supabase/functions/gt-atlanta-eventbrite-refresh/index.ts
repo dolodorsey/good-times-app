@@ -1,5 +1,8 @@
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.110.2";
+import {
+  classifyEvent, eventDateParts as collectorDateParts, findExistingOccurrence,
+  OccurrenceIdentityConflict, sourcedEventRecord, uniqueOccurrences,
+} from "../_shared/gt-source-occurrence.mjs";
 
 const MAX_BODY_BYTES = 64_000;
 const MAX_FETCH_BYTES = 2_000_000;
@@ -53,59 +56,7 @@ const secureEqual = (left: string, right: string): boolean => {
   return mismatch === 0;
 };
 
-const atlantaParts = (value = new Date()) => {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hourCycle: "h23",
-  }).formatToParts(value);
-  const part = (type: string) => parts.find((item) => item.type === type)?.value ?? "";
-  return {
-    date: `${part("year")}-${part("month")}-${part("day")}`,
-    time: `${part("hour")}:${part("minute")}`,
-  };
-};
-
-const dateInWindow = (isoDate: string): boolean => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return false;
-  const candidate = new Date(`${isoDate}T00:00:00Z`);
-  if (Number.isNaN(candidate.getTime())) return false;
-  const today = new Date(`${atlantaParts().date}T00:00:00Z`);
-  const maximum = new Date(today);
-  maximum.setUTCMonth(maximum.getUTCMonth() + MAX_MONTHS);
-  return candidate >= today && candidate <= maximum;
-};
-
-const eventDateParts = (value: unknown): { date: string; time: string | null } | null => {
-  const raw = first(value);
-  if (!raw) return null;
-
-  const compact = raw.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?Z?)?$/);
-  if (compact) {
-    const date = `${compact[1]}-${compact[2]}-${compact[3]}`;
-    return dateInWindow(date)
-      ? { date, time: compact[4] ? `${compact[4]}:${compact[5]}` : null }
-      : null;
-  }
-
-  // Preserve the event's stated local calendar date/time before its offset.
-  const localPrefix = raw.match(/^(\d{4}-\d{2}-\d{2})(?:[T ](\d{2}):(\d{2}))?/);
-  if (localPrefix && dateInWindow(localPrefix[1])) {
-    return {
-      date: localPrefix[1],
-      time: localPrefix[2] ? `${localPrefix[2]}:${localPrefix[3]}` : null,
-    };
-  }
-
-  const parsed = new Date(raw);
-  if (Number.isNaN(parsed.getTime())) return null;
-  const local = atlantaParts(parsed);
-  return dateInWindow(local.date) ? local : null;
-};
+const eventDateParts = (value: unknown) => collectorDateParts(first(value), new Date(), MAX_MONTHS);
 
 const normalizePlace = (value: unknown): string =>
   (clean(value, 200) ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
@@ -210,22 +161,10 @@ const flattenEvents = (value: unknown, output: Record<string, unknown>[] = []) =
   if (!value || typeof value !== "object") return output;
   const object = value as Record<string, unknown>;
   if (typeList(object["@type"]).some((type) => type.toLowerCase().includes("event"))) output.push(object);
-  for (const key of ["@graph", "itemListElement", "item", "events", "event"]) {
+  for (const key of ["@graph", "itemListElement", "item", "events", "event", "subEvent", "subEvents"]) {
     if (object[key]) flattenEvents(object[key], output);
   }
   return output;
-};
-
-const categoryOf = (sourceName: string, sourceUrl: string, title: string) => {
-  const text = `${sourceName} ${sourceUrl} ${title}`.toLowerCase();
-  if (/music|concert|artist|tour/.test(text)) return "concert";
-  if (/comedy|stand.?up/.test(text)) return "comedy";
-  if (/festival|parade|block.?party/.test(text)) return "festival";
-  if (/food|drink|brunch|dinner|tasting/.test(text)) return /brunch/.test(text) ? "brunch" : "special_event";
-  if (/nightlife|party|club|lounge|dj|rooftop|after.?hours/.test(text)) return "nightlife";
-  if (/art|theat|museum|gallery|paint/.test(text)) return "play";
-  if (/sport|game|match|boxing|ufc/.test(text)) return "sports";
-  return "special_event";
 };
 
 type ParsedEvent = {
@@ -253,7 +192,7 @@ type ParseResult = {
   discovered: number;
 };
 
-const parseEventbrite = (html: string, sourceName: string, pageUrl: string): ParseResult => {
+const parseEventbrite = (html: string, pageUrl: string): ParseResult => {
   const objects: Record<string, unknown>[] = [];
   for (const match of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
     try {
@@ -282,12 +221,8 @@ const parseEventbrite = (html: string, sourceName: string, pageUrl: string): Par
       continue;
     }
 
-    const status = first(event.eventStatus)?.toLowerCase() ?? "";
-    if (status.includes("eventcancelled") || status.includes("cancelled")) {
-      rejected.push({ name, reason: "cancelled_event", sourceUrl });
-      continue;
-    }
-
+    // Keep cancellation/postponement evidence for an existing source UUID. New
+    // observations remain unpublished; the mapped-show gate owns status changes.
     const end = eventDateParts(event.endDate ?? event.endTime);
     const offers = Array.isArray(event.offers) ? event.offers[0] : event.offers;
     const offer = offers && typeof offers === "object" ? offers as Record<string, unknown> : {};
@@ -303,7 +238,7 @@ const parseEventbrite = (html: string, sourceName: string, pageUrl: string): Par
       endTime: end?.time ?? null,
       venue: location.name,
       address: location.address!,
-      eventType: categoryOf(sourceName, pageUrl, name),
+      eventType: classifyEvent(name, [event.eventType, event["@type"]]),
       description: clean(event.description),
       ticket: first(offer.url ?? event.url) ?? pageUrl,
       price: clean(offer.price ?? offer.lowPrice, 100),
@@ -341,18 +276,13 @@ const fetchPage = async (url: string): Promise<string> => {
   }
 };
 
-const hash = async (value: string) =>
-  [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)))]
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-
 Deno.serve(async (request: Request) => {
   if (request.method !== "POST") return json({ ok: false, error: "method_not_allowed" }, 405);
   const contentLength = Number(request.headers.get("content-length") ?? 0);
   if (contentLength > MAX_BODY_BYTES) return json({ ok: false, error: "payload_too_large" }, 413);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const serviceKey = (JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") ?? "{}")["default"] ?? Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")) ?? "";
   if (!supabaseUrl || !serviceKey) return json({ ok: false, error: "server_configuration_missing" }, 500);
   const db = createClient(supabaseUrl, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -420,7 +350,7 @@ Deno.serve(async (request: Request) => {
     const sourceReasons: Record<string, number> = {};
 
     try {
-      const parsed = parseEventbrite(await fetchPage(source.source_url), source.source_name, source.source_url);
+      const parsed = parseEventbrite(await fetchPage(source.source_url), source.source_url);
       discovered = parsed.discovered;
       rejected = parsed.rejected.length;
       for (const item of parsed.rejected) {
@@ -428,74 +358,29 @@ Deno.serve(async (request: Request) => {
         summary.rejection_reasons[item.reason] = (summary.rejection_reasons[item.reason] ?? 0) + 1;
       }
 
-      const unique = new Map<string, ParsedEvent>();
-      for (const event of parsed.accepted) {
-        const dedup = await hash(`atlanta|${event.name.toLowerCase().replace(/\W+/g, " ").trim()}|${event.date}|${(event.venue ?? "").toLowerCase()}`);
-        unique.set(dedup, event);
+      const unique = await uniqueOccurrences(parsed.accepted, { city: "atlanta", sourceUrl: source.source_url });
+      accepted = unique.entries.size;
+      rejected += unique.rejected;
+      if (unique.conflicts) {
+        sourceReasons.conflicting_provider_occurrence_id = unique.rejected;
+        summary.rejection_reasons.conflicting_provider_occurrence_id = (summary.rejection_reasons.conflicting_provider_occurrence_id ?? 0) + unique.rejected;
       }
-      accepted = unique.size;
-
-      for (const [dedup, event] of unique) {
-        let { data: existing } = await db.from("gt_sourced_events")
-          .select("id,raw_data,is_verified")
-          .eq("dedup_hash", dedup)
-          .maybeSingle();
-        if (!existing) {
-          existing = (await db.from("gt_sourced_events")
-            .select("id,raw_data,is_verified")
-            .eq("event_date", event.date)
-            .ilike("event_name", event.name)
-            .limit(1)
-            .maybeSingle()).data;
+      let identityConflicts = unique.conflicts;
+      for (const [dedupHash, { event, identity }] of unique.entries) {
+        let existing;
+        try {
+          existing = await findExistingOccurrence(db, event, identity, dedupHash);
+        } catch (error) {
+          if (!(error instanceof OccurrenceIdentityConflict)) throw error;
+          identityConflicts += 1;
+          accepted -= 1;
+          rejected += 1;
+          sourceReasons[error.message] = (sourceReasons[error.message] ?? 0) + 1;
+          summary.rejection_reasons[error.message] = (summary.rejection_reasons[error.message] ?? 0) + 1;
+          continue;
         }
-
-        const existingRaw = existing?.raw_data && typeof existing.raw_data === "object"
-          ? existing.raw_data as Record<string, unknown>
-          : {};
-        const confirmations = new Set<string>(
-          Array.isArray(existingRaw.source_confirmations)
-            ? existingRaw.source_confirmations.filter((value): value is string => typeof value === "string")
-            : [],
-        );
-        confirmations.add(source.source_name);
-
-        const record = {
-          city: "atlanta",
-          event_name: event.name,
-          event_date: event.date,
-          event_time: event.time,
-          end_date: event.endDate,
-          end_time: event.endTime,
-          venue_name: event.venue,
-          venue_address: event.address,
-          event_type: event.eventType,
-          event_category: "eventbrite",
-          description: event.description,
-          ticket_url: event.ticket,
-          ticket_price: event.price,
-          image_url: event.image,
-          organizer: event.organizer,
-          source_id: source.id,
-          source_url: event.sourceUrl,
-          source_name: source.source_name,
-          is_verified: true,
-          is_published: true,
-          published_to_gt: false,
-          dedup_hash: dedup,
-          legacy_quarantined_at: null,
-          legacy_quarantine_reason: null,
-          raw_data: {
-            ...existingRaw,
-            jsonld: event.raw,
-            collected_via: "eventbrite_public_jsonld_v3",
-            source_type: source.source_type,
-            source_confirmations: [...confirmations],
-            location_validation: event.locationReason,
-            timezone: "America/New_York",
-            collected_at: new Date().toISOString(),
-          },
-          updated_at: new Date().toISOString(),
-        };
+        const record = sourcedEventRecord({ event, source, identity, dedupHash, existing,
+          observedAt: new Date().toISOString(), collectedVia: "eventbrite_public_jsonld_v4" });
 
         if (existing?.id) {
           const { error } = await db.from("gt_sourced_events").update(record).eq("id", existing.id);
@@ -508,9 +393,13 @@ Deno.serve(async (request: Request) => {
         }
       }
 
+      if (identityConflicts) {
+        errorText = `occurrence_identity_conflicts:${identityConflicts}`;
+        summary.errors += 1;
+      }
       await db.from("gt_event_sources").update({
         last_scraped_at: new Date().toISOString(),
-        last_scrape_status: accepted > 0 ? "success" : "empty",
+        last_scrape_status: identityConflicts ? "failed" : accepted > 0 ? "success" : "empty",
         events_found_last_run: accepted,
         updated_at: new Date().toISOString(),
       }).eq("id", source.id);
@@ -540,7 +429,7 @@ Deno.serve(async (request: Request) => {
       started_at: new Date(started).toISOString(),
       completed_at: new Date().toISOString(),
       run_metadata: {
-        collector: "gt-atlanta-eventbrite-refresh-v3",
+        collector: "gt-atlanta-eventbrite-refresh-v4",
         source_name: source.source_name,
         discovered,
         accepted,

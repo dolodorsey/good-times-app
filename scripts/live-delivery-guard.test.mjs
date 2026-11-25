@@ -16,9 +16,13 @@ test('live inventory fails fast to verified snapshot before the browser timeout'
 })
 
 test('customer bootstrap requests a bounded but useful Atlanta payload', () => {
-  assert.ok(client.includes('event_limit=80&venue_limit=120'))
-  assert.ok(app.includes('loadCanonicalEvents(nextCity,{limit:80})'))
-  assert.ok(app.includes('loadCanonicalVenues(nextCity,{limit:120})'))
+  // Owner 2026-11-09: lanes were starved (Tonight/Date Night/Brunch empty) at 80/120. Still bounded.
+  // Owner 2026-11-10: "not showing all concerts" — 373 live events and 461 live venues were cut to 240/360. Still bounded.
+  assert.ok(client.includes('event_limit=420&venue_limit=480'))
+  assert.ok(app.includes('loadCanonicalEvents(nextCity,{limit:420})'))
+  assert.ok(app.includes('loadCanonicalVenues(nextCity,{limit:480})'))
+  // The complete app kept only the first 80 events, so Upcoming showed ~73 of 370 live listings.
+  assert.ok(app.includes('loadCanonicalEvents(nextCity,{limit:420,throwOnError:true})'))
 })
 
 test('taxonomy cannot block first useful customer inventory render', () => {

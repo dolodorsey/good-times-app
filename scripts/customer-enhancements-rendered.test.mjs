@@ -24,7 +24,7 @@ for(const width of[320,390,430,834])test(`customer enhancements ${width}: Places
 
   await nav.filter({hasText:'Places'}).click();assert.equal(await page.getByRole('textbox',{name:'Search Atlanta places'}).count(),1);assert.equal(await page.locator('.gtc-place-lanes>button').count(),6);await page.getByRole('button',{name:/Restaurants/}).click();await page.locator('.gtc-restaurants').waitFor();assert.ok(await page.locator('.gtc-restaurant-quick button').count()>=9);await page.locator('.gtc-restaurants .gtc-card').first().waitFor({timeout:10000});assert.ok(await page.locator('.gtc-restaurants .gtc-card').count()>=1)
 
-  await nav.filter({hasText:'Entertainment'}).click();assert.equal(await page.locator('.gtc-entertainment-lane').count(),9);assert.deepEqual(await page.locator('.gtc-entertainment-time button').allTextContents(),['Tonight','This Weekend','Upcoming'])
+  await nav.filter({hasText:'Entertainment'}).click();assert.equal(await page.locator('.gtc-entertainment-lane').count(),10);assert.deepEqual(await page.locator('.gtc-entertainment-time button').allTextContents(),['Tonight','This Weekend','Upcoming'])
 
   await nav.filter({hasText:'Plan'}).click();assert.deepEqual(await page.locator('.gtc-planner>.gtc-tabs button').allTextContents(),['Build My Night','Shake','Ask']);assert.ok(await page.locator('.gtc-mood-grid').isVisible())
   await page.getByRole('button',{name:'Continue →',exact:true}).click();assert.ok(await page.getByLabel('Date').isVisible());assert.ok(await page.getByLabel('People').isVisible())
