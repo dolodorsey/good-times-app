@@ -1,3 +1,5 @@
+import {publicApiHeaders} from '../../lib/public-api-headers.js'
+import { requestExplorePage } from './explore-page.js'
 import {
   GT_SUPABASE_ANON_KEY,
   GT_SUPABASE_URL,
@@ -11,15 +13,11 @@ const gtHeaders = (token = GT_SUPABASE_ANON_KEY) => ({
   Authorization: `Bearer ${token}`,
   'Content-Type': 'application/json',
 })
-const gatewayHeaders = {
-  apikey: KHG_SUPABASE_ANON_KEY,
-  Authorization: `Bearer ${KHG_SUPABASE_ANON_KEY}`,
-  'Content-Type': 'application/json',
-}
+const gatewayHeaders = publicApiHeaders(KHG_SUPABASE_ANON_KEY, { 'Content-Type': 'application/json' })
 
 async function fetchJson(url, options = {}) {
   const controller = new AbortController()
-  const timeout = window.setTimeout(() => controller.abort(), 10000)
+  const timeout = window.setTimeout(() => controller.abort(), 7000)
   try {
     const response = await fetch(url, { cache: 'no-store', ...options, signal: options.signal || controller.signal })
     const payload = await response.json().catch(() => null)
@@ -57,13 +55,13 @@ function validLivePayload(payload) {
 
 async function requestLivePayload(normalizedCity) {
   try {
-    const fast = await fetchJson(`/api/data-fast?city=${encodeURIComponent(normalizedCity)}&event_limit=120&venue_limit=180`)
+    const fast = await fetchJson(`/api/data-fast?city=${encodeURIComponent(normalizedCity)}&event_limit=420&venue_limit=480`)
     if (validLivePayload(fast)) return fast
   } catch (error) {
     console.warn('[GOOD TIMES live data] Personalized gateway unavailable; falling back to canonical gateway.', error)
   }
 
-  const canonical = await fetchJson(`/api/data?city=${encodeURIComponent(normalizedCity)}&event_limit=120&venue_limit=180`)
+  const canonical = await fetchJson(`/api/data?city=${encodeURIComponent(normalizedCity)}&event_limit=420&venue_limit=480`)
   if (!validLivePayload(canonical)) throw new Error('GOOD TIMES data gateway returned an invalid response.')
   return canonical
 }
@@ -126,6 +124,44 @@ export async function loadExploreCounts(city = 'atlanta') {
   )
 }
 
+/** One representative, real venue photo per Places lane (highest quality first). Never stock/generic art. */
+export async function loadPlaceLaneArt(city = 'atlanta', categoryKeys = []) {
+  const keys = (categoryKeys || []).filter(key => /^[a-z0-9_]{1,60}$/.test(key))
+  if (!keys.length) return {}
+  const rows = await fetchJson(
+    `${KHG_SUPABASE_URL}/rest/v1/v_gt_venue_taxonomy_directory?select=id,category_key,hero_image,quality_score&city_key=eq.${encodeURIComponent(normalizeCity(city))}&category_key=in.(${keys.join(',')})&hero_image=not.is.null&order=quality_score.desc.nullslast&limit=400`,
+    { headers: gatewayHeaders },
+  )
+  const out = {}, used = new Set(), list = Array.isArray(rows) ? rows : []
+  // Lane covers must read as photography: first pass skips PNG/logo/thumbnail artwork, second pass allows it.
+  for (const photographic of [true, false]) for (const row of list) {
+    const image = String(row?.hero_image || '')
+    if (!/^https:\/\//.test(image) || /images\.unsplash\.com|good-times-backgrounds\/(?:gt-cat-|event-)|maps\.googleapis/i.test(image)) continue
+    if (photographic && /\.png(?:[?~%]|$)|logo|icon|thumbnail|favicon/i.test(image)) continue
+    if (out[row.category_key] || used.has(image) || used.has(row.id)) continue
+    out[row.category_key] = image; used.add(image); used.add(row.id)
+  }
+  return out
+}
+
+/** One real venue photo per subcategory inside a category (distinct venues where possible). */
+export async function loadSubcategoryArt(city = 'atlanta', category = null) {
+  if (!category || !/^[a-z0-9_]{1,60}$/.test(category)) return {}
+  const rows = await fetchJson(
+    `${KHG_SUPABASE_URL}/rest/v1/v_gt_venue_taxonomy_directory?select=id,subcategory_key,hero_image,quality_score&city_key=eq.${encodeURIComponent(normalizeCity(city))}&category_key=eq.${category}&hero_image=not.is.null&order=quality_score.desc.nullslast&limit=500`,
+    { headers: gatewayHeaders },
+  )
+  const out = {}, used = new Set()
+  const usable = row => { const image = String(row?.hero_image || ''); return /^https:\/\//.test(image) && !/images\.unsplash\.com|good-times-backgrounds\/(?:gt-cat-|event-)|maps\.googleapis/i.test(image) ? image : null }
+  const list = Array.isArray(rows) ? rows : []
+  for (const pass of [true, false]) for (const row of list) {
+    const image = usable(row); if (!image || !row.subcategory_key || out[row.subcategory_key]) continue
+    if (pass && used.has(row.id)) continue
+    out[row.subcategory_key] = image; used.add(row.id)
+  }
+  return out
+}
+
 export async function loadExploreDirectory(city = 'atlanta', { limit = 2500, category = null, subcategory = null } = {}) {
   const normalizedCity = normalizeCity(city)
   const categoryFilter = category ? `&category_key=eq.${encodeURIComponent(category)}` : ''
@@ -134,6 +170,11 @@ export async function loadExploreDirectory(city = 'atlanta', { limit = 2500, cat
     `${KHG_SUPABASE_URL}/rest/v1/v_gt_venue_taxonomy_directory?select=id,city_key,name,neighborhood,side_of_town,short_desc,hero_image,google_rating,google_reviews,quality_score,price_range,vibe_tags,category_key,category_name,subcategory,subcategory_key,venue_category_key,venue_subcategory,tab_tags,search_tags,culture_tier,is_khg,is_culture_pick,is_black_owned,culture_tags,instagram_handle,sourced_from,website,phone,booking_link,status,taxonomy_confidence,latitude,longitude&city_key=eq.${encodeURIComponent(normalizedCity)}${categoryFilter}${subcategoryFilter}&order=taxonomy_confidence.desc,quality_score.desc.nullslast,google_rating.desc.nullslast&limit=${limit}`,
     { headers: gatewayHeaders },
   )
+}
+
+/** Bounded full-corpus place search, separate from Home inventory. */
+export function loadExplorePage(city = 'atlanta', options = {}, request = {}) {
+  return requestExplorePage(KHG_SUPABASE_URL, gatewayHeaders, { ...options, city: normalizeCity(city) }, request)
 }
 
 export async function loadGoodTimesProfile(session = readSession()) {
@@ -154,7 +195,7 @@ export async function loadUserIntelligenceProfile(session = readSession()) {
   return rows?.[0] || null
 }
 
-export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}) {
+export async function loadCanonicalEvents(city = 'atlanta', { limit = 500, throwOnError = false } = {}) {
   const normalizedCity = normalizeCity(city)
   try {
     const payload = await loadSameOriginData(normalizedCity)
@@ -162,6 +203,7 @@ export async function loadCanonicalEvents(city = 'atlanta', { limit = 500 } = {}
   } catch (gatewayError) {
     // Do not bypass the server freshness/customer-readiness gate with a direct event feed.
     console.warn('[GOOD TIMES live data] Same-origin event gateway failed; event inventory is hidden until the verified gateway recovers.', gatewayError)
+    if (throwOnError) throw gatewayError
     return []
   }
 }
@@ -225,7 +267,7 @@ export async function unsaveItem({ profileId, itemType, itemId }, session = read
   await fetchJson(
     `${GT_SUPABASE_URL}/rest/v1/gt_saved_items?user_id=eq.${encodeURIComponent(profileId)}&item_type=eq.${encodeURIComponent(itemType)}&item_id=eq.${encodeURIComponent(String(itemId))}`,
     { method: 'DELETE', headers: { ...gtHeaders(session.access_token), Prefer: 'return=minimal' } },
-  ).catch(() => null)
+  )
 }
 
 export async function loadItineraries(session = readSession()) {

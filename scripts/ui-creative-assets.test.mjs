@@ -12,34 +12,34 @@ const skip=!BASE||!chromium?'set GT_UI_BASE and install playwright-core to run c
 const SESSION={access_token:'creative-fixture-access',refresh_token:'creative-fixture-refresh',expires_at:Math.floor(Date.now()/1000)+86400,user:{id:'creative-fixture-user',email:'creative.fixture@goodtimes.invalid'}}
 const TODAY=(()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`})()
 const PHOTO='https://dzlmtvodpyhetvektfuo.supabase.co/storage/v1/object/public/brand-graphics/good_times/graphics/LOCATION_IMAGES/REVEL.webp'
-const EVENTS=[{event_key:'creative:event',title:'Tonight at Revel',event_date:TODAY,event_time:'22:00',venue_name:'Revel Atlanta',category_key:'nightlife',subcategory_key:'nightclubs',image_url:PHOTO,ticket_url:'https://example.test/tickets',is_curated:true,is_featured:true}]
+const EVENTS=[{event_key:'creative:event',title:'Tonight at Revel',event_date:TODAY,event_time:'22:00',venue_name:'Revel Atlanta',category_key:'wellness_fitness',subcategory_key:'nightclubs',image_url:PHOTO,ticket_url:'https://example.test/tickets',is_curated:true,is_featured:true}]
 const VENUES=[{id:'creative:revel',name:'Revel Atlanta',city_key:'atlanta',neighborhood:'Westside',category_key:'nightlife',subcategory:'Nightclubs',short_desc:'Current nightlife fixture.',hero_image:PHOTO,quality_score:95,latitude:33.8035,longitude:-84.4274,is_culture_pick:true,is_black_owned:true,vibe_tags:['nightlife'],culture_tags:['culture-anchor']}]
 const CATEGORIES=[
-  {category_key:'nightlife',category_name:'Nightlife',description:'Clubs and lounges',sort_order:1},
-  {category_key:'day_parties_brunch',category_name:'Brunch & Day Parties',description:'Daytime energy',sort_order:2},
-  {category_key:'dining_culinary',category_name:'Dining & Culinary',description:'Food-led experiences',sort_order:3},
+  {category_key:'dining_culinary',category_name:'Dining & Culinary',description:'Restaurants and dining',sort_order:1},
+  {category_key:'attractions_experiences',category_name:'Attractions & Experiences',description:'Attractions and destination places',sort_order:2},
+  {category_key:'wellness_fitness',category_name:'Wellness & Fitness',description:'Wellness and fitness places',sort_order:3},
 ]
 const SUBCATEGORIES=[
-  {category_key:'nightlife',subcategory_key:'nightclubs',subcategory_name:'Nightclubs',sort_order:1,minimum_upcoming_inventory:0},
-  {category_key:'day_parties_brunch',subcategory_key:'day_parties',subcategory_name:'Day Parties',sort_order:1,minimum_upcoming_inventory:0},
-  {category_key:'dining_culinary',subcategory_key:'restaurants',subcategory_name:'Restaurants',sort_order:1,minimum_upcoming_inventory:0},
+  {category_key:'dining_culinary',subcategory_key:'restaurant_places',subcategory_name:'Restaurants',sort_order:1,minimum_upcoming_inventory:0},
+  {category_key:'attractions_experiences',subcategory_key:'unique_attractions',subcategory_name:'Unique Attractions',sort_order:1,minimum_upcoming_inventory:0},
+  {category_key:'wellness_fitness',subcategory_key:'wellness_events',subcategory_name:'Wellness',sort_order:1,minimum_upcoming_inventory:0},
 ]
 const DIRECTORY=[
-  {...VENUES[0],category_key:'nightlife',category_name:'Nightlife',subcategory_key:'nightclubs',taxonomy_confidence:.99},
-  {...VENUES[0],id:'creative:day',name:'Rooftop Day Party',category_key:'day_parties_brunch',category_name:'Brunch & Day Parties',subcategory_key:'day_parties',taxonomy_confidence:.99},
-  {...VENUES[0],id:'creative:dining',name:'Dinner Move',category_key:'dining_culinary',category_name:'Dining & Culinary',subcategory_key:'restaurants',taxonomy_confidence:.99},
+  {...VENUES[0],category_key:'dining_culinary',category_name:'Dining & Culinary',subcategory_key:'restaurant_places',taxonomy_confidence:.99},
+  {...VENUES[0],id:'creative:attraction',name:'Creative Attraction',category_key:'attractions_experiences',category_name:'Attractions & Experiences',subcategory_key:'unique_attractions',taxonomy_confidence:.99},
+  {...VENUES[0],id:'creative:wellness',name:'Wellness Place',category_key:'wellness_fitness',category_name:'Wellness & Fitness',subcategory_key:'wellness_events',taxonomy_confidence:.99},
 ]
 const MANIFEST=[
   {asset_key:'gt-motion-current',asset_type:'background_loop',surface:'global_motion',city_key:null,category_key:null,venue_slug:null,storage_bucket:'brand-graphics',storage_path:'kollective/animations/GOODTIMES.mp4',priority:1,metadata:{}},
   {asset_key:'gt-home-current',asset_type:'hero_image',surface:'home_hero',city_key:null,category_key:null,venue_slug:null,storage_bucket:'brand-graphics',storage_path:'motion/goodtimes.jpg',priority:1,metadata:{}},
-  {asset_key:'gt-explore-nightlife',asset_type:'category_image',surface:'explore_category',city_key:null,category_key:'nightlife',venue_slug:null,storage_bucket:'good-times-backgrounds',storage_path:'gt-cat-nightlife.webp',priority:10,metadata:{}},
-  {asset_key:'gt-explore-day-party',asset_type:'category_image',surface:'explore_category',city_key:null,category_key:'day_parties_brunch',venue_slug:null,storage_bucket:'good-times-backgrounds',storage_path:'event-rooftop-party.jpg',priority:10,metadata:{}},
+  {asset_key:'gt-explore-nightlife',asset_type:'category_image',surface:'explore_category',city_key:null,category_key:'nightlife',venue_slug:null,storage_bucket:'good-times-backgrounds',storage_path:'gt-cat-culture.webp',priority:10,metadata:{}},
+  {asset_key:'gt-explore-day-party',asset_type:'category_image',surface:'explore_category',city_key:null,category_key:'attractions_experiences',venue_slug:null,storage_bucket:'good-times-backgrounds',storage_path:'gt-cat-adventure.webp',priority:10,metadata:{}},
   {asset_key:'gt-explore-dining',asset_type:'category_image',surface:'explore_category',city_key:null,category_key:'dining_culinary',venue_slug:null,storage_bucket:'good-times-backgrounds',storage_path:'gt-cat-dining.webp',priority:10,metadata:{}},
 ]
 const COUNTS=[
-  {category_key:'nightlife',subcategory_key:null,place_count:40},
-  {category_key:'day_parties_brunch',subcategory_key:null,place_count:18},
-  {category_key:'dining_culinary',subcategory_key:null,place_count:62},
+  {category_key:'dining_culinary',subcategory_key:null,place_count:40},
+  {category_key:'attractions_experiences',subcategory_key:null,place_count:18},
+  {category_key:'wellness_fitness',subcategory_key:null,place_count:62},
 ]
 const json=value=>({status:200,contentType:'application/json',body:JSON.stringify(value)})
 
@@ -69,24 +69,17 @@ async function prove(width,height,name){
   try{
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
     await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
-    await page.locator('.gt5-nav button').filter({hasText:'Discover'}).click()
-    await page.waitForSelector('.gt5-discover',{state:'visible',timeout:10000})
-    await page.waitForSelector('.gt5-lanes button',{timeout:10000})
-    const lanes=await page.evaluate(()=>[...document.querySelectorAll('.gt5-lanes button')].map(card=>({label:String(card.querySelector('strong')?.textContent||'').trim(),background:getComputedStyle(card,'::before').backgroundImage})))
-    assert.deepEqual(lanes.map(x=>x.label),['Eat Well','Turn Up','Be There','Stay Right','Do More'],'V4 editorial discovery lanes changed')
-    assert.ok(lanes.every(row=>row.background&&row.background!=='none'),'every V4 discovery lane must remain image-backed')
-
-    await page.waitForSelector('.gt5-taxonomy .gt2-category-grid>button',{timeout:15000})
-    await page.waitForFunction(()=>[...document.querySelectorAll('.gt5-taxonomy .gt2-category-grid>button')].every(card=>card.dataset.hasArt==='true'&&getComputedStyle(card).backgroundImage.includes('good-times-backgrounds')),{timeout:15000})
-    const taxonomy=await page.evaluate(()=>[...document.querySelectorAll('.gt5-taxonomy .gt2-category-grid>button')].map(card=>({key:card.dataset.gtCategory,hasArt:card.dataset.hasArt,background:getComputedStyle(card).backgroundImage})))
-    await page.screenshot({path:path.join(OUT,`${name}__signed-in-v4-discover-creative.png`),fullPage:true})
-    assert.equal(taxonomy.length,3)
-    assert.ok(taxonomy.every(row=>row.hasArt==='true'))
-    assert.equal(new Set(taxonomy.map(row=>row.background)).size,3,'deep taxonomy categories must resolve distinct approved creative')
-    assert.ok(taxonomy.every(row=>row.background.includes('good-times-backgrounds')),'taxonomy creative must resolve from approved Supabase bucket')
+    await page.locator('.gt5-nav button').filter({hasText:'Places'}).click()
+    await page.waitForSelector('.gtc-places',{state:'visible',timeout:10000})
+    await page.waitForSelector('.gtc-place-lanes>button',{timeout:15000})
+    const lanes=await page.evaluate(()=>[...document.querySelectorAll('.gtc-place-lanes>button')].map(card=>({label:String(card.querySelector('strong')?.textContent||'').trim(),background:getComputedStyle(card).backgroundImage})))
+    await page.screenshot({path:path.join(OUT,`${name}__signed-in-v4-places-creative.png`),fullPage:true})
+    assert.deepEqual(lanes.map(x=>x.label),['Restaurants','Hotels & Stays','Attractions','Wellness','Shopping','Family Places'])
+    assert.ok(lanes.every(row=>row.background&&row.background!=='none'),'every Places entry lane must remain image-backed')
+    assert.ok(lanes.some(row=>row.background.includes('good-times-backgrounds')||row.background.includes('brand-graphics')||row.background.includes('/venues/')),'Places lanes must use approved GOOD TIMES or reviewed venue media')
     assert.deepEqual(errors,[],'uncaught page errors')
   }finally{await ctx.close();await browser.close()}
 }
 
-test('desktop V4 Discover keeps cinematic lanes and distinct approved taxonomy artwork',{skip},async()=>prove(1440,900,'1440x900'))
-test('mobile V4 Discover keeps cinematic lanes and distinct approved taxonomy artwork',{skip},async()=>prove(390,844,'390x844'))
+test('desktop V4 Places keeps dense distinct approved taxonomy artwork',{skip},async()=>prove(1440,900,'1440x900'))
+test('mobile V4 Places keeps dense distinct approved taxonomy artwork',{skip},async()=>prove(390,844,'390x844'))

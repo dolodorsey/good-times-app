@@ -1,0 +1,237 @@
+{
+  "captured_at": "2026-10-07",
+  "source": "Read-only gt_sourced_events sample; non-identity media, description and contact fields omitted.",
+  "rows": [
+    {
+      "id": "16e393e0-0fa6-4ba7-9701-b680c73b6ecb",
+      "city": "atlanta",
+      "event_name": "Haunted Seas After Hours",
+      "event_date": "2026-10-30",
+      "event_time": "23:30",
+      "venue_name": "Georgia Aquarium",
+      "venue_address": "225 Baker St NW,, Atlanta, GA, 30313",
+      "source_url": "https://www.georgiaaquarium.org/event-calendar/",
+      "ticket_url": "https://www.georgiaaquarium.org/events/event/haunted-seas-after-hours-1030/",
+      "source_id": "7ae70ca4-3d74-4218-ba38-254bd5b4ea98",
+      "source_name": "Georgia Aquarium · Entertainment Event Calendar",
+      "is_verified": true,
+      "is_published": true,
+      "published_to_gt": true,
+      "legacy_quarantined_at": null,
+      "legacy_quarantine_reason": null,
+      "raw_data": {
+        "jsonld": {
+          "name": "Haunted Seas<br><small>After Hours</small>",
+          "@type": "Event",
+          "offers": {
+            "url": "https://www.georgiaaquarium.org/events/event/haunted-seas-after-hours-1030/",
+            "@type": "Offer",
+            "price": "",
+            "availability": "http://schema.org/InStock",
+            "priceCurrency": "USD"
+          },
+          "endDate": "2026-10-30EDT22:30",
+          "@context": "http://schema.org",
+          "location": {
+            "name": "Georgia Aquarium",
+            "@type": "Place",
+            "address": {
+              "@type": "PostalAddress",
+              "postalCode": "30313",
+              "addressRegion": "GA",
+              "streetAddress": "225 Baker St NW,",
+              "addressLocality": "Atlanta"
+            }
+          },
+          "startDate": "2026-10-30EDT19:30"
+        },
+        "promotion": {
+          "publisher": "set_based_v2",
+          "processed_at": "2026-10-01T07:41:01.758706+00:00"
+        },
+        "source_type": "official",
+        "collected_at": "2026-09-28T03:27:35.650Z",
+        "collected_via": "direct_jsonld",
+        "source_confirmations": [
+          "Georgia Aquarium · Entertainment Event Calendar"
+        ],
+        "entertainment_high_precision_taxonomy": {
+          "method": "strong_event_or_venue_evidence",
+          "applied_at": "2026-09-28T03:33:32.760422+00:00",
+          "subcategory_key": "ent_zoos_aquariums"
+        }
+      }
+    },
+    {
+      "id": "c4db53e7-da69-4a9e-8f63-d3bd001cda21",
+      "city": "atlanta",
+      "event_name": "Afterwords: LIKE FATHER",
+      "event_date": "2026-10-31",
+      "event_time": "19:00",
+      "venue_name": "Hertz Stage",
+      "venue_address": "1280 Peachtree St NE, Atlanta, 30309",
+      "source_url": "https://www.alliancetheatre.org/event/afterwords-like-father-oct-31/",
+      "ticket_url": "https://www.alliancetheatre.org/event/afterwords-like-father-oct-31/",
+      "source_id": "eb0dc6ae-e561-4193-9173-a704dfca4a07",
+      "source_name": "Alliance Theatre Shows",
+      "is_verified": true,
+      "is_published": true,
+      "published_to_gt": true,
+      "legacy_quarantined_at": null,
+      "legacy_quarantine_reason": null,
+      "raw_data": {
+        "jsonld": {
+          "url": "https://www.alliancetheatre.org/event/afterwords-like-father-oct-31/",
+          "name": "Afterwords: LIKE FATHER",
+          "@type": "Event",
+          "offers": {
+            "url": "https://www.alliancetheatre.org/event/afterwords-like-father-oct-31/",
+            "@type": "Offer",
+            "price": "Free with Ticket",
+            "category": "primary",
+            "validFrom": "2026-08-04T00:00:00+00:00",
+            "availability": "inStock",
+            "priceCurrency": "USD"
+          },
+          "endDate": "2026-10-31T17:00:00-05:00",
+          "@context": "http://schema.org",
+          "location": {
+            "url": "https://www.alliancetheatre.org/venue/hertz-stage/",
+            "name": "Hertz Stage",
+            "@type": "Place",
+            "sameAs": "",
+            "address": {
+              "@type": "PostalAddress",
+              "postalCode": "30309",
+              "streetAddress": "1280 Peachtree St NE",
+              "addressCountry": "United States",
+              "addressLocality": "Atlanta"
+            }
+          },
+          "performer": "Organization",
+          "startDate": "2026-10-31T14:00:00-05:00",
+          "eventStatus": "https://schema.org/EventScheduled",
+          "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode"
+        },
+        "promotion": {
+          "publisher": "set_based_v2",
+          "processed_at": "2026-08-18T14:23:13.953855+00:00"
+        },
+        "source_type": "official",
+        "collected_at": "2026-08-18T14:23:09.808Z",
+        "collected_via": "direct_jsonld",
+        "source_confirmations": [
+          "Alliance Theatre Shows"
+        ]
+      }
+    },
+    {
+      "id": "998f9ece-95e9-43b7-b3c8-61b49a503fc3",
+      "city": "atlanta",
+      "event_name": "Drop In - YES! Kids Hip Hop Dance Class Ages 6-12 All Levels",
+      "event_date": "2026-10-17",
+      "event_time": null,
+      "venue_name": "Exchange Park Recreation Center",
+      "venue_address": "2771 Columbia Drive, Decatur, GA, 30034, US",
+      "source_url": "https://www.eventbrite.com/e/drop-in-yes-kids-hip-hop-dance-class-ages-6-12-all-levels-tickets-1999039792833",
+      "ticket_url": "https://www.eventbrite.com/e/drop-in-yes-kids-hip-hop-dance-class-ages-6-12-all-levels-tickets-1999039792833",
+      "source_id": "af03e970-493b-4224-9734-6b26830d3f30",
+      "source_name": "Eventbrite ATL · Entertainment Roller Skating",
+      "is_verified": true,
+      "is_published": true,
+      "published_to_gt": true,
+      "legacy_quarantined_at": null,
+      "legacy_quarantine_reason": null,
+      "raw_data": {
+        "jsonld": {
+          "url": "https://www.eventbrite.com/e/drop-in-yes-kids-hip-hop-dance-class-ages-6-12-all-levels-tickets-1999039792833",
+          "name": "Drop In - YES!  Kids Hip Hop Dance Class Ages 6-12 All Levels",
+          "@type": "Event",
+          "endDate": "2026-10-17",
+          "location": {
+            "name": "Exchange Park Recreation Center",
+            "@type": "Place",
+            "address": {
+              "@type": "PostalAddress",
+              "postalCode": "30034",
+              "addressRegion": "GA",
+              "streetAddress": "2771 Columbia Drive",
+              "addressCountry": "US",
+              "addressLocality": "Decatur"
+            }
+          },
+          "startDate": "2026-10-17",
+          "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode"
+        },
+        "timezone": "America/New_York",
+        "promotion": {
+          "publisher": "set_based_v2",
+          "processed_at": "2026-10-07T01:41:01.579561+00:00"
+        },
+        "source_type": "eventbrite",
+        "collected_at": "2026-10-07T00:26:29.285Z",
+        "collected_via": "eventbrite_public_jsonld_v3",
+        "location_validation": "metro_locality",
+        "source_confirmations": [
+          "Eventbrite ATL · Bowling",
+          "Eventbrite ATL · Kids Activities",
+          "Eventbrite ATL · Dance Classes",
+          "Eventbrite ATL · Entertainment Roller Skating"
+        ]
+      }
+    },
+    {
+      "id": "6d690e32-9452-4926-9aa8-29493c020620",
+      "city": "atlanta",
+      "event_name": "An Evening of Music and Reflection Featuring India Shawn and Other Guests",
+      "event_date": "2026-10-15",
+      "event_time": null,
+      "venue_name": "Cheshire Bridge Road Northeast",
+      "venue_address": "Cheshire Bridge Road Northeast, Atlanta, GA, 30324, US",
+      "source_url": "https://www.eventbrite.com/e/an-evening-of-music-and-reflection-featuring-india-shawn-and-other-guests-tickets-1979504127131",
+      "ticket_url": "https://www.eventbrite.com/e/an-evening-of-music-and-reflection-featuring-india-shawn-and-other-guests-tickets-1979504127131",
+      "source_id": "dcf0f4fb-13e8-4192-ad11-ee6bab9a99f0",
+      "source_name": "Eventbrite ATL · Entertainment Water Play",
+      "is_verified": true,
+      "is_published": true,
+      "published_to_gt": true,
+      "legacy_quarantined_at": null,
+      "legacy_quarantine_reason": null,
+      "raw_data": {
+        "jsonld": {
+          "url": "https://www.eventbrite.com/e/an-evening-of-music-and-reflection-featuring-india-shawn-and-other-guests-tickets-1979504127131",
+          "name": "An Evening of Music and Reflection Featuring  India Shawn and Other  Guests",
+          "@type": "Event",
+          "endDate": "2026-10-15",
+          "location": {
+            "name": "Cheshire Bridge Road Northeast",
+            "@type": "Place",
+            "address": {
+              "@type": "PostalAddress",
+              "postalCode": "30324",
+              "addressRegion": "GA",
+              "streetAddress": "Cheshire Bridge Road Northeast",
+              "addressCountry": "US",
+              "addressLocality": "Atlanta"
+            }
+          },
+          "startDate": "2026-10-15",
+          "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode"
+        },
+        "timezone": "America/New_York",
+        "promotion": {
+          "publisher": "set_based_v2",
+          "processed_at": "2026-10-07T01:41:01.579561+00:00"
+        },
+        "source_type": "eventbrite",
+        "collected_at": "2026-10-07T00:26:10.753Z",
+        "collected_via": "eventbrite_public_jsonld_v3",
+        "location_validation": "metro_locality",
+        "source_confirmations": [
+          "Eventbrite ATL · Diaspora Festivals",
+          "Eventbrite ATL · Entertainment Water Play"
+        ]
+      }
+    }
+  ]
+}

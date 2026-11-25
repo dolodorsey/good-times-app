@@ -5,6 +5,7 @@ import {
   KHG_SUPABASE_ANON_KEY,
 } from '../src/lib/supabase.js'
 import ATLANTA_FALLBACK_SNAPSHOT from './atlanta-fallback-snapshot.js'
+import { selectedCityClock } from '../src/features/experience/good-times-event-clock.js'
 
 const GT_URL = GT_SUPABASE_URL
 const CONTENT_URL = KHG_SUPABASE_URL
@@ -14,7 +15,9 @@ const CONTENT_ANON_KEY = KHG_SUPABASE_ANON_KEY
 const HEALTH_TIMEOUT_MS = 4500
 
 function headers(key) {
-  return { apikey: key, Authorization: `Bearer ${key}`, Accept: 'application/json' }
+  const value = { apikey: key, Accept: 'application/json' }
+  if (!String(key).startsWith('sb_publishable_')) value.Authorization = `Bearer ${key}`
+  return value
 }
 
 async function probe(url, key, query, fetchImpl) {
@@ -40,12 +43,9 @@ async function probeAtlantaInventory(fetchImpl, now = new Date()) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), HEALTH_TIMEOUT_MS)
   try {
-    const serviceDate = new Intl.DateTimeFormat('en-CA', {
-      timeZone: 'America/New_York',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-    }).format(now)
+    // The active night keeps the previous service date until 04:00 local.
+    // Calendar-day probes bypass a healthy inventory cache after midnight.
+    const serviceDate = selectedCityClock('atlanta', now).serviceDate
     const response = await fetchImpl(`${CONTENT_URL}/rest/v1/rpc/gt_public_live_inventory_cached`, {
       method: 'POST',
       headers: { ...headers(CONTENT_ANON_KEY), 'Content-Type': 'application/json' },
@@ -71,7 +71,9 @@ async function probeAtlantaInventory(fetchImpl, now = new Date()) {
 const SNAPSHOT_MAX_AGE_MS = 36 * 60 * 60 * 1000
 
 function parseSnapshotTimestamp(value) {
-  const normalized = String(value || '').trim().replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00')
+  let normalized=String(value||'').trim().replace(' ','T')
+  if(/[+-][0-9]{2}$/.test(normalized)) normalized += ':00'
+  normalized=normalized.replace(/\.([0-9]{3})[0-9]+(?=([+-][0-9]{2}:[0-9]{2}|Z)$)/,'.$1')
   return Date.parse(normalized)
 }
 
@@ -94,7 +96,9 @@ export async function getGoodTimesHealth(fetchImpl = globalThis.fetch, now = new
     probe(GT_URL, GT_ANON_KEY, 'gt_formula_versions?select=id&limit=1', fetchImpl),
     probeAtlantaInventory(fetchImpl, now),
   ])
-  const fallbackReady = !contentReady && verifiedSnapshotReady(now)
+  const snapshotArmed = verifiedSnapshotReady(now)
+  const fallbackReady = !contentReady && snapshotArmed
+  const snapshotAgeMs = now.getTime() - parseSnapshotTimestamp(ATLANTA_FALLBACK_SNAPSHOT?.refreshed_at)
   const degraded = customerReady && !contentReady && fallbackReady
   return {
     ok: customerReady && (contentReady || fallbackReady),
@@ -104,6 +108,10 @@ export async function getGoodTimesHealth(fetchImpl = globalThis.fetch, now = new
     content_ready: contentReady,
     verified_snapshot_ready: fallbackReady,
     snapshot_refreshed_at: fallbackReady ? ATLANTA_FALLBACK_SNAPSHOT.refreshed_at : null,
+    // Observability: whether the last-resort fallback is usable right now, independent of
+    // content-plane health. verified_snapshot_ready (above) is only true while it is in use.
+    fallback_snapshot_armed: snapshotArmed,
+    fallback_snapshot_age_hours: Number.isFinite(snapshotAgeMs) ? Math.round(snapshotAgeMs / 36e5 * 10) / 10 : null,
     launch_scope: 'atlanta_only',
     generated_at: now.toISOString(),
   }

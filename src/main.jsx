@@ -25,9 +25,10 @@ import './features/experience/good-times-home-discover.css'
 import './features/experience/good-times-shake.css'
 import './features/experience/good-times-customer-enhancements.css'
 import './features/experience/good-times-approved-ui-standard.css'
+import './features/experience/good-times-founder-v4-restore.css'
 import { installRecoveryRedirect, parseRecoverySession, refreshStoredSession } from './gt-auth-session.js'
 import { consumeOAuthRedirect, readSession, storeSession } from './features/auth/client.js'
-import { installGrowthTracking, recordGrowthEvent } from './growth.js'
+import { installGrowthTracking, recordGrowthEvent, recordSignupComplete } from './growth.js'
 import { installMediaIntegrityGuard } from './media-integrity.js'
 import { isNative } from './native.js'
 import GoodTimesInstallPrompt from './features/experience/GoodTimesInstallPrompt.jsx'
@@ -101,6 +102,18 @@ if (!isNative && 'serviceWorker' in navigator) {
   }, { once: true })
 }
 
+// Google OAuth has no separate signup call: treat an account created in the last 10 minutes as a new signup (once per user).
+function recordOAuthSignup(session){
+  try{
+    const user=session?.user,created=Date.parse(user?.created_at||'')
+    if(!user?.id||!created||Date.now()-created>10*60*1000)return
+    const key=`gt_signup_recorded:${user.id}`
+    if(localStorage.getItem(key))return
+    localStorage.setItem(key,'1')
+    recordSignupComplete({method:'google'})
+  }catch{}
+}
+
 class RuntimeBoundary extends Component {
   constructor(props){super(props);this.state={error:null}}
   static getDerivedStateFromError(error){return{error}}
@@ -113,19 +126,25 @@ class RuntimeBoundary extends Component {
 function RouteLoading({label='Opening GOOD TIMES'}){
   return <div className="gt-route-loading" role="status" aria-live="polite"><img src={GT_CURRENT_LOGO} alt=""/><div className="gt-route-loading__line"/><span>{label}</span></div>
 }
-function PremiumRoot({children,launch=false}){
+function PremiumRoot({children,launch=false,installPrompt=false}){
   const[showLaunch,setShowLaunch]=useState(()=>launch&&sessionStorage.getItem('gt_premium_launch')!=='1')
-  useEffect(()=>{if(!showLaunch)return undefined;sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1');const timer=setTimeout(()=>setShowLaunch(false),1250);return()=>clearTimeout(timer)},[showLaunch])
+  useEffect(()=>{if(!showLaunch)return undefined;sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1');const timer=setTimeout(()=>setShowLaunch(false),2000);return()=>clearTimeout(timer)},[showLaunch])
   if(showLaunch)return <div className="gt-launch" role="status" aria-label="Opening GOOD TIMES"><video className="gt-current-launch-video" autoPlay muted loop playsInline preload="metadata" poster={GT_CURRENT_HOME} src={GT_CURRENT_ANIMATION}/><div className="gt-launch__scene"/><div className="gt-launch__content"><img className="gt-launch__logo" src={GT_CURRENT_LOGO} alt="GOOD TIMES"/><div className="gt-launch__eyebrow">Worldwide experience concierge</div><div className="gt-launch__title">Your next move starts here.</div><div className="gt-launch__line"/></div></div>
-  return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}{readSession()?<GoodTimesInstallPrompt/>:null}</div>
+  return <div className="gt-premium-experience" data-app="good-times" data-build={buildId}>{children}{installPrompt?<GoodTimesInstallPrompt persistent={false}/>:null}</div>
 }
 
-function SignedOutMemberGate(){
+function SignedOutGuestExperience(){
+  const[authRequested,setAuthRequested]=React.useState(false)
+  if(!authRequested)return <LazyCommandApp onAuth={()=>setAuthRequested(true)}/>
+  return <SignedOutMemberGate onBack={()=>setAuthRequested(false)}/>
+}
+
+function SignedOutMemberGate({onBack=null}){
   const complete=(nextSession,prefs)=>{
     if(prefs){try{localStorage.setItem('gt_personalization',JSON.stringify({...prefs,updated_at:new Date().toISOString()}))}catch{}}
     if(nextSession)window.location.reload()
   }
-  return <LazyOnboarding onComplete={complete}/>
+  return <><button type="button" onClick={onBack||(()=>window.location.reload())} style={{position:'fixed',top:16,left:16,zIndex:10001,padding:'10px 14px',borderRadius:12,background:'#16161e',color:'#fff',border:'1px solid #777'}}>← Browse as guest</button><LazyOnboarding onComplete={complete}/></>
 }
 
 async function bootstrap(){
@@ -144,6 +163,7 @@ async function bootstrap(){
     oauthSession=await consumeOAuthRedirect(window.location.hash)
     if(oauthSession){
       storeSession(oauthSession)
+      recordOAuthSignup(oauthSession)
       const cleanUrl=new URL(window.location.href)
       cleanUrl.hash=''
       cleanUrl.searchParams.delete('auth')
@@ -160,15 +180,19 @@ async function bootstrap(){
   let loadingLabel='Opening GOOD TIMES'
   if(recoverySession){route=<LazyPasswordRecovery recoverySession={recoverySession}/>;loadingLabel='Securing your account'}
   else if(requestType){route=<LazyDirectRequest requestType={requestType}/>;loadingLabel='Opening your concierge request'}
-  else if(!hasSession){route=<SignedOutMemberGate/>;loadingLabel='Opening GOOD TIMES sign in'}
+  else if(!hasSession){route=<SignedOutGuestExperience/>;loadingLabel='Opening GOOD TIMES discovery'}
   else if(legacyRoute){route=<LazyLegacyApp/>;loadingLabel='Opening legacy GOOD TIMES'}
   else {route=<LazyCommandApp/>;loadingLabel=commandRoute?'Opening command interface':'Opening GOOD TIMES'}
 
   const launchMemberV4=hasSession&&!requestType&&!recoverySession&&!legacyRoute
+  // Cold Instagram/partner traffic must be able to install before creating an account
+  // (iOS Home Screen apps do not share Safari storage, so install-first avoids a second sign-in).
+  // The prompt itself still suppresses for Capacitor, standalone PWA and recent dismissals.
+  const showInstallPrompt=!isNative&&!requestType&&!recoverySession
   ReactDOM.createRoot(rootElement).render(
     <RuntimeBoundary>
       <Suspense fallback={<RouteLoading label={loadingLabel}/> }>
-        <PremiumRoot launch={launchMemberV4}>
+        <PremiumRoot launch={launchMemberV4} installPrompt={showInstallPrompt}>
           {isNative?<LazyNativeBridge/>:null}
           {route}
         </PremiumRoot>
