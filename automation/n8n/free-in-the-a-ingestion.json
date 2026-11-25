@@ -1,0 +1,29 @@
+{
+  "name": "GOOD TIMES · FREE IN THE A · offer ingestion (approval-gated)",
+  "nodes": [
+    { "id": "1", "name": "Every 6 hours", "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1.2, "position": [0, 0],
+      "parameters": { "rule": { "interval": [{ "field": "hours", "hoursInterval": 6 }] } } },
+    { "id": "2", "name": "Source list (official only)", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [220, 0],
+      "parameters": { "jsCode": "// Direct official sources only: restaurant/brand promo pages, museum free-day pages, birthday-reward program pages,\n// public giveaway rules pages, partner-supplied promos. One item per source. Edit this list; never add aggregator rumors.\nreturn [\n  // { json: { city_key: 'atlanta', merchant_name: 'Example', category: 'food_drinks', offer_type: 'free', source_url: 'https://example.com/promo', title_hint: '' } },\n].map(x => x);" } },
+    { "id": "3", "name": "Fetch official page", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [440, 0],
+      "parameters": { "url": "={{ $json.source_url }}", "options": { "response": { "response": { "fullResponse": true, "responseFormat": "text" } }, "timeout": 15000 } },
+      "continueOnFail": true },
+    { "id": "4", "name": "Verify location + conditions + expiration", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [660, 0],
+      "parameters": { "jsCode": "// Keep only offers whose OFFICIAL page is live (2xx), names the merchant, mentions the city or a participating\n// location, and states an end date we can parse (or is an evergreen birthday program). Everything else is dropped.\nconst out = [];\nfor (const item of $input.all()) {\n  const src = $('Source list (official only)').item.json;\n  const status = item.json.statusCode || 0; const body = String(item.json.body || item.json.data || '').toLowerCase();\n  if (status < 200 || status > 299) continue;\n  if (!body.includes(String(src.merchant_name || '').toLowerCase())) continue;\n  if (!/atlanta|\\bga\\b|georgia/.test(body) && src.category !== 'birthday') continue;\n  const m = body.match(/(?:ends?|expires?|valid (?:through|until)|through)\\s+([a-z]{3,9}\\.? \\d{1,2}(?:, ?\\d{4})?)/);\n  const expires = m ? new Date(m[1]) : null;\n  if (src.category !== 'birthday' && !(expires && !isNaN(expires) && expires > new Date())) continue;\n  out.push({ json: { ...src, expires_at: expires && !isNaN(expires) ? expires.toISOString() : null, dedupe: `${src.merchant_name}|${src.title_hint || src.source_url}`.toLowerCase() } });\n}\nreturn out;" } },
+    { "id": "5", "name": "Dedupe", "type": "n8n-nodes-base.removeDuplicates", "typeVersion": 2, "position": [880, 0],
+      "parameters": { "compare": "selectedFields", "fieldsToCompare": "dedupe" } },
+    { "id": "6", "name": "Submit to approval queue (Supabase)", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.2, "position": [1100, 0],
+      "parameters": { "method": "POST", "url": "https://dzlmtvodpyhetvektfuo.supabase.co/rest/v1/rpc/gt_submit_offer",
+        "authentication": "predefinedCredentialType", "nodeCredentialType": "supabaseApi", "sendBody": true, "specifyBody": "json",
+        "jsonBody": "={{ { p: { city_key: $json.city_key, title: $json.title_hint || ($json.merchant_name + ' offer'), merchant_name: $json.merchant_name, category: $json.category, offer_type: $json.offer_type, source_url: $json.source_url, expires_at: $json.expires_at, submitter_contact: 'n8n:free-in-the-a-ingestion' } } }}" } }
+  ],
+  "connections": {
+    "Every 6 hours": { "main": [[{ "node": "Source list (official only)", "type": "main", "index": 0 }]] },
+    "Source list (official only)": { "main": [[{ "node": "Fetch official page", "type": "main", "index": 0 }]] },
+    "Fetch official page": { "main": [[{ "node": "Verify location + conditions + expiration", "type": "main", "index": 0 }]] },
+    "Verify location + conditions + expiration": { "main": [[{ "node": "Dedupe", "type": "main", "index": 0 }]] },
+    "Dedupe": { "main": [[{ "node": "Submit to approval queue (Supabase)", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "notes": "Lands offers as pending/submitted. Publishing requires admin Verify + Approve in the FREE IN THE A console (?gt-admin=free). Expiry runs in Postgres (gt_expire_offers_v1). Engagement: v_gt_offer_metrics." }
+}

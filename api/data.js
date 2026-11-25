@@ -1,3 +1,7 @@
+import { eventFacts, SHOW_PUBLIC_FIELDS } from './event-facts.js'
+import { eventTimeFields } from './event-time-display.js'
+import { HOUSE_VENUE_TBA, houseVenueTba, withHouseVenue, limitKeepingHouse, isHiddenListing } from './house-programming.js'
+
 const CONTENT_URL = 'https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY = 'sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 const EVENT_FRESHNESS_MAX_HOURS = 72
@@ -8,11 +12,7 @@ const CITY_ALIASES = {
   dallas:'dallas', new_york:'new_york', 'new-york':'new_york', phoenix:'phoenix',
   scottsdale:'scottsdale', las_vegas:'las_vegas', 'las-vegas':'las_vegas',
 }
-const SHOW_SELECT = [
-  'id','event_name','event_type','genre','city_key','show_date','show_time','venue_name','ticket_url',
-  'image_url','organizer','display_priority','good_times_score','category_key_v2','subcategory_key_v2',
-  'is_featured','is_curated','updated_at',
-].join(',')
+const SHOW_SELECT = SHOW_PUBLIC_FIELDS
 const VENUE_SELECT = [
   'id','name','slug','city_key','neighborhood','side_of_town','category_key','subcategory','address',
   'latitude','longitude','phone','website','instagram_handle','short_desc','vibe_tags','best_for','best_time',
@@ -122,6 +122,13 @@ export function inferCustomerTaxonomy(item) {
   if (/film tv tour|film tour|studio tour|sightseeing tour|walking tour|city tour/.test(text)) return { category:'attractions_experiences', subcategory:'tours_sightseeing' }
   if (/happy hour|cocktail night|wine tasting|wine down/.test(text)) return { category:'dining_culinary', subcategory:'wine_cocktails' }
   if (/career fair|job fair|college expo|business expo|entrepreneur expo|professional expo|startup expo/.test(text)) return { category:'business_professional', subcategory:/career|job/.test(text)?'career_fairs':'conferences_summits' }
+  // Specific reviewed classifications must survive broad legacy event-type keywords.
+  // Only validated category/subcategory pairs are accepted here; other guards remain below.
+  if ((reviewed === 'arts_museums_culture' && ['film_screenings','exhibitions'].includes(fallbackSub))
+    || (reviewed === 'comedy_performing_arts' && fallbackSub === 'improv')
+    || (reviewed === 'festivals_major_activations' && fallbackSub === 'music_festivals')) {
+    return { category:reviewed, subcategory:fallbackSub }
+  }
   if (/stand up|stand-up|\bcomedy\b/.test(text)) return { category:'comedy_performing_arts', subcategory:'stand_up' }
   if (/\bimprov\b/.test(text)) return { category:'comedy_performing_arts', subcategory:'improv' }
   if (/burlesque|cabaret|variety show/.test(text)) return { category:'comedy_performing_arts', subcategory:'theater' }
@@ -134,7 +141,9 @@ export function inferCustomerTaxonomy(item) {
       ? { category:'sports_watch', subcategory:'watch_parties' }
       : { category:'nightlife', subcategory:'late_night' }
   }
-  if (/\b(vs\.?|versus|boxing|ufc|mma|wrestling|fight night|home game|matchup)\b/.test(text)) return { category:'sports_watch', subcategory:/boxing|ufc|mma|wrestling|fight/.test(text)?'combat_sports':fallbackSub || 'pro_home_games' }
+  const combatSignal=/\b(boxing|ufc|mma|wrestling|fight night)\b/.test(text)
+  const sportsMatchupSignal=/\b(home game|matchup)\b/.test(text)||(/\b(vs\.?|versus)\b/.test(text)&&hasSportsSignal(text))
+  if (combatSignal||sportsMatchupSignal) return { category:'sports_watch', subcategory:combatSignal?'combat_sports':fallbackSub || 'pro_home_games' }
 
   const concertSignal = rawType === 'concert' || /live music|music show|concert|symphony|dj set|night sets|\br&b\b|\brnb\b|hip hop|hip-hop|\brap\b|\bjazz\b|\bgospel\b|karaoke|open mic/.test(text)
   if (concertSignal) return { category:'concerts_live_music', subcategory:inferMusicSubcategory(text, fallbackSub, item?.genre) }
@@ -158,10 +167,12 @@ export function inferCustomerTaxonomy(item) {
 export function inferCustomerCategory(item) { return inferCustomerTaxonomy(item).category }
 function customerReadyEvent(item, verifiedVenueNames, city) {
   const title = String(item.event_name || '').trim()
-  const venue = String(item.venue_name || '').trim()
+  // Kollective house listings may be venue-TBA (never invented); every other event needs a real venue.
+  const venueTba = houseVenueTba(item)
+  const venue = venueTba ? HOUSE_VENUE_TBA : String(item.venue_name || '').trim()
   const taxonomy = inferCustomerTaxonomy(item)
   if (!title || !taxonomy.category || !safePublicImage(item.image_url) || !item.ticket_url) return false
-  if (!venue || /^(atlanta|houston|miami|dallas|charlotte|phoenix|scottsdale|las vegas|los angeles|new york|washington dc|tba|online|virtual|warehouse)$/i.test(venue)) return false
+  if (!venueTba && (!venue || /^(atlanta|houston|miami|dallas|charlotte|phoenix|scottsdale|las vegas|los angeles|new york|washington dc|tba|online|virtual|warehouse)$/i.test(venue))) return false
   if (/\b(sold out|mon-fri 2026|make money fast|timeshare|webinar)\b/i.test(title)) return false
   if (city !== 'atlanta') {
     const venueMatched = verifiedVenueNames.has(normalizeVenueName(venue))
@@ -251,15 +262,17 @@ async function fetchRows(path, label) {
   throw lastError || new Error(`${label} failed`)
 }
 function mapShows(rows) {
-  return rows.map((item, index) => {
+  return rows.filter(row => !isHiddenListing(row)).map(withHouseVenue).map((item, index) => {
     const taxonomy = inferCustomerTaxonomy(item)
     return {
+      ...eventFacts(item),
       event_key:`show:${item.id}`, source_table:'gt_shows', source_id:item.id, city_key:item.city_key,
-      title:decodeHtmlEntities(item.event_name), event_date:item.show_date, event_time:item.show_time, venue_name:decodeHtmlEntities(item.venue_name),
+      title:decodeHtmlEntities(item.event_name), event_date:item.show_date, ...eventTimeFields(item), venue_name:decodeHtmlEntities(item.venue_name),
       raw_type:item.event_type, raw_category:item.genre, ticket_url:item.ticket_url, image_url:safePublicImage(item.image_url),
+      description:decodeHtmlEntities(item.description),source_name:item.source,source_url:item.source_url,updated_at:item.updated_at,
       organizer:decodeHtmlEntities(item.organizer), display_priority:item.display_priority, good_times_score:item.good_times_score,
       category_key:taxonomy.category, subcategory_key:taxonomy.subcategory,
-      is_featured:item.is_featured, is_curated:item.is_curated, rank_order:index + 1,
+      is_featured:item.is_featured, is_curated:item.is_curated, venue_tba:Boolean(item.venue_tba), rank_order:index + 1,
     }
   })
 }
@@ -304,7 +317,7 @@ export default async function handler(request, response) {
   const venues = dedupeCustomerVenues(rawVenues).map(item => ({...item,hero_image:safePublicImage(item.hero_image)})).slice(0,venueLimit)
   const verifiedVenueNames = new Set(venues.map(item => normalizeVenueName(item.name)).filter(Boolean))
   const filteredEvents = eventFreshness.live ? rawEvents.filter(item => customerReadyEvent(item,verifiedVenueNames,city)) : []
-  const events = mapShows(dedupeCustomerEvents(filteredEvents)).slice(0,eventLimit)
+  const events = limitKeepingHouse(mapShows(dedupeCustomerEvents(filteredEvents)),eventLimit)
   const degraded = eventResult.status === 'rejected' || venueResult.status === 'rejected' || eventFreshness.status === 'stale'
   const coverage = {
     events_live:eventFreshness.live,

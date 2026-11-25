@@ -1,0 +1,61 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import { humanize, labelFor } from '../src/features/experience/complete/model.js'
+import { cuisinesFromText, restaurantCuisines, CUISINE_LABELS } from '../src/features/experience/complete/restaurant-cuisine.js'
+
+test('raw taxonomy keys never reach customer labels', () => {
+  assert.equal(humanize('afro_caribbean'), 'Afro-Caribbean')
+  assert.equal(humanize('american_brasserie'), 'American Brasserie')
+  assert.equal(humanize('Fine Dining'), 'Fine Dining')
+  assert.equal(labelFor('attractions_experiences'), 'Attractions & Experiences')
+  assert.equal(labelFor('travel_staycations'), 'Hotels & Staycations')
+  assert.doesNotMatch(labelFor('fashion_beauty_shopping'), /_/)
+})
+
+test('cuisine lanes come only from reviewed tags or the venue sourced subcategory', () => {
+  assert.deepEqual(cuisinesFromText('afro_caribbean'), ['caribbean'])
+  assert.deepEqual(cuisinesFromText('thai_restaurant'), ['thai'])
+  assert.deepEqual(cuisinesFromText('brewing_company'), [], 'brewing must not become wings')
+  assert.deepEqual(cuisinesFromText('delivery'), [], 'delivery must not become deli')
+  assert.deepEqual(cuisinesFromText('steakhouse'), ['steakhouse'], 'steakhouse must not become tea/cafe')
+  assert.deepEqual(restaurantCuisines({ name: 'Sushi Palace', cuisine_tags: [], source_subcategory: 'restaurant' }), [], 'names are never used to guess cuisine')
+  assert.deepEqual(restaurantCuisines({ cuisine_tags: ['seafood'], source_subcategory: 'steakhouse' }), ['seafood', 'steakhouse'])
+  for (const key of restaurantCuisines({ cuisine_tags: ['italian'], source_subcategory: 'wine_bar_pizza' })) assert.ok(CUISINE_LABELS[key])
+})
+
+test('Places surfaces depth instead of dead ends', () => {
+  const panel = fs.readFileSync('src/features/experience/CompactExplorePanel.jsx', 'utf8')
+  // Owner 2026-11-10: event-only lanes (Fashion Shows, Beauty Expos…) read as dead ends — empty subcategories are hidden.
+  assert.match(panel, /if \(n === 0 && selectedSubcategory !== sub\.subcategory_key\) return null/, 'empty subcategories are hidden, not shown as coming soon')
+  assert.match(panel, /loadSubcategoryArt/, 'subcategory tiles use real venue photography')
+  const v4 = fs.readFileSync('src/features/experience/GoodTimesCommandAppV4.jsx', 'utf8')
+  const placesScreen = fs.readFileSync('src/features/experience/complete/PlacesScreen.jsx', 'utf8')
+  assert.match(v4, /loadPlaceLaneArt/, 'Places lanes use distinct real venue photography')
+  assert.match(placesScreen, /gtc-lane-count/, 'Places lanes show verified place counts')
+  const collections = fs.readFileSync('src/features/experience/complete/Collections.jsx', 'utf8')
+  assert.match(collections, /CategoryPlacesFallback/, 'empty dated lanes fall back to verified places')
+  const explorer = fs.readFileSync('src/features/experience/complete/RestaurantExplorer.jsx', 'utf8')
+  // Owner 2026-11-11: Restaurants open into a subcategory grid like every other Places category (not a side-scrolling rail).
+  assert.match(explorer, /data-gt-subcategories="restaurant_cuisines"/, 'Restaurants open with real cuisine subcategories')
+  assert.match(explorer, /gtk-subtile-art/, 'cuisine subcategories are photographic')
+})
+
+test('re-verification never upgrades unverified inventory', () => {
+  const sql = fs.readFileSync('supabase/migrations/20261028063000_gt_venue_site_reverification_v1.sql', 'utf8')
+  assert.match(sql, /v\.verification_status = 'verified_current'/)
+  assert.match(sql, /v\.verified_at is not null/)
+  assert.match(sql, /p_closed_signal is null/)
+  assert.match(sql, /previous_freshness_expires_at/, 'every renewal is reversible')
+})
+
+test('cinematic standard: every primary screen opens with a themed hero and real actions only', () => {
+  const read = f => fs.readFileSync(f, 'utf8')
+  for (const f of ['HomeScreen.jsx','PlacesScreen.jsx','EntertainmentHub.jsx','RestaurantExplorer.jsx']) assert.match(read('src/features/experience/complete/' + f), /<ScreenHero/, f + ' must open with a cinematic hero')
+  const posters = read('src/features/experience/complete/posters.jsx')
+  assert.match(posters, /safeLink\(v\?\.booking_link\)/, 'Reserve only appears with a real booking link')
+  assert.match(posters, /safeLink\(event\.ticket_url\)/, 'Get Tickets only appears with a real ticket link')
+  assert.doesNotMatch(posters, /Math\.random|open now/i, 'no invented ratings, distances or open-now claims')
+  const kit = read('src/features/experience/complete/Kit.jsx')
+  assert.match(kit, /Verified photo coming soon/, 'named places without verified media use the premium no-photo treatment')
+})

@@ -53,6 +53,18 @@ jobs:
             rm -f /tmp/gt-qa-session.json
             echo "signed-in QA secret not configured; deterministic signed-in fixtures will still run"
           fi
+      - name: Prove restaurant facts, optional-data failure and return journeys
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: timeout 240s node --test --test-concurrency=1 scripts/restaurant-details.test.mjs
+      - name: Protect complete taxonomy and category-to-place journeys
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: timeout 240s node --test --test-concurrency=1 scripts/protected-taxonomy.test.mjs
       - name: Prove App Review iPad layouts
         env:
           GT_UI_BASE: http://localhost:4180
@@ -83,6 +95,12 @@ jobs:
           GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
           GT_UI_ARTIFACTS: ui-artifacts
         run: timeout 240s node --test --test-concurrency=1 scripts/customer-enhancements-rendered.test.mjs
+      - name: Owner-reported screenshot acceptance journeys
+        env:
+          GT_UI_BASE: http://localhost:4180
+          GT_UI_CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
+          GT_UI_ARTIFACTS: ui-artifacts
+        run: timeout 420s node --test --test-concurrency=1 scripts/owner-p0-screenshot-audit.test.mjs
       - name: Capture App Store-sized layout screenshots
         env:
           GT_UI_BASE: http://localhost:4180

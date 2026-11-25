@@ -7,13 +7,18 @@ import {
 } from './data.js'
 import { scoreGoodTimesEvent } from './good-times-intelligence.js'
 import { eventTimeFields, validClock } from './event-time-display.js'
+import { eventFacts } from './event-facts.js'
 import { dedupeEventOccurrences, inventoryCacheKey } from './event-occurrences.js'
 import ATLANTA_FALLBACK_SNAPSHOT from './atlanta-fallback-snapshot.js'
+import { HOUSE_VENUE_TBA, houseVenueTba, withHouseVenue, limitKeepingHouse, isHiddenListing } from './house-programming.js'
 
 const CONTENT_URL='https://dzlmtvodpyhetvektfuo.supabase.co'
 const CONTENT_KEY='sb_publishable_ekvoOK6QQ05dUZuWgzQfUw_2RgbWPFR'
 const EVENT_FRESHNESS_MAX_HOURS=72
 const EMBEDDED_SNAPSHOT_MAX_AGE_MS=36*60*60*1000
+const CACHE_ONLY_RPC_TIMEOUT_MS=1600
+const INVENTORY_RPC_TIMEOUT_MS=2600
+const INVENTORY_RPC_ATTEMPTS=1
 const CACHE=globalThis.__GT_DATA_LIVE_CACHE_V8__||(globalThis.__GT_DATA_LIVE_CACHE_V8__=new Map())
 const CITY_TIMEZONES=Object.freeze({
   atlanta:'America/New_York',
@@ -29,7 +34,7 @@ const CITY_TIMEZONES=Object.freeze({
   scottsdale:'America/Phoenix',
 })
 
-function headers(){return{apikey:CONTENT_KEY,Authorization:`Bearer ${CONTENT_KEY}`,Accept:'application/json','Content-Type':'application/json'}}
+function headers(){return{apikey:CONTENT_KEY,Accept:'application/json','Content-Type':'application/json'}}
 function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms))}
 function shiftISODate(value,days){const d=new Date(`${value}T12:00:00Z`);d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)}
 function clockPart(parts,type){return parts.find(part=>part.type===type)?.value||''}
@@ -50,8 +55,10 @@ function safeImage(value){
   return text.startsWith('http://')?text.replace(/^http:\/\//i,'https://'):text
 }
 function decode(value){return String(value||'').replace(/&amp;/gi,'&').replace(/&#8217;/gi,"'").replace(/&quot;/gi,'"').replace(/&#39;|&apos;/gi,"'").replace(/&nbsp;/gi,' ')}
-function parseSnapshotTimestamp(value){
-  const normalized=String(value||'').trim().replace(' ','T').replace(/([+-]\d{2})$/,'$1:00')
+function parseSnapshotTimestamp(value) {
+  let normalized=String(value||'').trim().replace(' ','T')
+  if(/[+-][0-9]{2}$/.test(normalized)) normalized += ':00'
+  normalized=normalized.replace(/\.([0-9]{3})[0-9]+(?=([+-][0-9]{2}:[0-9]{2}|Z)$)/,'.$1')
   return Date.parse(normalized)
 }
 function embeddedSnapshotUsable(snapshot,now=new Date()){
@@ -60,13 +67,33 @@ function embeddedSnapshotUsable(snapshot,now=new Date()){
   return Number.isFinite(refreshedAt)&&ageMs>=0&&ageMs<=EMBEDDED_SNAPSHOT_MAX_AGE_MS&&Array.isArray(snapshot?.events)&&snapshot.events.length>0&&Array.isArray(snapshot?.venues)&&snapshot.venues.length>0
 }
 
+async function fetchInventoryCacheOnly({city,serviceDate}){
+  const controller=new AbortController()
+  const timer=setTimeout(()=>controller.abort(),CACHE_ONLY_RPC_TIMEOUT_MS)
+  try{
+    const response=await fetch(`${CONTENT_URL}/rest/v1/rpc/gt_public_live_inventory_cache_only_v1`,{
+      method:'POST',headers:headers(),cache:'no-store',signal:controller.signal,
+      body:JSON.stringify({p_city:city,p_service_date:serviceDate}),
+    })
+    const text=await response.text()
+    if(!response.ok)throw new Error(`cache-only RPC HTTP ${response.status}: ${text.slice(0,240)}`)
+    const result=text?JSON.parse(text):null
+    if(!result?.ok||result?.is_service_date_match!==true||result?.is_fresh!==true||!Array.isArray(result?.payload?.events)||!Array.isArray(result?.payload?.venues)){
+      throw new Error(`cache-only RPC unavailable: ${result?.reason||'stale_or_invalid'}`)
+    }
+    return result.payload
+  }catch(error){
+    throw error?.name==='AbortError'?new Error('cache-only RPC timed out'):error
+  }finally{clearTimeout(timer)}
+}
+
 async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLimit}){
   let lastError=null
   let currentEventLimit=eventFetchLimit
   let currentVenueLimit=venueFetchLimit
-  for(let attempt=0;attempt<3;attempt+=1){
+  for(let attempt=0;attempt<INVENTORY_RPC_ATTEMPTS;attempt+=1){
     const controller=new AbortController()
-    const timer=setTimeout(()=>controller.abort(),7000)
+    const timer=setTimeout(()=>controller.abort(),INVENTORY_RPC_TIMEOUT_MS)
     try{
       const response=await fetch(`${CONTENT_URL}/rest/v1/rpc/gt_public_live_inventory_cached`,{
         method:'POST',headers:headers(),cache:'no-store',signal:controller.signal,
@@ -79,7 +106,7 @@ async function fetchInventoryRPC({city,serviceDate,eventFetchLimit,venueFetchLim
       return payload
     }catch(error){
       lastError=error?.name==='AbortError'?new Error('inventory RPC timed out'):error
-      if(attempt<2){
+      if(attempt<INVENTORY_RPC_ATTEMPTS-1){
         const message=lastError?.message||''
         const timeoutLike=/57014|statement timeout|timed out/i.test(message)
         const schemaCacheLike=/PGRST002|schema cache/i.test(message)
@@ -148,22 +175,25 @@ function isStaleServiceDayEvent(item,clock){
   if(start<0)return false
   return start<clock.serviceMinute-(6*60)
 }
-function customerReadyEvent(item,clock){
+export function customerReadyEvent(item,clock){
   const taxonomy=inferCustomerTaxonomy(item)
   const title=String(item.event_name||'').trim()
-  const venue=String(item.venue_name||'').trim()
+  // Kollective house listings may be venue-TBA (never invented); every other event needs a real venue.
+  const venueTba=houseVenueTba(item)
+  const venue=venueTba?HOUSE_VENUE_TBA:String(item.venue_name||'').trim()
   if(!title||!venue||!taxonomy.category||!safeImage(item.image_url)||!item.ticket_url||isStaleServiceDayEvent(item,clock))return false
-  if(/^(atlanta|houston|miami|dallas|charlotte|phoenix|scottsdale|las vegas|los angeles|new york|washington dc|tba|tbd|online|virtual|warehouse)$/i.test(venue))return false
+  if(!venueTba&&/^(atlanta|houston|miami|dallas|charlotte|phoenix|scottsdale|las vegas|los angeles|new york|washington dc|tba|tbd|online|virtual|warehouse)$/i.test(venue))return false
   if(/\b(online reserved|zoom id|virtual event|sold out|mon-fri 2026|make money fast|timeshare|webinar)\b/i.test(`${title} ${venue}`))return false
   return true
 }
-function mapEvents(rows){return rows.map((item,index)=>{const taxonomy=inferCustomerTaxonomy(item);return{
+function mapEvents(rows){return rows.filter(row=>!isHiddenListing(row)).map(withHouseVenue).map((item,index)=>{const taxonomy=inferCustomerTaxonomy(item);return{
+  ...eventFacts(item),
   event_key:`show:${item.id}`,source_table:'gt_shows',source_id:item.id,city_key:item.city_key,
   title:decode(item.event_name),event_date:item.show_date,...eventTimeFields(item),venue_name:decode(item.venue_name),
   raw_type:item.event_type,raw_category:item.genre,description:decode(item.description),ticket_url:item.ticket_url,image_url:safeImage(item.image_url),organizer:decode(item.organizer),
   source_name:item.source,source_url:item.source_url,is_verified:item.status==='confirmed',quality_score:item.quality_score,freshness_tier:item.freshness_tier,updated_at:item.updated_at,
   display_priority:item.display_priority,good_times_score:item.good_times_score,category_key:taxonomy.category,subcategory_key:taxonomy.subcategory,
-  is_featured:item.is_featured,is_curated:item.is_curated,rank_order:index+1,
+  is_featured:item.is_featured,is_curated:item.is_curated,venue_tba:Boolean(item.venue_tba),rank_order:index+1,
 }})}
 function mapVenues(rows){
   const normalized=rows.map(row=>({
@@ -190,16 +220,21 @@ export default async function handler(request,response){
   const requestedCity=normalizeCity(url.searchParams.get('city'))
   const city='atlanta'
   if(requestedCity!=='atlanta')response.setHeader('X-Good-Times-Launch-Scope','atlanta-only')
-  const eventLimit=clampLimit(url.searchParams.get('event_limit'),120,180)
-  const venueLimit=clampLimit(url.searchParams.get('venue_limit'),120,180)
+  const eventLimit=clampLimit(url.searchParams.get('event_limit'),120,480)
+  const venueLimit=clampLimit(url.searchParams.get('venue_limit'),120,540)
   const clock=cityClock(city)
-  const eventFetchLimit=Math.min(Math.max(eventLimit*4,360),720)
-  const venueFetchLimit=Math.min(Math.max(venueLimit*3,240),540)
+  const eventFetchLimit=Math.min(Math.max(eventLimit*2,120),240)
+  const venueFetchLimit=Math.min(Math.max(venueLimit*2,120),240)
   const cacheKey=inventoryCacheKey(city,clock.serviceDate,eventLimit,venueLimit)
   let inventory
   let embeddedFallbackUsed=false
   try{
-    inventory=await fetchInventoryRPC({city,serviceDate:clock.serviceDate,eventFetchLimit,venueFetchLimit})
+    try{
+      inventory=await fetchInventoryCacheOnly({city,serviceDate:clock.serviceDate})
+    }catch(cacheError){
+      console.warn('[GOOD TIMES data-live] cache-only inventory unavailable; trying canonical inventory RPC',{city,error:cacheError?.message})
+      inventory=await fetchInventoryRPC({city,serviceDate:clock.serviceDate,eventFetchLimit,venueFetchLimit})
+    }
   }catch(error){
     const stale=CACHE.get(cacheKey)
     if(stale&&Date.now()-stale.at<15*60*1000)return send(response,200,{...stale.payload,degraded:true,coverage:{...stale.payload.coverage,notice:'Live sources are refreshing; showing the most recent verified city snapshot.'}},'STALE')
@@ -218,7 +253,7 @@ export default async function handler(request,response){
   const freshness=getEventFreshness(rawEvents,new Date())
   const readyEvents=freshness.live?rawEvents.filter(item=>customerReadyEvent(item,clock)):[]
   const ranked=rankEvents(dedupeEventOccurrences(readyEvents),clock)
-  const events=mapEvents(ranked).slice(0,eventLimit)
+  const events=limitKeepingHouse(mapEvents(ranked),eventLimit)
   const venues=mapVenues(rawVenues).slice(0,venueLimit)
   const degraded=embeddedFallbackUsed||freshness.status==='stale'
   const payload={

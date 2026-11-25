@@ -40,17 +40,17 @@ try{
     const page=await context.newPage()
     await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:30000})
     await page.waitForSelector('.gt5-app',{state:'visible',timeout:20000})
-    await page.waitForSelector('.gt5-home-hero',{state:'visible',timeout:20000})
+    await page.waitForSelector('.gtc-home',{state:'visible',timeout:20000})
     await capture(page,target,'01-home')
 
-    await openTab(page,'Discover','.gt5-discover')
-    await capture(page,target,'02-discover')
+    await openTab(page,'Places','.gtc-places')
+    await capture(page,target,'02-places')
 
-    await openTab(page,'Plan','.gt5-plan')
+    await openTab(page,'Plan','.gtc-planner')
     await capture(page,target,'03-plan')
 
-    await openTab(page,'Saved','.gt5-saved')
-    await capture(page,target,'04-saved')
+    await openTab(page,'Entertainment','.gtc-entertainment')
+    await capture(page,target,'04-entertainment')
 
     await openTab(page,'Profile','.gt5-profile')
     await capture(page,target,'05-profile')
