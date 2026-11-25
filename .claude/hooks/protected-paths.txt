@@ -1,0 +1,11 @@
+# One path or prefix per line. Edits are blocked unless GT_FOUNDER_OVERRIDE=1.
+AGENTS.md
+docs/GOOD_TIMES_REFERENCE_BASE_LOCK.md
+src/features/experience/good-times-founder-v4-restore.css
+src/features/experience/good-times-v4.css
+src/features/experience/good-times-v4-tablet.css
+public/reference-base/
+scripts/reference-base-guard.test.mjs
+scripts/reference-base-rendered.test.mjs
+.github/workflows/ui-regression.yml
+.claude/
