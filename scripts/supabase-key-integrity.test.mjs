@@ -13,14 +13,18 @@ const SOURCE = fs.readFileSync(new URL('../src/lib/supabase.js', import.meta.url
 const HEALTH_SOURCE = fs.readFileSync(new URL('../api/health.js', import.meta.url), 'utf8')
 
 const CONSTANTS = [
-  { name: 'CANONICAL_GT_ANON_KEY', ref: 'czocqfaovfpjweayniuw' },
-  { name: 'CANONICAL_KHG_ANON_KEY', ref: 'dzlmtvodpyhetvektfuo' },
+  { name: 'CANONICAL_GT_ANON_KEY', ref: 'czocqfaovfpjweayniuw', type: 'legacy-anon' },
+  { name: 'CANONICAL_KHG_ANON_KEY', ref: 'dzlmtvodpyhetvektfuo', type: 'publishable' },
 ]
 
-function claimsFrom(source, name) {
+function valueFrom(source, name) {
   const match = source.match(new RegExp('const ' + name + " = '([^']*)'"))
   assert.ok(match, name + ' is missing')
-  const parts = match[1].split('.')
+  return match[1]
+}
+
+function claimsFrom(source, name) {
+  const parts = valueFrom(source, name).split('.')
   assert.equal(parts.length, 3, name + ' is not a well-formed JWT')
   return JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'))
 }
@@ -40,14 +44,28 @@ function assertValidAnonClaims(claims, name, ref) {
     name + ' expired ' + new Date(claims.exp * 1000).toISOString())
 }
 
-for (const { name, ref } of CONSTANTS) {
-  test(name + ' is a valid, unexpired anon key for its own project', () => {
+for (const { name, ref, type } of CONSTANTS) {
+  test(name + ' uses the intended public credential type', () => {
+    const value = valueFrom(SOURCE, name)
+    assert.doesNotMatch(value, /^sb_secret_/, name + ' must never ship a private secret key')
+    if (type === 'publishable') {
+      assert.match(value, /^sb_publishable_[A-Za-z0-9_-]+$/, name + ' must use a modern publishable key')
+      return
+    }
     assertValidAnonClaims(claimsOf(name), name, ref)
   })
 }
 
-test('the two canonical keys address different projects', () => {
-  assert.notEqual(claimsOf('CANONICAL_GT_ANON_KEY').ref, claimsOf('CANONICAL_KHG_ANON_KEY').ref)
+test('legacy GOOD TIMES auth and modern KHG content credentials stay intentionally separated', () => {
+  assert.equal(claimsOf('CANONICAL_GT_ANON_KEY').ref, 'czocqfaovfpjweayniuw')
+  assert.match(valueFrom(SOURCE, 'CANONICAL_KHG_ANON_KEY'), /^sb_publishable_/)
+})
+
+test('KHG env override accepts publishable keys only', () => {
+  assert.match(SOURCE, /function validPublishableKey\(value\)/)
+  assert.match(SOURCE, /\^sb_publishable_/)
+  assert.match(SOURCE, /KHG_SUPABASE_ANON_KEY = validPublishableKey\(env\.VITE_KHG_SUPABASE_ANON_KEY\)/)
+  assert.match(SOURCE, /value\.startsWith\('sb_secret_'\).*return false/)
 })
 
 test('GOOD TIMES health probe reuses the validated canonical project credentials', () => {

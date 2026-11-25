@@ -5,14 +5,22 @@ import handler, { normalizeCity, buildGatewayQueries, inferCustomerTaxonomy } fr
 
 const response = () => ({ statusCode: 0, headers: {}, body: '', setHeader(k,v) { this.headers[k]=v }, end(v='') { this.body=v } })
 
-test('Atlanta filesystem entrypoint requests the curated inventory RPC', async () => {
+test('Atlanta filesystem entrypoint reads the fresh verified cache before heavier inventory work', async () => {
   const original=globalThis.fetch, calls=[]
   globalThis.fetch=async (url,options={}) => {
     calls.push({url:String(url),options})
-    assert.match(String(url), /\/rpc\/gt_public_live_inventory_cached$/)
+    assert.match(String(url), /\/rpc\/gt_public_live_inventory_cache_only_v1$/)
     assert.equal(options.method,'POST')
     assert.equal(JSON.parse(options.body).p_city,'atlanta')
-    return new Response(JSON.stringify({events:[],venues:[]}), {status:200})
+    return new Response(JSON.stringify({
+      ok:true,
+      city:'atlanta',
+      service_date:'2026-09-24',
+      cache_refreshed_at:'2026-09-24T22:20:00Z',
+      is_service_date_match:true,
+      is_fresh:true,
+      payload:{events:[],venues:[]},
+    }), {status:200})
   }
   try {
     const res=response()

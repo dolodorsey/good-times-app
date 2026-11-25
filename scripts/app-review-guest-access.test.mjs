@@ -8,13 +8,12 @@ const onboarding = fs.readFileSync(new URL('../src/features/onboarding/GoodTimes
 const support = fs.readFileSync(new URL('../fastlane/metadata/en-US/support_url.txt', import.meta.url), 'utf8').trim()
 const project = fs.readFileSync(new URL('../ios/App/App.xcodeproj/project.pbxproj', import.meta.url), 'utf8')
 
-test('signed-out users must authenticate before GOOD TIMES customer app access', () => {
-  assert.match(main, /function SignedOutMemberGate\(\)/)
-  assert.match(main, /else if\(!hasSession\)\{route=<SignedOutMemberGate\/>/)
-  assert.match(main, /return <LazyOnboarding onComplete=\{complete\}\/>/)
-  assert.doesNotMatch(main, /SignedOutGuestExperience/)
-  assert.doesNotMatch(main, /Continue as guest/)
-  assert.doesNotMatch(main, /<LazyCommandApp onAuth=/)
+test('signed-out guests can browse the discovery application before authentication', () => {
+  assert.ok(main.includes('function SignedOutGuestExperience()'))
+  assert.ok(main.includes('if(!authRequested)return <LazyCommandApp onAuth='))
+  assert.ok(main.includes('else if(!hasSession){route=<SignedOutGuestExperience/>'))
+  assert.ok(main.includes('Browse as guest'))
+  assert.ok(!main.includes('else if(!hasSession){route=<SignedOutMemberGate/>'))
 })
 
 test('GOOD TIMES supports Google OAuth and restores the returned session', () => {
@@ -27,7 +26,7 @@ test('GOOD TIMES supports Google OAuth and restores the returned session', () =>
 })
 
 test('install prompt reaches signed-out web visitors but never native, recovery or direct-request routes', () => {
-  assert.match(main, /\{installPrompt\?<GoodTimesInstallPrompt persistent=\{!readSession\(\)\}\/>:null\}/)
+  assert.ok(main.includes('{installPrompt?<GoodTimesInstallPrompt persistent={false}/>:null}'))
   assert.match(main, /const showInstallPrompt=!isNative&&!requestType&&!recoverySession/)
   assert.doesNotMatch(main, /readSession\(\)\?<GoodTimesInstallPrompt/)
 })

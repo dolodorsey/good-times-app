@@ -1,0 +1,42 @@
+name: GOOD TIMES Public Stability Evidence
+on:
+  pull_request:
+    paths:
+      - 'api/**'
+      - 'vercel.json'
+      - 'scripts/public-stability-evidence.mjs'
+      - '.github/workflows/public-stability-evidence.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'api/**'
+      - 'vercel.json'
+      - 'scripts/public-stability-evidence.mjs'
+      - '.github/workflows/public-stability-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: public-stability-evidence-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  public-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: node node_modules/playwright-core/cli.js install --with-deps chromium
+      - name: Observe anonymous production requests and public screens
+        run: node scripts/public-stability-evidence.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: good-times-public-stability-${{ github.sha }}
+          path: artifacts/public-stability/
+          retention-days: 14
+          if-no-files-found: error

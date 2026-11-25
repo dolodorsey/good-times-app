@@ -49,15 +49,15 @@ async function installFixtureRoutes(ctx){
 }
 async function open(vp,signedIn){
   const ctx=await browser.newContext({viewport:{width:vp.width,height:vp.height},isMobile:vp.mobile,hasTouch:vp.mobile})
+  await installFixtureRoutes(ctx)
   if(signedIn){
     await ctx.addInitScript(s=>{localStorage.setItem('gt_session',JSON.stringify(s));localStorage.setItem('gt_personalization',JSON.stringify({city:'atlanta',vibes:['nightlife','grown'],age:'25-34'}));sessionStorage.setItem('gt_premium_launch','1');sessionStorage.setItem('gt_splash_shown','1')},SESSION)
-    await installFixtureRoutes(ctx)
   }
   const page=await ctx.newPage(),errors=[]
   page.on('pageerror',error=>errors.push(String(error)))
   await page.goto(BASE,{waitUntil:'domcontentloaded',timeout:60000})
   if(signedIn) await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
-  else await page.getByRole('button',{name:'Get Started'}).waitFor({state:'visible',timeout:30000})
+  else await page.waitForSelector('.gt5-app',{state:'visible',timeout:30000})
   await page.waitForTimeout(signedIn?1200:900)
   return{ctx,page,errors}
 }
@@ -88,7 +88,7 @@ async function assertShell(page,errors,context){
   assert.deepEqual(g.oversizedOverlays,[],`${context}: full-screen overlay wider/taller than viewport`)
   assert.ok(g.app&&g.topbar&&g.nav&&g.main,`${context}: V4 shell is incomplete`)
   assert.ok(g.appOverflow<=4,`${context}: app shell clips ${g.appOverflow}px instead of delegating scroll to main`)
-  assert.deepEqual(g.labels,['Home','Discover','Plan','Saved','Profile'],`${context}: protected V4 navigation changed`)
+  assert.deepEqual(g.labels,['Home','Places','Plan','Entertainment','Profile'],`${context}: protected V4 navigation changed`)
   if(g.profile){
     assert.ok(g.profileHorizontallyContained,`${context}: Profile escaped the app scroll canvas`)
     if(g.profile.h>g.main.h+2){assert.ok(g.mainScrollHeight>g.mainClientHeight,`${context}: long Profile is clipped instead of scrollable`);assert.match(g.mainOverflowY||'',/auto|scroll/,`${context}: Profile scroll container is not enabled`)}
@@ -104,27 +104,16 @@ async function openRadar(page){
 }
 
 for(const vp of VIEWPORTS){
-  test(`[${vp.name}] signed-out account gate is contained and blocks app access`,{skip,timeout:60000},async()=>{
+  test(`[${vp.name}] signed-out guests can browse public discovery without login`,{skip,timeout:60000},async()=>{
     const{ctx,page,errors}=await open(vp,false)
     try{
-      const g=await page.evaluate(()=>{
-        const doc=document.scrollingElement||document.documentElement
-        const buttons=[...document.querySelectorAll('button')].map(x=>(x.textContent||'').trim()).filter(Boolean)
-        return{
-          horizontalOverflow:Math.max(0,doc.scrollWidth-innerWidth),
-          verticalOverflow:Math.max(0,doc.scrollHeight-innerHeight),
-          hasApp:Boolean(document.querySelector('.gt5-app')),
-          buttons,
-          bodyText:(document.body.innerText||'').slice(0,2000),
-        }
-      })
-      assert.ok(g.horizontalOverflow<=1,`${vp.name}: account gate horizontal overflow ${g.horizontalOverflow}px`)
-      assert.equal(g.hasApp,false,`${vp.name}: signed-out user reached protected V4 shell`)
-      assert.ok(g.buttons.includes('Get Started'),`${vp.name}: Get Started is missing`)
-      assert.ok(g.buttons.includes('I Already Have an Account'),`${vp.name}: existing-account CTA is missing`)
-      assert.match(g.bodyText,/A free account keeps your saves, plans and recommendations with you/i)
-      assert.deepEqual(errors,[],`${vp.name}: uncaught signed-out account gate errors`)
-      await page.screenshot({path:path.join(OUT,`${vp.name}__signed-out-account-gate.png`),fullPage:false})
+      await assertShell(page,errors,`${vp.name} guest home`)
+      for(const [label,selector] of [['Places','.gtc-places'],['Entertainment','.gtc-entertainment'],['Home','.gtc-home']]){
+        await page.locator('.gt5-nav button').filter({hasText:label}).click()
+        await page.locator(selector).waitFor({state:'visible',timeout:10000})
+        await assertShell(page,errors,`${vp.name} guest ${label}`)
+      }
+      await page.screenshot({path:path.join(OUT,`${vp.name}__signed-out-guest-discovery.png`),fullPage:false})
     }finally{await ctx.close()}
   })
 
@@ -133,11 +122,11 @@ for(const vp of VIEWPORTS){
     try{
       await assertShell(page,errors,`${vp.name} member home`)
       await page.screenshot({path:path.join(OUT,`${vp.name}__signed-in-v4-home.png`),fullPage:false})
-      const destinations=[['Discover','.gt5-discover'],['Plan','.gt5-plan'],['Saved','.gt5-saved'],['Profile','.gt5-profile'],['Home','.gt5-home-hero']]
+      const destinations=[['Places','.gtc-places'],['Plan','.gtc-planner'],['Entertainment','.gtc-entertainment'],['Profile','.gt5-profile'],['Home','.gtc-home']]
       for(const[label,selector]of destinations){await page.locator('.gt5-nav button').filter({hasText:label}).click();await page.locator(selector).waitFor({state:'visible',timeout:10000});await assertShell(page,errors,`${vp.name} ${label}`)}
       await openRadar(page);await assertShell(page,errors,`${vp.name} Radar`);await page.locator('.gt5-back').click()
       const card=page.locator('.gt5-event').first();if(await card.count()){await card.click();await page.locator('.gt5-detail').waitFor({state:'visible',timeout:5000});const detail=await page.locator('.gt5-detail').first().boundingBox();assert.ok(detail&&detail.width<=vp.width+4,`${vp.name}: detail too wide`);await page.locator('.gt5-detail-back').click()}
-      await page.locator('.gt5-nav button').filter({hasText:'Profile'}).click();assert.match(await page.locator('.gt5-profile').innerText(),/GOOD TIMES QA/i)
+      await page.locator('.gt5-nav button').filter({hasText:'Profile'}).click();const profileText=await page.locator('.gt5-profile').innerText();assert.match(profileText,/GOOD TIMES QA/i);assert.match(profileText,/My GOOD TIMES/i);assert.ok(await page.locator('.gtc-my-good-times').count(),`${vp.name}: saved library did not move into Profile`)
       await assertShell(page,errors,`${vp.name} final`)
     }finally{await ctx.close()}
   })

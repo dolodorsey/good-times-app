@@ -2,6 +2,13 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { getGoodTimesHealth } from '../api/health.js'
+import ATLANTA_FALLBACK_SNAPSHOT from '../api/atlanta-fallback-snapshot.js'
+
+const snapshotTimestamp=String(ATLANTA_FALLBACK_SNAPSHOT.refreshed_at).trim().replace(' ','T')
+const snapshotWithZone=/[+-][0-9]{2}$/.test(snapshotTimestamp) ? snapshotTimestamp + ':00' : snapshotTimestamp
+const snapshotEpoch=Date.parse(snapshotWithZone.replace(/\.([0-9]{3})[0-9]+(?=([+-][0-9]{2}:[0-9]{2}|Z)$)/,'.$1'))
+const snapshotSameDay = new Date(snapshotEpoch + 3 * 60 * 60 * 1000)
+const snapshotNextDay = new Date(snapshotEpoch + 24 * 60 * 60 * 1000)
 
 const repoFile = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8')
 
@@ -34,15 +41,16 @@ test('GOOD TIMES health requires both exact service planes', async () => {
   assert.equal(JSON.parse(calls[1].options?.body || '{}').p_city, 'atlanta')
   assert.match(String(calls[0].options?.headers?.apikey || ''), /^eyJ/)
   assert.equal(calls[0].options?.headers?.Authorization, `Bearer ${calls[0].options?.headers?.apikey}`)
-  assert.match(String(calls[1].options?.headers?.apikey || ''), /^eyJ/)
-  assert.equal(calls[1].options?.headers?.Authorization, `Bearer ${calls[1].options?.headers?.apikey}`)
+  assert.match(String(calls[1].options?.headers?.apikey || ''), /^sb_publishable_/)
+  assert.doesNotMatch(String(calls[1].options?.headers?.apikey || ''), /^sb_secret_/)
+  assert.equal(calls[1].options?.headers?.Authorization, undefined)
 })
 
 test('GOOD TIMES health fails closed when the customer/auth plane is unavailable', async () => {
   const health = await getGoodTimesHealth(async (url) => {
     if (String(url).includes('czocqfaovfpjweayniuw')) return jsonResponse([])
     return jsonResponse({ events: [], venues: [] })
-  }, new Date('2026-09-23T12:00:00Z'))
+  }, snapshotSameDay)
 
   assert.equal(health.ok, false)
   assert.equal(health.customer_ready, false)
@@ -50,11 +58,43 @@ test('GOOD TIMES health fails closed when the customer/auth plane is unavailable
   assert.equal(health.degraded, false)
 })
 
+test('GOOD TIMES health uses the Atlanta service date through midnight and daylight-saving transitions', async () => {
+  const cases = [
+    ['2026-10-07T03:59:59Z', '2026-10-06'],
+    ['2026-10-07T04:00:00Z', '2026-10-06'],
+    ['2026-10-07T07:59:59Z', '2026-10-06'],
+    ['2026-10-07T08:00:00Z', '2026-10-07'],
+    ['2026-11-01T05:30:00Z', '2026-10-31'],
+    ['2026-11-01T06:30:00Z', '2026-10-31'],
+    ['2026-11-01T09:00:00Z', '2026-11-01'],
+    ['2026-03-08T06:59:59Z', '2026-03-07'],
+    ['2026-03-08T07:00:00Z', '2026-03-07'],
+    ['2026-03-08T08:00:00Z', '2026-03-08'],
+  ]
+  for (const [instant, expectedDate] of cases) {
+    let requestedDate
+    const health = await getGoodTimesHealth(async (url, options = {}) => {
+      if (String(url).includes('/rpc/gt_public_live_inventory_cached')) {
+        const request = JSON.parse(options.body)
+        requestedDate = request.p_service_date
+        // The healthy cache belongs to the active night, including after midnight.
+        return requestedDate === expectedDate
+          ? jsonResponse({ events: [], venues: [] })
+          : jsonResponse({ error: 'service_date_miss' }, false, 503)
+      }
+      return jsonResponse([{ id: 'fixture' }])
+    }, new Date(instant))
+    assert.equal(requestedDate, expectedDate, instant)
+    assert.equal(health.content_ready, true, instant)
+    assert.equal(health.degraded, false, instant)
+  }
+})
+
 test('GOOD TIMES health stays available in degraded mode when the verified Atlanta snapshot protects a content-plane outage', async () => {
   const health = await getGoodTimesHealth(async (url) => {
     if (String(url).includes('czocqfaovfpjweayniuw')) return jsonResponse([{ id: 'fixture' }])
     return jsonResponse({ error: 'schema cache' }, false, 503)
-  }, new Date('2026-09-23T12:00:00Z'))
+  }, snapshotSameDay)
 
   assert.equal(health.ok, true)
   assert.equal(health.degraded, true)
@@ -68,7 +108,7 @@ test('verified Atlanta snapshot remains a bounded fallback after service-date ro
   const health = await getGoodTimesHealth(async (url) => {
     if (String(url).includes('czocqfaovfpjweayniuw')) return jsonResponse([{ id: 'fixture' }])
     return jsonResponse({ error: 'schema cache' }, false, 503)
-  }, new Date('2026-09-24T12:00:00Z'))
+  }, snapshotNextDay)
 
   assert.equal(health.ok, true)
   assert.equal(health.degraded, true)

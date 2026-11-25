@@ -1,0 +1,109 @@
+name: Refresh Atlanta fallback snapshot
+
+# Keeps the verified Atlanta emergency snapshot fresh.
+# Snapshot-refresh close-out: run on workflow-file changes after the freshness-aware build guard is updated.
+#
+# GitHub Actions is responsible only for:
+# 1) refreshing and validating the embedded Atlanta snapshot,
+# 2) proving the diff is data-only,
+# 3) running the local build guard,
+# 4) force-updating the dedicated refresh branch.
+#
+# PR creation and protected merge are reconciled server-side by Supabase job
+# good-times-snapshot-pr-reconcile. That broker uses the owner's fine-grained
+# GitHub identity, so native pull_request workflows attach normally and strict
+# branch protection continues to enforce verify + geometry.
+
+on:
+  schedule:
+    - cron: '17 7,19 * * *'
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refresh-atlanta-fallback-snapshot.yml'
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: atlanta-fallback-snapshot-refresh
+  cancel-in-progress: false
+
+env:
+  BRANCH: claude/atlanta-snapshot-refresh
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ github.token }}
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Refresh snapshot from canonical cache (validated)
+        run: node scripts/refresh-atlanta-fallback-snapshot.mjs
+
+      - name: Force one data-only cycle when this workflow changes
+        if: github.event_name == 'push'
+        run: |
+          printf '\n// Refresher self-test run: %s\n' "$GITHUB_RUN_ID" >> api/atlanta-fallback-snapshot.js
+
+      - name: Data-only diff guard
+        id: diff
+        run: |
+          set -euo pipefail
+          CHANGED=$(git status --porcelain | awk '{print $2}')
+          echo "changed: $CHANGED"
+          if [ -z "$CHANGED" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$CHANGED" != "api/atlanta-fallback-snapshot.js" ]; then
+            echo "::error::Refusing: unexpected files changed: $CHANGED"
+            exit 1
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Local build guard
+        if: steps.diff.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Stage exact data-only refresh branch
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "good-times-snapshot-bot"
+          git config user.email "good-times-snapshot-bot@users.noreply.github.com"
+          git checkout -B "$BRANCH"
+          git add api/atlanta-fallback-snapshot.js
+          git commit -m "GOOD TIMES: refresh verified Atlanta fallback snapshot (data-only)"
+          git push -f origin "$BRANCH"
+          echo "Snapshot branch staged. Supabase protected-PR reconciler will create/merge the user-authored PR."
+
+      - name: Report staging failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          TITLE="Atlanta fallback snapshot refresh failed"
+          BODY="Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID — snapshot refresh or branch staging failed. Check /api/health and the refresher logs."
+          N=$(gh issue list --state open --search "\"$TITLE\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$N" ]; then
+            gh issue comment "$N" --body "$BODY"
+          else
+            gh issue create --title "$TITLE" --body "$BODY"
+          fi
