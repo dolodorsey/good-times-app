@@ -15,25 +15,52 @@ on:
         description: Type RESUBMIT to confirm this writes to App Store Connect
         required: true
         type: string
+  # Merging a change to this file resubmits the version/build it names (same checks as a manual run).
+  push:
+    branches: [main]
+    paths:
+      - 'ios/app-review-resubmit.json'
 
 permissions:
   contents: read
 
 jobs:
   resubmit:
-    if: inputs.confirmation == 'RESUBMIT'
+    if: github.event_name == 'push' || inputs.confirmation == 'RESUBMIT'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+      - name: Read the requested version and build
+        id: target
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_BUILD: ${{ inputs.build }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          if os.environ['EVENT_NAME'] == 'push':
+              d = json.load(open('ios/app-review-resubmit.json', encoding='utf-8'))
+              if d.get('confirmation') != 'RESUBMIT':
+                  raise SystemExit('ios/app-review-resubmit.json must set "confirmation": "RESUBMIT"')
+              version, build = str(d.get('version', '')).strip(), str(d.get('build', '')).strip()
+          else:
+              version, build = os.environ['INPUT_VERSION'].strip(), os.environ['INPUT_BUILD'].strip()
+          if not version or not build:
+              raise SystemExit('Version and build are required')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as f:
+              f.write(f'version={version}\nbuild={build}\n')
+          print(f'Resubmitting GOOD TIMES {version} build {build}')
+          PY
       - name: Validate and resubmit the explicitly selected GOOD TIMES build
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-          TARGET_VERSION: ${{ inputs.version }}
-          TARGET_BUILD: ${{ inputs.build }}
+          TARGET_VERSION: ${{ steps.target.outputs.version }}
+          TARGET_BUILD: ${{ steps.target.outputs.build }}
         run: |
           python3 - <<'PY'
           import json, os, time
