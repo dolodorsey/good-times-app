@@ -49,6 +49,7 @@ jobs:
               f.write(f"version={str(r.get('version','')).strip()}\n")
               f.write(f"build={str(r.get('build','')).strip()}\n")
               f.write(f"confirmed={'true' if ok else 'false'}\n")
+              f.write(f"availability={str(r.get('availability','')).strip()}\n")
           with open(os.environ['RUNNER_TEMP'] + '/review-notes.txt', 'w') as f:
               f.write(str(r.get('review_notes') or ''))
           print(f"Request: version {r.get('version')} build {r.get('build')} confirmed={ok}")
@@ -63,6 +64,7 @@ jobs:
           ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
           TARGET_VERSION: ${{ steps.request.outputs.version }}
           TARGET_BUILD: ${{ steps.request.outputs.build }}
+          TARGET_AVAILABILITY: ${{ steps.request.outputs.availability }}
         run: |
           python3 - <<'PY'
           import json, os, time
@@ -121,6 +123,37 @@ jobs:
               rd=req('GET',f'/appStoreVersions/{vid}/appStoreReviewDetail')['data']
               req('PATCH',f'/appStoreReviewDetails/{rd["id"]}',payload={'data':{'type':'appStoreReviewDetails','id':rd['id'],'attributes':{'notes':notes}}})
               print('Review notes updated.')
+
+          # Availability: GOOD TIMES launches in Atlanta only. China mainland availability triggers extra
+          # App Compliance requirements that block submission ("Version is not ready to be submitted yet").
+          def full(method,url,params=None,payload=None):
+              r=requests.request(method,url,headers=H,params=params,json=payload,timeout=45)
+              if not r.ok: raise SystemExit(f'{method} {url} HTTP {r.status_code}: {r.text[:3000]}')
+              return {} if r.status_code==204 or not r.content else r.json()
+          def territories():
+              av=req('GET',f'/apps/{app_id}/appAvailabilityV2')['data']
+              out=[]; url=f'https://api.appstoreconnect.apple.com/v2/appAvailabilities/{av["id"]}/territoryAvailabilities'
+              params={'limit':'200','include':'territory'}
+              while url:
+                  b=full('GET',url,params); params=None
+                  for t in b.get('data',[]):
+                      out.append((t['relationships']['territory']['data']['id'], t['id'], t['attributes']))
+                  url=(b.get('links') or {}).get('next')
+              return out
+          terr=territories()
+          avail=[c for c,_,a in terr if a.get('available')]
+          print(f'Available in {len(avail)} territories; China mainland: {"CHN" in avail}; United States: {"USA" in avail}')
+          for c,tid,a in terr:
+              if c=='CHN': print(f'China mainland content status: {a.get("contentStatuses")}')
+          if os.environ.get('TARGET_AVAILABILITY','')=='united_states_only':
+              changed=0
+              for c,tid,a in terr:
+                  want = (c=='USA')
+                  if bool(a.get('available'))!=want:
+                      full('PATCH',f'https://api.appstoreconnect.apple.com/v1/territoryAvailabilities/{tid}',payload={'data':{'type':'territoryAvailabilities','id':tid,'attributes':{'available':want}}})
+                      changed+=1
+              print(f'Availability set to United States only ({changed} territories changed).')
+              time.sleep(30)
 
           build_rel=req('GET',f'/appStoreVersions/{vid}/relationships/build')['data']
           if not build_rel: raise SystemExit('No build attached to App Store version')
