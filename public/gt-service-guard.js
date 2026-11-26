@@ -4,7 +4,8 @@
   // This guard runs before the React/native API bridge is imported.
   var nativePlatform = window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()
   var HEALTH_URL = nativePlatform ? 'https://thegoodtimesworldwide.com/api/health' : '/api/health'
-  var CLIENT_TIMEOUT_MS = 5000
+  // The server's own checks can take up to 4.5 s; a phone on a cold start needs headroom.
+  var CLIENT_TIMEOUT_MS = 12000
   var root = document.getElementById('root')
   var resolveReady
 
@@ -75,6 +76,10 @@
   async function checkHealth(isRetry){
     if (!isRetry) renderShell('checking')
     var state = await fetchHealth()
+    // A timeout or dropped connection is not an outage: try once more before blocking.
+    if (!state.ready && (state.detail === 'health check timeout' || state.detail === 'network unavailable')) {
+      state = await fetchHealth()
+    }
     window.__GOOD_TIMES_SERVICE_STATE__ = state
     if (state.ready) {
       if (isRetry) {
