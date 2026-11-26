@@ -134,7 +134,7 @@ test('GOOD TIMES runtime cannot mount before the service gate resolves', async (
   assert.match(guard, /Check status again/)
   assert.match(guard, /\/support\.html/)
   assert.match(guard, /\/privacy\.html/)
-  assert.match(guard, /CLIENT_TIMEOUT_MS = 5000/)
+  assert.match(guard, /CLIENT_TIMEOUT_MS = 12000/)
   assert.match(healthApi, /HEALTH_TIMEOUT_MS = 4500/)
   assert.match(healthApi, /KHG_SUPABASE_ANON_KEY/)
   assert.match(healthApi, /GT_SUPABASE_ANON_KEY/)
