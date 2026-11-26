@@ -3,6 +3,7 @@
   "build": "442",
   "confirmation": "RESUBMIT",
   "review_notes": "Resubmission for Guideline 2.1(a) (Nov 20, iPad Air 11-inch (M3), iPadOS 27.2.1: the app launched to a 'reconnecting' page). Cause: on launch the app checks our server, and the server only accepted requests from the address the Android and web app use, not the address the iOS app uses (capacitor://localhost), so the check was blocked on every iPhone and iPad. Fixed on the server (it now answers the iOS app) and in this build (longer startup wait plus an automatic retry). GOOD TIMES is a guide to things to do in Atlanta: places, events and entertainment, plus a night planner.",
-  "requested": "2026-11-26 retry: United States only (Atlanta-only launch); clears China mainland App Compliance block",
-  "availability": "united_states_only"
+  "requested": "2026-11-26: United States only set; retry until Apple accepts; fresh submission with exact blockers if the old one stays refused",
+  "availability": "united_states_only",
+  "requested_at": "2026-11-26T23:00:00Z"
 }
