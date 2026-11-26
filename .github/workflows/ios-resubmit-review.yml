@@ -1,6 +1,11 @@
 name: GOOD TIMES Resubmit App Review
 
 on:
+  # Merging a change to ios/app-store-resubmit.json on main runs the same resubmission
+  # (the file must say "confirmation": "RESUBMIT"). Manual runs work as before.
+  push:
+    branches: [main]
+    paths: [ios/app-store-resubmit.json]
   workflow_dispatch:
     inputs:
       version:
@@ -21,19 +26,43 @@ permissions:
 
 jobs:
   resubmit:
-    if: inputs.confirmation == 'RESUBMIT'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+      - name: Read the resubmission request
+        id: request
+        env:
+          IN_VERSION: ${{ inputs.version }}
+          IN_BUILD: ${{ inputs.build }}
+          IN_CONFIRMATION: ${{ inputs.confirmation }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          if os.environ['EVENT_NAME'] == 'workflow_dispatch':
+              r = {'version': os.environ['IN_VERSION'], 'build': os.environ['IN_BUILD'], 'confirmation': os.environ['IN_CONFIRMATION'], 'review_notes': ''}
+          else:
+              r = json.load(open('ios/app-store-resubmit.json'))
+          ok = str(r.get('confirmation', '')).strip() == 'RESUBMIT'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"version={str(r.get('version','')).strip()}\n")
+              f.write(f"build={str(r.get('build','')).strip()}\n")
+              f.write(f"confirmed={'true' if ok else 'false'}\n")
+          with open(os.environ['RUNNER_TEMP'] + '/review-notes.txt', 'w') as f:
+              f.write(str(r.get('review_notes') or ''))
+          print(f"Request: version {r.get('version')} build {r.get('build')} confirmed={ok}")
+          PY
+      - if: steps.request.outputs.confirmed == 'true'
+        run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
       - name: Validate and resubmit the explicitly selected GOOD TIMES build
+        if: steps.request.outputs.confirmed == 'true'
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-          TARGET_VERSION: ${{ inputs.version }}
-          TARGET_BUILD: ${{ inputs.build }}
+          TARGET_VERSION: ${{ steps.request.outputs.version }}
+          TARGET_BUILD: ${{ steps.request.outputs.build }}
         run: |
           python3 - <<'PY'
           import json, os, time
@@ -73,6 +102,25 @@ jobs:
           vstate=version.get('attributes',{}).get('appVersionState') or version.get('attributes',{}).get('appStoreState')
           if vstate not in {'PREPARE_FOR_SUBMISSION','REJECTED','DEVELOPER_REJECTED','METADATA_REJECTED','READY_FOR_REVIEW'}:
               raise SystemExit(f'Unsafe app-version state for resubmission: {vstate}')
+
+          # Attach the explicitly requested build if a different one is on the version.
+          wanted=req('GET','/builds',{'filter[app]':app_id,'filter[version]':BUILD,'filter[preReleaseVersion.version]':VERSION,'limit':'5'})['data']
+          if len(wanted)!=1: raise SystemExit(f'Expected one build {BUILD} for {VERSION}, found {len(wanted)}')
+          wb=wanted[0]; wa=wb.get('attributes',{})
+          if wa.get('processingState')!='VALID' or wa.get('buildAudienceType')!='APP_STORE_ELIGIBLE':
+              raise SystemExit(f'Requested build {BUILD} is not App Store eligible yet: processing={wa.get("processingState")} audience={wa.get("buildAudienceType")}')
+          if wa.get('usesNonExemptEncryption') is None:
+              req('PATCH',f'/builds/{wb["id"]}',payload={'data':{'type':'builds','id':wb['id'],'attributes':{'usesNonExemptEncryption':False}}})
+              print(f'Export compliance answered for build {BUILD}.')
+          current=req('GET',f'/appStoreVersions/{vid}/relationships/build')['data']
+          if not current or current['id']!=wb['id']:
+              req('PATCH',f'/appStoreVersions/{vid}/relationships/build',payload={'data':{'type':'builds','id':wb['id']}})
+              print(f'Attached build {BUILD} to {VERSION}.')
+          notes=Path(os.environ['RUNNER_TEMP'],'review-notes.txt').read_text(encoding='utf-8').strip() if Path(os.environ['RUNNER_TEMP'],'review-notes.txt').exists() else ''
+          if notes:
+              rd=req('GET',f'/appStoreVersions/{vid}/appStoreReviewDetail')['data']
+              req('PATCH',f'/appStoreReviewDetails/{rd["id"]}',payload={'data':{'type':'appStoreReviewDetails','id':rd['id'],'attributes':{'notes':notes}}})
+              print('Review notes updated.')
 
           build_rel=req('GET',f'/appStoreVersions/{vid}/relationships/build')['data']
           if not build_rel: raise SystemExit('No build attached to App Store version')
