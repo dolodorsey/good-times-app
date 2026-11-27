@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Validate exact Gitleaks historical exceptions without printing secret values."""
-import base64, json, re, subprocess
+import base64, hashlib, json, re, subprocess
 from pathlib import Path
 
 FINGERPRINT = re.compile(r'([0-9a-f]{40}):([^:]+):(jwt|generic-api-key):([1-9][0-9]*)')
@@ -17,6 +17,23 @@ REVIEWED_PROSE = {
     "d3235593e8112273955159560509b13bfcf6fddb:scripts/validate-secret-exceptions.py:generic-api-key:14": "    '733de0880c41b125acc772b2875c2ea579971d91:scripts/validate-secret-exceptions.py:generic-api-key:18': \"        '" + _DOC_LINE + "',\",",
     "041eba7a78365e329aea3936925c8bf51500a393:scripts/validate-secret-exceptions.py:generic-api-key:13": "    '80f4fa0f73fd9cb61c9cee8f83ac4a14c7c7d872:docs/all-pages/20_Event_Detail.md:generic-api-key:18': '" + _DOC_LINE + "',",
 }
+
+# A third party's own public key inside its image-CDN link (Maggiano's Builder.io photo),
+# copied from the venue's website. Not a KHG credential; nothing to rotate. The photo
+# loads identically without it, so the data and the snapshot refresher now strip it.
+# Exact fingerprint + host + key fingerprint (sha256 prefix) — never the value itself.
+THIRD_PARTY_CDN_KEY = re.compile(r'https://cdn\.builder\.io/[^\s\'"]*?[?&]apiKey=([0-9a-f]{32})')
+REVIEWED_THIRD_PARTY_CDN = {
+    '186d360360fdca5d0c929635ba8560dd44637018:supabase/data-fixes/20261112_venue_photos_and_duplicates.sql:generic-api-key:69': 'f140b1aa50',
+}
+
+def third_party_cdn_line(entry,rule,line):
+    expected=REVIEWED_THIRD_PARTY_CDN.get(entry)
+    if not expected or rule != 'generic-api-key': return False
+    if 'sb_secret_' in line or 'service_role' in line or JWT.search(line): return False
+    keys=THIRD_PARTY_CDN_KEY.findall(line)
+    if not keys or len(keys) != len(re.findall(r'(?i)api_?key=',line)): return False
+    return all(hashlib.sha256(k.encode()).hexdigest()[:10] == expected for k in keys)
 
 RETIRED_PRIVATE = frozenset({
     '17816714552bcb22947486e035c75df50ed54699:public/admin.html:jwt:143',
@@ -86,6 +103,8 @@ def validate(entries):
                 retired_count += 1
         elif entry in REVIEWED_PROSE and rule == 'generic-api-key' and line == REVIEWED_PROSE[entry]:
             public_count += 1
+        elif third_party_cdn_line(entry,rule,line):
+            public_count += 1
         elif public_line(rule,line):
             public_count += 1
         else:
@@ -109,7 +128,11 @@ def selftest():
     assert not retired_private_line('jwt',fake('anon',ref='dzlmtvodpyhetvektfuo'))
     assert not retired_private_line('jwt',fake('service_role',ref='other-project'))
     assert not FINGERPRINT.fullmatch('public/admin.html:jwt:143')
-    print('8 exception-validator safety assertions passed')
+    fp=next(iter(REVIEWED_THIRD_PARTY_CDN))
+    assert not third_party_cdn_line(fp,'generic-api-key',"'https://cdn.builder.io/o/a?apiKey="+'0'*32+"'")
+    assert not third_party_cdn_line('0'*40+':x.sql:generic-api-key:1','generic-api-key','https://cdn.builder.io/o/a?apiKey='+'0'*32)
+    assert not third_party_cdn_line(fp,'generic-api-key','https://evil.example/o/a?apiKey='+'0'*32)
+    print('11 exception-validator safety assertions passed')
 
 if __name__ == '__main__':
     selftest()

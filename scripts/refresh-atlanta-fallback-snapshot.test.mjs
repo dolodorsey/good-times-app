@@ -41,3 +41,16 @@ test('service date rolls back before 4am Atlanta (nightlife service day)',()=>{
   assert.equal(serviceDateFor(new Date('2026-10-03T06:30:00Z')),'2026-10-02') // 2:30am EDT
   assert.equal(serviceDateFor(new Date('2026-10-03T09:30:00Z')),'2026-10-03') // 5:30am EDT
 })
+
+test('snapshot never carries a key inside a photo link (Secret Leak Gate, Nov 26)',async()=>{
+  const {stripUrlKeyParams}=await import('./refresh-atlanta-fallback-snapshot.mjs')
+  const k='0123456789abcdef0123456789abcdef'
+  assert.equal(stripUrlKeyParams(`https://cdn.builder.io/api/v1/image/assets%2Fx%2Fy?apiKey=${k}&width=800`),'https://cdn.builder.io/api/v1/image/assets%2Fx%2Fy?width=800')
+  assert.equal(stripUrlKeyParams(`https://cdn.builder.io/o/assets%2Fx?alt=media&token=t&apiKey=${k}`),'https://cdn.builder.io/o/assets%2Fx?alt=media&token=t')
+  assert.equal(stripUrlKeyParams(`https://img.example.com/a.jpg?apiKey=${k}`),'https://img.example.com/a.jpg')
+  assert.equal(stripUrlKeyParams('Use the apiKey=abc in prose'),'Use the apiKey=abc in prose')
+  const r=good();r.payload.venues[0].hero_image=`https://cdn.builder.io/o/assets%2Fx?alt=media&apiKey=${k}`
+  const out=renderSnapshotModule(r)
+  assert.doesNotMatch(out,/[?&]api_?key=/i)
+  assert.match(out,/cdn\.builder\.io\/o\/assets%2Fx\?alt=media/)
+})
