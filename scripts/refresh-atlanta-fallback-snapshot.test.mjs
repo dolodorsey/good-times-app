@@ -54,3 +54,13 @@ test('snapshot never carries a key inside a photo link (Secret Leak Gate, Nov 26
   assert.doesNotMatch(out,/[?&]api_?key=/i)
   assert.match(out,/cdn\.builder\.io\/o\/assets%2Fx\?alt=media/)
 })
+
+test('Builder.io download links become the code-free WebP image address (Secret Leak Gate, Nov 27)',async()=>{
+  const {stripUrlKeyParams}=await import('./refresh-atlanta-fallback-snapshot.mjs')
+  const a='0123456789abcdef0123456789abcdef',i='fedcba9876543210fedcba9876543210'
+  assert.equal(stripUrlKeyParams(`https://cdn.builder.io/o/assets%2F${a}%2F${i}?alt=media&token=00000000-0000-0000-0000-000000000000&apiKey=${a}`),`https://cdn.builder.io/api/v1/image/assets%2F${a}%2F${i}?format=webp&width=1600`)
+  const r=good();r.payload.venues[0].hero_image=`https://cdn.builder.io/o/assets%2F${a}%2F${i}?alt=media&token=00000000-0000-0000-0000-000000000000`
+  const out=renderSnapshotModule(r)
+  assert.doesNotMatch(out,/[?&]token=/)
+  assert.match(out,/cdn\.builder\.io\/api\/v1\/image\/assets%2F/)
+})
