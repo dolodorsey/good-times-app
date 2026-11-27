@@ -1,6 +1,15 @@
 name: GOOD TIMES Resubmit App Review
 
 on:
+  # Merging a change to ios/app-store-resubmit.json on main runs the same resubmission
+  # (the file must say "confirmation": "RESUBMIT"). Manual runs work as before.
+  push:
+    branches: [main]
+    paths: [ios/app-store-resubmit.json]
+  # Keeps retrying every 2 hours until Apple accepts the submission; a version already
+  # with Apple (or live) ends the run without changes.
+  schedule:
+    - cron: '41 */2 * * *'
   workflow_dispatch:
     inputs:
       version:
@@ -21,19 +30,48 @@ permissions:
 
 jobs:
   resubmit:
-    if: inputs.confirmation == 'RESUBMIT'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
+      - name: Read the resubmission request
+        id: request
+        env:
+          IN_VERSION: ${{ inputs.version }}
+          IN_BUILD: ${{ inputs.build }}
+          IN_CONFIRMATION: ${{ inputs.confirmation }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          if os.environ['EVENT_NAME'] == 'workflow_dispatch' and os.environ['IN_VERSION']:
+              r = {'version': os.environ['IN_VERSION'], 'build': os.environ['IN_BUILD'], 'confirmation': os.environ['IN_CONFIRMATION'], 'review_notes': ''}
+          else:
+              r = json.load(open('ios/app-store-resubmit.json'))
+          ok = str(r.get('confirmation', '')).strip() == 'RESUBMIT'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f"version={str(r.get('version','')).strip()}\n")
+              f.write(f"build={str(r.get('build','')).strip()}\n")
+              f.write(f"confirmed={'true' if ok else 'false'}\n")
+              f.write(f"availability={str(r.get('availability','')).strip()}\n")
+              f.write(f"requested_at={str(r.get('requested_at','')).strip()}\n")
+          with open(os.environ['RUNNER_TEMP'] + '/review-notes.txt', 'w') as f:
+              f.write(str(r.get('review_notes') or ''))
+          print(f"Request: version {r.get('version')} build {r.get('build')} confirmed={ok}")
+          PY
+      - if: steps.request.outputs.confirmed == 'true'
+        run: python3 -m pip install --disable-pip-version-check --quiet pyjwt cryptography requests
       - name: Validate and resubmit the explicitly selected GOOD TIMES build
+        if: steps.request.outputs.confirmed == 'true'
         env:
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-          TARGET_VERSION: ${{ inputs.version }}
-          TARGET_BUILD: ${{ inputs.build }}
+          TARGET_VERSION: ${{ steps.request.outputs.version }}
+          TARGET_BUILD: ${{ steps.request.outputs.build }}
+          TARGET_AVAILABILITY: ${{ steps.request.outputs.availability }}
+          REQUESTED_AT: ${{ steps.request.outputs.requested_at }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           python3 - <<'PY'
           import json, os, time
@@ -71,8 +109,71 @@ jobs:
           version=vm[0]
           vid=version['id']
           vstate=version.get('attributes',{}).get('appVersionState') or version.get('attributes',{}).get('appStoreState')
+          print(f'Version {VERSION} state: {vstate}')
+          # Scheduled retries never resubmit after something was already submitted for this request
+          # (a new Apple rejection needs a fix and a new request, not the same build again).
+          if os.environ.get('EVENT_NAME')=='schedule':
+              asked=os.environ.get('REQUESTED_AT','').strip()
+              if not asked: print('Scheduled run: request has no requested_at; nothing to do.'); raise SystemExit(0)
+              allsubs=req('GET',f'/apps/{app_id}/reviewSubmissions',{'limit':'200'})['data']
+              latest=max([x.get('attributes',{}).get('submittedDate') or '' for x in allsubs] or [''])
+              if latest and latest>asked:
+                  print(f'Already submitted at {latest}, after this request ({asked}). Waiting for a new request.'); raise SystemExit(0)
+          if vstate in {'WAITING_FOR_REVIEW','IN_REVIEW','PENDING_DEVELOPER_RELEASE','READY_FOR_SALE','READY_FOR_DISTRIBUTION','PROCESSING_FOR_DISTRIBUTION','ACCEPTED','PENDING_APPLE_RELEASE'}:
+              print('Version is already with Apple or approved. Nothing to do.')
+              raise SystemExit(0)
           if vstate not in {'PREPARE_FOR_SUBMISSION','REJECTED','DEVELOPER_REJECTED','METADATA_REJECTED','READY_FOR_REVIEW'}:
               raise SystemExit(f'Unsafe app-version state for resubmission: {vstate}')
+
+          # Attach the explicitly requested build if a different one is on the version.
+          wanted=req('GET','/builds',{'filter[app]':app_id,'filter[version]':BUILD,'filter[preReleaseVersion.version]':VERSION,'limit':'5'})['data']
+          if len(wanted)!=1: raise SystemExit(f'Expected one build {BUILD} for {VERSION}, found {len(wanted)}')
+          wb=wanted[0]; wa=wb.get('attributes',{})
+          if wa.get('processingState')!='VALID' or wa.get('buildAudienceType')!='APP_STORE_ELIGIBLE':
+              raise SystemExit(f'Requested build {BUILD} is not App Store eligible yet: processing={wa.get("processingState")} audience={wa.get("buildAudienceType")}')
+          if wa.get('usesNonExemptEncryption') is None:
+              req('PATCH',f'/builds/{wb["id"]}',payload={'data':{'type':'builds','id':wb['id'],'attributes':{'usesNonExemptEncryption':False}}})
+              print(f'Export compliance answered for build {BUILD}.')
+          current=req('GET',f'/appStoreVersions/{vid}/relationships/build')['data']
+          if not current or current['id']!=wb['id']:
+              req('PATCH',f'/appStoreVersions/{vid}/relationships/build',payload={'data':{'type':'builds','id':wb['id']}})
+              print(f'Attached build {BUILD} to {VERSION}.')
+          notes=Path(os.environ['RUNNER_TEMP'],'review-notes.txt').read_text(encoding='utf-8').strip() if Path(os.environ['RUNNER_TEMP'],'review-notes.txt').exists() else ''
+          if notes:
+              rd=req('GET',f'/appStoreVersions/{vid}/appStoreReviewDetail')['data']
+              req('PATCH',f'/appStoreReviewDetails/{rd["id"]}',payload={'data':{'type':'appStoreReviewDetails','id':rd['id'],'attributes':{'notes':notes}}})
+              print('Review notes updated.')
+
+          # Availability: GOOD TIMES launches in Atlanta only. China mainland availability triggers extra
+          # App Compliance requirements that block submission ("Version is not ready to be submitted yet").
+          def full(method,url,params=None,payload=None):
+              r=requests.request(method,url,headers=H,params=params,json=payload,timeout=45)
+              if not r.ok: raise SystemExit(f'{method} {url} HTTP {r.status_code}: {r.text[:3000]}')
+              return {} if r.status_code==204 or not r.content else r.json()
+          def territories():
+              av=req('GET',f'/apps/{app_id}/appAvailabilityV2')['data']
+              out=[]; url=f'https://api.appstoreconnect.apple.com/v2/appAvailabilities/{av["id"]}/territoryAvailabilities'
+              params={'limit':'200','include':'territory'}
+              while url:
+                  b=full('GET',url,params); params=None
+                  for t in b.get('data',[]):
+                      out.append((t['relationships']['territory']['data']['id'], t['id'], t['attributes']))
+                  url=(b.get('links') or {}).get('next')
+              return out
+          terr=territories()
+          avail=[c for c,_,a in terr if a.get('available')]
+          print(f'Available in {len(avail)} territories; China mainland: {"CHN" in avail}; United States: {"USA" in avail}')
+          for c,tid,a in terr:
+              if c=='CHN': print(f'China mainland content status: {a.get("contentStatuses")}')
+          if os.environ.get('TARGET_AVAILABILITY','')=='united_states_only':
+              changed=0
+              for c,tid,a in terr:
+                  want = (c=='USA')
+                  if bool(a.get('available'))!=want:
+                      full('PATCH',f'https://api.appstoreconnect.apple.com/v1/territoryAvailabilities/{tid}',payload={'data':{'type':'territoryAvailabilities','id':tid,'attributes':{'available':want}}})
+                      changed+=1
+              print(f'Availability set to United States only ({changed} territories changed).')
+              time.sleep(30)
 
           build_rel=req('GET',f'/appStoreVersions/{vid}/relationships/build')['data']
           if not build_rel: raise SystemExit('No build attached to App Store version')
@@ -93,17 +194,19 @@ jobs:
 
           subs=req('GET',f'/apps/{app_id}/reviewSubmissions',{'limit':'200'})['data']
           unresolved=[s for s in subs if s.get('attributes',{}).get('state')=='UNRESOLVED_ISSUES']
-          if len(unresolved)!=1: raise SystemExit(f'Expected exactly one UNRESOLVED_ISSUES submission, found {len(unresolved)}')
-          sub=unresolved[0]
-          sid=sub['id']
-          items=req('GET',f'/reviewSubmissions/{sid}/items',{'limit':'200'})['data']
-          if len(items)!=1: raise SystemExit(f'Expected one review item, found {len(items)}')
+          if len(unresolved)>1: raise SystemExit(f'Expected at most one UNRESOLVED_ISSUES submission, found {len(unresolved)}')
+          sid=unresolved[0]['id'] if unresolved else None
+          if sid:
+              items=req('GET',f'/reviewSubmissions/{sid}/items',{'limit':'200'})['data']
+              if len(items)!=1: raise SystemExit(f'Expected one review item, found {len(items)}')
+          else:
+              print('No unresolved submission (an earlier run cancelled it); going straight to a fresh submission.')
 
-          payload={'data':{'type':'reviewSubmissions','id':sid,'attributes':{'submitted':True}}}
           transient_phrase='Version is not ready to be submitted yet, please try again later.'
           submitted=False
           last_error=None
-          for attempt in range(1,13):
+          for attempt in (range(1,13) if sid else []):
+              payload={'data':{'type':'reviewSubmissions','id':sid,'attributes':{'submitted':True}}}
               r=req('PATCH',f'/reviewSubmissions/{sid}',payload=payload,allow_error=True)
               if r.ok:
                   submitted=True
@@ -116,14 +219,49 @@ jobs:
                   continue
               raise SystemExit(f'PATCH /reviewSubmissions/{sid} HTTP {r.status_code}: {last_error}')
           if not submitted:
-              raise SystemExit(f'App Store version never became review-ready after bounded retries: {last_error}')
+              print('Old submission still refused. Opening a fresh submission to get Apple\'s exact blocking reasons.')
+              if sid:
+                  c=req('PATCH',f'/reviewSubmissions/{sid}',payload={'data':{'type':'reviewSubmissions','id':sid,'attributes':{'canceled':True}}},allow_error=True)
+                  print(f'Cancel old submission: HTTP {c.status_code}')
+              # Reuse an open draft if one exists, otherwise open a new one.
+              drafts=[x for x in req('GET',f'/apps/{app_id}/reviewSubmissions',{'limit':'200'})['data'] if x.get('attributes',{}).get('state')=='READY_FOR_REVIEW' and x.get('attributes',{}).get('platform')=='IOS']
+              for _ in range(12):
+                  time.sleep(10)
+                  v=req('GET',f'/appStoreVersions/{vid}')['data']['attributes']
+                  if (v.get('appVersionState') or v.get('appStoreState')) in {'PREPARE_FOR_SUBMISSION','DEVELOPER_REJECTED','READY_FOR_REVIEW','REJECTED'}: break
+              if drafts:
+                  sid=drafts[0]['id']
+                  print(f'Reusing open draft submission.')
+              else:
+                  ns=req('POST','/reviewSubmissions',payload={'data':{'type':'reviewSubmissions','attributes':{'platform':'IOS'},'relationships':{'app':{'data':{'type':'apps','id':app_id}}}}},allow_error=True)
+                  if not ns.ok: raise SystemExit(f'Could not open a fresh submission: HTTP {ns.status_code}: {ns.text[:3000]}')
+                  sid=ns.json()['data']['id']
+              have=req('GET',f'/reviewSubmissions/{sid}/items',{'limit':'200'})['data']
+              added=None
+              for attempt in (range(1,7) if not have else []):
+                  added=req('POST','/reviewSubmissionItems',payload={'data':{'type':'reviewSubmissionItems','relationships':{'reviewSubmission':{'data':{'type':'reviewSubmissions','id':sid}},'appStoreVersion':{'data':{'type':'appStoreVersions','id':vid}}}}},allow_error=True)
+                  if added.ok: break
+                  time.sleep(20)
+              if added is not None and not added.ok:
+                  print('Apple blocks this version for these reasons:')
+                  try:
+                      for x in added.json().get('errors',[]):
+                          print(f"- {x.get('code')}: {x.get('detail') or x.get('title')}")
+                          for ae in ((x.get('meta') or {}).get('associatedErrors') or {}).values():
+                              for e in ae: print(f"  - {e.get('code')}: {e.get('detail') or e.get('title')}")
+                  except Exception: print(added.text[:6000])
+                  raise SystemExit('Fresh submission could not take the version (reasons above).')
+              r=req('PATCH',f'/reviewSubmissions/{sid}',payload={'data':{'type':'reviewSubmissions','id':sid,'attributes':{'submitted':True}}},allow_error=True)
+              if not r.ok: raise SystemExit(f'Fresh submission refused: HTTP {r.status_code}: {r.text[:6000]}')
+              submitted=True
+              print('App Review submission accepted (fresh submission).')
 
           final=req('GET',f'/reviewSubmissions/{sid}')['data']
           fstate=final.get('attributes',{}).get('state')
           if fstate not in {'READY_FOR_REVIEW','WAITING_FOR_REVIEW','IN_REVIEW'}:
               raise SystemExit(f'Resubmission request returned unexpected state {fstate}: {json.dumps(final)[:4000]}')
 
-          evidence={'bundleId':BUNDLE,'appId':app_id,'version':VERSION,'versionId':vid,'build':BUILD,'buildId':build['id'],'reviewSubmissionId':sid,'previousState':'UNRESOLVED_ISSUES','currentState':fstate,'submitted':True,'verified':True}
+          evidence={'bundleId':BUNDLE,'appId':app_id,'version':VERSION,'versionId':vid,'build':BUILD,'buildId':build['id'],'reviewSubmissionId':sid,'previousState':vstate,'currentState':fstate,'submitted':True,'verified':True}
           out=Path(os.environ['RUNNER_TEMP'])/'good-times-resubmission.json'
           out.write_text(json.dumps(evidence,indent=2),encoding='utf-8')
           print(json.dumps(evidence,indent=2))
