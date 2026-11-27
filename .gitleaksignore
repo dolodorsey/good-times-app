@@ -102,3 +102,6 @@ d3235593e8112273955159560509b13bfcf6fddb:scripts/validate-secret-exceptions.py:g
 d3235593e8112273955159560509b13bfcf6fddb:scripts/validate-secret-exceptions.py:generic-api-key:14
 041eba7a78365e329aea3936925c8bf51500a393:scripts/validate-secret-exceptions.py:generic-api-key:13
 8f38fa6e4d597340630cc48c727a72c9b262b283:api/offers.js:generic-api-key:5
+
+# 2026-11-26: Maggiano's own public Builder.io key inside its photo link (third party, not ours). Validator checks host + key fingerprint.
+186d360360fdca5d0c929635ba8560dd44637018:supabase/data-fixes/20261112_venue_photos_and_duplicates.sql:generic-api-key:69

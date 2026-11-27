@@ -60,8 +60,22 @@ export function validateCacheResult(result,{serviceDate,previous}={}){
   return problems
 }
 
+// Third-party sites (e.g. a venue's Builder.io-hosted photos) put their own public
+// key in image links as ?apiKey=…. The photo loads the same without it, and the
+// Secret Leak Gate rightly flags it, so a snapshot never carries any URL key param.
+const URL_KEY_PARAM=/([?&])(?:api_?key|apikey|key)=[^&#"'\s]*(&?)/gi
+export function stripUrlKeyParams(value){
+  if(typeof value==='string'){
+    if(!/^https?:\/\//i.test(value))return value
+    return value.replace(URL_KEY_PARAM,(m,lead,trail)=>lead==='?'&&trail?'?':trail&&lead==='&'?'&':'').replace(/[?&]$/,'')
+  }
+  if(Array.isArray(value))return value.map(stripUrlKeyParams)
+  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,stripUrlKeyParams(v)]))
+  return value
+}
+
 export function renderSnapshotModule(result){
-  const snapshot={city:'atlanta',events:result.payload.events,venues:result.payload.venues,refreshed_at:result.cache_refreshed_at,service_date:result.service_date}
+  const snapshot=stripUrlKeyParams({city:'atlanta',events:result.payload.events,venues:result.payload.venues,refreshed_at:result.cache_refreshed_at,service_date:result.service_date})
   return `// Auto-refreshed emergency snapshot from the canonical Atlanta live-inventory cache.
 // Source: Supabase / gt_atlanta_live_inventory_cache_v1 via gt_public_live_inventory_cache_only_v1
 // Refreshed by: scripts/refresh-atlanta-fallback-snapshot.mjs (.github/workflows/refresh-atlanta-fallback-snapshot.yml)
