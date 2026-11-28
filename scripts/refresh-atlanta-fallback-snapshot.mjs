@@ -64,9 +64,14 @@ export function validateCacheResult(result,{serviceDate,previous}={}){
 // key in image links as ?apiKey=…. The photo loads the same without it, and the
 // Secret Leak Gate rightly flags it, so a snapshot never carries any URL key param.
 const URL_KEY_PARAM=/([?&])(?:api_?key|apikey|key)=[^&#"'\s]*(&?)/gi
+// Builder.io download links (cdn.builder.io/o/...?...&token=...) carry a download code the
+// Secret Leak Gate flags. The same photo is served code-free, as WebP, by Builder's image API.
+const BUILDER_DOWNLOAD=/^https:\/\/cdn\.builder\.io\/o\/assets%2F([0-9a-f]+)%2F([0-9a-f]+)(?:\?.*)?$/i
 export function stripUrlKeyParams(value){
   if(typeof value==='string'){
     if(!/^https?:\/\//i.test(value))return value
+    const b=value.match(BUILDER_DOWNLOAD)
+    if(b)return `https://cdn.builder.io/api/v1/image/assets%2F${b[1]}%2F${b[2]}?format=webp&width=1600`
     return value.replace(URL_KEY_PARAM,(m,lead,trail)=>lead==='?'&&trail?'?':trail&&lead==='&'?'&':'').replace(/[?&]$/,'')
   }
   if(Array.isArray(value))return value.map(stripUrlKeyParams)
