@@ -699,3 +699,132 @@ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-poster 
 html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt2-venue-grid.gt-compact-results{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
 @media(min-width:700px){html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt2-venue-grid.gt-compact-results{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
 @media(max-width:339px){html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-grid.gtk-grid,html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gt2-venue-grid.gt-compact-results,.gtk-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+
+/* ── Owner pass 2026-11-12 — Uber reference ───────────────────────────
+   "Make our cards and functionality similar to Uber… a tad bigger than theirs because we show info
+   inside, but smaller so users can see a lot more at once." Phone targets at 390px:
+   shortcut tiles 84×100 (Uber ≈80×89), rail cards ~104px wide with the next one peeking,
+   3-up grids, compact list rows, slimmer hero, pills, banners and headers. */
+@media(max-width:759px){
+ /* Hero + search: about 120px instead of 170px */
+ .gtk-hero,.gtk-hero-sm,.gtk-hero-md,.gtk-hero-lg{min-height:0!important;padding:10px 16px 10px!important;margin-bottom:6px!important}
+ .gtk-hero h1{font-size:clamp(24px,6.8vw,30px)!important;line-height:1!important}
+ .gtk-hero .gtk-eyebrow{font-size:9.5px!important;letter-spacing:.26em!important}
+ .gtk-hero .gtk-tagline{margin-top:3px!important;font-size:8.5px!important;letter-spacing:.2em!important}
+ .gtk-script{top:8px!important;right:10px!important;font-size:clamp(14px,4vw,18px)!important}
+ .gtk-hero-tools{margin-top:8px!important}
+ .gtk-hero-back{width:34px!important;height:34px!important;top:8px!important;left:8px!important}
+ .gtk-hero-back+.gtk-hero-copy{margin-top:30px!important}
+ .gtk-hero.is-long .gtk-hero-copy{padding-top:0!important}
+ .gtk-search,.gtk-searchbar .gtk-icon-btn{min-height:40px!important;height:40px!important}
+ .gtk-searchbar .gtk-icon-btn{width:40px!important}
+ .gtk-search input{font-size:14.5px!important}
+
+ /* Pills / time tabs */
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-time-tabs{margin-bottom:8px!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-time-tabs button{min-height:34px!important;padding:0 14px!important;font-size:13px!important}
+ .gtk-pills button{min-height:32px!important;padding:0 12px!important;font-size:12.5px!important}
+
+ /* Section rhythm */
+ .gtk-section{margin-bottom:12px!important}
+ .gtk-section-head{margin-bottom:6px!important;align-items:flex-end}
+ .gtk-section-head h2{font-size:16.5px!important;line-height:1.15!important}
+ .gtk-section-head .gtk-kicker{font-size:8px!important;letter-spacing:.2em!important;margin-top:3px}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-section{margin-top:4px!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-see-all{font-size:12.5px!important;min-height:30px!important;padding-top:0!important;padding-bottom:0!important}
+ .gtk-see-all svg{width:14px;height:14px}
+
+ /* Shortcut tiles ("What kind of time?") — Uber "For you" size, with live counts */
+ .gtk-cats{gap:7px!important;margin-bottom:2px!important;padding-bottom:4px!important}
+ .gtk-cat{width:84px!important;height:100px!important;padding:8px!important;border-radius:14px!important}
+ .gtk-cat-icon{left:8px!important;top:8px!important;width:28px!important;height:28px!important;border-radius:9px!important}
+ .gtk-cat-icon svg{width:16px;height:16px}
+ .gtk-cat strong{font-size:12.5px!important}
+ .gtk-cat small{font-size:9px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+ /* Plan Your Night: one row of three instead of a 240px block */
+ .gtk-build.is-compact .gtk-build-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:auto!important;gap:7px!important}
+ .gtk-build.is-compact .gtk-build-grid>.gtk-build-card,.gtk-build.is-compact .gtk-build-grid>.gtk-build-card:first-child{grid-row:auto!important;min-height:78px!important;padding:8px 9px!important;gap:4px!important;border-radius:14px!important;border-width:1px!important}
+ .gtk-build.is-compact .gtk-build-card strong,.gtk-build.is-compact .gtk-build-grid>.gtk-build-card:first-child strong{font:800 13px/1.05 var(--gtk-sans)!important}
+ .gtk-build.is-compact .gtk-build-card small{font-size:9.5px!important;line-height:1.2!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .gtk-build.is-compact .gtk-build-icon{width:26px!important;height:26px!important;border-radius:8px!important}
+ .gtk-build.is-compact .gtk-build-icon svg{width:15px;height:15px}
+ .gtk-build.is-compact .gtk-build-go{display:none!important}
+
+ /* Info cards: ~104px wide in rails (next card peeks), 3-up in grids, shorter photo and slimmer action */
+ .gtk-scroller{gap:7px!important}
+ .gtk-poster,.gtk-poster-sm{width:min(26.7vw,140px)!important;border-radius:11px!important}
+ .gtk-grid .gtk-poster,.gt2-venue-grid .gtk-poster{width:auto!important}
+ .gtk-poster-lg{width:min(58vw,240px)!important}
+ .gtk-featured .gtk-poster-lg{width:100%!important}
+ .gtk-poster-media{aspect-ratio:1/.84!important}
+ .gtk-poster-lg .gtk-poster-media{aspect-ratio:16/8!important}
+ .gtk-poster-copy{margin-top:-18px!important;padding:0 7px 6px!important;gap:1px!important}
+ .gtk-poster h3,.gtk-grid .gtk-poster h3{font:650 12px/1.14 var(--gtk-sans)!important;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+ .gtk-poster-lg h3{font:600 16px/1.12 var(--gtk-serif)!important}
+ .gtk-poster p{font-size:9.5px!important;line-height:1.25!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .gtk-poster-kicker{font-size:7.5px!important;letter-spacing:.1em!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-poster .gtk-poster-action{min-height:24px!important;margin:0 6px 6px!important;border-radius:7px!important;font-size:10px!important;gap:4px!important}
+ .gtk-poster-action svg{width:11px!important;height:11px!important}
+ .gtk-poster .gtk-badge{top:5px!important;left:5px!important;font-size:7.5px!important;padding:3px 5px!important;max-width:calc(100% - 36px)!important}
+ .gtk-poster .gtk-save{width:26px!important;height:26px!important;top:5px!important;right:5px!important}
+ .gtk-poster .gtk-save svg{width:13px!important;height:13px!important}
+ .gtk-photo-tile{width:min(26.7vw,120px)!important;aspect-ratio:1/.84!important;padding:7px!important;border-radius:12px!important}
+ .gtk-photo-tile strong{font-size:12px!important}.gtk-photo-tile small{font-size:9.5px!important}
+
+ /* Places categories: 3-up compact tiles with the count chip (was 2-up, 120px tall) */
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-lanes-top{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;margin:2px 0 10px!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-lanes-top>button{min-height:84px!important;padding:8px!important;border-radius:13px!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-lanes-top>button>span{padding:24px 0 0!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-lanes-top strong{font:700 12.5px/1.1 var(--gtk-sans)!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-lanes-top small{display:none!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-lanes-top .gtc-lane-count{margin-top:4px!important;padding:2px 6px!important;font-size:9.5px!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-lanes-top .gtk-lane-icon{left:8px!important;right:auto!important;top:8px!important;width:24px!important;height:24px!important;border-radius:8px!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtk-lanes-top .gtk-lane-icon svg{width:14px;height:14px}
+
+ /* Entertainment lanes (Explore Entertainment): 3-up, title only */
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-entertainment-lanes{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-entertainment-lane{min-height:64px!important;padding:8px!important;border-radius:12px!important;align-items:flex-end!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-entertainment-lane strong{font-size:12.5px!important;line-height:1.12!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-entertainment-lane small{display:none!important}
+ html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-entertainment-lane>b,html body.gt-complete-mode #root .gt5-app.gt5-complete[data-screen] .gtc-entertainment-lane svg{display:none!important}
+
+ /* FREE IN THE A: slim strip */
+ .gtf-banner{padding:8px 10px!important;gap:9px!important;margin:2px 0 10px!important;border-radius:14px!important;border-width:1px!important}
+ .gtf-banner-gift{width:34px!important;height:34px!important;border-radius:10px!important}
+ .gtf-banner-gift svg{width:19px;height:19px}
+ .gtf-banner-copy small{font-size:8px!important}
+ .gtf-banner-copy strong{font-size:16px!important}
+ .gtf-banner-copy em{font-size:10px!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .gtf-banner-cta{padding:6px 9px!important;font-size:11px!important}
+
+ /* Circle shortcuts (Uber "For you") */
+ .gtk-rail-circle{gap:4px!important}
+ .gtk-rail-circle>button{width:62px!important;gap:5px!important;font-size:11px!important}
+ .gtk-rail-circle .gtk-tile-icon{width:48px!important;height:48px!important}
+ .gtk-rail-circle .gtk-tile-icon svg{width:21px;height:21px}
+
+ /* Team board, restaurant subcategories */
+ .gtk-team-card{width:min(40vw,160px)!important;padding:8px 9px!important;border-radius:12px!important}
+ .gtk-team-card strong{font-size:14px!important}
+ .gtk-team-main{font-size:12px!important}
+ .gtk-subtile{min-height:56px!important;padding:7px 8px!important;border-radius:11px!important}
+ .gtk-subtile strong{font-size:11.5px!important}.gtk-subtile small{font-size:9.5px!important}
+ .gtk-concierge,.gtk-brand-band{transform:none}
+}
+/* Live count chip on shortcut tiles (replaces the sub-line when there is something tonight) */
+.gtk-cat-badge{display:inline-flex;align-items:center;gap:4px;align-self:flex-start;margin-top:2px;padding:2px 6px;border-radius:999px;background:var(--gtk-accent);color:#0b0b0c;font:800 8.5px/1.2 var(--gtk-sans);font-style:normal;letter-spacing:.02em;white-space:nowrap}
+.gtk-cat-badge i{width:5px;height:5px;border-radius:50%;background:#e5242b;animation:gtk-live 1.2s ease-in-out infinite}
+/* Uber-style compact rows */
+.gtk-quick-list{list-style:none;margin:0;padding:0;border:1px solid var(--gtk-line);border-radius:14px;background:rgba(14,15,18,.86);overflow:hidden}
+.gtk-quick-list li+li{border-top:1px solid rgba(255,255,255,.07)}
+.gtk-quick-row{display:flex;align-items:center;gap:10px;width:100%;min-height:54px;padding:7px 10px;border:0;background:none;color:var(--gtk-ink);text-align:left}
+.gtk-quick-row:active{background:rgba(255,255,255,.05)}
+.gtk-quick-thumb{flex:0 0 auto;width:40px;height:40px;border-radius:10px;overflow:hidden;display:grid;place-items:center;background:#1a1b1f;color:var(--gtk-accent)}
+.gtk-quick-thumb img{width:100%;height:100%;object-fit:cover}
+.gtk-quick-copy{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.gtk-quick-copy strong{font:700 13.5px/1.2 var(--gtk-sans);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gtk-quick-copy small{font:500 11.5px/1.2 var(--gtk-sans);color:var(--gtk-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gtk-quick-meta{flex:0 0 auto;display:inline-flex;align-items:center;gap:4px;font:700 11px/1 var(--gtk-sans);color:var(--gtk-accent2,#e9d9a6)}
+.gtk-quick-go{flex:0 0 auto;color:var(--gtk-muted)}
+@media(min-width:760px){.gtk-quick-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.gtk-quick-list li+li{border-top:0;border-left:1px solid rgba(255,255,255,.07)}}

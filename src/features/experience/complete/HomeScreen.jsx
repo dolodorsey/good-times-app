@@ -1,11 +1,11 @@
 import React,{useMemo,useState} from 'react'
 import AdSlot from './AdSlot.jsx'
-import {Themed,ScreenHero,SearchBar,CategoryCards,Rail,BuildTrio,ConciergeBand,PhotoTile,Skeletons,Empty,SCENES} from './Kit.jsx'
-import {EventPoster,VenuePoster} from './posters.jsx'
+import {Themed,ScreenHero,SearchBar,CategoryCards,Rail,BuildTrio,ConciergeBand,PhotoTile,Skeletons,Empty,QuickList,SCENES} from './Kit.jsx'
+import {EventPoster,VenuePoster,eventPrice} from './posters.jsx'
 import HomeTimeline from './HomeTimeline.jsx'
 import {State} from './Cards.jsx'
 import {selectedCityClock,eventIsThisWeekend} from '../good-times-event-clock.js'
-import {occurrenceUsable,eveningUsable,unique,list,labelFor,safeImage,safeLink,displayDate,displayTime} from './model.js'
+import {occurrenceUsable,eveningUsable,unique,list,labelFor,safeImage,safeLink,displayDate,displayTime,cleanTitle} from './model.js'
 import {PosterCard} from './Kit.jsx'
 import {tonightOrNext} from './tonight.js'
 import {houseEvents,KOLLECTIVE_PROGRAMS} from './kollective-programming.js'
@@ -57,6 +57,14 @@ const WEEK_GROUPS=[
 // Owner 2026-11-10: keep these off the Home screen (still findable in Places / search).
 export const HOME_EXCLUDE=/^(the )?(royal peacock|safari( lounge)?|x ?midtown)\b/i
 const INTERACTIVE=/puttshack|flight club|cosm|f1 arcade|andretti|topgolf|top golf|sandbox vr|great big game show|spin art|game show|mini golf|darts|vr\b|immersive|sim[_ -]?racing|karting|arcade|bowling|escape|splatter|rage room|axe/i
+// Owner 2026-11-12 (Uber reference): tonight counts on the shortcut tiles, from the live feed only.
+const MOOD_COUNTS={'nightlife-events':e=>/^(nightlife|day_parties_brunch)$/.test(e.category_key),events:()=>true,sports:e=>e.category_key==='sports_watch'}
+function moodTiles(night){
+ if(night.next)return MOODS
+ const rows=collapseByTitle(night.rows)
+ return MOODS.map(m=>{const f=MOOD_COUNTS[m.id];const n=f?rows.filter(f).length:0;return n>0?{...m,badge:`${n} tonight`}:m})
+}
+const soonRow=(e,onEvent)=>{const t=displayTime(e.event_time);return {key:e.event_key,image:e.image_url,icon:'ticket',title:cleanTitle(e.title),sub:[e.venue_name,eventPrice(e)].filter(Boolean).join(' · '),meta:t==='Time to confirm'?null:t,onClick:()=>onEvent(e)}}
 function greeting(minute){if(minute<240||minute>=1080)return 'Good Evening,';if(minute<720)return 'Good Morning,';return 'Good Afternoon,'}
 
 export default function HomeScreen({events=[],venues=[],profile,savedKeys,onEvent,onVenue,onSave,onSearch,onNavigate,onPlan,mode,onMode,now,loading,error,onRetry,sponsored=null}){
@@ -68,6 +76,7 @@ export default function HomeScreen({events=[],venues=[],profile,savedKeys,onEven
  const rails=useMemo(()=>{
   const used=new Set()
   const best=claim(bestRows(live,now),used,14)
+  const soon=claim(collapseByTitle(night.rows),used,3)
   const nightRows=claim(collapseByTitle(night.rows),used,10)
   const tonight=night.next?[]:nightRows
   const homeVenues=unique(venues).filter(v=>!HOME_EXCLUDE.test(String(v.name||'').trim()))
@@ -75,7 +84,7 @@ export default function HomeScreen({events=[],venues=[],profile,savedKeys,onEven
   const weekend=claim(collapseByTitle(live.filter(e=>eventIsThisWeekend(e,'atlanta',now))),used,10)
   const comingUp=claim(collapseByTitle(live.filter(e=>String(e.event_date)>c.date)),used,10)
   const different=claim(homeVenues.filter(v=>INTERACTIVE.test([v.name,v.category_key,v.venue_subcategory,v.subcategory].filter(Boolean).join(' '))),used,10)
-  return {best,nightRows,tonight,places,weekend,comingUp,different}
+  return {best,soon,nightRows,tonight,places,weekend,comingUp,different}
  },[live,night,venues,now,c.date])
  const {tonight,places,weekend,comingUp,different}=rails
  const firstName=String(profile?.full_name||'').trim().split(/\s+/)[0]
@@ -85,8 +94,9 @@ export default function HomeScreen({events=[],venues=[],profile,savedKeys,onEven
   </ScreenHero>
   <div className="gtk-time-tabs"><nav className="gtc-tabs gt5-home-modes gtk-time-nav" aria-label="GOOD TIMES Home views">{[['for-you','For You'],['upcoming','Upcoming'],['tonight','Tonight']].map(([id,label])=><button key={id} className={id===mode?'active':''} aria-pressed={id===mode} onClick={()=>onMode(id)}>{label}</button>)}</nav><button type="button" onClick={()=>nav('weekend')}>This Weekend</button></div>
   {mode!=='for-you'?<HomeTimeline key={mode} mode={mode} events={events} venues={venues.filter(v=>!HOME_EXCLUDE.test(String(v.name||'').trim()))} now={now} savedKeys={savedKeys} onEvent={onEvent} onVenue={onVenue} onSave={onSave}/>:<>
-   <section className="gtk-section gtk-moods"><header className="gtk-section-head"><div><h2>What kind of <em>time?</em></h2></div><button type="button" className="gtk-see-all" onClick={()=>nav('places')}>See All</button></header><CategoryCards label="What kind of time" items={MOODS} onSelect={nav}/></section>
-   <BuildTrio onBuild={()=>onPlan?.('guided')} onShake={()=>onPlan?.('shake')} onAsk={()=>onPlan?.('ask')}/>
+   <section className="gtk-section gtk-moods"><header className="gtk-section-head"><div><h2>What kind of <em>time?</em></h2></div><button type="button" className="gtk-see-all" onClick={()=>nav('places')}>See All</button></header><CategoryCards label="What kind of time" items={moodTiles(night)} onSelect={nav}/></section>
+   <QuickList title={night.next?'Next':'Starting'} accent={night.next?'Up':'Soon'} kicker={night.next?night.kicker:'TONIGHT · ATLANTA'} rows={rails.soon.map(e=>soonRow(e,onEvent))} onSeeAll={()=>onMode(night.next?'upcoming':'tonight')}/>
+   <BuildTrio compact onBuild={()=>onPlan?.('guided')} onShake={()=>onPlan?.('shake')} onAsk={()=>onPlan?.('ask')}/>
    <AdSlot placement="home" slot={0}/>
    <BestRail items={rails.best} now={now} savedKeys={savedKeys} onEvent={onEvent} onSave={onSave} onSeeAll={()=>onMode('upcoming')}/>
    {error&&<State error title="Couldn’t refresh all recommendations" body={error} action={<button onClick={onRetry}>Retry</button>}/>}
